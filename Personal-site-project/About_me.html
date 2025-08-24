@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cristina Vera - Servicios Legales</title>
+  <link rel="stylesheet" href="CSS/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <link rel="icon" type="image/png" href="IMAGE/favicon.png">
+  <script src="JS/main.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="branding">
+        <a id="logo_link" href="index.html">
+          <img src="Siteplan/CristinaVeraAttorney1.png" alt="Cristina Vera Logo">
+        </a>
+        <h1 data-i18n="head_h1">Abogada Cristina Vera</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html" data-i18n="nav_home">Inicio</a></li>
+          <li><a href="About_me.html" data-i18n="nav_about">Sobre mí</a></li>
+          <li><a href="services.html" data-i18n="nav_services">Servicios</a></li>
+          <li><a href="contact.html" data-i18n="nav_contact">Contacto</a></li>
+          <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        </ul>
+        <select id="language-select">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
+      </nav>
+    </div>
+  </header>
+  <!--<section class="hero">
+    <div class="container">
+      <h2 data-i18n="hero_title" id="rotating-text">Tu Asesor Legal de Confianza</h2>
+      <p data-i18n="hero_subtitle">Experiencia, Honestidad, Compromiso y Solucion a sus problemas juridicos.</p>
+      <a href="#contact" class="btn" data-i18n="hero_cta">Solicita una Consulta</a>
+    </div>
+  </section>-->
+  <section id="about" class="about">
+    <div class="container">
+      <h2 data-i18n="about_title">Sobre Cristina Vera</h2>
+        <img src="Siteplan/Cristina_Vera_Professional_Photo.jpg" alt="Cristina Vera profesional" class="about-img">
+        <p data-i18n="about_text1">Cristina Vera no es solo una abogada con experiencia, sino también una persona profundamente comprometida con el servicio, la integridad y la empatía. Originaria de Milagro, Ecuador, Cristina creció con un fuerte sentido de comunidad y una pasión por la justicia. Sus valores personales —honestidad, compasión y resiliencia— guían sus interacciones diarias con clientes, colegas y con la comunidad en general. Es conocida por su capacidad de escuchar con atención, comunicarse con claridad y generar confianza con quienes buscan su asesoría. Fuera del ámbito legal, Cristina participa activamente en iniciativas locales que apoyan a mujeres y familias, reflejando su dedicación a proteger y fortalecer a los más vulnerables.</p>
+        
+        <p data-i18n="about_text2">Con más de una década de experiencia legal, Cristina Vera ha construido una práctica jurídica reconocida por brindar soluciones legales estratégicas y personalizadas. Se especializa en derecho civil, derecho de familia, planificación patrimonial, actos notariales y derecho de tránsito, todo dentro del marco de la legislación ecuatoriana. Sus servicios incluyen casos complejos de divorcio, custodia y pensión alimenticia, redacción y revisión de contratos, asesoramiento en herencias y transferencias de propiedades, así como representación en casos de tránsito y violencia intrafamiliar. Cristina domina tanto los procesos judiciales como los transaccionales, ofreciendo apoyo completo desde la consulta inicial hasta la resolución del caso. Su práctica se caracteriza por el rigor ético, el análisis profundo y un interés genuino en el bienestar de cada cliente.</p>
+        <p data-i18n="about_text2_1">Conoce mas sobre los <a href="services.html" data-i18n="">Servicios legales</a></p>
+        <img src="Siteplan/familia-law.jpg" alt="Servicios legales" class="services1-img">
+        <p></p>
+        <p data-i18n="about_text3">Lo que distingue a Cristina Vera es su combinación única de conocimiento legal y comprensión humana. No ve a sus clientes como simples expedientes, sino como personas enfrentando desafíos reales. Cristina se toma el tiempo para explicar cada paso del proceso legal en términos claros y accesibles, asegurando que sus clientes puedan tomar decisiones informadas. Su sitio web bilingüe y las opciones para subir documentos en línea facilitan el contacto desde cualquier parte de Ecuador. En un entorno legal que puede parecer abrumador, Cristina ofrece seguridad, claridad y una firme defensa de tus derechos. Su honestidad, atención personalizada y resultados comprobados le han ganado la confianza y lealtad de cientos de clientes, y está lista para ayudarte a ti también.</p>
+        <p data-i18n="about_text3_1">Agenda una consulta legal hoy</p> <a href="contact.html" class="btn" data-i18n="hero_cta">Solicita una Consulta</a>
+      <!--<video width="85%" controls>
+        <source src="video-presentacion.mp4" type="video/mp4">
+        <span data-i18n="video_error">Tu navegador no admite la reproducción de video.</span>
+      </video>-->
+    </div>
+  </section>
+  
+<footer>
+    <div class="container">
+      <p> <a href="Siteplan/site-plan.html" >Site plan</a></p>
+      <p>&copy; 2025 <a href=about_me.html >Cristina Vera</a> - Abogada. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
+      <p>Created by &copy; <a href="youtube.com" target="_blank">Jose Castro</a></p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    const translations = {
+      es: {}, // el español es el valor por defecto, así que no traducimos aquí
+      en: {
+        head_h1: "Cristina Vera - Attorney",
+        nav_home: "Home",
+        nav_about: "About Me",
+        nav_services: "Services",
+        nav_blog: "Blog",
+        nav_contact: "Contact",
+        nav_dashboard: "Dashboard",
+        nav_faq: "FAQ",
+        //hero_title: "Your Trusted Legal Partner",
+       // hero_subtitle: "Experience, Honesty, Commitment and Solution to your legal problems",
+        //hero_cta: "Request a Consultation",
+        about_title: "About Cristina Vera",
+        about_text1: "Cristina Vera is not only a seasoned attorney but also a person deeply committed to service, integrity, and empathy. Originally from Milagro, Ecuador, Cristina grew up with a strong sense of community and a passion for justice. Her personal values—honesty, compassion, and resilience—guide her daily interactions with clients, colleagues, and the broader community. She is known for her ability to listen attentively, communicate clearly, and create a sense of trust with those who seek her counsel. Outside of her legal practice, Cristina is actively involved in local initiatives that support women and families, reflecting her dedication to uplifting and protecting vulnerable members of society.",
+        about_text2: "With over a decade of legal experience, Cristina Vera has built a reputable law practice that focuses on delivering strategic and personalized legal solutions. She specializes in civil law, family law, estate planning, notarial services, and traffic law, all within the framework of Ecuadorian legislation. Her services include handling complex divorces, custody and child support cases, drafting and reviewing contracts, assisting with inheritance and property transfers, and offering representation in traffic and domestic violence disputes. Cristina is highly knowledgeable in both litigation and transactional processes, ensuring her clients receive comprehensive support from consultation to resolution. Her legal practice is guided by ethical rigor, deep analysis, and a genuine interest in each client’s well-being.",
+        about_text2_1: "Learn more about the Legal Services",
+        about_text3: "What sets Cristina Vera apart is her rare combination of legal expertise and human understanding. She does not see clients as case numbers but as individuals facing real-life challenges. Cristina takes the time to explain each step of the legal process in clear, accessible terms, ensuring clients are empowered to make informed decisions. Her bilingual website and document upload options make it easy for people across Ecuador to reach her, regardless of location. In a legal landscape that can feel overwhelming, Cristina offers reassurance, clarity, and a strong defense of your rights. Her honesty, personalized service, and proven results have earned her the trust and loyalty of hundreds of clients—and she is ready to help you, too.",
+        about_text3_1: "Schedule a legal consultation today",
+        hero_cta: "Request a Consultation",
+        //video_error: "Your browser does not support video playback.",
+        //services_title: "Services",
+        //service_1: "Family",
+        //service_2: "Women",
+        //service_3: "Childhood and Adolescence",
+        //service_4: "Notarial acts (Deeds, Contracts, Powers of Attorney, etc.)",
+        //service_5: "Domestic Violence",
+        //service_6: "Transit",
+        //faq_title: "Frequently Asked Questions",
+        //faq_q1: "How much does an initial consultation cost?",
+        //faq_a1: "The initial consultation may vary depending on the type of case, but we often offer a free first evaluation.",
+        //faq_q2: "What documents should I bring to my appointment?",
+        //faq_a2: "Basic documentation such as ID card, contracts, deeds, etc., depending on the case.",
+        //faq_q3: "Do I need to make an appointment online?",
+        //faq_a3: "Yes, the online appointment is necessary to reserve the time for your consultation. If you do not schedule an appointment in advance, you will have to wait until there is time available.",
+        //blog_title: "Legal Tips and News",
+        //blog1_title: "How to correctly register your business in Ecuador?",
+        //blog1_date: "Published on April 20, 2025",
+        //blog1_desc: "Learn the legal steps to safely establish your business.",
+        //blog2_title: "What should you know about mutual agreement divorce?",
+        //blog2_date: "Published on May 5, 2025",
+        //blog2_desc: "A quick guide to making informed decisions if you're considering this option.",
+        //contact_title: "Contact Us",
+        //label_name: "Full Name:",
+        //label_cedula: "ID number",
+        //label_email: "Email Address:",
+        //label_motivo: "Reason for Inquiry:",
+        //opt_familia: "Family",
+        //opt_mujer: "Women's affairs",
+        //opt_niñez: "Real Estate",
+        //opt_notariales: "Notarial Matters",
+        //opt_intrafamiliar: "Family affairs",
+        //opt_transito: "Transit",
+        //opt_otros: "other",
+        //btn_submit: "Submit Inquiry",
+        //contact_location: "Location:  Ecuador",
+        //calendly_btn: "Schedule via Calendly",
+        footer_rights: "All rights reserved."
+      }
+    };
+
+    const select = document.getElementById("language-select");
+    select.addEventListener("change", (e) => {
+      const lang = e.target.value;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (translations[lang] && translations[lang][key]) {
+          el.innerText = translations[lang][key];
+        }
+      });
+    });
+  </script>
+
+  <script>
+    const sections = document.querySelectorAll('section');
+
+    const revealOnScroll = () => {
+      const triggerBottom = window.innerHeight * 0.9;
+
+      sections.forEach(section => {
+        const sectionTop = section.getBoundingClientRect().top;
+        if (sectionTop < triggerBottom) {
+          section.classList.add('reveal');
+        }
+      });
+    };
+
+    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('load', revealOnScroll);
+  </script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cristina Vera - Servicios Legales</title>
+  <link rel="stylesheet" href="CSS/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <link rel="icon" type="image/png" href="IMAGE/favicon.png">
+  <script src="JS/main.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="branding">
+        <a id="logo_link" href="index.html">
+          <img src="Siteplan/CristinaVeraAttorney1.png" alt="Cristina Vera Logo">
+        </a>
+        <h1 data-i18n="head_h1">Abogada Cristina Vera</h1>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html" data-i18n="nav_home">Inicio</a></li>
+          <li><a href="About_me.html" data-i18n="nav_about">Sobre mí</a></li>
+          <li><a href="services.html" data-i18n="nav_services">Servicios</a></li>
+          <li><a href="contact.html" data-i18n="nav_contact">Contacto</a></li>
+          <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+        </ul>
+        <select id="language-select">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
+      </nav>
+    </div>
+  </header>
+  
+    
+
+  <!--<section class="hero">
+    <div class="container">
+      <h2 data-i18n="hero_title" id="rotating-text">Tu Asesor Legal de Confianza</h2>
+      <p data-i18n="hero_subtitle">Experiencia, Honestidad, Compromiso y Solucion a sus problemas juridicos.</p>
+      <a href="#contact" class="btn" data-i18n="hero_cta">Solicita una Consulta</a>
+    </div>
+  </section>-->
+  <section id="services" class="services">
+    <div class="container">
+      <h2 data-i18n="services_title">Servicios</h2>
+      <img src="Siteplan/services-2.jpg" alt="Cristina Vera servicios" class="about-img">
+      <p>
+        Entre los servicios legales que ofrece Cristina Vera se incluyen:
+      </p>
+      <ul>
+        <li> 
+          <strong data-i18n="service_1" class="servise_fam">Familia</strong><br>
+          <p data-i18n="service_1_1">
+            El derecho de familia en Ecuador abarca temas como divorcio, custodia, pensión alimenticia, régimen de visitas y protección de menores.
+          </p>
+          <p data-i18n="service_1_2">
+            Cristina guía a sus clientes en estos procesos emocionales con atención personalizada y precisión legal, preparando documentos, representando en audiencias o mediando acuerdos.
+          </p>
+          <p data-i18n="service_1_3">
+            Los conflictos familiares son delicados y tienen consecuencias a largo plazo. La experiencia de Cristina garantiza que las decisiones legales protejan tus derechos y el bienestar de tu familia.
+          </p>
+        </li>
+        <li>
+          <strong data-i18n="service_2" class="servise_woman">Mujer</strong><br>
+          <p data-i18n="service_2_1">
+            Asesoría y representación en casos de violencia de género, derechos laborales, y protección legal para mujeres. Esta área se enfoca en proteger a mujeres víctimas de violencia intrafamiliar, abandono, abuso o discriminación, especialmente en el entorno familiar.
+          </p>
+          <p data-i18n="service_2_2">
+            Ofrece intervención legal rápida: medidas de protección, procesos de separación, custodia de hijos y acompañamiento jurídico con enfoque humano.
+          </p>
+          <p data-i18n="service_2_3">
+            Cristina comprende la urgencia y el peso emocional de estos casos. Brinda defensa firme, trato empático y acción legal inmediata para protegerte.
+          </p>
+        </li>
+        <li>
+        <strong data-i18n="service_3" class="servise_kids">Ninez y Adolecencia</strong><br>
+          <p data-i18n="service_3_1">Se refiere a casos legales que involucran a menores: custodia, patria potestad, pensión alimenticia, visitas, tutela y protección en situaciones vulnerables.
+          </p>
+          <p data-i18n="service_3_2">Cristina asegura que el interés superior del niño sea respetado, ya sea gestionando custodias, redactando acuerdos de alimentos o solicitando medidas judiciales de protección.
+          </p>
+          <p data-i18n="service_3_3">Los casos con menores requieren protocolos estrictos y sensibilidad. Cristina ofrece representación legal sólida, con enfoque en la niñez y respeto por la ley ecuatoriana.
+          </p>
+        </li>
+        <li>
+        <strong data-i18n="service_4" class="servise_acts">Actos notariales (Escrituras, Contratos, Poderes, etc)</strong><br>
+          <p data-i18n="service_4_1">Son documentos legales que deben ser validados ante notario: contratos, escrituras, poderes, autorizaciones, declaraciones juramentadas, entre otros.
+          </p>
+          <p data-i18n="service_4_2">Ella redacta y revisa tus documentos para asegurar que sean claros, legales y protejan tus intereses antes de ser firmados ante un notario.
+          </p>
+          <p data-i18n="service_4_3">Un documento mal redactado puede traer grandes problemas. Cristina garantiza estructura legal correcta y evita errores que puedan afectar tu seguridad jurídica.
+          </p>
+        </li>
+        <li>
+        <strong data-i18n="service_5" class="servise_violence">Violencia intrafamilar</strong><br>
+          <p data-i18n="service_5_1">La violencia intrafamiliar incluye abuso físico, psicológico, sexual o económico que ocurre en relaciones familiares o íntimas. En Ecuador, está regulada por la Ley Orgánica Integral para Prevenir y Erradicar la Violencia contra las Mujeres y el Código Orgánico Integral Penal (COIP). Las víctimas pueden solicitar medidas de protección, custodia de hijos, boletas de auxilio e incluso procesos penales contra el agresor.
+          </p>
+          <p data-i18n="service_5_2">Cristina Vera brinda apoyo legal inmediato a víctimas, solicitando medidas de protección, presentando denuncias formales y guiando a las personas en los procesos ante la policía y la justicia. Ella asegura que las instituciones traten el caso con la seriedad y respeto que merece.
+          </p>
+          <p data-i18n="service_5_3">Los casos de violencia intrafamiliar son delicados y requieren acción legal firme, rápida y con sensibilidad. Cristina combina su conocimiento jurídico con comprensión humana, protegiendo tu seguridad, tus derechos y ayudándote a recuperar el control de tu vida.</p>
+        </li>
+        <li>
+        <strong data-i18n="service_6" class="servise_transit">Transito</Strong><br>
+          <p data-i18n="service_6_1">Incluye infracciones, accidentes, multas, suspensión de licencias y trámites administrativos ante la Agencia Nacional de Tránsito (ANT).</p>
+          <p data-i18n="service_6_2">Cristina defiende tus derechos, apela sanciones injustas, gestiona documentación y te representa en audiencias o negociaciones tras incidentes de tránsito.
+          </p>
+          <p data-i18n="service_6_3">Los problemas de tránsito pueden generar antecedentes, pérdida de licencia o multas innecesarias. Cristina asegura que se respeten tus derechos y el debido proceso.
+          </p>
+        </li>
+      </ul>
+      <p>
+        <a href="contact.html" class="btn" data-i18n="hero_cta">Solicita una Consulta</a>
+      </p>
+    </div>
+    
+  </section>
+  
+<footer>
+    <div class="container">
+      <p> <a href="Siteplan/site-plan.html" >Site plan</a></p>
+      <p>&copy; 2025 <a href=about_me.html >Cristina Vera</a> - Abogada. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
+      <p>Created by &copy; <a href="youtube.com" target="_blank">Jose Castro</a></p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    const translations = {
+      es: {}, // el español es el valor por defecto, así que no traducimos aquí
+      en: {
+        head_h1: "Cristina Vera - Attorney",
+        nav_home: "Home",
+        nav_about: "About Me",
+        nav_services: "Services",
+        //nav_blog: "Blog",
+        nav_contact: "Contact",
+        //nav_dashboard: "Dashboard",
+        nav_faq: "FAQ",
+        //hero_title: "Your Trusted Legal Partner",
+        //hero_subtitle: "Experience, Honesty, Commitment and Solution to your legal problems",
+        //hero_cta: "Request a Consultation",
+        //about_title: "About Cristina Vera",
+        //about_text1: "Cristina Vera is not only a seasoned attorney but also a person deeply committed to service, integrity, and empathy. Originally from Milagro, Ecuador, Cristina grew up with a strong sense of community and a passion for justice. Her personal values—honesty, compassion, and resilience—guide her daily interactions with clients, colleagues, and the broader community. She is known for her ability to listen attentively, communicate clearly, and create a sense of trust with those who seek her counsel. Outside of her legal practice, Cristina is actively involved in local initiatives that support women and families, reflecting her dedication to uplifting and protecting vulnerable members of society.",
+        //about_text2: "With over a decade of legal experience, Cristina Vera has built a reputable law practice that focuses on delivering strategic and personalized legal solutions. She specializes in civil law, family law, estate planning, notarial services, and traffic law, all within the framework of Ecuadorian legislation. Her services include handling complex divorces, custody and child support cases, drafting and reviewing contracts, assisting with inheritance and property transfers, and offering representation in traffic and domestic violence disputes. Cristina is highly knowledgeable in both litigation and transactional processes, ensuring her clients receive comprehensive support from consultation to resolution. Her legal practice is guided by ethical rigor, deep analysis, and a genuine interest in each client’s well-being.",
+        //about_text3: "What sets Cristina Vera apart is her rare combination of legal expertise and human understanding. She does not see clients as case numbers but as individuals facing real-life challenges. Cristina takes the time to explain each step of the legal process in clear, accessible terms, ensuring clients are empowered to make informed decisions. Her bilingual website and document upload options make it easy for people across Ecuador to reach her, regardless of location. In a legal landscape that can feel overwhelming, Cristina offers reassurance, clarity, and a strong defense of your rights. Her honesty, personalized service, and proven results have earned her the trust and loyalty of hundreds of clients—and she is ready to help you, too.",
+        //video_error: "Your browser does not support video playback.",
+        services_title: "Services",
+        service_1: "Family",
+        service_1_1: "Family law in Ecuador deals with matters like divorce, custody, child support, visitation, and protection of minors.",
+        service_1_2: "Cristina guides clients through emotionally charged cases with care and legal precision—preparing legal documents, representing them in court, or mediating agreements.",
+        service_1_3: "Family conflicts are sensitive and have long-term consequences. Cristina’s experience ensures legal decisions protect you and your loved ones, while respecting Ecuadorian family law.",
+        service_2: "Women",
+        //service_2_1: "
+        service_2_2: "She provides rapid legal intervention for protection orders, separation processes, and child custody issues, while ensuring victims feel safe and supported.",
+        service_2_3: "Cristina understands the urgency and emotional weight of these cases. She offers firm advocacy, empathetic treatment, and swift legal action to protect you.",
+        service_3: "Childhood and Adolescence",
+        service_3_1: "This area covers legal issues involving minors: custody, parental rights, child support, visitation, guardianship, and protection in vulnerable situations.",
+        service_3_2: "Cristina ensures the best interests of the child are prioritized, whether managing custody arrangements, drafting support agreements, or seeking protective court orders.",
+        service_3_3: "Cases involving minors require strict protocols and sensitivity. Cristina provides strong legal representation with a child-focused approach and respect for Ecuadorian juvenile law.",
+        service_4: "Notarial acts (Deeds, Contracts, Powers of Attorney, etc.)",
+        service_4_1: "These are legal documents that must be notarized: contracts, deeds, powers of attorney, authorizations, sworn statements, among others.",
+        service_4_2: "She drafts and reviews your documents to ensure they are clear, lawful, and protect your interests before being signed in front of a notary.",
+        service_4_3: "A poorly drafted document can lead to major problems. Cristina ensures correct legal structure and avoids mistakes that could compromise your legal security.",
+        service_5: "Domestic Violence",
+        service_5_1: "Domestic violence includes physical, psychological, sexual, or economic abuse occurring within family or intimate relationships. In Ecuador, this is addressed under the Comprehensive Organic Law to Prevent and Eradicate Violence Against Women and the Criminal Code (COIP). Victims can request legal protection, custody of children, restraining orders, and even criminal prosecution of the aggressor.",
+        service_5_2: "Cristina Vera provides immediate legal support to victims, seeking protection orders, filing formal complaints, and guiding individuals through processes with the police and judiciary. She ensures institutions handle the case with the seriousness and respect it deserves.",
+        service_5_3: "Domestic violence cases are highly sensitive and require firm, swift, and compassionate legal action. Cristina combines her legal expertise with human understanding, safeguarding your safety, rights, and helping you regain control of your life.",
+        service_6: "Transit",
+        service_6_1: "This includes traffic violations, accidents, fines, license suspensions, and administrative procedures before the National Transit Agency (ANT).",
+        service_6_2: "Cristina defends your rights, appeals unjust sanctions, manages documentation, and represents you in hearings or negotiations following traffic incidents.",
+        service_6_3: "Traffic issues can lead to records, license loss, or unnecessary fines. Cristina ensures your rights and due process are respected.",
+        //faq_title: "Frequently Asked Questions",
+        //faq_q1: "How much does an initial consultation cost?",
+        //faq_a1: "The initial consultation may vary depending on the type of case, but we often offer a free first evaluation.",
+        //faq_q2: "What documents should I bring to my appointment?",
+        //faq_a2: "Basic documentation such as ID card, contracts, deeds, etc., depending on the case.",
+        //faq_q3: "Do I need to make an appointment online?",
+        //faq_a3: "Yes, the online appointment is necessary to reserve the time for your consultation. If you do not schedule an appointment in advance, you will have to wait until there is time available.",
+        //blog_title: "Legal Tips and News",
+        //blog1_title: "How to correctly register your business in Ecuador?",
+        //blog1_date: "Published on April 20, 2025",
+        //blog1_desc: "Learn the legal steps to safely establish your business.",
+        //blog2_title: "What should you know about mutual agreement divorce?",
+        //blog2_date: "Published on May 5, 2025",
+        //blog2_desc: "A quick guide to making informed decisions if you're considering this option.",
+        //contact_title: "Contact Us",
+        //label_name: "Full Name:",
+        //label_cedula: "ID number",
+        //label_email: "Email Address:",
+        //label_motivo: "Reason for Inquiry:",
+        //opt_familia: "Family",
+        //opt_mujer: "Women's affairs",
+        //opt_niñez: "Real Estate",
+        //opt_notariales: "Notarial Matters",
+        //opt_intrafamiliar: "Family affairs",
+        //opt_transito: "Transit",
+        //opt_otros: "other",
+        //btn_submit: "Submit Inquiry",
+        //contact_location: "Location: Milagro, Ecuador",
+        calendly_btn: "Schedule via Calendly",
+        footer_rights: "All rights reserved."
+      }
+    };
+
+    const select = document.getElementById("language-select");
+    select.addEventListener("change", (e) => {
+      const lang = e.target.value;
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (translations[lang] && translations[lang][key]) {
+          el.innerText = translations[lang][key];
+        }
+      });
+    });
+  </script>
+
+  <script>
+    const sections = document.querySelectorAll('section');
+
+    const revealOnScroll = () => {
+      const triggerBottom = window.innerHeight * 0.9;
+
+      sections.forEach(section => {
+        const sectionTop = section.getBoundingClientRect().top;
+        if (sectionTop < triggerBottom) {
+          section.classList.add('reveal');
+        }
+      });
+    };
+
+    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('load', revealOnScroll);
+  </script>
+</body>
+</html>
