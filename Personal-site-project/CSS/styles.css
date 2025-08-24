@@ -153,7 +153,7 @@ nav a:hover {
   margin-top: 1rem;
 
   /* ✅ Keep consistent height */
-  min-height: 350px;   /* adjust as needed */
+  min-height: 100vh; /* takes full viewport height */
   display: flex;
   flex-direction: column;
   justify-content: center; /* vertically center content */
