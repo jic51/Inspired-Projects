@@ -151,6 +151,14 @@ nav a:hover {
   padding: 4rem 1rem;
   border-radius: 8px;
   margin-top: 1rem;
+
+  /* ✅ Keep consistent height */
+  min-height: 350px;   /* adjust as needed */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* vertically center content */
+  align-items: center;     /* horizontally center */
+  box-sizing: border-box;
 }
 
 .hero h2 {
