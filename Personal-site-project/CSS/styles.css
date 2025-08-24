@@ -1,6 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap');
 container
 /* File: Personal-site-project */
+
+#rotating-text {
+  font-size: 2.8rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 1rem;
+
+  /* Animation just for the rotating text */
+  animation: fadeInOut 4s infinite;
+}
+
+/* Keyframes for smooth fade-in / fade-out effect */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(20px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
+.hero p {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.hero .btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #f1c40f;
+  color: #002244;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+
 .branding {
   display: flex;
   align-items: center;
