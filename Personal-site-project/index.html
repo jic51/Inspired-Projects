@@ -20,12 +20,16 @@
         </a>
         <h1 data-i18n="head_h1">Abogada Cristina Vera</h1>
       </div>
+
+      <!-- Hamburger for mobile -->
+      <button class="menu-toggle" aria-label="Toggle Menu">☰</button>
+
       <nav>
-        <ul>
+        <ul class="nav-links">
           <li><a href="index.html" data-i18n="nav_home">Inicio</a></li>
           <li><a href="About_me.html" data-i18n="nav_about">Sobre mí</a></li>
           <li><a href="services.html" data-i18n="nav_services">Servicios</a></li>
-          <li><a href="contact.html" data-i18n="nav_contact">Contacto</a></li>
+          <li><a href="contact.html" data-i18n="nav_contact">Contactanos</a></li>
           <li><a href="faq.html" data-i18n="nav_faq">Preguntas Frequentes</a></li>
         </ul>
         <select id="language-select">
@@ -290,6 +294,16 @@
       });
     });
   </script>
+
+  <script>
+  const menuToggle = document.querySelector(".menu-toggle");
+  const navLinks = document.querySelector(".nav-links");
+
+  menuToggle.addEventListener("click", () => {
+   navLinks.classList.toggle("active");
+  });
+  </script>
+
 
   <script>
     const sections = document.querySelectorAll('section');
