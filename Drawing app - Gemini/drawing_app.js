@@ -97,7 +97,9 @@ function getEventCoords(e) {
     }
 }
 
-// --- Replay and Control Functions ---
+---
+
+### **Replay and Control Functions**
 
 function stopReplay() {
     isReplaying = false;
@@ -108,10 +110,7 @@ function stopReplay() {
 }
 
 async function replayDrawing(drawingData) {
-    if (isReplaying) {
-        stopReplay();
-        return;
-    }
+    // NEW: Removed the isReplaying check so the loop can start
     
     isReplaying = true;
     
@@ -131,11 +130,12 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                // NEW: Re-added the beginPath and moveTo logic for correct segment drawing
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -143,14 +143,13 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
-                ctx.closePath();
                 break;
         }
     }
     
     if (isReplaying) {
         replayTimeout = setTimeout(() => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // No need to clear here as it's done at the start of the function
             replayDrawing(drawingData);
         }, 500);
     }
