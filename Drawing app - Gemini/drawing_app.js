@@ -39,6 +39,8 @@ function startDrawing(e) {
     }
 
     if (isReplaying) {
+        // NEW: Stop the replay and prevent any new drawing immediately
+        isDrawing = false;
         stopReplay();
         return; 
     }
