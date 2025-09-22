@@ -8,7 +8,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 // Drawing state
 let isDrawing = false;
 const brushWidth = 5; // Fixed brush width
-let hue = 0; // For rainbow color
+let hue = 0; // For rainbow color 🌈
 let recordedStrokes = []; // Stores objects with {x, y, color, timestampOffset}
 let lastTimestamp = 0;
 
@@ -17,17 +17,18 @@ ctx.lineWidth = brushWidth;
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 
-// --- Rainbow Color Function ---
+// --- NEW: Rainbow Color Function ---
 function getRainbowColor() {
     hue = (hue + 1) % 360; // Cycle through hues 0-359
     return `hsl(${hue}, 100%, 50%)`; // Full saturation, 50% lightness
 }
 
-// --- Drawing Functions ---
+// --- Modified Drawing Functions ---
 function startDrawing(e) {
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
-    ctx.strokeStyle = getRainbowColor();
+    // ctx.strokeStyle = 'red'; // REMOVE THIS LINE
+    ctx.strokeStyle = getRainbowColor(); // NEW: Set initial rainbow color
     ctx.beginPath();
     ctx.moveTo(offsetX, offsetY);
     
@@ -38,13 +39,15 @@ function startDrawing(e) {
         x: offsetX,
         y: offsetY,
         color: ctx.strokeStyle,
-        timestampOffset: 0 // Start of a new stroke has 0 offset
+        timestampOffset: 0
     });
 }
 
 function draw(e) {
     if (!isDrawing) return;
     const { offsetX, offsetY } = getEventCoords(e);
+    // NEW: Update color on every single drawing point to get the rainbow effect
+    ctx.strokeStyle = getRainbowColor(); 
     ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
 
@@ -54,8 +57,8 @@ function draw(e) {
         type: 'draw',
         x: offsetX,
         y: offsetY,
-        color: ctx.strokeStyle, // Store color with each point for consistency during replay
-        timestampOffset: currentTimestamp - lastTimestamp // Time since last point
+        color: ctx.strokeStyle, // Store the new color with each point
+        timestampOffset: currentTimestamp - lastTimestamp
     });
     lastTimestamp = currentTimestamp;
 }
@@ -63,20 +66,17 @@ function draw(e) {
 function stopDrawing() {
     isDrawing = false;
     ctx.closePath();
-    // Mark end of stroke
     recordedStrokes.push({ type: 'end', timestampOffset: 0 }); 
 }
 
 function getEventCoords(e) {
     if (e.touches && e.touches.length > 0) {
-        // Handle touch events
         const rect = canvas.getBoundingClientRect();
         return {
             offsetX: e.touches[0].clientX - rect.left,
             offsetY: e.touches[0].clientY - rect.top
         };
     } else {
-        // Handle mouse events
         return {
             offsetX: e.offsetX,
             offsetY: e.offsetY
@@ -84,22 +84,20 @@ function getEventCoords(e) {
     }
 }
 
-// --- Event Listeners for Drawing ---
+// --- Event Listeners and Button Handlers (No changes here) ---
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
 canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing); // Stop drawing if mouse leaves canvas
+canvas.addEventListener('mouseout', stopDrawing); 
 
-// Touch events for mobile
 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); }, { passive: false });
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-// --- Control Buttons ---
 clearButton.addEventListener('click', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    recordedStrokes = []; // Clear recorded strokes too
+    recordedStrokes = [];
     statusMessage.textContent = 'Canvas cleared!';
 });
 
@@ -110,34 +108,27 @@ sendButton.addEventListener('click', () => {
     }
     statusMessage.textContent = 'Sending drawing...';
     
-    // In a real app, this data would be sent to a server
     const drawingData = {
         width: canvas.width,
         height: canvas.height,
         strokes: recordedStrokes,
-        senderId: 'userA', // Placeholder for actual user ID
-        recipientId: 'userB' // Placeholder for actual recipient ID
+        senderId: 'userA',
+        recipientId: 'userB'
     };
 
-    // --- MOCK SERVER SEND ---
-    // Simulate sending to a server and then receiving it back for replay
     console.log("Simulating send:", drawingData);
-    // After sending, you might clear the canvas or give feedback
     
-    // Simulate receiving it on another user's device (or locally for testing)
-    // This part would typically be handled by a WebSocket or push notification
     setTimeout(() => {
         statusMessage.textContent = 'Drawing sent! Simulating reception.';
         displayReceivedDrawing(drawingData);
-    }, 1000); // Simulate network delay
-    // --- END MOCK SERVER SEND ---
+    }, 1000);
 
-    recordedStrokes = []; // Clear local strokes after sending
+    recordedStrokes = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
 
 
-// --- Replay Drawing Function ---
+// --- Replay Drawing Function (Modified to use new color data) ---
 async function replayDrawing(drawingData, targetCanvas) {
     const replayCtx = targetCanvas.getContext('2d');
     replayCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
@@ -148,19 +139,18 @@ async function replayDrawing(drawingData, targetCanvas) {
     for (let i = 0; i < drawingData.strokes.length; i++) {
         const stroke = drawingData.strokes[i];
         
-        // Wait for the recorded time offset
         if (stroke.timestampOffset > 0) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
 
         switch (stroke.type) {
             case 'start':
-                replayCtx.strokeStyle = stroke.color;
+                replayCtx.strokeStyle = stroke.color; // NEW: Use the recorded color
                 replayCtx.beginPath();
                 replayCtx.moveTo(stroke.x, stroke.y);
                 break;
             case 'draw':
-                replayCtx.strokeStyle = stroke.color; // Ensure color consistency
+                replayCtx.strokeStyle = stroke.color; // NEW: Use the recorded color
                 replayCtx.lineTo(stroke.x, stroke.y);
                 replayCtx.stroke();
                 break;
@@ -171,9 +161,8 @@ async function replayDrawing(drawingData, targetCanvas) {
     }
 }
 
-// --- Display and Manage Received Drawings ---
+// --- Display and Manage Received Drawings (No changes here) ---
 function displayReceivedDrawing(drawingData) {
-    // Clear previous received drawings to simplify the demo
     receivedDrawingContainer.innerHTML = ''; 
 
     const receivedCanvas = document.createElement('canvas');
@@ -188,16 +177,12 @@ function displayReceivedDrawing(drawingData) {
 
     replayDrawing(drawingData, receivedCanvas);
 
-    // Set the self-destruction timer
-    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-    // For demo purposes, let's make it disappear in 10 seconds
     const DEMO_DISAPPEAR_MS = 10 * 1000; 
 
     setTimeout(() => {
         receivedDrawingContainer.innerHTML = '<p>The drawing has disappeared!</p>';
         console.log('Drawing disappeared after 2 hours (or demo time).');
-    }, DEMO_DISAPPEAR_MS); // Use DEMO_DISAPPEAR_MS for testing, TWO_HOURS_MS for production
+    }, DEMO_DISAPPEAR_MS);
 }
 
-// Initialize status
 statusMessage.textContent = 'Start drawing your rainbow masterpiece!';
