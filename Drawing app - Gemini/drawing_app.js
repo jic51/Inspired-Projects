@@ -30,16 +30,15 @@ function getRainbowColor() {
     return `hsl(${hue}, 100%, 50%)`;
 }
 
-// --- Modified Drawing Functions ---
+// --- Drawing Functions ---
 function startDrawing(e) {
-    // NEW: Stop any ongoing replay if the user starts to draw
     if (isReplaying) {
         stopReplay();
+        return; 
     }
+    
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
-    
-    // Do NOT clear the canvas here. The drawing can have multiple strokes now.
     
     lastX = offsetX;
     lastY = offsetY;
@@ -98,12 +97,11 @@ function getEventCoords(e) {
     }
 }
 
-// --- New Replay-related functions ---
+// --- Replay and Control Functions ---
 
 function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
-    // NEW: Clear canvas and strokes here, as requested
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     recordedStrokes = [];
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
@@ -112,11 +110,12 @@ function stopReplay() {
 async function replayDrawing(drawingData) {
     if (isReplaying) {
         stopReplay();
+        return;
     }
     
     isReplaying = true;
     
-    // The canvas is already cleared by the send button, so no need to clear here.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     let lastReplayX = 0;
     let lastReplayY = 0;
@@ -132,11 +131,11 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -144,12 +143,14 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
+                ctx.closePath();
                 break;
         }
     }
     
     if (isReplaying) {
         replayTimeout = setTimeout(() => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             replayDrawing(drawingData);
         }, 500);
     }
@@ -166,8 +167,8 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-canvas.addEventListener('mousedown', stopReplay);
-canvas.addEventListener('touchstart', stopReplay);
+canvas.addEventListener('mousedown', () => { if (isReplaying) stopReplay(); });
+canvas.addEventListener('touchstart', () => { if (isReplaying) stopReplay(); });
 
 clearButton.addEventListener('click', () => {
     stopReplay();
@@ -193,7 +194,6 @@ sendButton.addEventListener('click', () => {
     
     setTimeout(() => {
         statusMessage.textContent = 'Drawing sent! Replaying your art...';
-        // NEW: Clear the canvas just before the replay starts
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         replayDrawing(drawingData);
     }, 1000);
