@@ -15,7 +15,7 @@ let lastTimestamp = 0;
 let lastX = 0;
 let lastY = 0;
 
-// NEW: Variables to control replay
+// Replay state
 let isReplaying = false;
 let replayTimeout;
 
@@ -39,10 +39,7 @@ function startDrawing(e) {
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
     
-    // Clear the canvas to start a new drawing
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    recordedStrokes = [];
-    statusMessage.textContent = 'Drawing...';
+    // Do NOT clear the canvas here. The drawing can have multiple strokes now.
     
     lastX = offsetX;
     lastY = offsetY;
@@ -101,24 +98,25 @@ function getEventCoords(e) {
     }
 }
 
-// --- NEW: Replay-related functions ---
+// --- New Replay-related functions ---
 
 function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
-    statusMessage.textContent = 'Replay stopped. Start drawing or send again!';
+    // NEW: Clear canvas and strokes here, as requested
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    recordedStrokes = [];
+    statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
 }
 
 async function replayDrawing(drawingData) {
-    // NEW: Don't start if another replay is already happening
     if (isReplaying) {
         stopReplay();
     }
     
     isReplaying = true;
     
-    // Clear the canvas to prepare for the replay
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // The canvas is already cleared by the send button, so no need to clear here.
     
     let lastReplayX = 0;
     let lastReplayY = 0;
@@ -150,11 +148,10 @@ async function replayDrawing(drawingData) {
         }
     }
     
-    // NEW: If the replay wasn't stopped, start it again after a short delay
     if (isReplaying) {
         replayTimeout = setTimeout(() => {
             replayDrawing(drawingData);
-        }, 500); // Wait 0.5 seconds before looping
+        }, 500);
     }
 }
 
@@ -169,15 +166,12 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-// NEW: Stop replay when the canvas is clicked/tapped
 canvas.addEventListener('mousedown', stopReplay);
 canvas.addEventListener('touchstart', stopReplay);
 
 clearButton.addEventListener('click', () => {
     stopReplay();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    recordedStrokes = [];
-    statusMessage.textContent = 'Canvas cleared!';
+    statusMessage.textContent = 'Canvas cleared! Start drawing a new masterpiece!';
 });
 
 sendButton.addEventListener('click', () => {
@@ -197,19 +191,18 @@ sendButton.addEventListener('click', () => {
 
     console.log("Simulating send:", drawingData);
     
-    // Simulate sending and then immediately starting the replay on the sender's screen
     setTimeout(() => {
         statusMessage.textContent = 'Drawing sent! Replaying your art...';
+        // NEW: Clear the canvas just before the replay starts
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         replayDrawing(drawingData);
     }, 1000);
 });
 
-// --- Display and Manage Received Drawings (for the recipient's view) ---
+// --- Display and Manage Received Drawings (No changes here) ---
 function displayReceivedDrawing(drawingData) {
-    // NEW: Stop any current replay on the receiving end
     stopReplay();
     
-    // Clear previous received drawings to simplify the demo
     receivedDrawingContainer.innerHTML = ''; 
 
     const receivedCanvas = document.createElement('canvas');
@@ -222,15 +215,11 @@ function displayReceivedDrawing(drawingData) {
     receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
     receivedDrawingContainer.appendChild(receivedMessage);
     
-    // The recipient sees a single replay, then it disappears
     let lastReplayX = 0;
     let lastReplayY = 0;
     
-    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-    // For demo purposes, let's make it disappear in 10 seconds
     const DEMO_DISAPPEAR_MS = 10 * 1000; 
 
-    // Replay on the received canvas
     async function replayForRecipient() {
       for (let i = 0; i < drawingData.strokes.length; i++) {
         const stroke = drawingData.strokes[i];
