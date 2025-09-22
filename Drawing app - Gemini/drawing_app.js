@@ -7,7 +7,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 
 // Drawing state
 let isDrawing = false;
-const brushWidth = 5; // Fixed brush width
+const brushWidth = 5;
 let hue = 0; // For rainbow color 🌈
 let recordedStrokes = []; // Stores objects with {x, y, color, timestampOffset}
 let lastTimestamp = 0;
@@ -17,28 +17,31 @@ ctx.lineWidth = brushWidth;
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 
-// --- NEW: Rainbow Color Function ---
+// --- Rainbow Color Function ---
 function getRainbowColor() {
-    hue = (hue + 1) % 360; // Cycle through hues 0-359
-    return `hsl(${hue}, 100%, 50%)`; // Full saturation, 50% lightness
+    hue = (hue + 1) % 360;
+    return `hsl(${hue}, 100%, 50%)`;
 }
+
+// Store previous coordinates to draw a tiny segment
+let lastX = 0;
+let lastY = 0;
 
 // --- Modified Drawing Functions ---
 function startDrawing(e) {
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
-    // ctx.strokeStyle = 'red'; // REMOVE THIS LINE
-    ctx.strokeStyle = getRainbowColor(); // NEW: Set initial rainbow color
-    ctx.beginPath();
-    ctx.moveTo(offsetX, offsetY);
     
-    // Record the start of a new stroke
+    // Store the initial position for the first tiny segment
+    lastX = offsetX;
+    lastY = offsetY;
+    
+    // Start of a new stroke for recording purposes
     lastTimestamp = performance.now();
     recordedStrokes.push({
         type: 'start',
         x: offsetX,
         y: offsetY,
-        color: ctx.strokeStyle,
         timestampOffset: 0
     });
 }
@@ -46,10 +49,19 @@ function startDrawing(e) {
 function draw(e) {
     if (!isDrawing) return;
     const { offsetX, offsetY } = getEventCoords(e);
-    // NEW: Update color on every single drawing point to get the rainbow effect
-    ctx.strokeStyle = getRainbowColor(); 
-    ctx.lineTo(offsetX, offsetY);
+    
+    // Set a new rainbow color for this tiny line segment
+    ctx.strokeStyle = getRainbowColor();
+    
+    // Create a new path for this single segment
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY); // Move from the last point...
+    ctx.lineTo(offsetX, offsetY); // ...to the current point
     ctx.stroke();
+    
+    // Update the last position for the next segment
+    lastX = offsetX;
+    lastY = offsetY;
 
     // Record the drawing point
     const currentTimestamp = performance.now();
@@ -65,8 +77,8 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
-    ctx.closePath();
-    recordedStrokes.push({ type: 'end', timestampOffset: 0 }); 
+    // No need to ctx.closePath() here because we are drawing many small lines
+    recordedStrokes.push({ type: 'end', timestampOffset: 0 });
 }
 
 function getEventCoords(e) {
@@ -128,13 +140,16 @@ sendButton.addEventListener('click', () => {
 });
 
 
-// --- Replay Drawing Function (Modified to use new color data) ---
+// --- Replay Drawing Function (No change is needed here, as it was already handling separate points) ---
 async function replayDrawing(drawingData, targetCanvas) {
     const replayCtx = targetCanvas.getContext('2d');
     replayCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
     replayCtx.lineWidth = brushWidth;
     replayCtx.lineCap = 'round';
     replayCtx.lineJoin = 'round';
+
+    let lastReplayX = 0;
+    let lastReplayY = 0;
 
     for (let i = 0; i < drawingData.strokes.length; i++) {
         const stroke = drawingData.strokes[i];
@@ -145,17 +160,20 @@ async function replayDrawing(drawingData, targetCanvas) {
 
         switch (stroke.type) {
             case 'start':
-                replayCtx.strokeStyle = stroke.color; // NEW: Use the recorded color
-                replayCtx.beginPath();
-                replayCtx.moveTo(stroke.x, stroke.y);
+                lastReplayX = stroke.x;
+                lastReplayY = stroke.y;
                 break;
             case 'draw':
-                replayCtx.strokeStyle = stroke.color; // NEW: Use the recorded color
+                replayCtx.strokeStyle = stroke.color;
+                replayCtx.beginPath();
+                replayCtx.moveTo(lastReplayX, lastReplayY);
                 replayCtx.lineTo(stroke.x, stroke.y);
                 replayCtx.stroke();
+                
+                lastReplayX = stroke.x;
+                lastReplayY = stroke.y;
                 break;
             case 'end':
-                replayCtx.closePath();
                 break;
         }
     }
