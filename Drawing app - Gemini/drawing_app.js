@@ -32,8 +32,10 @@ function getRainbowColor() {
 
 // --- Drawing Functions ---
 function startDrawing(e) {
-    // NEW: Check if the button is a left-click (e.button === 0)
-    // and if it's a touch event (e.touches).
+    // NEW: Prevent default right-click context menu
+    e.preventDefault();
+
+    // NEW: Only proceed if it's a left-click (0) or a touch event
     if (e.button !== 0 && !e.touches) {
         return;
     }
@@ -167,8 +169,8 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-// NEW: Removed the redundant event listeners for stopping the replay.
-// The logic is now handled in the startDrawing() function.
+// NEW: Add a listener to prevent the context menu from appearing on right-click
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 clearButton.addEventListener('click', () => {
     stopReplay();
