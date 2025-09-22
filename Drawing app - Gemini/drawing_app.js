@@ -32,10 +32,8 @@ function getRainbowColor() {
 
 // --- Drawing Functions ---
 function startDrawing(e) {
-    // NEW: Prevent default right-click context menu
     e.preventDefault();
 
-    // NEW: Only proceed if it's a left-click (0) or a touch event
     if (e.button !== 0 && !e.touches) {
         return;
     }
@@ -105,7 +103,7 @@ function getEventCoords(e) {
     }
 }
 
-// --- Replay and Control Functions ---
+/// ---Replay and Control Functions ---
 
 function stopReplay() {
     isReplaying = false;
@@ -169,7 +167,6 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-// NEW: Add a listener to prevent the context menu from appearing on right-click
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 clearButton.addEventListener('click', () => {
