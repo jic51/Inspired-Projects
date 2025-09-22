@@ -38,7 +38,6 @@ function startDrawing(e) {
         return;
     }
 
-    // NEW: Handle stopping the replay directly in the event listener
     if (isReplaying) {
         stopReplay();
         return;
@@ -130,16 +129,21 @@ async function replayDrawing(drawingData) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
 
+        // NEW: Check `isReplaying` immediately after the await
+        if (!isReplaying) {
+            return;
+        }
+
         switch (stroke.type) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                // NEW: Begin a new path for each stroke to prevent ghost lines
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                // NEW: Use beginPath and moveTo for each segment for correct coloring
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
