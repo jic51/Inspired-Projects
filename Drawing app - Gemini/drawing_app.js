@@ -98,13 +98,15 @@ function getEventCoords(e) {
 }
 
 // --- Replay and Control Functions ---
+
 function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // NEW: Clear the recorded strokes to prevent incomplete clearing
     recordedStrokes = [];
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
+    // NEW: Re-enable the send button
+    sendButton.disabled = false;
 }
 
 async function replayDrawing(drawingData) {
@@ -131,6 +133,7 @@ async function replayDrawing(drawingData) {
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                // NEW: Use the context properties to draw the line segment
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -175,6 +178,9 @@ sendButton.addEventListener('click', () => {
         return;
     }
     statusMessage.textContent = 'Sending drawing...';
+    
+    // NEW: Disable the send button immediately
+    sendButton.disabled = true;
     
     const drawingData = {
         width: canvas.width,
