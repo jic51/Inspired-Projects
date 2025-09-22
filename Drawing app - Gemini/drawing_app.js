@@ -97,9 +97,7 @@ function getEventCoords(e) {
     }
 }
 
----
-
-### **Replay and Control Functions**
+// --- Replay and Control Functions ---
 
 function stopReplay() {
     isReplaying = false;
@@ -110,8 +108,6 @@ function stopReplay() {
 }
 
 async function replayDrawing(drawingData) {
-    // NEW: Removed the isReplaying check so the loop can start
-    
     isReplaying = true;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -130,12 +126,11 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // NEW: Re-added the beginPath and moveTo logic for correct segment drawing
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -143,13 +138,13 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
+                ctx.closePath();
                 break;
         }
     }
     
     if (isReplaying) {
         replayTimeout = setTimeout(() => {
-            // No need to clear here as it's done at the start of the function
             replayDrawing(drawingData);
         }, 500);
     }
@@ -211,49 +206,4 @@ function displayReceivedDrawing(drawingData) {
     receivedDrawingContainer.appendChild(receivedCanvas);
 
     const receivedMessage = document.createElement('p');
-    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
-    receivedDrawingContainer.appendChild(receivedMessage);
-    
-    let lastReplayX = 0;
-    let lastReplayY = 0;
-    
-    const DEMO_DISAPPEAR_MS = 10 * 1000; 
-
-    async function replayForRecipient() {
-      for (let i = 0; i < drawingData.strokes.length; i++) {
-        const stroke = drawingData.strokes[i];
-        
-        if (stroke.timestampOffset > 0) {
-            await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
-        }
-
-        switch (stroke.type) {
-            case 'start':
-                lastReplayX = stroke.x;
-                lastReplayY = stroke.y;
-                break;
-            case 'draw':
-                receivedCanvas.getContext('2d').strokeStyle = stroke.color;
-                receivedCanvas.getContext('2d').beginPath();
-                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
-                receivedCanvas.getContext('2d').lineTo(stroke.x, stroke.y);
-                receivedCanvas.getContext('2d').stroke();
-                
-                lastReplayX = stroke.x;
-                lastReplayY = stroke.y;
-                break;
-            case 'end':
-                break;
-        }
-      }
-    }
-    
-    replayForRecipient();
-
-    setTimeout(() => {
-        receivedDrawingContainer.innerHTML = '<p>The drawing has disappeared!</p>';
-        console.log('Drawing disappeared after 2 hours (or demo time).');
-    }, DEMO_DISAPPEAR_MS);
-}
-
-statusMessage.textContent = 'Start drawing your rainbow masterpiece!';
+    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing
