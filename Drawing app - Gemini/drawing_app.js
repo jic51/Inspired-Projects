@@ -8,9 +8,16 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 // Drawing state
 let isDrawing = false;
 const brushWidth = 5;
-let hue = 0; // For rainbow color 🌈
-let recordedStrokes = []; // Stores objects with {x, y, color, timestampOffset}
+let hue = 0;
+let recordedStrokes = [];
 let lastTimestamp = 0;
+
+let lastX = 0;
+let lastY = 0;
+
+// NEW: Variables to control replay
+let isReplaying = false;
+let replayTimeout;
 
 // --- Canvas Setup ---
 ctx.lineWidth = brushWidth;
@@ -23,20 +30,23 @@ function getRainbowColor() {
     return `hsl(${hue}, 100%, 50%)`;
 }
 
-// Store previous coordinates to draw a tiny segment
-let lastX = 0;
-let lastY = 0;
-
 // --- Modified Drawing Functions ---
 function startDrawing(e) {
+    // NEW: Stop any ongoing replay if the user starts to draw
+    if (isReplaying) {
+        stopReplay();
+    }
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
     
-    // Store the initial position for the first tiny segment
+    // Clear the canvas to start a new drawing
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    recordedStrokes = [];
+    statusMessage.textContent = 'Drawing...';
+    
     lastX = offsetX;
     lastY = offsetY;
     
-    // Start of a new stroke for recording purposes
     lastTimestamp = performance.now();
     recordedStrokes.push({
         type: 'start',
@@ -50,26 +60,22 @@ function draw(e) {
     if (!isDrawing) return;
     const { offsetX, offsetY } = getEventCoords(e);
     
-    // Set a new rainbow color for this tiny line segment
     ctx.strokeStyle = getRainbowColor();
     
-    // Create a new path for this single segment
     ctx.beginPath();
-    ctx.moveTo(lastX, lastY); // Move from the last point...
-    ctx.lineTo(offsetX, offsetY); // ...to the current point
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
     
-    // Update the last position for the next segment
     lastX = offsetX;
     lastY = offsetY;
 
-    // Record the drawing point
     const currentTimestamp = performance.now();
     recordedStrokes.push({
         type: 'draw',
         x: offsetX,
         y: offsetY,
-        color: ctx.strokeStyle, // Store the new color with each point
+        color: ctx.strokeStyle,
         timestampOffset: currentTimestamp - lastTimestamp
     });
     lastTimestamp = currentTimestamp;
@@ -77,7 +83,6 @@ function draw(e) {
 
 function stopDrawing() {
     isDrawing = false;
-    // No need to ctx.closePath() here because we are drawing many small lines
     recordedStrokes.push({ type: 'end', timestampOffset: 0 });
 }
 
@@ -96,7 +101,64 @@ function getEventCoords(e) {
     }
 }
 
-// --- Event Listeners and Button Handlers (No changes here) ---
+// --- NEW: Replay-related functions ---
+
+function stopReplay() {
+    isReplaying = false;
+    clearTimeout(replayTimeout);
+    statusMessage.textContent = 'Replay stopped. Start drawing or send again!';
+}
+
+async function replayDrawing(drawingData) {
+    // NEW: Don't start if another replay is already happening
+    if (isReplaying) {
+        stopReplay();
+    }
+    
+    isReplaying = true;
+    
+    // Clear the canvas to prepare for the replay
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    let lastReplayX = 0;
+    let lastReplayY = 0;
+
+    for (let i = 0; i < drawingData.strokes.length && isReplaying; i++) {
+        const stroke = drawingData.strokes[i];
+        
+        if (stroke.timestampOffset > 0) {
+            await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
+        }
+
+        switch (stroke.type) {
+            case 'start':
+                lastReplayX = stroke.x;
+                lastReplayY = stroke.y;
+                break;
+            case 'draw':
+                ctx.strokeStyle = stroke.color;
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
+                ctx.lineTo(stroke.x, stroke.y);
+                ctx.stroke();
+                
+                lastReplayX = stroke.x;
+                lastReplayY = stroke.y;
+                break;
+            case 'end':
+                break;
+        }
+    }
+    
+    // NEW: If the replay wasn't stopped, start it again after a short delay
+    if (isReplaying) {
+        replayTimeout = setTimeout(() => {
+            replayDrawing(drawingData);
+        }, 500); // Wait 0.5 seconds before looping
+    }
+}
+
+// --- Event Listeners and Button Handlers ---
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
 canvas.addEventListener('mouseup', stopDrawing);
@@ -107,7 +169,12 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
+// NEW: Stop replay when the canvas is clicked/tapped
+canvas.addEventListener('mousedown', stopReplay);
+canvas.addEventListener('touchstart', stopReplay);
+
 clearButton.addEventListener('click', () => {
+    stopReplay();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     recordedStrokes = [];
     statusMessage.textContent = 'Canvas cleared!';
@@ -130,28 +197,42 @@ sendButton.addEventListener('click', () => {
 
     console.log("Simulating send:", drawingData);
     
+    // Simulate sending and then immediately starting the replay on the sender's screen
     setTimeout(() => {
-        statusMessage.textContent = 'Drawing sent! Simulating reception.';
-        displayReceivedDrawing(drawingData);
+        statusMessage.textContent = 'Drawing sent! Replaying your art...';
+        replayDrawing(drawingData);
     }, 1000);
-
-    recordedStrokes = [];
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 });
 
+// --- Display and Manage Received Drawings (for the recipient's view) ---
+function displayReceivedDrawing(drawingData) {
+    // NEW: Stop any current replay on the receiving end
+    stopReplay();
+    
+    // Clear previous received drawings to simplify the demo
+    receivedDrawingContainer.innerHTML = ''; 
 
-// --- Replay Drawing Function (No change is needed here, as it was already handling separate points) ---
-async function replayDrawing(drawingData, targetCanvas) {
-    const replayCtx = targetCanvas.getContext('2d');
-    replayCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-    replayCtx.lineWidth = brushWidth;
-    replayCtx.lineCap = 'round';
-    replayCtx.lineJoin = 'round';
+    const receivedCanvas = document.createElement('canvas');
+    receivedCanvas.id = 'receivedDrawingCanvas';
+    receivedCanvas.width = drawingData.width;
+    receivedCanvas.height = drawingData.height;
+    receivedDrawingContainer.appendChild(receivedCanvas);
 
+    const receivedMessage = document.createElement('p');
+    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
+    receivedDrawingContainer.appendChild(receivedMessage);
+    
+    // The recipient sees a single replay, then it disappears
     let lastReplayX = 0;
     let lastReplayY = 0;
+    
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+    // For demo purposes, let's make it disappear in 10 seconds
+    const DEMO_DISAPPEAR_MS = 10 * 1000; 
 
-    for (let i = 0; i < drawingData.strokes.length; i++) {
+    // Replay on the received canvas
+    async function replayForRecipient() {
+      for (let i = 0; i < drawingData.strokes.length; i++) {
         const stroke = drawingData.strokes[i];
         
         if (stroke.timestampOffset > 0) {
@@ -164,11 +245,11 @@ async function replayDrawing(drawingData, targetCanvas) {
                 lastReplayY = stroke.y;
                 break;
             case 'draw':
-                replayCtx.strokeStyle = stroke.color;
-                replayCtx.beginPath();
-                replayCtx.moveTo(lastReplayX, lastReplayY);
-                replayCtx.lineTo(stroke.x, stroke.y);
-                replayCtx.stroke();
+                receivedCanvas.getContext('2d').strokeStyle = stroke.color;
+                receivedCanvas.getContext('2d').beginPath();
+                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
+                receivedCanvas.getContext('2d').lineTo(stroke.x, stroke.y);
+                receivedCanvas.getContext('2d').stroke();
                 
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
@@ -176,26 +257,10 @@ async function replayDrawing(drawingData, targetCanvas) {
             case 'end':
                 break;
         }
+      }
     }
-}
-
-// --- Display and Manage Received Drawings (No changes here) ---
-function displayReceivedDrawing(drawingData) {
-    receivedDrawingContainer.innerHTML = ''; 
-
-    const receivedCanvas = document.createElement('canvas');
-    receivedCanvas.id = 'receivedDrawingCanvas';
-    receivedCanvas.width = drawingData.width;
-    receivedCanvas.height = drawingData.height;
-    receivedDrawingContainer.appendChild(receivedCanvas);
-
-    const receivedMessage = document.createElement('p');
-    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
-    receivedDrawingContainer.appendChild(receivedMessage);
-
-    replayDrawing(drawingData, receivedCanvas);
-
-    const DEMO_DISAPPEAR_MS = 10 * 1000; 
+    
+    replayForRecipient();
 
     setTimeout(() => {
         receivedDrawingContainer.innerHTML = '<p>The drawing has disappeared!</p>';
