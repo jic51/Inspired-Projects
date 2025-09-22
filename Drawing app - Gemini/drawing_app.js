@@ -103,6 +103,7 @@ function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // NEW: Properly clear the recorded strokes data.
     recordedStrokes = [];
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
 }
@@ -126,11 +127,13 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
+                // NEW: Use beginPath for each stroke to get the correct color
                 ctx.beginPath();
                 ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                // NEW: Correctly draw a line segment
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -138,6 +141,7 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
+                // NEW: Close the path for a clean stroke
                 ctx.closePath();
                 break;
         }
