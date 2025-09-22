@@ -105,7 +105,6 @@ function stopReplay() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     recordedStrokes = [];
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
-    // NEW: Re-enable the send button
     sendButton.disabled = false;
 }
 
@@ -128,12 +127,13 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
+                // NEW: Removed ctx.beginPath() and ctx.moveTo() from here
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // NEW: Use the context properties to draw the line segment
+                // NEW: Added back beginPath and moveTo for each segment
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 
@@ -141,7 +141,7 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
-                ctx.closePath();
+                // NEW: Nothing to do here
                 break;
         }
     }
@@ -179,7 +179,6 @@ sendButton.addEventListener('click', () => {
     }
     statusMessage.textContent = 'Sending drawing...';
     
-    // NEW: Disable the send button immediately
     sendButton.disabled = true;
     
     const drawingData = {
