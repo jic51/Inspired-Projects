@@ -103,7 +103,7 @@ function getEventCoords(e) {
     }
 }
 
-/// ---Replay and Control Functions ---
+// --- Replay and Control Functions ---
 
 function stopReplay() {
     isReplaying = false;
