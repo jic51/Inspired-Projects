@@ -32,6 +32,12 @@ function getRainbowColor() {
 
 // --- Drawing Functions ---
 function startDrawing(e) {
+    // NEW: Check if the button is a left-click (e.button === 0)
+    // and if it's a touch event (e.touches).
+    if (e.button !== 0 && !e.touches) {
+        return;
+    }
+
     if (isReplaying) {
         stopReplay();
         return; 
@@ -127,11 +133,9 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                // NEW: Removed ctx.beginPath() and ctx.moveTo() from here
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // NEW: Added back beginPath and moveTo for each segment
                 ctx.beginPath();
                 ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
@@ -141,7 +145,6 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
-                // NEW: Nothing to do here
                 break;
         }
     }
@@ -164,8 +167,8 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { 
 canvas.addEventListener('touchend', stopDrawing);
 canvas.addEventListener('touchcancel', stopDrawing);
 
-canvas.addEventListener('mousedown', () => { if (isReplaying) stopReplay(); });
-canvas.addEventListener('touchstart', () => { if (isReplaying) stopReplay(); });
+// NEW: Removed the redundant event listeners for stopping the replay.
+// The logic is now handled in the startDrawing() function.
 
 clearButton.addEventListener('click', () => {
     stopReplay();
