@@ -37,13 +37,6 @@ function startDrawing(e) {
     if (e.button !== 0 && !e.touches) {
         return;
     }
-
-    if (isReplaying) {
-        // NEW: Stop the replay and prevent any new drawing immediately
-        isDrawing = false;
-        stopReplay();
-        return; 
-    }
     
     isDrawing = true;
     const { offsetX, offsetY } = getEventCoords(e);
@@ -114,6 +107,17 @@ function stopReplay() {
     recordedStrokes = [];
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
     sendButton.disabled = false;
+    // NEW: Remove the replay stopper when the replay is done
+    canvas.removeEventListener('mousedown', stopReplayFromClick);
+    canvas.removeEventListener('touchstart', stopReplayFromClick);
+}
+
+// NEW: This function only stops the replay and does nothing else
+function stopReplayFromClick(e) {
+    e.preventDefault();
+    if (isReplaying) {
+        stopReplay();
+    }
 }
 
 async function replayDrawing(drawingData) {
@@ -123,6 +127,10 @@ async function replayDrawing(drawingData) {
     
     let lastReplayX = 0;
     let lastReplayY = 0;
+
+    // NEW: Add a dedicated event listener to stop the replay on click
+    canvas.addEventListener('mousedown', stopReplayFromClick);
+    canvas.addEventListener('touchstart', stopReplayFromClick);
 
     for (let i = 0; i < drawingData.strokes.length && isReplaying; i++) {
         const stroke = drawingData.strokes[i];
