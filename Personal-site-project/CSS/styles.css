@@ -5,12 +5,19 @@ container
 #rotating-text {
   font-size: 2.8rem;
   font-weight: bold;
-  color: #fff;
-  margin-bottom: 1rem;
-
+  text-align: center;
+  margin-bottom: 2rem;
+  color: black;
+  margin-top: 2rem;
+  
+  /* THIS IS THE CHANGE YOU NEED TO MAKE */
+  height: 3.5rem; 
+  
   /* Animation just for the rotating text */
-  animation: fadeInOut 4s infinite;
+  animation: fadeInOut 6s infinite;
+  transition: opacity 0.5s ease-in-out;
 }
+
 
 /* Keyframes for smooth fade-in / fade-out effect */
 @keyframes fadeInOut {
@@ -20,14 +27,31 @@ container
   100% { opacity: 0; transform: translateY(-20px); }
 }
 
-.hero p {
+/* Hero */
+.hero {
+  background: linear-gradient(to right, #01376e, #015ab4);
+  color: #fcfcfc;
+  text-align: center;
+  padding: 6rem 1rem;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  min-height: 50vh; /* keeps space consistent */
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  flex-direction: column;
+
+}
+
+.hero h2 {
+  font-size: 3rem;
   margin-bottom: 1rem;
-  font-size: 1.2rem;
-  position: relative;
-  z-index: 2; /* ensures they stay above animation */
+  
 }
 
 .hero .btn {
+  display: inline-block;
   margin-top: 1rem;
   padding: 0.75rem 1.5rem;
   background: #f1c40f;
@@ -38,6 +62,28 @@ container
   transition: background 0.3s ease;
 }
 
+.hero .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.hero .btn:hover {
+  background: #ffdf4e;
+}
+
+p {
+margin-bottom: 20px;
+}
+
+.hero p {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  position: relative;
+  z-index: 2; /* ensures they stay above animation */
+}
 
 .branding {
   display: flex;
@@ -296,47 +342,6 @@ nav a:hover {
   color: #f1c40f;
 }
 
-/* Hero */
-.hero {
-  background: linear-gradient(to right, #002244, #004f9e);
-  color: #fff;
-  text-align: center;
-  padding: 4rem 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
-  position: relative;
-  min-height: 50vh; /* keeps space consistent */
-  display: flex;
-  justify-content: center;
-  flex-direction: column;
-}
-
-.hero h2 {
-  font-size: 2.8rem;
-  margin-bottom: 1rem;
-  
-}
-
-.hero .btn {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #f1c40f;
-  color: #002244;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 6px;
-  transition: background 0.3s ease;
-}
-
-.hero .btn:hover {
-  background: #ffdf4e;
-}
-
-p {
-margin-bottom: 20px;
-}
-
 .services1-img,
 .services-img,
 .about-img {
@@ -570,15 +575,6 @@ to {
   }
 }
 
-#rotating-text {
-  font-size: 4vw;
-  color: black;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 30px;
-  transition: opacity 0.5s ease-in-out;
-}
-
 @media (max-width: 768px) {
   nav ul {
     flex-direction: column;   /* stack menu items */
@@ -589,11 +585,4 @@ to {
     margin: 10px 0;
   }
 
-  .hero h2 {
-    font-size: 1.5rem;  /* smaller title on mobile */
-  }
-
-  .container {
-    padding: 0 10px;
-  }
 }

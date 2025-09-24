@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 rotatingTextElement.innerText = texts[currentIndex];
                 rotatingTextElement.style.opacity = '1';
                 currentIndex = (currentIndex + 1) % texts.length;
-            }, 500); // Wait for fade out
+            }, 800); // Wait for fade out
         }
 
         setInterval(updateText, 3000); // Change text every 3 seconds
