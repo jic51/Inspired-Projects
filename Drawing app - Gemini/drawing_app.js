@@ -3,6 +3,9 @@ const ctx = canvas.getContext('2d');
 const sendButton = document.getElementById('sendButton');
 const undoButton = document.getElementById('undoButton');
 const saveButton = document.getElementById('saveButton');
+const saveOptions = document.getElementById('saveOptions');
+const saveStaticButton = document.getElementById('saveStatic');
+const saveReplayButton = document.getElementById('saveReplay');
 const statusMessage = document.getElementById('statusMessage');
 const receivedDrawingContainer = document.getElementById('receivedDrawingContainer');
 
@@ -21,6 +24,12 @@ let lastY = 0;
 // Replay state
 let isReplaying = false;
 let replayTimeout;
+
+// Placeholder for user data
+const userData = {
+    name: 'Creative Canvas User',
+    profilePicUrl: 'https://placehold.co/40x40/5a1f6a/FFFFFF?text=P'
+};
 
 // --- Canvas Setup ---
 function resizeCanvas() {
@@ -88,7 +97,6 @@ function draw(e) {
 
     ctx.strokeStyle = getRainbowColor();
 
-    // Draw a new, single segment path
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(offsetX, offsetY);
@@ -166,7 +174,6 @@ async function replayDrawing(drawingData) {
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // Draw a new, single segment path for replay
                 ctx.beginPath();
                 ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
@@ -197,20 +204,95 @@ function undoStroke() {
     statusMessage.textContent = 'Last stroke undone.';
 }
 
-// Save function
+// Save function (updated to show options)
 function saveDrawing() {
     if (recordedStrokes.length === 0) {
         statusMessage.textContent = 'Draw something to save!';
         return;
     }
-    const dataURL = canvas.toDataURL('image/png');
+    statusMessage.textContent = 'Choose a download option:';
+    saveOptions.style.display = 'flex';
+}
+
+// New save functions for static and replay versions
+async function saveStaticDrawing() {
+    const originalImage = canvas.toDataURL('image/png');
+    const finalImage = await addCreatorInfo(originalImage);
+    downloadImage(finalImage, 'rainbow_drawing_static.png');
+    statusMessage.textContent = 'Static drawing saved!';
+    hideSaveOptions();
+}
+
+async function saveReplayDrawing() {
+    // Replay the drawing to get the final image
+    await replayDrawing({
+        width: canvas.width,
+        height: canvas.height,
+        strokes: recordedStrokes
+    });
+
+    const finalReplayImage = canvas.toDataURL('image/png');
+    const finalImage = await addCreatorInfo(finalReplayImage);
+    downloadImage(finalImage, 'rainbow_drawing_replay.png');
+    statusMessage.textContent = 'Replay image saved!';
+    hideSaveOptions();
+    // Re-draw the full canvas for continued use
+    redrawCanvas();
+}
+
+function hideSaveOptions() {
+    saveOptions.style.display = 'none';
+}
+
+function downloadImage(dataUrl, filename) {
     const a = document.createElement('a');
-    a.href = dataURL;
-    a.download = 'rainbow_drawing.png';
+    a.href = dataUrl;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    statusMessage.textContent = 'Drawing saved!';
+}
+
+// Function to add creator's info to the image
+async function addCreatorInfo(imageDataUrl) {
+    const finalCanvas = document.createElement('canvas');
+    const finalCtx = finalCanvas.getContext('2d');
+    const image = new Image();
+
+    return new Promise(resolve => {
+        image.onload = () => {
+            finalCanvas.width = image.width;
+            finalCanvas.height = image.height;
+            finalCtx.fillStyle = '#1a1a1a'; // Match background color
+            finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            finalCtx.drawImage(image, 0, 0);
+
+            // Add creator info
+            finalCtx.font = '20px Arial';
+            finalCtx.fillStyle = '#e0e0e0';
+            const text = `Created by ${userData.name}`;
+            const textWidth = finalCtx.measureText(text).width;
+            const textX = finalCanvas.width - textWidth - 10;
+            const textY = finalCanvas.height - 10;
+            finalCtx.fillText(text, textX, textY);
+
+            // Add profile picture (for this example, just a placeholder circle)
+            const profilePicSize = 24;
+            const picX = finalCanvas.width - textWidth - 10 - profilePicSize - 5;
+            const picY = finalCanvas.height - 10 - profilePicSize / 2 - 5;
+            finalCtx.fillStyle = '#6a1b9a';
+            finalCtx.beginPath();
+            finalCtx.arc(picX + profilePicSize / 2, picY + profilePicSize / 2, profilePicSize / 2, 0, Math.PI * 2);
+            finalCtx.fill();
+            // A more robust solution would draw an image here
+            // const profileImage = new Image();
+            // profileImage.src = userData.profilePicUrl;
+            // finalCtx.drawImage(profileImage, picX, picY, profilePicSize, profilePicSize);
+
+            resolve(finalCanvas.toDataURL('image/png'));
+        };
+        image.src = imageDataUrl;
+    });
 }
 
 // Redraw all recorded strokes
@@ -269,6 +351,8 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
 undoButton.addEventListener('click', undoStroke);
 saveButton.addEventListener('click', saveDrawing);
+saveStaticButton.addEventListener('click', saveStaticDrawing);
+saveReplayButton.addEventListener('click', saveReplayDrawing);
 
 sendButton.addEventListener('click', () => {
     if (recordedStrokes.length === 0) {
