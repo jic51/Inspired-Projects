@@ -9,7 +9,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 // Drawing state
 let isDrawing = false;
 let hasSentDrawing = false;
-const brushWidth = 4;
+const brushWidth = 100;
 let hue = 0;
 let recordedStrokes = [];
 let lastTimestamp = 0;
