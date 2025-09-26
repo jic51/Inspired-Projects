@@ -216,28 +216,82 @@ function saveDrawing() {
 
 // New save functions for static and replay versions
 async function saveStaticDrawing() {
+    // Clear the canvas and redraw everything with a white background for a clean download
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    redrawCanvas();
+
     const originalImage = canvas.toDataURL('image/png');
-    const finalImage = await addCreatorInfo(originalImage);
+    const finalImage = await addCreatorInfo(originalImage, '#000000', '#FFFFFF'); // Black text on white background
     downloadImage(finalImage, 'rainbow_drawing_static.png');
     statusMessage.textContent = 'Static drawing saved!';
     hideSaveOptions();
+    // Redraw the canvas with the original dark background
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    redrawCanvas();
 }
 
 async function saveReplayDrawing() {
-    // Replay the drawing to get the final image
-    await replayDrawing({
-        width: canvas.width,
-        height: canvas.height,
-        strokes: recordedStrokes
-    });
-
-    const finalReplayImage = canvas.toDataURL('image/png');
-    const finalImage = await addCreatorInfo(finalReplayImage);
-    downloadImage(finalImage, 'rainbow_drawing_replay.png');
-    statusMessage.textContent = 'Replay image saved!';
+    statusMessage.textContent = 'Generating video... this may take a moment.';
     hideSaveOptions();
-    // Re-draw the full canvas for continued use
-    redrawCanvas();
+
+    const stream = canvas.captureStream(60); // 60 FPS
+    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const videoChunks = [];
+
+    recorder.ondataavailable = (e) => videoChunks.push(e.data);
+    recorder.onstop = () => {
+        const videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+        const videoUrl = URL.createObjectURL(videoBlob);
+        downloadImage(videoUrl, 'rainbow_drawing_replay.webm');
+        statusMessage.textContent = 'Replay video saved!';
+        URL.revokeObjectURL(videoUrl);
+        // After download, redraw the canvas to its original state
+        redrawCanvas();
+    };
+
+    recorder.start();
+
+    let lastX_replay = 0;
+    let lastY_replay = 0;
+
+    const signatureColor = '#e0e0e0';
+    const signatureText = `Created by ${userData.name}`;
+
+    async function replayAndRecord() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < recordedStrokes.length; i++) {
+            const stroke = recordedStrokes[i];
+            
+            if (stroke.timestampOffset > 0) {
+                await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
+            }
+
+            switch (stroke.type) {
+                case 'start':
+                    lastX_replay = stroke.x;
+                    lastY_replay = stroke.y;
+                    break;
+                case 'draw':
+                    ctx.strokeStyle = stroke.color;
+                    ctx.beginPath();
+                    ctx.moveTo(lastX_replay, lastY_replay);
+                    ctx.lineTo(stroke.x, stroke.y);
+                    ctx.stroke();
+                    lastX_replay = stroke.x;
+                    lastY_replay = stroke.y;
+                    break;
+            }
+            // Draw signature on every frame
+            drawSignatureOnCanvas(ctx, signatureColor, signatureText);
+        }
+        recorder.stop();
+        stopReplay();
+    }
+
+    replayAndRecord();
 }
 
 function hideSaveOptions() {
@@ -253,8 +307,40 @@ function downloadImage(dataUrl, filename) {
     document.body.removeChild(a);
 }
 
+// Function to draw the creator's info on a given context
+function drawSignatureOnCanvas(context, textColor, bgColor) {
+    const text = `Created by ${userData.name}`;
+    const profilePicSize = 24;
+    const padding = 10;
+    
+    // Measure text to determine background box size
+    context.font = '20px Arial';
+    const textWidth = context.measureText(text).width;
+    const totalWidth = textWidth + profilePicSize + 15;
+    const totalHeight = 35; // A fixed height for the signature box
+
+    // Calculate position
+    const boxX = canvas.width - totalWidth - padding;
+    const boxY = canvas.height - totalHeight - padding;
+
+    // Draw a semi-transparent box behind the text
+    context.fillStyle = 'rgba(26, 26, 26, 0.5)'; // A universal color that works on both white and black backgrounds
+    context.fillRect(boxX, boxY, totalWidth, totalHeight);
+
+    // Draw the profile picture placeholder
+    context.fillStyle = userData.profilePicUrl.includes('placeholder') ? '#6a1b9a' : bgColor;
+    context.beginPath();
+    context.arc(boxX + profilePicSize / 2 + 5, boxY + profilePicSize / 2 + 5, profilePicSize / 2, 0, Math.PI * 2);
+    context.fill();
+
+    // Draw the text
+    context.fillStyle = textColor;
+    context.fillText(text, boxX + profilePicSize + 10, boxY + 25);
+}
+
+
 // Function to add creator's info to the image
-async function addCreatorInfo(imageDataUrl) {
+async function addCreatorInfo(imageDataUrl, textColor, bgColor) {
     const finalCanvas = document.createElement('canvas');
     const finalCtx = finalCanvas.getContext('2d');
     const image = new Image();
@@ -263,31 +349,11 @@ async function addCreatorInfo(imageDataUrl) {
         image.onload = () => {
             finalCanvas.width = image.width;
             finalCanvas.height = image.height;
-            finalCtx.fillStyle = '#1a1a1a'; // Match background color
+            finalCtx.fillStyle = bgColor;
             finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
             finalCtx.drawImage(image, 0, 0);
 
-            // Add creator info
-            finalCtx.font = '20px Arial';
-            finalCtx.fillStyle = '#e0e0e0';
-            const text = `Created by ${userData.name}`;
-            const textWidth = finalCtx.measureText(text).width;
-            const textX = finalCanvas.width - textWidth - 10;
-            const textY = finalCanvas.height - 10;
-            finalCtx.fillText(text, textX, textY);
-
-            // Add profile picture (for this example, just a placeholder circle)
-            const profilePicSize = 24;
-            const picX = finalCanvas.width - textWidth - 10 - profilePicSize - 5;
-            const picY = finalCanvas.height - 10 - profilePicSize / 2 - 5;
-            finalCtx.fillStyle = '#6a1b9a';
-            finalCtx.beginPath();
-            finalCtx.arc(picX + profilePicSize / 2, picY + profilePicSize / 2, profilePicSize / 2, 0, Math.PI * 2);
-            finalCtx.fill();
-            // A more robust solution would draw an image here
-            // const profileImage = new Image();
-            // profileImage.src = userData.profilePicUrl;
-            // finalCtx.drawImage(profileImage, picX, picY, profilePicSize, profilePicSize);
+            drawSignatureOnCanvas(finalCtx, textColor, bgColor);
 
             resolve(finalCanvas.toDataURL('image/png'));
         };
