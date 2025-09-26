@@ -378,17 +378,6 @@
                 appContainer.style.display = 'none';
                 userId = null;
                 currentUserIdDisplay.textContent = '';
-        
-                // Try to sign in with the initial custom token if available
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase auth error:", error);
-                }
             }
         });
         
