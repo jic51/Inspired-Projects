@@ -3,518 +3,450 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rainbow Drawing</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Rainbow Drawing App</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
+        /* General Styling */
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a1a1a;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            align-items: flex-start; /* Align to top */
+            min-height: 100vh;
+            background-color: #f0f2f5;
             margin: 0;
-            overflow: hidden;
+            padding-top: 20px;
         }
 
-        .gradient-text {
-            background-image: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+        .app-container {
+            width: 90%;
+            max-width: 900px;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
             -webkit-background-clip: text;
             background-clip: text;
-            color: transparent;
             -webkit-text-fill-color: transparent;
-            text-fill-color: transparent;
-            font-size: 2.5rem;
-            font-weight: 700;
-            text-align: center;
-            padding: 1rem;
+            animation: rainbow-flow 5s linear infinite;
+            background-size: 400% 100%;
         }
 
-        #app-container {
+        @keyframes rainbow-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        /* Login Screen Styling */
+        #auth-screen {
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            width: 100%;
-            height: 100%;
-            background-color: #2a2a2a;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+        #username-input {
+            font-size: 1.2em;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 80%;
+            max-width: 300px;
             text-align: center;
-            position: relative;
+        }
+        #login-button {
+            font-size: 1.1em;
+            padding: 12px 25px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        #login-button:hover {
+            background-color: #0056b3;
         }
 
-        #canvas-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+        /* Main Drawing App Styling (Hidden by default) */
+        #main-app {
+            display: none; /* Initially hidden */
         }
 
+        #user-info {
+            text-align: right;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        #logout-button {
+            background: none;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+
+        /* Canvas and Controls */
         canvas {
-            background-color: #1a1a1a;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+            cursor: crosshair;
             display: block;
-            touch-action: none;
-            width: 100%;
-            height: 100%;
+            margin: 15px auto;
+            touch-action: none; /* Prevents scrolling on canvas on mobile */
         }
 
-        #button-bar {
-            position: absolute;
-            top: 1rem;
+        .controls {
             display: flex;
-            flex-direction: row;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            gap: 1rem;
-            z-index: 10;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        
-        button {
-            background-color: rgba(64, 64, 64, 0.7);
-            border: none;
-            padding: 0.75rem;
-            border-radius: 9999px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(5px);
-            transition: all 0.2s ease-in-out;
+        .controls button, .controls select {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f8f8f8;
         }
-
-        button:hover {
-            transform: scale(1.1);
-            background-color: rgba(80, 80, 80, 0.9);
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        button svg {
-            width: 24px;
-            height: 24px;
-            fill: #e0e0e0;
-        }
-
-        #download-options-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(42, 42, 42, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            z-index: 100;
-        }
-
-        #download-options-modal h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 0.5rem;
-        }
-
-        .modal-button-container {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .modal-button {
-            background-color: #444;
-            color: #fff;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .modal-button:hover {
-            background-color: #555;
-            transform: scale(1.05);
-        }
-
-        #statusMessage {
-            position: absolute;
-            bottom: 1rem;
-            width: 90%;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            z-index: 10;
+        .controls button:hover, .controls select:hover {
+            background-color: #e9e9e9;
         }
     </style>
 </head>
 <body>
-    <div id="app-container">
-        <h1 class="gradient-text">Rainbow Drawing</h1>
-        <div id="button-bar">
-            <button id="undoButton" title="Undo Last Stroke">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.928 2.071c-.04-.04-.09-.06-.144-.06H5.5c-1.38 0-2.5 1.12-2.5 2.5v11.928c0 .054.024.104.064.144L6.96 18.25a.5.5 0 00.354.146h6.353c1.38 0 2.5-1.12 2.5-2.5V4.62c0-.054-.02-.104-.06-.144L12.928 2.07zM12.928 3.515L15.3 5.888v8.614c0 .552-.448 1-1 1H7.318a.5.5 0 00-.353.146L4.01 18.293a.5.5 0 00-.146.354V4.5c0-.827.673-1.5 1.5-1.5h7.391a.5.5 0 00.354-.146z" fill="currentColor"/>
-                    <path d="M12.015 20.914a.5.5 0 00-.707-.008L9.043 18.914a.5.5 0 000 .707l2.262 2.262a.5.5 0 00.707-.707z" fill="currentColor"/>
-                    <path d="M19.992 10.999a.5.5 0 00-.5-.5h-2c-.276 0-.5.224-.5.5s.224.5.5.5h2c.276 0 .5-.224.5-.5z" fill="currentColor"/>
-                    <path d="M19.992 13.999a.5.5 0 00-.5-.5h-2c-.276 0-.5.224-.5.5s.224.5.5.5h2c.276 0 .5-.224.5-.5z" fill="currentColor"/>
-                    <path d="M19.992 16.999a.5.5 0 00-.5-.5h-2c-.276 0-.5.224-.5.5s.224.5.5.5h2c.276 0 .5-.224.5-.5z" fill="currentColor"/>
-                </svg>
-            </button>
-            <button id="sendButton" title="Send Drawing">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <button id="saveButton" title="Save Drawing">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 17V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M9 14L12 11L15 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
+
+    <div class="app-container">
+        <h1>Rainbow Drawing</h1>
+
+        <div id="auth-screen">
+            <h2>Welcome!</h2>
+            <p>Please enter a username to save your drawings.</p>
+            <input type="text" id="username-input" placeholder="Enter your name">
+            <button id="login-button">Start Drawing</button>
         </div>
-        
-        <div id="canvas-container">
-            <canvas id="drawingCanvas"></canvas>
-            <div id="download-options-modal" style="display: none;">
-                <h3>Download Options</h3>
-                <div class="modal-button-container">
-                    <button class="modal-button" id="downloadStatic">Static</button>
-                    <button class="modal-button" id="downloadReplay">Replay</button>
-                </div>
+
+        <div id="main-app">
+            <div id="user-info">
+                Logged in as: <strong id="username-display"></strong>
+                <button id="logout-button">Logout</button>
             </div>
+
+            <canvas id="drawingCanvas" width="800" height="500"></canvas>
+            
+            <div class="controls">
+                <button id="clearButton">Clear</button>
+                <button id="saveButton">Save Drawing</button>
+                <select id="savedDrawingsDropdown">
+                    <option value="">Load a Drawing</option>
+                </select>
+                <button id="downloadStaticButton">Download Image</button>
+                <button id="downloadVideoButton">Download Video</button>
+            </div>
+            
+            <div id="statusMessage"></div>
         </div>
-
-        <p id="statusMessage">Start drawing your rainbow masterpiece!</p>
-
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/ccapture.js@1.1.0/build/CCapture.all.min.js"></script>
     <script>
+        // --- DOM Elements ---
+        const authScreen = document.getElementById('auth-screen');
+        const mainApp = document.getElementById('main-app');
+        const usernameInput = document.getElementById('username-input');
+        const loginButton = document.getElementById('login-button');
+        const usernameDisplay = document.getElementById('username-display');
+        const logoutButton = document.getElementById('logout-button');
+        
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        const sendButton = document.getElementById('sendButton');
-        const undoButton = document.getElementById('undoButton');
+        const clearButton = document.getElementById('clearButton');
         const saveButton = document.getElementById('saveButton');
+        const savedDrawingsDropdown = document.getElementById('savedDrawingsDropdown');
+        const downloadStaticButton = document.getElementById('downloadStaticButton');
+        const downloadVideoButton = document.getElementById('downloadVideoButton');
         const statusMessage = document.getElementById('statusMessage');
-        const modal = document.getElementById('download-options-modal');
-        const downloadStaticButton = document.getElementById('downloadStatic');
-        const downloadReplayButton = document.getElementById('downloadReplay');
 
-        // Drawing state
+        // --- App State ---
         let isDrawing = false;
-        let hasSentDrawing = false;
-        const brushWidth = 4;
         let hue = 0;
+        let brushWidth = 5;
         let recordedStrokes = [];
-        let lastX = 0;
-        let lastY = 0;
-        let isReplaying = false;
-        let currentStrokeId = 0;
+        let lastTimestamp = 0;
+        let currentUser = null;
 
-        // User info for signature (using dummy data since there's no auth)
-        const userId = 'user-local';
-        const userName = 'Local Artist';
-        const userAvatar = 'https://placehold.co/40x40/ffffff/000000?text=U';
-
-        // --- Canvas Setup ---
-        function resizeCanvas() {
-            const rect = canvas.parentNode.getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-            ctx.lineWidth = brushWidth;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            redrawCanvas();
+        // --- Authentication Logic ---
+        function checkLoginState() {
+            currentUser = localStorage.getItem('rainbowDrawUser');
+            if (currentUser) {
+                // User is logged in
+                usernameDisplay.textContent = currentUser;
+                authScreen.style.display = 'none';
+                mainApp.style.display = 'block';
+                populateSavedDrawings();
+            } else {
+                // User is not logged in
+                authScreen.style.display = 'flex';
+                mainApp.style.display = 'none';
+            }
         }
-        window.addEventListener('load', resizeCanvas);
-        window.addEventListener('resize', resizeCanvas);
 
-        // --- Rainbow Color Function ---
+        loginButton.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            if (username) {
+                localStorage.setItem('rainbowDrawUser', username);
+                checkLoginState();
+            } else {
+                alert('Please enter a username.');
+            }
+        });
+
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('rainbowDrawUser');
+            currentUser = null;
+            recordedStrokes = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            checkLoginState();
+        });
+
+
+        // --- Drawing Logic ---
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
         function getRainbowColor() {
             hue = (hue + 1) % 360;
             return `hsl(${hue}, 100%, 50%)`;
         }
 
-        // --- Drawing Functions ---
+        function getEventCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+            }
+            return { x: e.offsetX, y: e.offsetY };
+        }
+
         function startDrawing(e) {
             e.preventDefault();
-            if (e.button !== 0 && !e.touches) return;
-            if (isReplaying) {
-                stopReplay();
-                clearCanvas();
-                return;
-            }
-            if (hasSentDrawing) {
-                clearCanvas();
-                return;
-            }
             isDrawing = true;
-            currentStrokeId++;
-            const { offsetX, offsetY } = getEventCoords(e);
-            lastX = offsetX;
-            lastY = offsetY;
-            recordedStrokes.push({ type: 'start', x: offsetX, y: offsetY, strokeId: currentStrokeId });
+            const { x, y } = getEventCoords(e);
+            ctx.lineWidth = brushWidth;
+            ctx.strokeStyle = getRainbowColor();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+
+            lastTimestamp = performance.now();
+            recordedStrokes.push({ type: 'start', x, y, color: ctx.strokeStyle, width: brushWidth, timestampOffset: 0 });
         }
 
         function draw(e) {
             if (!isDrawing) return;
-            const { offsetX, offsetY } = getEventCoords(e);
-            ctx.strokeStyle = getRainbowColor();
-            ctx.beginPath();
-            ctx.moveTo(lastX, lastY);
-            ctx.lineTo(offsetX, offsetY);
+            e.preventDefault();
+            const { x, y } = getEventCoords(e);
+            ctx.lineTo(x, y);
             ctx.stroke();
-            lastX = offsetX;
-            lastY = offsetY;
-            recordedStrokes.push({ type: 'draw', x: offsetX, y: offsetY, color: ctx.strokeStyle, strokeId: currentStrokeId });
+
+            const currentTimestamp = performance.now();
+            recordedStrokes.push({ type: 'draw', x, y, color: ctx.strokeStyle, width: brushWidth, timestampOffset: currentTimestamp - lastTimestamp });
+            lastTimestamp = currentTimestamp;
         }
 
         function stopDrawing() {
             if (!isDrawing) return;
             isDrawing = false;
-            recordedStrokes.push({ type: 'end', strokeId: currentStrokeId });
+            ctx.closePath();
+            recordedStrokes.push({ type: 'end', timestampOffset: 0 });
         }
 
-        function getEventCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            if (e.touches && e.touches.length > 0) {
-                return {
-                    offsetX: e.touches[0].clientX - rect.left,
-                    offsetY: e.touches[0].clientY - rect.top
-                };
-            } else {
-                return {
-                    offsetX: e.clientX - rect.left,
-                    offsetY: e.clientY - rect.top
-                };
-            }
-        }
-
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            recordedStrokes = [];
-            hasSentDrawing = false;
-            statusMessage.textContent = 'Canvas cleared! Start drawing a new masterpiece!';
-        }
-        
-        // --- Replay and Control Functions ---
-        async function replayDrawing() {
-            isReplaying = true;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let lastReplayX = 0;
-            let lastReplayY = 0;
-
-            for (const stroke of recordedStrokes) {
-                if (!isReplaying) return;
-                switch (stroke.type) {
-                    case 'start':
-                        lastReplayX = stroke.x;
-                        lastReplayY = stroke.y;
-                        break;
-                    case 'draw':
-                        ctx.strokeStyle = stroke.color;
-                        ctx.beginPath();
-                        ctx.moveTo(lastReplayX, lastReplayY);
-                        ctx.lineTo(stroke.x, stroke.y);
-                        ctx.stroke();
-                        lastReplayX = stroke.x;
-                        lastReplayY = stroke.y;
-                        break;
-                }
-                await new Promise(r => setTimeout(r, 10));
-            }
-            if (isReplaying) {
-                await new Promise(r => setTimeout(r, 500));
-                replayDrawing();
-            }
-        }
-
-        function stopReplay() {
-            isReplaying = false;
-            statusMessage.textContent = 'Replay stopped.';
-        }
-
-        function redrawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let lastRedrawX = 0;
-            let lastRedrawY = 0;
-
-            recordedStrokes.forEach(stroke => {
-                switch (stroke.type) {
-                    case 'start':
-                        lastRedrawX = stroke.x;
-                        lastRedrawY = stroke.y;
-                        break;
-                    case 'draw':
-                        ctx.strokeStyle = stroke.color;
-                        ctx.beginPath();
-                        ctx.moveTo(lastRedrawX, lastRedrawY);
-                        ctx.lineTo(stroke.x, stroke.y);
-                        ctx.stroke();
-                        lastRedrawX = stroke.x;
-                        lastRedrawY = stroke.y;
-                        break;
-                }
-            });
-        }
-
-        // --- Download Functions ---
-        function addSignatureToCanvas(canvasToDrawOn) {
-            const signature = `by ${userName}`;
-            const signatureY = canvasToDrawOn.height - 20;
-            const signatureX = canvasToDrawOn.width - 20;
-            const avatarSize = 30;
-            const textWidth = canvasToDrawOn.getContext('2d').measureText(signature).width;
-
-            canvasToDrawOn.getContext('2d').save();
-            canvasToDrawOn.getContext('2d').font = '16px Inter, sans-serif';
-            canvasToDrawOn.getContext('2d').fillStyle = 'rgba(255, 255, 255, 0.8)';
-            canvasToDrawOn.getContext('2d').textAlign = 'right';
-            canvasToDrawOn.getContext('2d').textBaseline = 'middle';
-            canvasToDrawOn.getContext('2d').fillText(signature, signatureX, signatureY);
-
-            // Placeholder for the avatar
-            canvasToDrawOn.getContext('2d').restore();
-        }
-
-        function saveStaticDrawing() {
-            statusMessage.textContent = 'Preparing static download...';
-            const drawingCanvas = document.createElement('canvas');
-            drawingCanvas.width = canvas.width;
-            drawingCanvas.height = canvas.height;
-            const drawingCtx = drawingCanvas.getContext('2d');
-            drawingCtx.fillStyle = '#FFFFFF';
-            drawingCtx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-            drawingCtx.drawImage(canvas, 0, 0);
-            addSignatureToCanvas(drawingCanvas);
-            const dataURL = drawingCanvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.href = dataURL;
-            link.download = 'rainbow_drawing_static.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            statusMessage.textContent = 'Static drawing saved!';
-            hideDownloadModal();
-        }
-
-        async function saveReplayDrawing() {
-            statusMessage.textContent = 'Preparing video download... This may take a moment.';
-            hideDownloadModal();
-
-            const drawingCanvas = document.createElement('canvas');
-            drawingCanvas.width = canvas.width;
-            drawingCanvas.height = canvas.height;
-            const drawingCtx = drawingCanvas.getContext('2d');
-            drawingCtx.fillStyle = '#FFFFFF';
-            drawingCtx.fillRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-
-            const stream = drawingCanvas.captureStream();
-            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-            let chunks = [];
-
-            recorder.ondataavailable = (e) => chunks.push(e.data);
-            recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'rainbow_drawing_replay.webm';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                statusMessage.textContent = 'Video download complete!';
-            };
-
-            recorder.start();
-
-            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-            let lastReplayX = 0;
-            let lastReplayY = 0;
-
-            for (const stroke of recordedStrokes) {
-                switch (stroke.type) {
-                    case 'start':
-                        lastReplayX = stroke.x;
-                        lastReplayY = stroke.y;
-                        break;
-                    case 'draw':
-                        drawingCtx.strokeStyle = stroke.color;
-                        drawingCtx.beginPath();
-                        drawingCtx.moveTo(lastReplayX, lastReplayY);
-                        drawingCtx.lineTo(stroke.x, stroke.y);
-                        drawingCtx.stroke();
-                        lastReplayX = stroke.x;
-                        lastReplayY = stroke.y;
-                        break;
-                }
-                addSignatureToCanvas(drawingCanvas);
-                await new Promise(r => setTimeout(r, 10));
-            }
-            recorder.stop();
-        }
-
-        // --- Modal Functions ---
-        function showDownloadModal() {
-            if (recordedStrokes.length === 0) {
-                statusMessage.textContent = 'Draw something to download!';
-                return;
-            }
-            modal.style.display = 'flex';
-        }
-
-        function hideDownloadModal() {
-            modal.style.display = 'none';
-        }
-
-        // --- Event Listeners and Button Handlers ---
+        // --- Event Listeners ---
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseout', stopDrawing);
-
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); }, { passive: false });
-        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
         canvas.addEventListener('touchend', stopDrawing);
         canvas.addEventListener('touchcancel', stopDrawing);
-
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-        undoButton.addEventListener('click', () => {
-            const lastStrokeId = recordedStrokes.length > 0 ? recordedStrokes[recordedStrokes.length - 1].strokeId : 0;
-            if (lastStrokeId > 0) {
-                recordedStrokes = recordedStrokes.filter(stroke => stroke.strokeId !== lastStrokeId);
-                redrawCanvas();
-                statusMessage.textContent = 'Last stroke undone.';
-            } else {
-                statusMessage.textContent = 'Nothing to undo!';
-            }
+        
+        clearButton.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            recordedStrokes = [];
+            savedDrawingsDropdown.value = "";
+            statusMessage.textContent = 'Canvas cleared!';
         });
 
-        sendButton.addEventListener('click', () => {
+        // --- Save and Load Logic ---
+        function getDrawingsForCurrentUser() {
+            const allDrawings = JSON.parse(localStorage.getItem('rainbowDrawings') || '{}');
+            return allDrawings[currentUser] || [];
+        }
+
+        function saveDrawingForCurrentUser(drawingData) {
+            const allDrawings = JSON.parse(localStorage.getItem('rainbowDrawings') || '{}');
+            if (!allDrawings[currentUser]) {
+                allDrawings[currentUser] = [];
+            }
+            allDrawings[currentUser].push(drawingData);
+            localStorage.setItem('rainbowDrawings', JSON.stringify(allDrawings));
+        }
+        
+        saveButton.addEventListener('click', () => {
             if (recordedStrokes.length === 0) {
-                statusMessage.textContent = 'Draw something before sending!';
+                statusMessage.textContent = 'Draw something before saving!';
                 return;
             }
-            statusMessage.textContent = 'Simulating send... Replaying your art!';
-            hasSentDrawing = true;
-            replayDrawing();
+            const drawingName = prompt("Enter a name for your drawing:");
+            if (drawingName) {
+                const drawingData = {
+                    name: drawingName,
+                    strokes: recordedStrokes,
+                    timestamp: new Date().toISOString()
+                };
+                saveDrawingForCurrentUser(drawingData);
+                populateSavedDrawings();
+                statusMessage.textContent = `Drawing "${drawingName}" saved!`;
+            }
         });
+
+        function populateSavedDrawings() {
+            const drawings = getDrawingsForCurrentUser();
+            savedDrawingsDropdown.innerHTML = '<option value="">Load a Drawing</option>';
+            drawings.forEach((drawing, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = drawing.name;
+                savedDrawingsDropdown.appendChild(option);
+            });
+        }
         
-        saveButton.addEventListener('click', showDownloadModal);
-        downloadStaticButton.addEventListener('click', saveStaticDrawing);
-        downloadReplayButton.addEventListener('click', saveReplayDrawing);
+        savedDrawingsDropdown.addEventListener('change', (e) => {
+            const drawingIndex = e.target.value;
+            if (drawingIndex === "") {
+                clearButton.click();
+                return;
+            }
+            const drawings = getDrawingsForCurrentUser();
+            const drawingToLoad = drawings[drawingIndex];
+            if (drawingToLoad) {
+                recordedStrokes = drawingToLoad.strokes;
+                replayDrawing(recordedStrokes, canvas, true); // Replay instantly
+                statusMessage.textContent = `Loaded "${drawingToLoad.name}".`;
+            }
+        });
+
+        async function replayDrawing(strokes, targetCanvas, instant = false) {
+            const replayCtx = targetCanvas.getContext('2d');
+            replayCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            
+            for (const stroke of strokes) {
+                if (!instant && stroke.timestampOffset > 0) {
+                    await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
+                }
+
+                switch (stroke.type) {
+                    case 'start':
+                        replayCtx.lineWidth = stroke.width;
+                        replayCtx.strokeStyle = stroke.color;
+                        replayCtx.beginPath();
+                        replayCtx.moveTo(stroke.x, stroke.y);
+                        break;
+                    case 'draw':
+                        replayCtx.lineTo(stroke.x, stroke.y);
+                        replayCtx.stroke();
+                        break;
+                    case 'end':
+                        replayCtx.closePath();
+                        break;
+                }
+            }
+        }
+
+        // --- Download Logic ---
+        downloadStaticButton.addEventListener('click', () => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw a white background
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw the existing canvas content on top
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // Download the image
+            const link = document.createElement('a');
+            link.download = `rainbow-drawing-${Date.now()}.png`;
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+            statusMessage.textContent = 'Image download started!';
+        });
+
+        downloadVideoButton.addEventListener('click', async () => {
+            if (recordedStrokes.length === 0) {
+                statusMessage.textContent = 'Draw something to record a video!';
+                return;
+            }
+
+            statusMessage.textContent = 'Preparing video... this may take a moment.';
+
+            const capturer = new CCapture({
+                format: 'webm',
+                framerate: 60,
+                verbose: false
+            });
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#FFFFFF';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            capturer.start();
+
+            // Custom replay for video capture
+            for (const stroke of recordedStrokes) {
+                switch (stroke.type) {
+                    case 'start':
+                        tempCtx.lineWidth = stroke.width;
+                        tempCtx.strokeStyle = stroke.color;
+                        tempCtx.beginPath();
+                        tempCtx.moveTo(stroke.x, stroke.y);
+                        break;
+                    case 'draw':
+                        tempCtx.lineTo(stroke.x, stroke.y);
+                        tempCtx.stroke();
+                        break;
+                    case 'end':
+                        tempCtx.closePath();
+                        break;
+                }
+                // Capture a frame after each drawing action
+                capturer.capture(tempCanvas);
+            }
+            
+            capturer.stop();
+            capturer.save();
+            statusMessage.textContent = 'Video download started!';
+        });
+
+        // --- Initial Load ---
+        checkLoginState();
+
     </script>
 </body>
 </html>
