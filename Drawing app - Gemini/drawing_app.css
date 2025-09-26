@@ -28,24 +28,9 @@ body {
     font-weight: bold;
     margin-bottom: 20px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.rainbow-text {
-    animation: rainbow 10s infinite;
-}
-
-@keyframes rainbow {
-    0% { color: #ff0000; }
-    10% { color: #ff8c00; }
-    20% { color: #ffd700; }
-    30% { color: #008000; }
-    40% { color: #0000ff; }
-    50% { color: #4b0082; }
-    60% { color: #8a2be2; }
-    70% { color: #0000ff; }
-    80% { color: #008000; }
-    90% { color: #ffd700; }
-    100% { color: #ff0000; }
+    background: linear-gradient(to right, #ff0000, #ff8c00, #ffd700, #008000, #0000ff, #4b0082, #8a2be2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .canvas-container {
