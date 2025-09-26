@@ -9,7 +9,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 // Drawing state
 let isDrawing = false;
 let hasSentDrawing = false;
-const brushWidth = 10; // <--- CHANGE THE VALUE HERE (e.g., from 4 to 10)
+const brushWidth = 10;
 let hue = 0;
 let recordedStrokes = [];
 let lastTimestamp = 0;
@@ -27,9 +27,9 @@ function resizeCanvas() {
     const rect = canvas.parentNode.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
-    // Set line width *after* resize to maintain consistency
-    ctx.lineWidth = brushWidth; // <--- THIS LINE IS CRUCIAL AND WAS MISSING
-    // Redraw existing content after resize to prevent it from clearing
+    ctx.lineWidth = brushWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     if (recordedStrokes.length > 0) {
         redrawCanvas();
     }
@@ -37,7 +37,7 @@ function resizeCanvas() {
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
 
-ctx.lineWidth = brushWidth; // <--- AND THIS LINE IS NEEDED FOR INITIAL SETUP
+ctx.lineWidth = brushWidth;
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 
@@ -60,7 +60,6 @@ function startDrawing(e) {
         return;
     }
 
-    // New workflow: clear canvas on touch after a drawing has been sent
     if (hasSentDrawing) {
         clearCanvas();
         return;
@@ -72,6 +71,10 @@ function startDrawing(e) {
 
     lastX = offsetX;
     lastY = offsetY;
+
+    // Start a new path here
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
 
     lastTimestamp = performance.now();
     recordedStrokes.push({
@@ -89,8 +92,6 @@ function draw(e) {
 
     ctx.strokeStyle = getRainbowColor();
 
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
     ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
 
@@ -110,7 +111,10 @@ function draw(e) {
 }
 
 function stopDrawing() {
+    if (!isDrawing) return;
     isDrawing = false;
+    // Close the path here
+    ctx.closePath();
     recordedStrokes.push({ type: 'end', timestampOffset: 0, strokeId: currentStrokeId });
 }
 
@@ -154,7 +158,6 @@ async function replayDrawing(drawingData) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
 
-        // Check `isReplaying` immediately after the await
         if (!isReplaying) {
             return;
         }
@@ -163,12 +166,12 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
+                // Start new path for replay
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // Use beginPath and moveTo for each segment for correct coloring
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
 
@@ -176,12 +179,13 @@ async function replayDrawing(drawingData) {
                 lastReplayY = stroke.y;
                 break;
             case 'end':
+                // Close the path for replay
+                ctx.closePath();
                 break;
         }
     }
 
     if (isReplaying) {
-        // This is a simplified replay loop.
         replayTimeout = setTimeout(() => {
             replayDrawing(drawingData);
         }, 500);
@@ -222,24 +226,27 @@ function redrawCanvas() {
     let lastRedrawX = 0;
     let lastRedrawY = 0;
 
-    // Reset line width before redrawing
     ctx.lineWidth = brushWidth;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
     recordedStrokes.forEach(stroke => {
         switch (stroke.type) {
             case 'start':
                 lastRedrawX = stroke.x;
                 lastRedrawY = stroke.y;
+                ctx.beginPath();
+                ctx.moveTo(lastRedrawX, lastRedrawY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                ctx.beginPath();
-                ctx.moveTo(lastRedrawX, lastRedrawY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
-
                 lastRedrawX = stroke.x;
                 lastRedrawY = stroke.y;
+                break;
+            case 'end':
+                ctx.closePath();
                 break;
         }
     });
@@ -329,18 +336,18 @@ function displayReceivedDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
+                receivedCanvas.getContext('2d').beginPath();
+                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 receivedCanvas.getContext('2d').strokeStyle = stroke.color;
-                receivedCanvas.getContext('2d').beginPath();
-                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
                 receivedCanvas.getContext('2d').lineTo(stroke.x, stroke.y);
                 receivedCanvas.getContext('2d').stroke();
-
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
                 break;
             case 'end':
+                receivedCanvas.getContext('2d').closePath();
                 break;
         }
       }
