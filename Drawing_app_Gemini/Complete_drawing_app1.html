@@ -27,18 +27,17 @@
             text-align: center;
         }
 
-        /* NEW: Seamless Rainbow Title Animation */
         h1 {
             font-size: 2.5em;
             font-weight: bold;
             background: linear-gradient(90deg, 
                 #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3,
-                #ff0000); /* Repeat the first color for a seamless loop */
+                #ff0000);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: rainbow-flow 10s linear infinite;
-            background-size: 200% auto; /* Make background wider than the element */
+            background-size: 200% auto;
         }
 
         @keyframes rainbow-flow {
@@ -54,38 +53,49 @@
             padding: 40px;
         }
         #username-input {
-            font-size: 1.2em;
-            padding: 10px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            width: 80%;
-            max-width: 300px;
-            text-align: center;
+            font-size: 1.2em; padding: 10px; border: 2px solid #ccc;
+            border-radius: 8px; margin-bottom: 20px; width: 80%;
+            max-width: 300px; text-align: center;
         }
         #login-button {
-            font-size: 1.1em;
-            padding: 12px 25px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            background-color: #007bff;
-            color: white;
-            transition: background-color 0.3s;
+            font-size: 1.1em; padding: 12px 25px; cursor: pointer;
+            border: none; border-radius: 8px; background-color: #007bff;
+            color: white; transition: background-color 0.3s;
         }
-        #login-button:hover {
-            background-color: #0056b3;
-        }
+        #login-button:hover { background-color: #0056b3; }
 
         /* Main Drawing App Styling */
         #main-app { display: none; }
         
-        /* NEW: Wrapper for Canvas and Floating UI */
+        /* NEW: Header for User Profile */
+        .app-header {
+            display: flex;
+            justify-content: flex-end; /* Aligns items to the right */
+            align-items: center;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+        
+        #user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #user-avatar {
+            width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+        }
+        #username-display { font-weight: 600; }
+        #logout-button {
+            background: none; border: none; color: #007bff;
+            cursor: pointer; text-decoration: underline; font-size: 0.9em;
+            padding: 0; margin-left: 5px;
+        }
+        
+        /* Wrapper for Canvas and Floating UI */
         .canvas-wrapper {
-            position: relative; /* This is the anchor for absolute children */
-            width: 800px;
-            height: 500px;
-            margin: 15px auto;
+            position: relative;
+            width: 800px; height: 500px;
+            margin: 0 auto; /* Centered now that header is outside */
         }
 
         canvas {
@@ -97,76 +107,32 @@
             touch-action: none;
         }
         
-        /* NEW: User Profile (Top Right) */
-        #user-profile {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(5px);
-            padding: 5px 10px;
-            border-radius: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        #user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        #username-display { font-weight: 600; }
-        #logout-button {
-            background: none; border: none; color: #007bff;
-            cursor: pointer; text-decoration: underline; font-size: 0.8em;
-            padding: 0; margin-left: 5px;
-        }
-
-        /* NEW: Floating Controls (Top Left) */
+        /* Floating Controls (Top Left) */
         .floating-controls {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            display: flex;
-            gap: 10px;
+            top: 15px; left: 15px;
+            display: flex; gap: 10px;
         }
         .floating-controls button {
-            padding: 8px 12px;
-            font-size: 1em;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
+            padding: 8px 12px; font-size: 1em; cursor: pointer;
+            border: none; border-radius: 8px;
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(5px);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: background-color 0.2s;
         }
-        .floating-controls button:hover {
-            background-color: rgba(255, 255, 255, 1);
-        }
+        .floating-controls button:hover { background-color: rgba(255, 255, 255, 1); }
 
-        /* NEW: Save Button Dropdown */
         .save-container { position: relative; }
         .save-options {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            margin-top: 5px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            overflow: hidden;
-            flex-direction: column;
-            width: 120px;
+            display: none; position: absolute; top: 100%;
+            left: 0; margin-top: 5px; background: white;
+            border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            overflow: hidden; flex-direction: column; width: 120px;
         }
         .save-options button {
-            width: 100%;
-            border-radius: 0;
-            box-shadow: none;
-            text-align: left;
+            width: 100%; border-radius: 0;
+            box-shadow: none; text-align: left;
         }
     </style>
 </head>
@@ -183,15 +149,17 @@
         </div>
 
         <div id="main-app">
-            <div class="canvas-wrapper">
-                <canvas id="drawingCanvas" width="800" height="500"></canvas>
-                
+            <div class="app-header">
                 <div id="user-profile">
                     <img id="user-avatar" src="" alt="User Avatar">
                     <span id="username-display"></span>
                     <button id="logout-button">Logout</button>
                 </div>
+            </div>
 
+            <div class="canvas-wrapper">
+                <canvas id="drawingCanvas" width="800" height="500"></canvas>
+                
                 <div class="floating-controls">
                     <button id="undoButton">↩️ Undo</button>
                     <div class="save-container">
@@ -224,7 +192,6 @@
         const ctx = canvas.getContext('2d');
         const statusMessage = document.getElementById('statusMessage');
 
-        // New Floating Buttons
         const undoButton = document.getElementById('undoButton');
         const saveButton = document.getElementById('saveButton');
         const saveOptions = document.getElementById('saveOptions');
@@ -235,10 +202,10 @@
         // --- App State ---
         let isDrawing = false;
         let hue = 0;
-        let brushWidth = 4; // Thickness set to 4
+        let brushWidth = 4;
         let recordedStrokes = [];
-        let lastTimestamp = 0;
         let currentUser = null;
+        let lastPoint = { x: 0, y: 0 }; // For segment-by-segment drawing
 
         // --- Authentication & Profile ---
         function checkLoginState() {
@@ -268,18 +235,15 @@
             localStorage.removeItem('rainbowDrawUser');
             checkLoginState();
         });
-
-        // NEW: Generate a simple avatar from user initials
+        
         function generateAvatar(name) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             canvas.width = 64;
             canvas.height = 64;
-
             const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
             const colors = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545', '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
             const colorIndex = (initials.charCodeAt(0) || 0) % colors.length;
-            
             context.fillStyle = colors[colorIndex];
             context.fillRect(0, 0, canvas.width, canvas.height);
             context.font = 'bold 32px Arial';
@@ -287,16 +251,16 @@
             context.textAlign = 'center';
             context.textBaseline = 'middle';
             context.fillText(initials, canvas.width / 2, canvas.height / 2);
-
             return canvas.toDataURL();
         }
 
         // --- Drawing Logic ---
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        ctx.lineWidth = brushWidth;
 
         function getRainbowColor() {
-            hue = (hue + 1.5) % 360; // Increased increment for faster color change
+            hue = (hue + 1) % 360;
             return `hsl(${hue}, 100%, 50%)`;
         }
         
@@ -312,56 +276,42 @@
             e.preventDefault();
             isDrawing = true;
             const { x, y } = getEventCoords(e);
-            ctx.lineWidth = brushWidth;
-            
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-
-            lastTimestamp = performance.now();
-            recordedStrokes.push({ type: 'start', x, y, width: brushWidth, timestampOffset: 0 });
+            lastPoint = { x, y };
+            recordedStrokes.push({ type: 'start', x, y, width: brushWidth });
         }
 
         function draw(e) {
             if (!isDrawing) return;
             e.preventDefault();
-            
-            // NEW: Update color on every segment for true rainbow effect
-            ctx.strokeStyle = getRainbowColor();
-            
             const { x, y } = getEventCoords(e);
+            
+            // NEW: Draw segment by segment for a true rainbow effect
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.x, lastPoint.y);
+            ctx.strokeStyle = getRainbowColor();
             ctx.lineTo(x, y);
             ctx.stroke();
-
-            const currentTimestamp = performance.now();
-            recordedStrokes.push({ type: 'draw', x, y, color: ctx.strokeStyle, timestampOffset: currentTimestamp - lastTimestamp });
-            lastTimestamp = currentTimestamp;
+            
+            recordedStrokes.push({ type: 'draw', from: lastPoint, to: {x,y}, color: ctx.strokeStyle });
+            lastPoint = { x, y };
         }
 
         function stopDrawing() {
             if (!isDrawing) return;
             isDrawing = false;
-            ctx.closePath();
-            recordedStrokes.push({ type: 'end', timestampOffset: 0 });
+            recordedStrokes.push({ type: 'end' });
         }
 
         // --- Redraw Canvas from Strokes ---
         function redrawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (const stroke of recordedStrokes) {
-                switch (stroke.type) {
-                    case 'start':
-                        ctx.lineWidth = stroke.width;
-                        ctx.beginPath();
-                        ctx.moveTo(stroke.x, stroke.y);
-                        break;
-                    case 'draw':
-                        ctx.strokeStyle = stroke.color;
-                        ctx.lineTo(stroke.x, stroke.y);
-                        ctx.stroke();
-                        break;
-                    case 'end':
-                        ctx.closePath();
-                        break;
+                if (stroke.type === 'draw') {
+                    ctx.beginPath();
+                    ctx.moveTo(stroke.from.x, stroke.from.y);
+                    ctx.strokeStyle = stroke.color;
+                    ctx.lineTo(stroke.to.x, stroke.to.y);
+                    ctx.stroke();
                 }
             }
         }
@@ -375,10 +325,8 @@
         canvas.addEventListener('touchmove', draw, { passive: false });
         canvas.addEventListener('touchend', stopDrawing);
 
-        // NEW: Undo Button Logic
         undoButton.addEventListener('click', () => {
             if (recordedStrokes.length === 0) return;
-            // Find the last 'start' point
             let lastStartIndex = -1;
             for (let i = recordedStrokes.length - 1; i >= 0; i--) {
                 if (recordedStrokes[i].type === 'start') {
@@ -387,12 +335,11 @@
                 }
             }
             if (lastStartIndex !== -1) {
-                recordedStrokes.splice(lastStartIndex); // Remove the last stroke
-                redrawCanvas(); // Redraw the canvas with the remaining strokes
+                recordedStrokes.splice(lastStartIndex);
+                redrawCanvas();
             }
         });
 
-        // NEW: Save Dropdown Logic
         saveButton.addEventListener('click', () => {
             saveOptions.style.display = saveOptions.style.display === 'flex' ? 'none' : 'flex';
         });
@@ -402,23 +349,15 @@
             }
         });
         
-        // NEW: Placeholder Send Button
         sendButton.addEventListener('click', () => {
-            alert('Send functionality is not yet implemented. This is where you could add code to email or share the drawing!');
+            alert('Send functionality is not yet implemented!');
         });
 
         // --- Download Logic ---
         downloadStaticButton.addEventListener('click', () => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.fillStyle = '#FFFFFF';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(canvas, 0, 0);
-
             const link = document.createElement('a');
             link.download = `rainbow-drawing-${Date.now()}.png`;
-            link.href = tempCanvas.toDataURL('image/png');
+            link.href = canvas.toDataURL('image/png');
             link.click();
             statusMessage.textContent = 'Image download started!';
             saveOptions.style.display = 'none';
@@ -435,26 +374,19 @@
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.fillStyle = '#FFFFFF';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.lineWidth = brushWidth;
+            tempCtx.lineCap = 'round';
+            tempCtx.lineJoin = 'round';
             
             capturer.start();
 
             for (const stroke of recordedStrokes) {
-                switch (stroke.type) {
-                    case 'start':
-                        tempCtx.lineWidth = stroke.width;
-                        tempCtx.beginPath();
-                        tempCtx.moveTo(stroke.x, stroke.y);
-                        break;
-                    case 'draw':
-                        tempCtx.strokeStyle = stroke.color;
-                        tempCtx.lineTo(stroke.x, stroke.y);
-                        tempCtx.stroke();
-                        break;
-                    case 'end':
-                        tempCtx.closePath();
-                        break;
+                if(stroke.type === 'draw') {
+                    tempCtx.beginPath();
+                    tempCtx.moveTo(stroke.from.x, stroke.from.y);
+                    tempCtx.strokeStyle = stroke.color;
+                    tempCtx.lineTo(stroke.to.x, stroke.to.y);
+                    tempCtx.stroke();
                 }
                 capturer.capture(tempCanvas);
             }
