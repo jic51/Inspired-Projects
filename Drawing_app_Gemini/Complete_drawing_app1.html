@@ -373,9 +373,20 @@
                     });
                 });
             } else {
-                // Show the auth form and hide the main app
-                authContainer.style.display = 'flex';
-                appContainer.style.display = 'none';
+                // Check if an initial token is available to sign in anonymously
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Firebase auth error:", error);
+                        authContainer.style.display = 'flex';
+                        appContainer.style.display = 'none';
+                    }
+                } else {
+                    // Show the auth form and hide the main app
+                    authContainer.style.display = 'flex';
+                    appContainer.style.display = 'none';
+                }
                 userId = null;
                 currentUserIdDisplay.textContent = '';
             }
