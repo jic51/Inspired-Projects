@@ -23,6 +23,18 @@ let isReplaying = false;
 let replayTimeout;
 
 // --- Canvas Setup ---
+function resizeCanvas() {
+    const rect = canvas.parentNode.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    // Redraw existing content after resize to prevent it from clearing
+    if (recordedStrokes.length > 0) {
+        redrawCanvas();
+    }
+}
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+
 ctx.lineWidth = brushWidth;
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';

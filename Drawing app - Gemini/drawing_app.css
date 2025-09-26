@@ -21,8 +21,7 @@ body {
 .canvas-container {
     position: relative;
     width: 100%;
-    /* This padding-top makes the canvas responsive and maintain aspect ratio */
-    padding-top: 50%; /* Adjust based on desired aspect ratio (e.g., 400/800 = 0.5 = 50%) */
+    padding-top: 50%; /* This maintains a 2:1 aspect ratio */
     margin: 20px auto;
 }
 
@@ -49,7 +48,6 @@ canvas {
 
 .controls button {
     padding: 10px;
-    font-size: 20px;
     cursor: pointer;
     border: none;
     border-radius: 50%;
@@ -58,17 +56,23 @@ canvas {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(224, 224, 224, 0.8);
-    color: #444;
-    transition: background-color 0.3s ease, transform 0.1s ease;
+    background-color: rgba(230, 230, 230, 0.9);
+    color: #555;
+    transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.controls button svg {
+    width: 24px;
+    height: 24px;
 }
 
 .controls button:hover {
-    background-color: rgba(189, 189, 189, 0.9);
+    background-color: rgba(200, 200, 200, 0.9);
+    transform: scale(1.1);
 }
 
 .controls button:active {
-    transform: scale(0.95) translateX(-50%);
+    transform: scale(0.95);
 }
 
 #statusMessage {
