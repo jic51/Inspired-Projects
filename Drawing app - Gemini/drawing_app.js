@@ -9,7 +9,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 // Drawing state
 let isDrawing = false;
 let hasSentDrawing = false;
-const brushWidth = 100;
+const brushWidth = 10; // <--- CHANGE THE VALUE HERE (e.g., from 4 to 10)
 let hue = 0;
 let recordedStrokes = [];
 let lastTimestamp = 0;
@@ -27,6 +27,8 @@ function resizeCanvas() {
     const rect = canvas.parentNode.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
+    // Set line width *after* resize to maintain consistency
+    ctx.lineWidth = brushWidth; // <--- THIS LINE IS CRUCIAL AND WAS MISSING
     // Redraw existing content after resize to prevent it from clearing
     if (recordedStrokes.length > 0) {
         redrawCanvas();
@@ -35,7 +37,7 @@ function resizeCanvas() {
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
 
-ctx.lineWidth = brushWidth;
+ctx.lineWidth = brushWidth; // <--- AND THIS LINE IS NEEDED FOR INITIAL SETUP
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 
@@ -219,6 +221,9 @@ function redrawCanvas() {
 
     let lastRedrawX = 0;
     let lastRedrawY = 0;
+
+    // Reset line width before redrawing
+    ctx.lineWidth = brushWidth;
 
     recordedStrokes.forEach(stroke => {
         switch (stroke.type) {
