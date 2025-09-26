@@ -29,9 +29,16 @@
             padding: 1rem;
             gap: 1rem;
         }
+        
+        #loadingMessage {
+            display: none;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #bbb;
+        }
 
         #authContainer {
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
@@ -236,6 +243,7 @@
     </style>
 </head>
 <body>
+    <div id="loadingMessage">Connecting to server...</div>
 
     <div id="authContainer" class="rounded-xl p-8 shadow-lg">
         <form id="loginForm" class="bg-gray-800 p-6 rounded-lg shadow-xl">
@@ -306,6 +314,7 @@
         const signOutButton = document.getElementById('signOutButton');
         const appContainer = document.getElementById('appContainer');
         const authStatusMessage = document.getElementById('authStatusMessage');
+        const loadingMessage = document.getElementById('loadingMessage');
         
         // Drawing state
         let isDrawing = false;
@@ -350,9 +359,14 @@
         
         let userId = null;
         
-        // Authenticate user and listen for new messages
+        // Authenticate user and listen for changes
+        // This listener fires once on app load and whenever the auth state changes
         onAuthStateChanged(auth, async (user) => {
+            // Hide the loading message once the auth state is determined
+            loadingMessage.style.display = 'none';
+
             if (user) {
+                // User is signed in.
                 userId = user.uid;
                 currentUserIdDisplay.textContent = `Your User ID: ${userId}`;
                 console.log(`User authenticated with ID: ${userId}`);
@@ -373,17 +387,12 @@
                     });
                 });
             } else {
-                // Check if an initial token is available to sign in anonymously
-                if (initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } catch (error) {
-                        console.error("Firebase auth error:", error);
-                        authContainer.style.display = 'flex';
-                        appContainer.style.display = 'none';
-                    }
-                } else {
-                    // Show the auth form and hide the main app
+                // No user is signed in. Attempt to sign in anonymously.
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Firebase auth error:", error);
+                    // If anonymous sign-in fails, show the regular auth form
                     authContainer.style.display = 'flex';
                     appContainer.style.display = 'none';
                 }
@@ -391,7 +400,6 @@
                 currentUserIdDisplay.textContent = '';
             }
         });
-        
         
         // --- Authentication Handlers ---
         loginButton.addEventListener('click', async (e) => {
@@ -452,7 +460,10 @@
                 redrawCanvas();
             }
         }
-        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            loadingMessage.style.display = 'block';
+        });
         window.addEventListener('resize', resizeCanvas);
         
         ctx.lineWidth = brushWidth;
