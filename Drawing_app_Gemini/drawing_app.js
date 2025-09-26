@@ -1,6 +1,3 @@
-// drawing_app.js
-
-        // --- UI Elements ---
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
         const sendButton = document.getElementById('sendButton');
@@ -95,17 +92,6 @@
                 appContainer.style.display = 'none';
                 userId = null;
                 currentUserIdDisplay.textContent = '';
-        
-                // Try to sign in with the initial custom token if available
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase auth error:", error);
-                }
             }
         });
         
