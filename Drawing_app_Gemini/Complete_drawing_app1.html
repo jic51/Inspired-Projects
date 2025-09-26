@@ -10,7 +10,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align to top */
+            align-items: flex-start;
             min-height: 100vh;
             background-color: #f0f2f5;
             margin: 0;
@@ -27,20 +27,23 @@
             text-align: center;
         }
 
+        /* NEW: Seamless Rainbow Title Animation */
         h1 {
             font-size: 2.5em;
             font-weight: bold;
-            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            background: linear-gradient(90deg, 
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3,
+                #ff0000); /* Repeat the first color for a seamless loop */
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: rainbow-flow 5s linear infinite;
-            background-size: 400% 100%;
+            animation: rainbow-flow 10s linear infinite;
+            background-size: 200% auto; /* Make background wider than the element */
         }
 
         @keyframes rainbow-flow {
             0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+            100% { background-position: 200% 50%; }
         }
 
         /* Login Screen Styling */
@@ -74,54 +77,96 @@
             background-color: #0056b3;
         }
 
-        /* Main Drawing App Styling (Hidden by default) */
-        #main-app {
-            display: none; /* Initially hidden */
+        /* Main Drawing App Styling */
+        #main-app { display: none; }
+        
+        /* NEW: Wrapper for Canvas and Floating UI */
+        .canvas-wrapper {
+            position: relative; /* This is the anchor for absolute children */
+            width: 800px;
+            height: 500px;
+            margin: 15px auto;
         }
 
-        #user-info {
-            text-align: right;
-            margin-bottom: 10px;
-            color: #555;
-        }
-        #logout-button {
-            background: none;
-            border: none;
-            color: #007bff;
-            cursor: pointer;
-            text-decoration: underline;
-            font-size: 0.9em;
-        }
-
-        /* Canvas and Controls */
         canvas {
             border: 2px solid #ddd;
             border-radius: 8px;
             background-color: #fdfdfd;
             cursor: crosshair;
             display: block;
-            margin: 15px auto;
-            touch-action: none; /* Prevents scrolling on canvas on mobile */
+            touch-action: none;
+        }
+        
+        /* NEW: User Profile (Top Right) */
+        #user-profile {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            padding: 5px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        #username-display { font-weight: 600; }
+        #logout-button {
+            background: none; border: none; color: #007bff;
+            cursor: pointer; text-decoration: underline; font-size: 0.8em;
+            padding: 0; margin-left: 5px;
         }
 
-        .controls {
+        /* NEW: Floating Controls (Top Left) */
+        .floating-controls {
+            position: absolute;
+            top: 15px;
+            left: 15px;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
         }
-        .controls button, .controls select {
-            padding: 10px 15px;
+        .floating-controls button {
+            padding: 8px 12px;
             font-size: 1em;
             cursor: pointer;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f8f8f8;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
         }
-        .controls button:hover, .controls select:hover {
-            background-color: #e9e9e9;
+        .floating-controls button:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
+
+        /* NEW: Save Button Dropdown */
+        .save-container { position: relative; }
+        .save-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 5px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            overflow: hidden;
+            flex-direction: column;
+            width: 120px;
+        }
+        .save-options button {
+            width: 100%;
+            border-radius: 0;
+            box-shadow: none;
+            text-align: left;
         }
     </style>
 </head>
@@ -132,30 +177,34 @@
 
         <div id="auth-screen">
             <h2>Welcome!</h2>
-            <p>Please enter a username to save your drawings.</p>
+            <p>Please enter a username to begin.</p>
             <input type="text" id="username-input" placeholder="Enter your name">
             <button id="login-button">Start Drawing</button>
         </div>
 
         <div id="main-app">
-            <div id="user-info">
-                Logged in as: <strong id="username-display"></strong>
-                <button id="logout-button">Logout</button>
-            </div>
+            <div class="canvas-wrapper">
+                <canvas id="drawingCanvas" width="800" height="500"></canvas>
+                
+                <div id="user-profile">
+                    <img id="user-avatar" src="" alt="User Avatar">
+                    <span id="username-display"></span>
+                    <button id="logout-button">Logout</button>
+                </div>
 
-            <canvas id="drawingCanvas" width="800" height="500"></canvas>
-            
-            <div class="controls">
-                <button id="clearButton">Clear</button>
-                <button id="saveButton">Save Drawing</button>
-                <select id="savedDrawingsDropdown">
-                    <option value="">Load a Drawing</option>
-                </select>
-                <button id="downloadStaticButton">Download Image</button>
-                <button id="downloadVideoButton">Download Video</button>
+                <div class="floating-controls">
+                    <button id="undoButton">↩️ Undo</button>
+                    <div class="save-container">
+                        <button id="saveButton">💾 Save</button>
+                        <div class="save-options" id="saveOptions">
+                            <button id="downloadStaticButton">⬇️ Image</button>
+                            <button id="downloadVideoButton">🎬 Video</button>
+                        </div>
+                    </div>
+                    <button id="sendButton">✉️ Send</button>
+                </div>
             </div>
-            
-            <div id="statusMessage"></div>
+            <div id="statusMessage" style="margin-top:10px;"></div>
         </div>
     </div>
 
@@ -166,37 +215,40 @@
         const mainApp = document.getElementById('main-app');
         const usernameInput = document.getElementById('username-input');
         const loginButton = document.getElementById('login-button');
+        const userProfile = document.getElementById('user-profile');
+        const userAvatar = document.getElementById('user-avatar');
         const usernameDisplay = document.getElementById('username-display');
         const logoutButton = document.getElementById('logout-button');
         
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        const clearButton = document.getElementById('clearButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // New Floating Buttons
+        const undoButton = document.getElementById('undoButton');
         const saveButton = document.getElementById('saveButton');
-        const savedDrawingsDropdown = document.getElementById('savedDrawingsDropdown');
+        const saveOptions = document.getElementById('saveOptions');
         const downloadStaticButton = document.getElementById('downloadStaticButton');
         const downloadVideoButton = document.getElementById('downloadVideoButton');
-        const statusMessage = document.getElementById('statusMessage');
+        const sendButton = document.getElementById('sendButton');
 
         // --- App State ---
         let isDrawing = false;
         let hue = 0;
-        let brushWidth = 5;
+        let brushWidth = 4; // Thickness set to 4
         let recordedStrokes = [];
         let lastTimestamp = 0;
         let currentUser = null;
 
-        // --- Authentication Logic ---
+        // --- Authentication & Profile ---
         function checkLoginState() {
             currentUser = localStorage.getItem('rainbowDrawUser');
             if (currentUser) {
-                // User is logged in
                 usernameDisplay.textContent = currentUser;
+                userAvatar.src = generateAvatar(currentUser);
                 authScreen.style.display = 'none';
                 mainApp.style.display = 'block';
-                populateSavedDrawings();
             } else {
-                // User is not logged in
                 authScreen.style.display = 'flex';
                 mainApp.style.display = 'none';
             }
@@ -214,22 +266,40 @@
 
         logoutButton.addEventListener('click', () => {
             localStorage.removeItem('rainbowDrawUser');
-            currentUser = null;
-            recordedStrokes = [];
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
             checkLoginState();
         });
 
+        // NEW: Generate a simple avatar from user initials
+        function generateAvatar(name) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 64;
+            canvas.height = 64;
+
+            const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+            const colors = ['#007bff', '#6610f2', '#6f42c1', '#e83e8c', '#dc3545', '#fd7e14', '#ffc107', '#28a745', '#20c997', '#17a2b8'];
+            const colorIndex = (initials.charCodeAt(0) || 0) % colors.length;
+            
+            context.fillStyle = colors[colorIndex];
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.font = 'bold 32px Arial';
+            context.fillStyle = '#fff';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(initials, canvas.width / 2, canvas.height / 2);
+
+            return canvas.toDataURL();
+        }
 
         // --- Drawing Logic ---
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
         function getRainbowColor() {
-            hue = (hue + 1) % 360;
+            hue = (hue + 1.5) % 360; // Increased increment for faster color change
             return `hsl(${hue}, 100%, 50%)`;
         }
-
+        
         function getEventCoords(e) {
             const rect = canvas.getBoundingClientRect();
             if (e.touches && e.touches.length > 0) {
@@ -243,23 +313,27 @@
             isDrawing = true;
             const { x, y } = getEventCoords(e);
             ctx.lineWidth = brushWidth;
-            ctx.strokeStyle = getRainbowColor();
+            
             ctx.beginPath();
             ctx.moveTo(x, y);
 
             lastTimestamp = performance.now();
-            recordedStrokes.push({ type: 'start', x, y, color: ctx.strokeStyle, width: brushWidth, timestampOffset: 0 });
+            recordedStrokes.push({ type: 'start', x, y, width: brushWidth, timestampOffset: 0 });
         }
 
         function draw(e) {
             if (!isDrawing) return;
             e.preventDefault();
+            
+            // NEW: Update color on every segment for true rainbow effect
+            ctx.strokeStyle = getRainbowColor();
+            
             const { x, y } = getEventCoords(e);
             ctx.lineTo(x, y);
             ctx.stroke();
 
             const currentTimestamp = performance.now();
-            recordedStrokes.push({ type: 'draw', x, y, color: ctx.strokeStyle, width: brushWidth, timestampOffset: currentTimestamp - lastTimestamp });
+            recordedStrokes.push({ type: 'draw', x, y, color: ctx.strokeStyle, timestampOffset: currentTimestamp - lastTimestamp });
             lastTimestamp = currentTimestamp;
         }
 
@@ -270,6 +344,28 @@
             recordedStrokes.push({ type: 'end', timestampOffset: 0 });
         }
 
+        // --- Redraw Canvas from Strokes ---
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const stroke of recordedStrokes) {
+                switch (stroke.type) {
+                    case 'start':
+                        ctx.lineWidth = stroke.width;
+                        ctx.beginPath();
+                        ctx.moveTo(stroke.x, stroke.y);
+                        break;
+                    case 'draw':
+                        ctx.strokeStyle = stroke.color;
+                        ctx.lineTo(stroke.x, stroke.y);
+                        ctx.stroke();
+                        break;
+                    case 'end':
+                        ctx.closePath();
+                        break;
+                }
+            }
+        }
+        
         // --- Event Listeners ---
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
@@ -278,121 +374,54 @@
         canvas.addEventListener('touchstart', startDrawing, { passive: false });
         canvas.addEventListener('touchmove', draw, { passive: false });
         canvas.addEventListener('touchend', stopDrawing);
-        canvas.addEventListener('touchcancel', stopDrawing);
-        
-        clearButton.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            recordedStrokes = [];
-            savedDrawingsDropdown.value = "";
-            statusMessage.textContent = 'Canvas cleared!';
+
+        // NEW: Undo Button Logic
+        undoButton.addEventListener('click', () => {
+            if (recordedStrokes.length === 0) return;
+            // Find the last 'start' point
+            let lastStartIndex = -1;
+            for (let i = recordedStrokes.length - 1; i >= 0; i--) {
+                if (recordedStrokes[i].type === 'start') {
+                    lastStartIndex = i;
+                    break;
+                }
+            }
+            if (lastStartIndex !== -1) {
+                recordedStrokes.splice(lastStartIndex); // Remove the last stroke
+                redrawCanvas(); // Redraw the canvas with the remaining strokes
+            }
         });
 
-        // --- Save and Load Logic ---
-        function getDrawingsForCurrentUser() {
-            const allDrawings = JSON.parse(localStorage.getItem('rainbowDrawings') || '{}');
-            return allDrawings[currentUser] || [];
-        }
-
-        function saveDrawingForCurrentUser(drawingData) {
-            const allDrawings = JSON.parse(localStorage.getItem('rainbowDrawings') || '{}');
-            if (!allDrawings[currentUser]) {
-                allDrawings[currentUser] = [];
-            }
-            allDrawings[currentUser].push(drawingData);
-            localStorage.setItem('rainbowDrawings', JSON.stringify(allDrawings));
-        }
-        
+        // NEW: Save Dropdown Logic
         saveButton.addEventListener('click', () => {
-            if (recordedStrokes.length === 0) {
-                statusMessage.textContent = 'Draw something before saving!';
-                return;
-            }
-            const drawingName = prompt("Enter a name for your drawing:");
-            if (drawingName) {
-                const drawingData = {
-                    name: drawingName,
-                    strokes: recordedStrokes,
-                    timestamp: new Date().toISOString()
-                };
-                saveDrawingForCurrentUser(drawingData);
-                populateSavedDrawings();
-                statusMessage.textContent = `Drawing "${drawingName}" saved!`;
+            saveOptions.style.display = saveOptions.style.display === 'flex' ? 'none' : 'flex';
+        });
+        document.addEventListener('click', (e) => {
+            if (!saveButton.contains(e.target) && !saveOptions.contains(e.target)) {
+                saveOptions.style.display = 'none';
             }
         });
-
-        function populateSavedDrawings() {
-            const drawings = getDrawingsForCurrentUser();
-            savedDrawingsDropdown.innerHTML = '<option value="">Load a Drawing</option>';
-            drawings.forEach((drawing, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = drawing.name;
-                savedDrawingsDropdown.appendChild(option);
-            });
-        }
         
-        savedDrawingsDropdown.addEventListener('change', (e) => {
-            const drawingIndex = e.target.value;
-            if (drawingIndex === "") {
-                clearButton.click();
-                return;
-            }
-            const drawings = getDrawingsForCurrentUser();
-            const drawingToLoad = drawings[drawingIndex];
-            if (drawingToLoad) {
-                recordedStrokes = drawingToLoad.strokes;
-                replayDrawing(recordedStrokes, canvas, true); // Replay instantly
-                statusMessage.textContent = `Loaded "${drawingToLoad.name}".`;
-            }
+        // NEW: Placeholder Send Button
+        sendButton.addEventListener('click', () => {
+            alert('Send functionality is not yet implemented. This is where you could add code to email or share the drawing!');
         });
-
-        async function replayDrawing(strokes, targetCanvas, instant = false) {
-            const replayCtx = targetCanvas.getContext('2d');
-            replayCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-            
-            for (const stroke of strokes) {
-                if (!instant && stroke.timestampOffset > 0) {
-                    await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
-                }
-
-                switch (stroke.type) {
-                    case 'start':
-                        replayCtx.lineWidth = stroke.width;
-                        replayCtx.strokeStyle = stroke.color;
-                        replayCtx.beginPath();
-                        replayCtx.moveTo(stroke.x, stroke.y);
-                        break;
-                    case 'draw':
-                        replayCtx.lineTo(stroke.x, stroke.y);
-                        replayCtx.stroke();
-                        break;
-                    case 'end':
-                        replayCtx.closePath();
-                        break;
-                }
-            }
-        }
 
         // --- Download Logic ---
         downloadStaticButton.addEventListener('click', () => {
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
-            
-            // Draw a white background
             tempCtx.fillStyle = '#FFFFFF';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            
-            // Draw the existing canvas content on top
             tempCtx.drawImage(canvas, 0, 0);
 
-            // Download the image
             const link = document.createElement('a');
             link.download = `rainbow-drawing-${Date.now()}.png`;
             link.href = tempCanvas.toDataURL('image/png');
             link.click();
             statusMessage.textContent = 'Image download started!';
+            saveOptions.style.display = 'none';
         });
 
         downloadVideoButton.addEventListener('click', async () => {
@@ -400,34 +429,26 @@
                 statusMessage.textContent = 'Draw something to record a video!';
                 return;
             }
-
             statusMessage.textContent = 'Preparing video... this may take a moment.';
 
-            const capturer = new CCapture({
-                format: 'webm',
-                framerate: 60,
-                verbose: false
-            });
-
+            const capturer = new CCapture({ format: 'webm', framerate: 60 });
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
+            tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
             tempCtx.fillStyle = '#FFFFFF';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
+            
             capturer.start();
 
-            // Custom replay for video capture
             for (const stroke of recordedStrokes) {
                 switch (stroke.type) {
                     case 'start':
                         tempCtx.lineWidth = stroke.width;
-                        tempCtx.strokeStyle = stroke.color;
                         tempCtx.beginPath();
                         tempCtx.moveTo(stroke.x, stroke.y);
                         break;
                     case 'draw':
+                        tempCtx.strokeStyle = stroke.color;
                         tempCtx.lineTo(stroke.x, stroke.y);
                         tempCtx.stroke();
                         break;
@@ -435,18 +456,17 @@
                         tempCtx.closePath();
                         break;
                 }
-                // Capture a frame after each drawing action
                 capturer.capture(tempCanvas);
             }
             
             capturer.stop();
             capturer.save();
             statusMessage.textContent = 'Video download started!';
+            saveOptions.style.display = 'none';
         });
 
         // --- Initial Load ---
         checkLoginState();
-
     </script>
 </body>
 </html>
