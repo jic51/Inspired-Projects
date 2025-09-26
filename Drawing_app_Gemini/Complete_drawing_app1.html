@@ -358,22 +358,33 @@
         
         let userId = null;
         
-        // Authenticate user and listen for changes
-        // This listener fires once on app load and whenever the auth state changes
-        onAuthStateChanged(auth, async (user) => {
-            // Hide the loading message once the auth state is determined
-            loadingMessage.style.display = 'none';
-
+        // Function to handle the initial sign-in
+        async function handleInitialAuth() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                // If auth fails, hide loading and show the manual login form
+                loadingMessage.style.display = 'none';
+                appContainer.style.display = 'none';
+                authContainer.style.display = 'flex';
+                authStatusMessage.textContent = "Could not connect to the server. Please sign in manually.";
+            }
+        }
+        
+        // Listen for authentication state changes and update the UI
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in.
                 userId = user.uid;
                 currentUserIdDisplay.textContent = `Your User ID: ${userId}`;
-                console.log(`User authenticated with ID: ${userId}`);
-        
-                // Show the main app and hide the auth form
+                loadingMessage.style.display = 'none';
                 authContainer.style.display = 'none';
                 appContainer.style.display = 'flex';
-        
+                
                 // Set up real-time listener for incoming messages
                 const messagesRef = collection(db, `artifacts/${appId}/public/data/messages`);
                 const q = query(messagesRef, where("recipientId", "==", userId));
@@ -386,29 +397,9 @@
                     });
                 });
             } else {
-                // No user is signed in. Attempt to sign in with the custom token.
-                if (initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } catch (error) {
-                        console.error("Firebase custom token auth error:", error);
-                        // If token sign-in fails, show the regular auth form
-                        authContainer.style.display = 'flex';
-                        appContainer.style.display = 'none';
-                    }
-                } else {
-                    // Fallback to anonymous sign-in if no token is available
-                    try {
-                        await signInAnonymously(auth);
-                    } catch (error) {
-                        console.error("Firebase anonymous auth error:", error);
-                        // If all sign-in methods fail, show the regular auth form
-                        authContainer.style.display = 'flex';
-                        appContainer.style.display = 'none';
-                    }
-                }
                 userId = null;
                 currentUserIdDisplay.textContent = '';
+                // The UI is already handled by the manual auth fallback.
             }
         });
         
@@ -473,7 +464,7 @@
         }
         window.addEventListener('load', () => {
             resizeCanvas();
-            loadingMessage.style.display = 'block';
+            handleInitialAuth(); // Start the authentication process on page load
         });
         window.addEventListener('resize', resizeCanvas);
         
