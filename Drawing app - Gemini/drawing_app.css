@@ -48,34 +48,27 @@ canvas {
 }
 
 .controls button {
-    padding: 10px 15px;
-    font-size: 16px;
+    padding: 10px;
+    font-size: 20px;
     cursor: pointer;
     border: none;
-    border-radius: 5px;
-    background-color: rgba(0, 123, 255, 0.8);
-    color: white;
-    transition: background-color 0.3s ease;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(224, 224, 224, 0.8);
+    color: #444;
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .controls button:hover {
-    background-color: rgba(0, 86, 179, 0.9);
+    background-color: rgba(189, 189, 189, 0.9);
 }
 
-#undoButton {
-    background-color: rgba(255, 193, 7, 0.8);
-}
-
-#undoButton:hover {
-    background-color: rgba(224, 168, 0, 0.9);
-}
-
-#saveButton {
-    background-color: rgba(40, 167, 69, 0.8);
-}
-
-#saveButton:hover {
-    background-color: rgba(33, 136, 56, 0.9);
+.controls button:active {
+    transform: scale(0.95) translateX(-50%);
 }
 
 #statusMessage {
