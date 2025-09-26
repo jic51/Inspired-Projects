@@ -1,6 +1,5 @@
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
-const clearButton = document.getElementById('clearButton');
 const sendButton = document.getElementById('sendButton');
 const undoButton = document.getElementById('undoButton');
 const saveButton = document.getElementById('saveButton');
@@ -9,6 +8,7 @@ const receivedDrawingContainer = document.getElementById('receivedDrawingContain
 
 // Drawing state
 let isDrawing = false;
+let hasSentDrawing = false;
 const brushWidth = 5;
 let hue = 0;
 let recordedStrokes = [];
@@ -43,6 +43,12 @@ function startDrawing(e) {
 
     if (isReplaying) {
         stopReplay();
+        return;
+    }
+
+    // New workflow: clear canvas on touch after a drawing has been sent
+    if (hasSentDrawing) {
+        clearCanvas();
         return;
     }
 
@@ -134,7 +140,7 @@ async function replayDrawing(drawingData) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
 
-        // NEW: Check `isReplaying` immediately after the await
+        // Check `isReplaying` immediately after the await
         if (!isReplaying) {
             return;
         }
@@ -146,7 +152,7 @@ async function replayDrawing(drawingData) {
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
-                // NEW: Use beginPath and moveTo for each segment for correct coloring
+                // Use beginPath and moveTo for each segment for correct coloring
                 ctx.beginPath();
                 ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
@@ -161,13 +167,14 @@ async function replayDrawing(drawingData) {
     }
 
     if (isReplaying) {
+        // This is a simplified replay loop.
         replayTimeout = setTimeout(() => {
             replayDrawing(drawingData);
         }, 500);
     }
 }
 
-// NEW: Undo function
+// Undo function
 function undoStroke() {
     if (isReplaying || recordedStrokes.length === 0) return;
 
@@ -178,7 +185,7 @@ function undoStroke() {
     statusMessage.textContent = 'Last stroke undone.';
 }
 
-// NEW: Save function
+// Save function
 function saveDrawing() {
     if (recordedStrokes.length === 0) {
         statusMessage.textContent = 'Draw something to save!';
@@ -194,7 +201,7 @@ function saveDrawing() {
     statusMessage.textContent = 'Drawing saved!';
 }
 
-// NEW: Redraw all recorded strokes
+// Redraw all recorded strokes
 function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -221,6 +228,15 @@ function redrawCanvas() {
     });
 }
 
+// Clear canvas function
+function clearCanvas() {
+    stopReplay();
+    recordedStrokes = [];
+    hasSentDrawing = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    statusMessage.textContent = 'Canvas cleared! Start drawing a new masterpiece!';
+}
+
 // --- Event Listeners and Button Handlers ---
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
@@ -237,20 +253,12 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 undoButton.addEventListener('click', undoStroke);
 saveButton.addEventListener('click', saveDrawing);
 
-clearButton.addEventListener('click', () => {
-    stopReplay();
-    recordedStrokes = [];
-    redrawCanvas();
-    statusMessage.textContent = 'Canvas cleared! Start drawing a new masterpiece!';
-});
-
 sendButton.addEventListener('click', () => {
     if (recordedStrokes.length === 0) {
         statusMessage.textContent = 'Draw something before sending!';
         return;
     }
     statusMessage.textContent = 'Sending drawing...';
-
     sendButton.disabled = true;
 
     const drawingData = {
@@ -264,7 +272,8 @@ sendButton.addEventListener('click', () => {
     console.log("Simulating send:", drawingData);
 
     setTimeout(() => {
-        statusMessage.textContent = 'Drawing sent! Replaying your art...';
+        statusMessage.textContent = 'Drawing sent! Replaying your art... Tap the canvas to clear it.';
+        hasSentDrawing = true;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         replayDrawing(drawingData);
     }, 1000);
@@ -328,4 +337,5 @@ function displayReceivedDrawing(drawingData) {
     }, DEMO_DISAPPEAR_MS);
 }
 
+// Initial status message
 statusMessage.textContent = 'Start drawing your rainbow masterpiece!';

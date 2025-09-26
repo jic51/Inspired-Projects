@@ -10,12 +10,13 @@
     <div class="app-container">
         <h1>Rainbow Drawing</h1>
         <p id="statusMessage">Start drawing your rainbow masterpiece!</p>
-        <canvas id="drawingCanvas" width="800" height="400"></canvas>
-        <div class="controls">
-            <button id="undoButton">Undo</button>
-            <button id="saveButton">Save Drawing</button>
-            <button id="clearButton">Clear Canvas</button>
-            <button id="sendButton">Send Drawing</button>
+        <div class="canvas-container">
+            <div class="controls">
+                <button id="undoButton">Undo</button>
+                <button id="saveButton">Save Drawing</button>
+                <button id="sendButton">Send Drawing</button>
+            </div>
+            <canvas id="drawingCanvas" width="800" height="400"></canvas>
         </div>
         <div id="receivedDrawingContainer" class="received-drawing-section">
             <!-- Received drawing will be displayed here -->
