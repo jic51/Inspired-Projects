@@ -8,11 +8,13 @@ const saveStaticButton = document.getElementById('saveStatic');
 const saveReplayButton = document.getElementById('saveReplay');
 const statusMessage = document.getElementById('statusMessage');
 const receivedDrawingContainer = document.getElementById('receivedDrawingContainer');
+const recipientIdInput = document.getElementById('recipientId');
+const currentUserIdDisplay = document.getElementById('currentUserId');
 
 // Drawing state
 let isDrawing = false;
 let hasSentDrawing = false;
-const brushWidth = 3;
+const brushWidth = 4;
 let hue = 0;
 let recordedStrokes = [];
 let lastTimestamp = 0;
@@ -30,6 +32,63 @@ const userData = {
     name: 'Creative Canvas User',
     profilePicUrl: 'https://placehold.co/40x40/5a1f6a/FFFFFF?text=P'
 };
+
+// --- Firebase Setup ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Global variables provided by the Canvas environment
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Enable debug logging for Firestore
+setLogLevel('Debug');
+
+let userId = null;
+
+// Authenticate user and listen for new messages
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        userId = user.uid;
+        currentUserIdDisplay.textContent = `Your User ID: ${userId}`;
+        console.log(`User authenticated with ID: ${userId}`);
+
+        // Set up real-time listener for incoming messages
+        const messagesRef = collection(db, `artifacts/${appId}/public/data/messages`);
+        const q = query(messagesRef, where("recipientId", "==", userId));
+        onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    console.log("New message received:", change.doc.data());
+                    displayReceivedDrawing(change.doc.data());
+                    // Delete the document after it's displayed to prevent re-display
+                    // This is a simple cleanup, for a full app, more robust logic would be needed
+                    // setDoc(doc(db, `artifacts/${appId}/public/data/messages`, change.doc.id), { status: 'read' }, { merge: true });
+                }
+            });
+        });
+    } else {
+        // Sign in anonymously if no initial auth token is provided
+        try {
+            if (initialAuthToken) {
+                await signInWithCustomToken(auth, initialAuthToken);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (error) {
+            console.error("Firebase auth error:", error);
+        }
+    }
+});
+
 
 // --- Canvas Setup ---
 function resizeCanvas() {
@@ -421,31 +480,39 @@ saveButton.addEventListener('click', saveDrawing);
 saveStaticButton.addEventListener('click', saveStaticDrawing);
 saveReplayButton.addEventListener('click', saveReplayDrawing);
 
-sendButton.addEventListener('click', () => {
+sendButton.addEventListener('click', async () => {
     if (recordedStrokes.length === 0) {
         statusMessage.textContent = 'Draw something before sending!';
         return;
     }
+    const recipientId = recipientIdInput.value.trim();
+    if (!recipientId) {
+        statusMessage.textContent = 'Please enter a recipient User ID!';
+        return;
+    }
+
     statusMessage.textContent = 'Sending drawing...';
     sendButton.disabled = true;
-
+    
     const drawingData = {
-        width: canvas.width,
-        height: canvas.height,
-        strokes: recordedStrokes,
-        senderId: 'userA',
-        recipientId: 'userB'
+        senderId: userId,
+        recipientId: recipientId,
+        strokes: JSON.stringify(recordedStrokes), // Store as a JSON string
+        timestamp: Timestamp.now()
     };
 
-    console.log("Simulating send:", drawingData);
-
-    setTimeout(() => {
-        statusMessage.textContent = 'Drawing sent! Replaying your art... Tap the canvas to clear it.';
-        hasSentDrawing = true;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        replayDrawing(drawingData);
-    }, 1000);
+    try {
+        const messagesRef = collection(db, `artifacts/${appId}/public/data/messages`);
+        await addDoc(messagesRef, drawingData);
+        statusMessage.textContent = 'Drawing sent successfully!';
+        sendButton.disabled = false;
+    } catch (e) {
+        console.error("Error sending drawing:", e);
+        statusMessage.textContent = 'Failed to send drawing. Please try again.';
+        sendButton.disabled = false;
+    }
 });
+
 
 // --- Display and Manage Received Drawings (No changes here) ---
 function displayReceivedDrawing(drawingData) {
@@ -455,22 +522,22 @@ function displayReceivedDrawing(drawingData) {
 
     const receivedCanvas = document.createElement('canvas');
     receivedCanvas.id = 'receivedDrawingCanvas';
-    receivedCanvas.width = drawingData.width;
-    receivedCanvas.height = drawingData.height;
+    receivedCanvas.width = canvas.width;
+    receivedCanvas.height = canvas.height;
     receivedDrawingContainer.appendChild(receivedCanvas);
 
     const receivedMessage = document.createElement('p');
-    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
+    receivedMessage.textContent = `New drawing received from ${drawingData.senderId}!`;
     receivedDrawingContainer.appendChild(receivedMessage);
 
     let lastReplayX = 0;
     let lastReplayY = 0;
 
-    const DEMO_DISAPPEAR_MS = 10 * 1000;
+    const strokes = JSON.parse(drawingData.strokes);
 
     async function replayForRecipient() {
-      for (let i = 0; i < drawingData.strokes.length; i++) {
-        const stroke = drawingData.strokes[i];
+      for (let i = 0; i < strokes.length; i++) {
+        const stroke = strokes[i];
 
         if (stroke.timestampOffset > 0) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
@@ -497,11 +564,6 @@ function displayReceivedDrawing(drawingData) {
     }
 
     replayForRecipient();
-
-    setTimeout(() => {
-        receivedDrawingContainer.innerHTML = '<p>The drawing has disappeared!</p>';
-        console.log('Drawing disappeared after 2 hours (or demo time).');
-    }, DEMO_DISAPPEAR_MS);
 }
 
 // Initial status message
