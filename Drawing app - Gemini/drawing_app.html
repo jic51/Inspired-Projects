@@ -4,27 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rainbow Drawing App</title>
-    <link rel="stylesheet" href="drawing_app.css"> 
+    <link rel="stylesheet" href="drawing_app.css">
 </head>
 <body>
     <div class="app-container">
-        <h1>Rainbow Sketch</h1>
-        <canvas id="drawingCanvas" width="800" height="600"></canvas>
+        <h1>Rainbow Drawing</h1>
+        <p id="statusMessage">Start drawing your rainbow masterpiece!</p>
+        <canvas id="drawingCanvas" width="800" height="400"></canvas>
         <div class="controls">
             <button id="undoButton">Undo</button>
+            <button id="saveButton">Save Drawing</button>
             <button id="clearButton">Clear Canvas</button>
             <button id="sendButton">Send Drawing</button>
         </div>
-        <div id="statusMessage"></div>
-        
-        <div class="received-drawing-section">
-            <h2>Received Drawings</h2>
-            <div id="receivedDrawingContainer">
-                <p>No new drawings yet.</p>
-            </div>
+        <div id="receivedDrawingContainer" class="received-drawing-section">
+            <!-- Received drawing will be displayed here -->
         </div>
     </div>
-
     <script src="drawing_app.js"></script>
 </body>
 </html>
