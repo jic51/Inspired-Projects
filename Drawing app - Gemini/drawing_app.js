@@ -2,6 +2,8 @@ const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
 const clearButton = document.getElementById('clearButton');
 const sendButton = document.getElementById('sendButton');
+const undoButton = document.getElementById('undoButton');
+const saveButton = document.getElementById('saveButton');
 const statusMessage = document.getElementById('statusMessage');
 const receivedDrawingContainer = document.getElementById('receivedDrawingContainer');
 
@@ -11,6 +13,7 @@ const brushWidth = 5;
 let hue = 0;
 let recordedStrokes = [];
 let lastTimestamp = 0;
+let currentStrokeId = 0;
 
 let lastX = 0;
 let lastY = 0;
@@ -42,33 +45,35 @@ function startDrawing(e) {
         stopReplay();
         return;
     }
-    
+
     isDrawing = true;
+    currentStrokeId++;
     const { offsetX, offsetY } = getEventCoords(e);
-    
+
     lastX = offsetX;
     lastY = offsetY;
-    
+
     lastTimestamp = performance.now();
     recordedStrokes.push({
         type: 'start',
         x: offsetX,
         y: offsetY,
-        timestampOffset: 0
+        timestampOffset: 0,
+        strokeId: currentStrokeId
     });
 }
 
 function draw(e) {
     if (!isDrawing) return;
     const { offsetX, offsetY } = getEventCoords(e);
-    
+
     ctx.strokeStyle = getRainbowColor();
-    
+
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
-    
+
     lastX = offsetX;
     lastY = offsetY;
 
@@ -78,14 +83,15 @@ function draw(e) {
         x: offsetX,
         y: offsetY,
         color: ctx.strokeStyle,
-        timestampOffset: currentTimestamp - lastTimestamp
+        timestampOffset: currentTimestamp - lastTimestamp,
+        strokeId: currentStrokeId
     });
     lastTimestamp = currentTimestamp;
 }
 
 function stopDrawing() {
     isDrawing = false;
-    recordedStrokes.push({ type: 'end', timestampOffset: 0 });
+    recordedStrokes.push({ type: 'end', timestampOffset: 0, strokeId: currentStrokeId });
 }
 
 function getEventCoords(e) {
@@ -108,23 +114,22 @@ function getEventCoords(e) {
 function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    recordedStrokes = [];
+    redrawCanvas();
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
     sendButton.disabled = false;
 }
 
 async function replayDrawing(drawingData) {
     isReplaying = true;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     let lastReplayX = 0;
     let lastReplayY = 0;
 
     for (let i = 0; i < drawingData.strokes.length && isReplaying; i++) {
         const stroke = drawingData.strokes[i];
-        
+
         if (stroke.timestampOffset > 0) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
@@ -146,7 +151,7 @@ async function replayDrawing(drawingData) {
                 ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
-                
+
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
                 break;
@@ -154,7 +159,7 @@ async function replayDrawing(drawingData) {
                 break;
         }
     }
-    
+
     if (isReplaying) {
         replayTimeout = setTimeout(() => {
             replayDrawing(drawingData);
@@ -162,11 +167,65 @@ async function replayDrawing(drawingData) {
     }
 }
 
+// NEW: Undo function
+function undoStroke() {
+    if (isReplaying || recordedStrokes.length === 0) return;
+
+    const lastStrokeId = recordedStrokes[recordedStrokes.length - 1].strokeId;
+    recordedStrokes = recordedStrokes.filter(stroke => stroke.strokeId !== lastStrokeId);
+
+    redrawCanvas();
+    statusMessage.textContent = 'Last stroke undone.';
+}
+
+// NEW: Save function
+function saveDrawing() {
+    if (recordedStrokes.length === 0) {
+        statusMessage.textContent = 'Draw something to save!';
+        return;
+    }
+    const dataURL = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'rainbow_drawing.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    statusMessage.textContent = 'Drawing saved!';
+}
+
+// NEW: Redraw all recorded strokes
+function redrawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let lastRedrawX = 0;
+    let lastRedrawY = 0;
+
+    recordedStrokes.forEach(stroke => {
+        switch (stroke.type) {
+            case 'start':
+                lastRedrawX = stroke.x;
+                lastRedrawY = stroke.y;
+                break;
+            case 'draw':
+                ctx.strokeStyle = stroke.color;
+                ctx.beginPath();
+                ctx.moveTo(lastRedrawX, lastRedrawY);
+                ctx.lineTo(stroke.x, stroke.y);
+                ctx.stroke();
+
+                lastRedrawX = stroke.x;
+                lastRedrawY = stroke.y;
+                break;
+        }
+    });
+}
+
 // --- Event Listeners and Button Handlers ---
 canvas.addEventListener('mousedown', startDrawing);
 canvas.addEventListener('mousemove', draw);
 canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing); 
+canvas.addEventListener('mouseout', stopDrawing);
 
 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); }, { passive: false });
 canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
@@ -175,8 +234,13 @@ canvas.addEventListener('touchcancel', stopDrawing);
 
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+undoButton.addEventListener('click', undoStroke);
+saveButton.addEventListener('click', saveDrawing);
+
 clearButton.addEventListener('click', () => {
     stopReplay();
+    recordedStrokes = [];
+    redrawCanvas();
     statusMessage.textContent = 'Canvas cleared! Start drawing a new masterpiece!';
 });
 
@@ -186,9 +250,9 @@ sendButton.addEventListener('click', () => {
         return;
     }
     statusMessage.textContent = 'Sending drawing...';
-    
+
     sendButton.disabled = true;
-    
+
     const drawingData = {
         width: canvas.width,
         height: canvas.height,
@@ -198,7 +262,7 @@ sendButton.addEventListener('click', () => {
     };
 
     console.log("Simulating send:", drawingData);
-    
+
     setTimeout(() => {
         statusMessage.textContent = 'Drawing sent! Replaying your art...';
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -209,8 +273,8 @@ sendButton.addEventListener('click', () => {
 // --- Display and Manage Received Drawings (No changes here) ---
 function displayReceivedDrawing(drawingData) {
     stopReplay();
-    
-    receivedDrawingContainer.innerHTML = ''; 
+
+    receivedDrawingContainer.innerHTML = '';
 
     const receivedCanvas = document.createElement('canvas');
     receivedCanvas.id = 'receivedDrawingCanvas';
@@ -221,16 +285,16 @@ function displayReceivedDrawing(drawingData) {
     const receivedMessage = document.createElement('p');
     receivedMessage.textContent = `New drawing received from ${drawingData.senderId}! Disappearing in 2 hours.`;
     receivedDrawingContainer.appendChild(receivedMessage);
-    
+
     let lastReplayX = 0;
     let lastReplayY = 0;
-    
-    const DEMO_DISAPPEAR_MS = 10 * 1000; 
+
+    const DEMO_DISAPPEAR_MS = 10 * 1000;
 
     async function replayForRecipient() {
       for (let i = 0; i < drawingData.strokes.length; i++) {
         const stroke = drawingData.strokes[i];
-        
+
         if (stroke.timestampOffset > 0) {
             await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
@@ -246,7 +310,7 @@ function displayReceivedDrawing(drawingData) {
                 receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
                 receivedCanvas.getContext('2d').lineTo(stroke.x, stroke.y);
                 receivedCanvas.getContext('2d').stroke();
-                
+
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
                 break;
@@ -255,7 +319,7 @@ function displayReceivedDrawing(drawingData) {
         }
       }
     }
-    
+
     replayForRecipient();
 
     setTimeout(() => {

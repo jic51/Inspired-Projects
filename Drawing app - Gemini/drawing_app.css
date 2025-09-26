@@ -42,6 +42,22 @@ canvas {
     background-color: #0056b3;
 }
 
+#undoButton {
+    background-color: #ffc107;
+}
+
+#undoButton:hover {
+    background-color: #e0a800;
+}
+
+#saveButton {
+    background-color: #28a745;
+}
+
+#saveButton:hover {
+    background-color: #218838;
+}
+
 #statusMessage {
     margin-top: 15px;
     font-weight: bold;
