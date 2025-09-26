@@ -143,7 +143,6 @@ function getEventCoords(e) {
 function stopReplay() {
     isReplaying = false;
     clearTimeout(replayTimeout);
-    redrawCanvas();
     statusMessage.textContent = 'Replay stopped. Draw a new masterpiece!';
     sendButton.disabled = false;
 }
@@ -235,7 +234,7 @@ async function saveStaticDrawing() {
 async function saveReplayDrawing() {
     statusMessage.textContent = 'Generating video... this may take a moment.';
     hideSaveOptions();
-
+    
     const stream = canvas.captureStream(60); // 60 FPS
     const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
     const videoChunks = [];
@@ -247,51 +246,46 @@ async function saveReplayDrawing() {
         downloadImage(videoUrl, 'rainbow_drawing_replay.webm');
         statusMessage.textContent = 'Replay video saved!';
         URL.revokeObjectURL(videoUrl);
-        // After download, redraw the canvas to its original state
-        redrawCanvas();
     };
 
     recorder.start();
+    await recordDrawing(recorder);
+}
 
-    let lastX_replay = 0;
-    let lastY_replay = 0;
+async function recordDrawing(recorder) {
+    // Clear the canvas and set up initial state for recording
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let lastX_record = 0;
+    let lastY_record = 0;
+    
+    // Draw signature
+    drawSignatureOnCanvas(ctx, '#e0e0e0', '#1a1a1a');
 
-    const signatureColor = '#e0e0e0';
-    const signatureText = `Created by ${userData.name}`;
-
-    async function replayAndRecord() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < recordedStrokes.length; i++) {
+        const stroke = recordedStrokes[i];
         
-        for (let i = 0; i < recordedStrokes.length; i++) {
-            const stroke = recordedStrokes[i];
-            
-            if (stroke.timestampOffset > 0) {
-                await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
-            }
-
-            switch (stroke.type) {
-                case 'start':
-                    lastX_replay = stroke.x;
-                    lastY_replay = stroke.y;
-                    break;
-                case 'draw':
-                    ctx.strokeStyle = stroke.color;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX_replay, lastY_replay);
-                    ctx.lineTo(stroke.x, stroke.y);
-                    ctx.stroke();
-                    lastX_replay = stroke.x;
-                    lastY_replay = stroke.y;
-                    break;
-            }
-            // Draw signature on every frame
-            drawSignatureOnCanvas(ctx, signatureColor, signatureText);
+        if (stroke.timestampOffset > 0) {
+            await new Promise(resolve => setTimeout(resolve, stroke.timestampOffset));
         }
-        recorder.stop();
-        stopReplay();
-    }
 
-    replayAndRecord();
+        switch (stroke.type) {
+            case 'start':
+                lastX_record = stroke.x;
+                lastY_record = stroke.y;
+                break;
+            case 'draw':
+                ctx.strokeStyle = stroke.color;
+                ctx.beginPath();
+                ctx.moveTo(lastX_record, lastY_record);
+                ctx.lineTo(stroke.x, stroke.y);
+                ctx.stroke();
+                lastX_record = stroke.x;
+                lastY_record = stroke.y;
+                break;
+        }
+    }
+    
+    recorder.stop();
 }
 
 function hideSaveOptions() {
