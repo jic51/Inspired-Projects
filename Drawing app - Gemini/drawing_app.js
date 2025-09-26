@@ -237,7 +237,13 @@ async function saveReplayDrawing() {
     statusMessage.textContent = 'Generating video... this may take a moment.';
     hideSaveOptions();
     
-    const stream = canvas.captureStream(60); // 60 FPS
+    // Create a temporary, off-screen canvas for a clean recording
+    const recordingCanvas = document.createElement('canvas');
+    recordingCanvas.width = canvas.width;
+    recordingCanvas.height = canvas.height;
+    const recordingCtx = recordingCanvas.getContext('2d');
+    
+    const stream = recordingCanvas.captureStream(60); // 60 FPS
     const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
     const videoChunks = [];
 
@@ -251,18 +257,18 @@ async function saveReplayDrawing() {
     };
 
     recorder.start();
-    // Start the recording process without awaiting it, so the UI remains responsive
-    recordDrawing(recorder);
+    await recordDrawing(recordingCtx);
+    recorder.stop();
 }
 
-async function recordDrawing(recorder) {
-    // Clear the canvas and set up initial state for recording
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+async function recordDrawing(context) {
+    // Clear the recording canvas and set up initial state for a clean video
+    context.clearRect(0, 0, canvas.width, canvas.height);
     let lastX_record = 0;
     let lastY_record = 0;
     
     // Draw signature
-    drawSignatureOnCanvas(ctx, '#e0e0e0', '#1a1a1a');
+    drawSignatureOnCanvas(context, '#e0e0e0', '#1a1a1a');
 
     for (let i = 0; i < recordedStrokes.length; i++) {
         const stroke = recordedStrokes[i];
@@ -277,18 +283,16 @@ async function recordDrawing(recorder) {
                 lastY_record = stroke.y;
                 break;
             case 'draw':
-                ctx.strokeStyle = stroke.color;
-                ctx.beginPath();
-                ctx.moveTo(lastX_record, lastY_record);
-                ctx.lineTo(stroke.x, stroke.y);
-                ctx.stroke();
+                context.strokeStyle = stroke.color;
+                context.beginPath();
+                context.moveTo(lastX_record, lastY_record);
+                context.lineTo(stroke.x, stroke.y);
+                context.stroke();
                 lastX_record = stroke.x;
                 lastY_record = stroke.y;
                 break;
         }
     }
-    
-    recorder.stop();
 }
 
 function hideSaveOptions() {
