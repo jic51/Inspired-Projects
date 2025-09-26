@@ -65,12 +65,14 @@ function startDrawing(e) {
     }
 
     if (isReplaying) {
+        // Stop replay and clear canvas with a single click
         stopReplay();
+        clearCanvas();
         return;
     }
 
     if (hasSentDrawing) {
-        clearCanvas();
+        // This case is now handled by the isReplaying block
         return;
     }
 
@@ -249,7 +251,8 @@ async function saveReplayDrawing() {
     };
 
     recorder.start();
-    await recordDrawing(recorder);
+    // Start the recording process without awaiting it, so the UI remains responsive
+    recordDrawing(recorder);
 }
 
 async function recordDrawing(recorder) {
