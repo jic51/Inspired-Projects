@@ -72,10 +72,6 @@ function startDrawing(e) {
     lastX = offsetX;
     lastY = offsetY;
 
-    // Start a new path here
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-
     lastTimestamp = performance.now();
     recordedStrokes.push({
         type: 'start',
@@ -92,6 +88,9 @@ function draw(e) {
 
     ctx.strokeStyle = getRainbowColor();
 
+    // Draw a new, single segment path
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
     ctx.lineTo(offsetX, offsetY);
     ctx.stroke();
 
@@ -113,8 +112,6 @@ function draw(e) {
 function stopDrawing() {
     if (!isDrawing) return;
     isDrawing = false;
-    // Close the path here
-    ctx.closePath();
     recordedStrokes.push({ type: 'end', timestampOffset: 0, strokeId: currentStrokeId });
 }
 
@@ -166,21 +163,18 @@ async function replayDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                // Start new path for replay
-                ctx.beginPath();
-                ctx.moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                // Draw a new, single segment path for replay
+                ctx.beginPath();
+                ctx.moveTo(lastReplayX, lastReplayY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
-
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
                 break;
             case 'end':
-                // Close the path for replay
-                ctx.closePath();
                 break;
         }
     }
@@ -235,18 +229,17 @@ function redrawCanvas() {
             case 'start':
                 lastRedrawX = stroke.x;
                 lastRedrawY = stroke.y;
-                ctx.beginPath();
-                ctx.moveTo(lastRedrawX, lastRedrawY);
                 break;
             case 'draw':
                 ctx.strokeStyle = stroke.color;
+                ctx.beginPath();
+                ctx.moveTo(lastRedrawX, lastRedrawY);
                 ctx.lineTo(stroke.x, stroke.y);
                 ctx.stroke();
                 lastRedrawX = stroke.x;
                 lastRedrawY = stroke.y;
                 break;
             case 'end':
-                ctx.closePath();
                 break;
         }
     });
@@ -336,18 +329,17 @@ function displayReceivedDrawing(drawingData) {
             case 'start':
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
-                receivedCanvas.getContext('2d').beginPath();
-                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
                 break;
             case 'draw':
                 receivedCanvas.getContext('2d').strokeStyle = stroke.color;
+                receivedCanvas.getContext('2d').beginPath();
+                receivedCanvas.getContext('2d').moveTo(lastReplayX, lastReplayY);
                 receivedCanvas.getContext('2d').lineTo(stroke.x, stroke.y);
                 receivedCanvas.getContext('2d').stroke();
                 lastReplayX = stroke.x;
                 lastReplayY = stroke.y;
                 break;
             case 'end':
-                receivedCanvas.getContext('2d').closePath();
                 break;
         }
       }
