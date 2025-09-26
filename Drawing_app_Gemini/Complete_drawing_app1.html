@@ -31,7 +31,6 @@
         }
         
         #loadingMessage {
-            display: none;
             text-align: center;
             font-size: 1.5rem;
             color: #bbb;
@@ -387,14 +386,26 @@
                     });
                 });
             } else {
-                // No user is signed in. Attempt to sign in anonymously.
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Firebase auth error:", error);
-                    // If anonymous sign-in fails, show the regular auth form
-                    authContainer.style.display = 'flex';
-                    appContainer.style.display = 'none';
+                // No user is signed in. Attempt to sign in with the custom token.
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Firebase custom token auth error:", error);
+                        // If token sign-in fails, show the regular auth form
+                        authContainer.style.display = 'flex';
+                        appContainer.style.display = 'none';
+                    }
+                } else {
+                    // Fallback to anonymous sign-in if no token is available
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Firebase anonymous auth error:", error);
+                        // If all sign-in methods fail, show the regular auth form
+                        authContainer.style.display = 'flex';
+                        appContainer.style.display = 'none';
+                    }
                 }
                 userId = null;
                 currentUserIdDisplay.textContent = '';
