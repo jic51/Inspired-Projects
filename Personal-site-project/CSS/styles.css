@@ -209,12 +209,6 @@ nav {
   flex-wrap: wrap;
 }
 
-nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
 .nav-links {
   list-style: none;
   display: flex;        /* ✅ side by side by default */
@@ -250,7 +244,9 @@ nav {
   .menu-toggle {
     display: block; /* show hamburger */
   }
-
+  nav {
+    width: 100%;
+  }
   /* hide menu by default */
   .nav-links {
     display: none;         /* hidden on mobile until toggle */
@@ -264,35 +260,6 @@ nav {
   /* when active, show stacked */
   .nav-links.active {
     display: flex;
-  }
-
-  #language-select {
-    margin-top: 1rem;
-    width: 100%;
-  }
-}
-
-/* NAVBAR MOBILE */
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: block; /* show hamburger */
-  }
-
-  nav {
-    width: 100%;
-  }
-
-  .nav-links {
-    display: none; /* hidden by default */
-    flex-direction: column;
-    background: #002244;
-    width: 100%;
-    padding: 1rem;
-    border-radius: 6px;
-  }
-
-  .nav-links.active {
-    display: flex; /* show when toggled */
   }
 
   #language-select {
@@ -326,11 +293,6 @@ nav {
     flex-direction: column;
     align-items: flex-start;
   }
-
-  #language-select {
-    margin-top: 1rem;
-  }
-
 
 nav a {
   color: #fff;
@@ -390,7 +352,7 @@ section.reveal {
 }
 
 section h2 {
-  color: #ffffff;
+  color: #000000;
   margin-bottom: 1rem;
   font-family: 'Playfair Display', serif;
   font-size: 2rem;
@@ -586,4 +548,55 @@ to {
     margin: 10px 0;
   }
 
+}
+
+/* Ajustes para móviles */
+@media (max-width: 768px) {
+  .branding h1 {
+    font-size: 1.5rem; /* Título más pequeño en móvil */
+  }
+
+  .nav-links {
+    display: none; /* Oculto por defecto */
+    width: 100%;
+    background: #002244;
+    position: absolute;
+    top: 70px;
+    left: 0;
+    flex-direction: column;
+    padding: 20px;
+    z-index: 10;
+  }
+
+  /* Clase que activa el JS para mostrar el menú */
+  .nav-links.active {
+    display: flex;
+  }
+
+  .menu-toggle {
+    display: block; /* Muestra el botón ☰ */
+  }
+
+  .container {
+    padding: 0 10px;
+  }
+}
+
+/* Estilo del Formulario de Citas */
+#appointment-form {
+  background: #f4f4f4;
+  padding: 2rem;
+  border-radius: 10px;
+  border-left: 5px solid #002244;
+}
+
+.btn-submit {
+  background: #f1c40f;
+  color: #002244;
+  padding: 1rem;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 1rem;
 }
