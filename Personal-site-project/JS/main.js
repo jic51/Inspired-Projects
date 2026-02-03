@@ -50,8 +50,3 @@ document.addEventListener("DOMContentLoaded", () => {
     textElement.textContent = phrases[currentLanguage][index];
   });
 });
-
-
-
-
-
