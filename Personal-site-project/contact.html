@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cristina Vera - Servicios Legales</title>
+  <title>Cristina Vera - Servicios Legales - Milagro, Ecuador</title>
+  <meta name="description" content="Abogada Cristina Vera en Milagro, Ecuador. Especialista en derecho familiar, violencia intrafamiliar, actos notariales y tránsito. Consultas confiables y personalizadas.">
+  <meta name="keywords" content="abogada Milagro, abogada Ecuador, derecho familiar Milagro, violencia intrafamiliar Ecuador, actos notariales Milagro, abogada tránsito">
   <link rel="stylesheet" href="CSS/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -30,13 +32,13 @@
           <li><a href="About_me.html" data-i18n="nav_about">Sobre mí</a></li>
           <li><a href="services.html" data-i18n="nav_services">Servicios</a></li>
           <li><a href="contact.html" data-i18n="nav_contact">Contacto</a></li>
-          <li><a href="faq.html" data-i18n="nav_faq">FAQ</a></li>
+          <li><a href="faq.html" data-i18n="nav_faq">Preguntas Frecuentes</a></li>
         </ul>
+      </nav>
         <select id="language-select">
           <option value="es">Español</option>
           <option value="en">English</option>
         </select>
-      </nav>
     </div>
   </header>
 
@@ -51,56 +53,62 @@
   <section id="contact" class="contact">
     <div class="container">
       <h2 data-i18n="contact_title">Contáctanos</h2>
-      <img src="Siteplan/contact_form.jpg" alt="Cristina Vera servicios" class="about-img">
-      <form action="submit_form.php" method="POST" enctype="multipart/form-data">
+      <img src="Siteplan/contact_form.jpg" alt="Formulario de contacto legal" class="about-img" loading="lazy">
+
+      <form action="https://formspree.io/f/TU-ID-AQUÍ" method="POST">
         <label for="name" data-i18n="label_name">Nombre completo:</label>
         <input type="text" id="name" name="name" required>
 
-        <label for="cedula" data-i18n="label_cedula">Numero de cedula:</label>
+        <label for="cedula" data-i18n="label_cedula">Número de cédula/ID:</label>
         <input type="text" id="cedula" name="cedula" required>
 
         <label for="email" data-i18n="label_email">Correo electrónico:</label>
         <input type="email" id="email" name="email" required>
 
+        <label for="phone">Número de teléfono:</label>
+        <input type="tel" id="phone" name="phone" placeholder="099-999-9999" required>
+
         <label for="motivo" data-i18n="label_motivo">Motivo de consulta:</label>
         <select id="motivo" name="motivo" onchange="showOtherField()">
           <option value="Familia" data-i18n="opt_familia">Asunto de Familia</option>
           <option value="Mujer" data-i18n="opt_mujer">Asuntos de Mujer</option>
-          <option value="Niñez y adolecensia" data-i18n="opt_niñez">Asuntos de niñez y a dolecensia</option>
-          <option value="Actos notariales (Escrituras, Contratos, Poderes, etc)" data-i18n="opt_notariales">Escrituras, Contratos, Poderes, etc</option>
-          <option value="Violencia intrafamilar" data-i18n="opt_intrafamiliar">Violencia en la familia</option>
-          <option value="Transito" data-i18n="opt_transito">Transito</option>
-          <option value="otro" data-i18n="opt_otro">Otro</option>
+          <option value="Niñez y Adolescencia" data-i18n="opt_niñez">Asuntos de Niñez y Adolescencia</option>
+          <option value="Actos Notariales" data-i18n="opt_notariales">Escrituras, Contratos, Poderes, etc.</option>
+          <option value="Violencia Intrafamiliar" data-i18n="opt_intrafamiliar">Violencia en la Familia</option>
+          <option value="Tránsito" data-i18n="opt_transito">Tránsito</option>
+          <option value="Otro" data-i18n="opt_otro">Otro</option>
         </select>
 
-        <div id="other-reason-container" style="display: none; margin-top: 10px;">
-          <label for="other-reason" data-i18n="opt_otro1">Por favor, especifique:</label>
-          <textarea id="other-reason" name="other-reason" rows="3" cols="40"></textarea>
+        <div id="other-reason-container" style="display: none;">
+          <label for="other-reason">Especifique:</label>
+          <textarea id="other-reason" name="other-reason" rows="3"></textarea>
         </div>
 
-        <div class="g-recaptcha" data-sitekey="YOUR_SITE_KEY"></div>
+        <!-- reCAPTCHA (regístrate en https://www.google.com/recaptcha y pon tu sitekey) -->
+        <div class="g-recaptcha" data-sitekey="TU-SITEKEY-AQUÍ"></div>
 
-        <button type="submit" data-i18n="btn_submit">Enviar Consulta</button>
+        <button type="submit" class="btn-submit" data-i18n="btn_submit">Enviar Consulta</button>
       </form>
-    <div>
-      <p></p>
-      <p>Email: cristinaveraguevara@outlook.com</p>
-      <p data-i18n="phone">Teléfono: +593992347656</p>
-      <p data-i18n="contact_location">Ubicación: Ecuador</p>
-    </div>
-      <a href="https://calendly.com/cristinavera/consulta" class="btn" target="_blank" data-i18n="calendly_btn">Agendar Consulta vía Calendly</a>
+
+      <div class="contact-info">
+        <p>Email: cristinaveraguevara@outlook.com</p>
+        <p data-i18n="phone">Teléfono: +593992347656</p>
+        <p data-i18n="location">Ubicación: Milagro, Ecuador</p>
+      </div>
+
+      <a href="https://calendly.com/cristinavera/consulta" class="btn" target="_blank" data-i18n="calendly_btn">Agendar vía Calendly</a>
     </div>
   </section>
   
-<footer>
+  <footer>
     <div class="container">
-      <p> <a href="Siteplan/site-plan.html" >Site plan</a></p>
-      <p>&copy; 2025 <a href=about_me.html >Cristina Vera</a> - Abogada. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
-      <p>Created by &copy; <a href="youtube.com" target="_blank">Jose Castro</a></p>
+      <p><a href="Siteplan/site-plan.html">Site plan</a></p>
+      <p>© 2026 <a href="About_me.html">Cristina Vera</a> - Abogada. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
+      <p>Created by © <a href="https://Jose_Castro.com" target="_blank">Jose Castro</a></p>
+      <a href="https://wa.me/593992347656?text=Hola%20Dra.%20Cristina%2C%20necesito%20asesor%C3%ADa%20legal" target="_blank" class="whatsapp-btn">Chatea por WhatsApp</a>
     </div>
   </footer>
 
-  <script src="script.js"></script>
   <script>
     const translations = {
       es: {}, // el español es el valor por defecto, así que no traducimos aquí

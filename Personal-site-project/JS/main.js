@@ -1,3 +1,4 @@
+// === Rotating Text en Hero ===
 const phrases = {
   es: [
     "Tu Asesor Legal de Confianza",
@@ -8,7 +9,7 @@ const phrases = {
     "Comprometidos con la justicia y la verdad",
     "Tu tranquilidad legal es nuestra prioridad",
     "Experiencia y confianza a tu servicio",
-    "Asesoría personalizada para cada situación legal",
+    "Asesoría personalizada para cada situación legal"
   ],
   en: [
     "Your Trusted Legal Advisor",
@@ -23,30 +24,105 @@ const phrases = {
   ]
 };
 
-let currentLanguage = "es"; // default language
-let index = 0;
+let currentLanguage = "es";
+let phraseIndex = 0;
 
-document.addEventListener("DOMContentLoaded", () => {
+function updateRotatingText() {
   const textElement = document.getElementById("rotating-text");
+  if (!textElement) return;
 
-  function updatePhrase() {
-    textElement.style.opacity = 0;
+  textElement.style.opacity = 0;
 
-    setTimeout(() => {
-      index = (index + 1) % phrases[currentLanguage].length;
-      textElement.textContent = phrases[currentLanguage][index];
-      textElement.style.opacity = 1;
-    }, 500);
-  }
+  setTimeout(() => {
+    phraseIndex = (phraseIndex + 1) % phrases[currentLanguage].length;
+    textElement.textContent = phrases[currentLanguage][phraseIndex];
+    textElement.style.opacity = 1;
+  }, 500);
+}
 
-  // rotate phrases every 4 seconds
-  setInterval(updatePhrase, 4000);
+// Iniciar rotación
+setInterval(updateRotatingText, 4000);
 
-  // Language selector change event
-  const languageSelect = document.getElementById("language-select");
-  languageSelect.addEventListener("change", (e) => {
-    currentLanguage = e.target.value;
-    index = 0;  // reset to first phrase on language change
-    textElement.textContent = phrases[currentLanguage][index];
-  });
+// Cambiar idioma y resetear frase
+document.getElementById("language-select").addEventListener("change", (e) => {
+  currentLanguage = e.target.value;
+  phraseIndex = 0;
+  const textElement = document.getElementById("rotating-text");
+  textElement.textContent = phrases[currentLanguage][phraseIndex];
+  textElement.style.opacity = 1;
 });
+
+// === Menú hamburguesa mejorado ===
+const menuToggle = document.querySelector(".menu-toggle");
+const navLinks = document.querySelector(".nav-links");
+
+if (menuToggle && navLinks) {
+  // Abrir/cerrar al clic en hamburguesa
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation(); // evita que el clic se propague y cierre inmediatamente
+    navLinks.classList.toggle("active");
+    menuToggle.textContent = navLinks.classList.contains("active") ? "✖" : "☰";
+  });
+
+  // Cerrar al clic fuera del menú o toggle
+  document.addEventListener("click", (event) => {
+    const isClickInside = menuToggle.contains(event.target) || navLinks.contains(event.target);
+    
+    if (!isClickInside && navLinks.classList.contains("active")) {
+      navLinks.classList.remove("active");
+      menuToggle.textContent = "☰";
+    }
+  });
+
+  // Cerrar al hacer clic en un enlace del menú (útil en móvil)
+  navLinks.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      navLinks.classList.remove("active");
+      menuToggle.textContent = "☰";
+    });
+  });
+}
+
+// === Reveal on scroll ===
+const sections = document.querySelectorAll("section");
+
+const revealOnScroll = () => {
+  const triggerBottom = window.innerHeight * 0.85;
+  sections.forEach((section) => {
+    const sectionTop = section.getBoundingClientRect().top;
+    if (sectionTop < triggerBottom) {
+      section.classList.add("reveal");
+    }
+  });
+};
+
+window.addEventListener("scroll", revealOnScroll);
+window.addEventListener("load", revealOnScroll);
+
+// === Testimonials carrusel ===
+const testimonials = [
+  { text: "Cristina resolvió mi divorcio de forma rápida y humana. ¡Total confianza!", author: "María G., Milagro" },
+  { text: "Excelente en actos notariales. Documentos perfectos y sin complicaciones.", author: "Carlos R., Empresa local" },
+  { text: "Me ayudó con un caso de violencia intrafamiliar. Me sentí protegida en todo momento.", author: "Ana L." },
+];
+
+let current = 0;
+const carousel = document.getElementById("testimonial-carousel");
+
+function showTestimonial() {
+  if (carousel) {
+    const t = testimonials[current];
+    carousel.innerHTML = `
+      <blockquote>
+        <p>“${t.text}”</p>
+        <cite>— ${t.author}</cite>
+      </blockquote>
+    `;
+    current = (current + 1) % testimonials.length;
+  }
+}
+
+if (carousel) {
+  showTestimonial();
+  setInterval(showTestimonial, 7000);
+}
