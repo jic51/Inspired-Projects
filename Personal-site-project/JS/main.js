@@ -62,6 +62,14 @@ if (menuToggle && navLinks) {
     e.stopPropagation(); // evita que el clic se propague y cierre inmediatamente
     navLinks.classList.toggle("active");
     menuToggle.textContent = navLinks.classList.contains("active") ? "✖" : "☰";
+
+  // Dentro del evento click del menuToggle
+  if (navLinks.classList.contains("active")) {
+    document.body.style.overflow = "hidden"; // evita scroll en fondo mientras menú abierto
+  } else {
+    document.body.style.overflow = "";
+}
+
   });
 
   // Cerrar al clic fuera del menú o toggle
