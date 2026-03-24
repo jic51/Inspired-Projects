@@ -24,6 +24,12 @@ const translations = {
     hero_subtitle: "Experiencia, Honestidad, Compromiso y Soluciones a tus problemas jurídicos.",
     hero_cta: "Solicita una Consulta",
 
+    // --- SECCIÓN ESTADÍSTICAS (index.html) ---
+    stat_clients: "Clientes atendidos",
+    stat_years: "Años de experiencia",
+    stat_success: "Casos resueltos exitosamente",
+    stat_areas: "Áreas de práctica legal",
+
     // --- SECCIÓN ABOUT (index.html) ---
     about_title: "Abogada Cristina Vera",
     about_text1: "Con más de 10 años de experiencia legal, Cristina Vera se ha consolidado como una asesora y defensora de confianza para cientos de personas y pequeñas empresas en Milagro y en todo Ecuador. Su experiencia abarca una amplia gama de áreas legales, incluyendo derecho civil, derecho corporativo, derecho de familia, planificación patrimonial y actos notariales como contratos, poderes notariales y transacciones inmobiliarias.",
@@ -129,6 +135,12 @@ const translations = {
     hero_subtitle: "Experience, Honesty, Commitment and Solutions to your legal problems.",
     hero_cta: "Request a Consultation",
 
+    // --- STATISTICS SECTION (index.html) ---
+    stat_clients: "Clients Served",
+    stat_years: "Years of Experience",
+    stat_success: "Cases Successfully Resolved",
+    stat_areas: "Legal Practice Areas",
+
     // --- ABOUT (index.html) ---
     about_title: "Attorney Cristina Vera",
     about_text1: "With over 10 years of legal experience, Cristina Vera has established herself as a trusted advisor and advocate for hundreds of individuals and small businesses in Milagro and across Ecuador. Her expertise spans a wide range of legal areas, including civil law, corporate law, family law, estate planning, and notarial acts such as contracts, powers of attorney, and real estate transactions.",
@@ -212,3 +224,4 @@ const translations = {
     footer_rights: "All rights reserved."
   }
 };
+

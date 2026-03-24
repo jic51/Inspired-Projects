@@ -543,3 +543,229 @@ header { background: #001F3F; /* Navy blue */ color: white; padding: 1em; }
   font-weight: bold;
 }
 
+/* ===== TESTIMONIOS INFINITE SCROLL ===== */
+
+.testimonials {
+  padding: 3rem 0;
+  overflow: hidden; /* corta lo que sale de los bordes */
+  background: #f0f8ff;
+  text-align: center;
+}
+
+.testimonials h2 {
+  margin-bottom: 2rem;
+}
+
+/* El wrapper maneja el fade en los extremos */
+.testimonials-fade-wrapper {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Los gradientes de fade izquierda y derecha */
+.testimonials-fade-wrapper::before,
+.testimonials-fade-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none; /* los clicks siguen funcionando en las tarjetas */
+}
+
+.testimonials-fade-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, #f0f8ff, transparent);
+}
+
+.testimonials-fade-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, #f0f8ff, transparent);
+}
+
+/* El track que se mueve */
+.testimonials-track {
+  display: flex;
+  gap: 1.5rem;
+  width: max-content;        /* se expande cuanto necesite */
+  animation: scrollLeft 35s linear infinite;
+  padding: 1rem 0;
+}
+
+/* Pausa al hacer hover — buena práctica de UX */
+.testimonials-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scrollLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* -50% porque duplicamos las tarjetas */
+}
+
+/* Tarjeta individual */
+.testimonial-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  width: 320px;
+  min-width: 320px;         /* no se encoge */
+  box-shadow: 0 4px 16px rgba(0, 34, 68, 0.1);
+  border-left: 4px solid #002244;
+  text-align: left;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 34, 68, 0.18);
+}
+
+.testimonial-card p {
+  font-style: italic;
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.testimonial-card cite {
+  font-weight: bold;
+  color: #002244;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.testimonial-card .stars {
+  color: #f1c40f;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+}
+
+/* Mobile — tarjetas más pequeñas */
+@media (max-width: 768px) {
+  .testimonial-card {
+    width: 260px;
+    min-width: 260px;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .testimonials-fade-wrapper::before,
+  .testimonials-fade-wrapper::after {
+    width: 60px;
+  }
+}
+
+/* ===== WHATSAPP FLOTANTE ===== */
+.whatsapp-float {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #25D366;
+  color: #fff;
+  padding: 0.85rem 1.4rem;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  /* Pulso de atención cada 4 segundos */
+  animation: waPulse 4s ease-in-out infinite;
+}
+
+.whatsapp-float:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 28px rgba(37, 211, 102, 0.55);
+  animation-play-state: paused;
+}
+
+.whatsapp-float svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* En móvil — solo ícono, sin texto */
+@media (max-width: 600px) {
+  .whatsapp-float {
+    padding: 0.9rem;
+    border-radius: 50%;
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
+
+  .whatsapp-float .wa-text {
+    display: none;
+  }
+}
+
+@keyframes waPulse {
+  0%, 90%, 100% { transform: scale(1); }
+  95%           { transform: scale(1.07); }
+}
+
+/* ===== STATS COUNTER ===== */
+.stats {
+  background: linear-gradient(135deg, #002244, #015ab4);
+  padding: 3rem 1rem;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  /* Override del opacity:0 de section — esta entra diferente */
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease;
+}
+
+.stats.reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  text-align: center;
+}
+
+.stat-item {
+  padding: 1rem;
+}
+
+.stat-number {
+  display: block;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #f1c40f;
+  font-family: 'Playfair Display', serif;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #cce0ff;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Mobile — 2 columnas */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .stat-number {
+    font-size: 2.8rem;
+  }
+}
