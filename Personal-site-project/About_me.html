@@ -3,13 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cristina Vera - Servicios Legales - Ecuador</title>
-  <meta name="description" content="Abogada Cristina Vera en Milagro, Ecuador. Especialista en derecho familiar, violencia intrafamiliar, actos notariales y tránsito. Consultas confiables y personalizadas.">
+  <!-- Preconnect: carga Google Fonts hasta 300ms más rápido -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Meta robots: decirle a Google qué indexar -->
+  <meta name="robots" content="index, follow">
+  <title>Cristina Vera - Sobre Mí - Ecuador</title>
+  <meta property="og:title" content="Abogada Cristina Vera - Milagro, Ecuador">
+  <meta property="og:description" content="Especialista en derecho familiar, violencia intrafamiliar y actos notariales.">
+  <meta property="og:image" content="https://TU-DOMINIO.com/Siteplan/CristinaVeraAttorney1.png">
+  <meta property="og:url" content="https://TU-DOMINIO.com">
+  <meta property="og:type" content="website">
   <meta name="keywords" content="abogada Milagro, abogada Ecuador, derecho familiar Milagro, violencia intrafamiliar Ecuador, actos notariales Milagro, abogada tránsito">
+  <link rel="canonical" href="https://TU-DOMINIO.com/index.html">
   <link rel="stylesheet" href="CSS/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <link rel="icon" type="image/png" href="IMAGE/favicon.png">
+  <script src="JS/translations.js"></script>
   <script src="JS/main.js" defer></script>
 </head>
 <body>
@@ -132,35 +144,6 @@
         footer_rights: "All rights reserved."
       }
     };
-
-    const select = document.getElementById("language-select");
-    select.addEventListener("change", (e) => {
-      const lang = e.target.value;
-      document.querySelectorAll("[data-i18n]").forEach(el => {
-        const key = el.getAttribute("data-i18n");
-        if (translations[lang] && translations[lang][key]) {
-          el.innerText = translations[lang][key];
-        }
-      });
-    });
-  </script>
-
-  <script>
-    const sections = document.querySelectorAll('section');
-
-    const revealOnScroll = () => {
-      const triggerBottom = window.innerHeight * 0.9;
-
-      sections.forEach(section => {
-        const sectionTop = section.getBoundingClientRect().top;
-        if (sectionTop < triggerBottom) {
-          section.classList.add('reveal');
-        }
-      });
-    };
-
-    window.addEventListener('scroll', revealOnScroll);
-    window.addEventListener('load', revealOnScroll);
   </script>
 </body>
 </html>

@@ -3,13 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cristina Vera - Servicios Legales - Ecuador</title>
-  <meta name="description" content="Abogada Cristina Vera en Milagro, Ecuador. Especialista en derecho familiar, violencia intrafamiliar, actos notariales y tránsito. Consultas confiables y personalizadas.">
+  <!-- Preconnect: carga Google Fonts hasta 300ms más rápido -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Meta robots: decirle a Google qué indexar -->
+  <meta name="robots" content="index, follow">
+  <title>Cristina Vera - Servicios - Ecuador</title>
+  <meta property="og:title" content="Abogada Cristina Vera - Milagro, Ecuador">
+  <meta property="og:description" content="Especialista en derecho familiar, violencia intrafamiliar y actos notariales.">
+  <meta property="og:image" content="https://TU-DOMINIO.com/Siteplan/CristinaVeraAttorney1.png">
+  <meta property="og:url" content="https://TU-DOMINIO.com">
+  <meta property="og:type" content="website">
   <meta name="keywords" content="abogada Milagro, abogada Ecuador, derecho familiar Milagro, violencia intrafamiliar Ecuador, actos notariales Milagro, abogada tránsito">
+  <link rel="canonical" href="https://TU-DOMINIO.com/index.html">
   <link rel="stylesheet" href="CSS/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <link rel="icon" type="image/png" href="IMAGE/favicon.png">
+  <script src="JS/translations.js"></script>
   <script src="JS/main.js" defer></script>
 </head>
 <body>
@@ -63,7 +75,7 @@
           </p>
         </li>
         <li>
-          <strong data-i18n="service_2" class="servise_woman">Mujer</strong><br>
+          <strong data-i18n="service_2" class="service_woman">Mujer</strong><br>
           <p data-i18n="service_2_1">
             Asesoría y representación en casos de violencia de género, derechos laborales, y protección legal para mujeres. Esta área se enfoca en proteger a mujeres víctimas de violencia intrafamiliar, abandono, abuso o discriminación, especialmente en el entorno familiar.
           </p>
@@ -75,7 +87,7 @@
           </p>
         </li>
         <li>
-        <strong data-i18n="service_3" class="servise_kids">Ninez y Adolecencia</strong><br>
+        <strong data-i18n="service_3" class="service_kids">Niñez y Adolescencia</strong><br>
           <p data-i18n="service_3_1">Se refiere a casos legales que involucran a menores: custodia, patria potestad, pensión alimenticia, visitas, tutela y protección en situaciones vulnerables.
           </p>
           <p data-i18n="service_3_2">Cristina asegura que el interés superior del niño sea respetado, ya sea gestionando custodias, redactando acuerdos de alimentos o solicitando medidas judiciales de protección.
@@ -84,7 +96,7 @@
           </p>
         </li>
         <li>
-        <strong data-i18n="service_4" class="servise_acts">Actos notariales (Escrituras, Contratos, Poderes, etc)</strong><br>
+        <strong data-i18n="service_4" class="service_acts">Actos notariales (Escrituras, Contratos, Poderes, etc)</strong><br>
           <p data-i18n="service_4_1">Son documentos legales que deben ser validados ante notario: contratos, escrituras, poderes, autorizaciones, declaraciones juramentadas, entre otros.
           </p>
           <p data-i18n="service_4_2">Ella redacta y revisa tus documentos para asegurar que sean claros, legales y protejan tus intereses antes de ser firmados ante un notario.
@@ -93,7 +105,7 @@
           </p>
         </li>
         <li>
-        <strong data-i18n="service_5" class="servise_violence">Violencia intrafamilar</strong><br>
+        <strong data-i18n="service_5" class="service_violence">Violencia intrafamiliar</strong><br>
           <p data-i18n="service_5_1">La violencia intrafamiliar incluye abuso físico, psicológico, sexual o económico que ocurre en relaciones familiares o íntimas. En Ecuador, está regulada por la Ley Orgánica Integral para Prevenir y Erradicar la Violencia contra las Mujeres y el Código Orgánico Integral Penal (COIP). Las víctimas pueden solicitar medidas de protección, custodia de hijos, boletas de auxilio e incluso procesos penales contra el agresor.
           </p>
           <p data-i18n="service_5_2">Cristina Vera brinda apoyo legal inmediato a víctimas, solicitando medidas de protección, presentando denuncias formales y guiando a las personas en los procesos ante la policía y la justicia. Ella asegura que las instituciones traten el caso con la seriedad y respeto que merece.
@@ -101,7 +113,7 @@
           <p data-i18n="service_5_3">Los casos de violencia intrafamiliar son delicados y requieren acción legal firme, rápida y con sensibilidad. Cristina combina su conocimiento jurídico con comprensión humana, protegiendo tu seguridad, tus derechos y ayudándote a recuperar el control de tu vida.</p>
         </li>
         <li>
-        <strong data-i18n="service_6" class="servise_transit">Transito</Strong><br>
+        <strong data-i18n="service_6" class="service_transit">Transito</strong><br>
           <p data-i18n="service_6_1">Incluye infracciones, accidentes, multas, suspensión de licencias y trámites administrativos ante la Agencia Nacional de Tránsito (ANT).</p>
           <p data-i18n="service_6_2">Cristina defiende tus derechos, apela sanciones injustas, gestiona documentación y te representa en audiencias o negociaciones tras incidentes de tránsito.
           </p>
@@ -202,35 +214,6 @@
         footer_rights: "All rights reserved."
       }
     };
-
-    const select = document.getElementById("language-select");
-    select.addEventListener("change", (e) => {
-      const lang = e.target.value;
-      document.querySelectorAll("[data-i18n]").forEach(el => {
-        const key = el.getAttribute("data-i18n");
-        if (translations[lang] && translations[lang][key]) {
-          el.innerText = translations[lang][key];
-        }
-      });
-    });
   </script>
-
-  <script>
-    const sections = document.querySelectorAll('section');
-
-    const revealOnScroll = () => {
-      const triggerBottom = window.innerHeight * 0.9;
-
-      sections.forEach(section => {
-        const sectionTop = section.getBoundingClientRect().top;
-        if (sectionTop < triggerBottom) {
-          section.classList.add('reveal');
-        }
-      });
-    };
-
-    window.addEventListener('scroll', revealOnScroll);
-    window.addEventListener('load', revealOnScroll);
-  </script>
-</body>
 </html>
+Ninez y Adolecencia

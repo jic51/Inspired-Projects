@@ -1,3 +1,5 @@
+document.documentElement.lang = lang;
+
 // === Rotating Text en Hero ===
 const phrases = {
   es: [
@@ -24,7 +26,7 @@ const phrases = {
   ]
 };
 
-let currentLanguage = "es";
+let currentLanguage = savedLang;
 let phraseIndex = 0;
 
 function updateRotatingText() {
@@ -43,13 +45,34 @@ function updateRotatingText() {
 // Iniciar rotación
 setInterval(updateRotatingText, 4000);
 
-// Cambiar idioma y resetear frase
-document.getElementById("language-select").addEventListener("change", (e) => {
-  currentLanguage = e.target.value;
-  phraseIndex = 0;
-  const textElement = document.getElementById("rotating-text");
-  textElement.textContent = phrases[currentLanguage][phraseIndex];
-  textElement.style.opacity = 1;
+// JS/main.js  (sección de idioma)
+const savedLang = localStorage.getItem("lang") || "es";
+
+
+function applyTranslations(lang) {
+  document.documentElement.lang = lang; // fix del bug de accesibilidad
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (translations[lang]?.[key]) {
+      el.textContent = translations[lang][key];
+    }
+  });
+  // Sincronizar el select con el idioma guardado
+  const select = document.getElementById("language-select");
+  if (select) select.value = lang;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyTranslations(currentLanguage);
+
+  const select = document.getElementById("language-select");
+  if (select) {
+    select.addEventListener("change", (e) => {
+      currentLanguage = e.target.value;
+      localStorage.setItem("lang", currentLanguage); // recuerda el idioma elegido
+      applyTranslations(currentLanguage);
+    });
+  }
 });
 
 // === Menú hamburguesa mejorado ===
