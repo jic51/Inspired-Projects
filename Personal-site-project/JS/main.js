@@ -157,3 +157,28 @@ if (carousel) {
   showTestimonial();
   setInterval(showTestimonial, 7000);
 }
+
+function applyTranslations(lang) {
+  // Claves que contienen HTML (links <a>) — usan innerHTML
+  const htmlKeys = [
+    "about_text1_1",
+    "about_text2_1",
+    "about_me_text2_1"
+  ];
+
+  document.documentElement.lang = lang;
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (translations[lang]?.[key]) {
+      if (htmlKeys.includes(key)) {
+        el.innerHTML = translations[lang][key]; // preserva los <a>
+      } else {
+        el.textContent = translations[lang][key]; // más seguro para el resto
+      }
+    }
+  });
+
+  const select = document.getElementById("language-select");
+  if (select) select.value = lang;
+}
