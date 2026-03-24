@@ -1,5 +1,5 @@
 // ============================================================
-// JS/main.js  —  versión corregida y ordenada
+// JS/main.js  — versión limpia y corregida
 // ============================================================
 
 // === 1. IDIOMA — debe ir primero, antes de DOMContentLoaded ===
@@ -44,16 +44,15 @@ const phrases = {
     "Tu tranquilidad legal es nuestra prioridad",
     "Experiencia y confianza a tu servicio",
     "Asesoría personalizada para cada situación legal",
-    "Seguridad jurídica para sus decisiones más importantes. Estamos listos para representar sus intereses",
-    "Resolvamos su situación legal hoy: agende una consulta técnica y recupere su tranquilidad",
-    "No deje su bienestar al azar; tome el control de su caso con nuestra asesoría especializada",
-    "Transformamos procesos complejos en soluciones claras. Hablemos sobre cómo podemos ayudarle",
-    "Justicia con resultados, no solo promesas. Solicite su evaluación inicial y conozca sus opciones reales",
-    "Seguridad jurídica para sus decisiones más importantes. Estamos listos para representar sus intereses",
-    "Su caso merece una defensa sólida. Permítanos ser el respaldo legal que su familia o empresa necesita",
-    "Asesoría legal de alto nivel a su alcance. Escríbanos y obtenga una hoja de ruta clara para su caso",
-    "Protección legal experta sin tecnicismos innecesarios. Iniciemos hoy la defensa de sus derechos",
-    "Experiencia probada al servicio de su causa. Agende una cita y asegure el respaldo que su situación exige"
+    "Seguridad jurídica para sus decisiones más importantes",
+    "Resolvamos su situación legal hoy: agende una consulta",
+    "No deje su bienestar al azar; tome el control de su caso",
+    "Transformamos procesos complejos en soluciones claras",
+    "Justicia con resultados, no solo promesas",
+    "Su caso merece una defensa sólida",
+    "Asesoría legal de alto nivel a su alcance",
+    "Protección legal experta sin tecnicismos innecesarios",
+    "Experiencia probada al servicio de su causa"
   ],
   en: [
     "Your Trusted Legal Advisor",
@@ -65,16 +64,15 @@ const phrases = {
     "Your legal peace of mind is our priority",
     "Experience and trust at your service",
     "Personalized advice for every legal situation",
-    "Legal certainty for your most critical decisions. We are ready to represent your best interests",
-    "Resolve your legal situation today: schedule a technical consultation and regain your peace of mind",
-    "Don't leave your well-being to chance; take control of your case with our specialized advice",
-    "We turn complex processes into clear solutions. Let's talk about how we can help you",
-    "Justice with results, not just promises. Request your initial evaluation and learn about your real options",
-    "Legal certainty for your most important decisions. We are ready to represent your interests",
-    "Your case deserves a solid defense. Let us be the legal support your family or business needs",
-    "High-level legal advice within your reach. Write to us and get a clear roadmap for your case",
-    "Expert legal protection without unnecessary jargon. Let's start defending your rights today",
-    "Proven experience at the service of your cause. Schedule an appointment and secure the support your situation demands"
+    "Legal certainty for your most critical decisions",
+    "Resolve your legal situation today: schedule a consultation",
+    "Don't leave your well-being to chance",
+    "We turn complex processes into clear solutions",
+    "Justice with results, not just promises",
+    "Your case deserves a solid defense",
+    "High-level legal advice within your reach",
+    "Expert legal protection without unnecessary jargon",
+    "Proven experience at the service of your cause"
   ]
 };
 
@@ -84,77 +82,58 @@ function updateRotatingText() {
   const el = document.getElementById("rotating-text");
   if (!el) return;
 
-  // PASO 1 — sale hacia arriba y desaparece
+  // PASO 1: sale hacia arriba y desaparece
   el.style.opacity = "0";
   el.style.transform = "translateY(-20px)";
 
-  // PASO 2 — cuando terminó de salir: cambia el texto y lo posiciona abajo
+  // PASO 2: cuando terminó de salir, cambia el texto y lo posiciona abajo
   setTimeout(() => {
     phraseIndex = (phraseIndex + 1) % phrases[currentLanguage].length;
     el.textContent = phrases[currentLanguage][phraseIndex];
 
-    // Lo coloca abajo listo para entrar (sin transición para que sea instantáneo)
+    // Reposición instantánea sin transición
     el.style.transition = "none";
     el.style.transform = "translateY(20px)";
 
-    // PASO 3 — fuerza al navegador a registrar el estado "abajo" antes de animar
+    // PASO 3: doble rAF para que el navegador registre el cambio antes de animar
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // Reactiva la transición y entra desde abajo hacia el centro
         el.style.transition = "opacity 0.5s ease-in-out, transform 0.5s ease-in-out";
         el.style.opacity = "1";
         el.style.transform = "translateY(0)";
       });
     });
-  }, 500); // espera exactamente los 500ms que tarda en salir
+  }, 500);
 }
 
-///El doble `requestAnimationFrame` es necesario porque el navegador necesita dos frames para registrar el cambio de posición antes de volver a activar la transición. Sin eso, el "salto abajo" no ocurre y el texto entra desde donde estaba.
 
-///## Por qué funciona ahora
-
-///El flujo queda perfectamente ordenado:
-
-///[0ms]    → opacidad baja + sube        (sale hacia arriba)
-///[500ms]  → texto cambia + baja abajo   (reposición instantánea)
-///[502ms]  → opacidad sube + sube al centro  (entra desde abajo)
-
-
-// === 3. TESTIMONIOS ===
+// === 3. TESTIMONIOS — INFINITE SCROLL CAROUSEL ===
 const testimonials = [
-  { text: "Cristina resolvió mi divorcio de forma rápida y humana. ¡Total confianza!", author: "María G., Milagro" },
-  { text: "Excelente en actos notariales. Documentos perfectos y sin complicaciones.", author: "Carlos R., Empresa local" },
-  { text: "Me ayudó con un caso de violencia intrafamiliar. Me sentí protegida en todo momento.", author: "Ana L." },
-  { text: "Profesional, clara y siempre disponible. La recomiendo al 100%.", author: "Jorge M., Milagro" },
-  { text: "Gracias a Cristina, mi caso de tránsito se resolvió sin problemas. ¡Muy agradecido!", author: "Luis F., Milagro" },
-  { text: "Su asesoría legal me dio la tranquilidad que necesitaba en un momento difícil. ¡Gracias, Cristina!", author: "Sofía P., Milagro" },
-  { text: "Cristina es una abogada excepcional. Su dedicación y conocimiento marcaron la diferencia en mi caso.", author: "Miguel A., Milagro" },
-  { text: "Me asesoró con un contrato importante y su atención al detalle fue impresionante. ¡Muy recomendable!", author: "Laura V., Milagro" },
-  { text: "Su apoyo legal me dio la confianza para enfrentar mi situación. Estoy muy agradecida por su ayuda.", author: "Elena S., Milagro" },
-  { text: "Recuperé lo que me correspondía en mi liquidación laboral gracias a su asesoría. Proceso transparente y sin vueltas.", author: "Javier M., Guayaquil"},
-  { text: "Pensé que mi trámite de herencia tardaría años, pero lo resolvieron en tiempo récord. Muy profesionales.", author: "Elena S., Quito"},
-  { text: "Su asesoría en mi caso de violencia intrafamiliar fue fundamental. Me sentí segura y apoyada en todo momento.", author: "María G., Milagro" },
-  { text: "Pensé que mi trámite de herencia tardaría años, pero lo resolvieron en tiempo récord. Muy profesionales.", author: "Elena S., Quito"},
-  { text: "Excelente gestión en el cobro de deudas. Recuperamos la cartera de mi negocio de forma ética y rápida.", author: "Roberto D., Comerciante local"},
-  { text: "Lo que más valoro es que me hablaron claro desde el primer día. Sin términos complicados, solo soluciones.", author: "Patricia V., Milagro" },
-  { text: "Atención personalizada de verdad. Sienten tu problema como propio y no te dejan solo en ninguna audiencia.", author: "Luis F., Cuenca" },
-  { text: "Me asesoraron en la compra de mi primera propiedad. Me dieron la seguridad legal que necesitaba para invertir.", author: "Mónica T., Inversionista extranjera en Ecuador" },
-  { text: "En un momento de mucha incertidumbre con mi custodia, fueron mi mayor apoyo. Expertos y muy humanos.", author: "Gabriela P., Milagro" },
-  { text: "Su atención y profesionalismo me hicieron sentir segura en todo momento.", author: "Isabel R., Milagro" },
-  { text: "Muy satisfecha con el servicio recibido. Cristina es una abogada comprometida y profesional.", author: "Ana L., Milagro"},
-  { text: "Su compromiso y profesionalismo me hicieron sentirme segura en todo momento.", author: "Elena S., Milagro"},
-  { text: "Excelente trabajo. Me ayudaron a resolver mi caso de forma rápida y eficiente.", author: "Carlos R., Empresa local" },
-  { text: "Cristina es una abogada excepcional. Su dedicación y conocimiento marcaron la diferencia en mi caso.", author: "Miguel A., Milagro" },
-  { text: "Resolvieron mi situación migratoria de manera impecable. Ahora mi familia y yo estamos tranquilos.", author: "Juan C., Residente extranjero en Ecuador"},
-  { text: "Llevan todos los contratos de mi empresa. Desde que están con nosotros, no hemos tenido ni un solo vacío legal.", author: "Ricardo H., Emprendedor local"},
-  { text: "Trámite notarial ágil y seguro. Es difícil encontrar un servicio tan puntual y detallista hoy en día.", author: "Sofía L., Inmobiliaria local"}
+  { text: "Cristina resolvió mi divorcio de forma rápida y humana. ¡Total confianza!", author: "María G., Milagro", stars: 5 },
+  { text: "Excelente en actos notariales. Documentos perfectos y sin complicaciones.", author: "Carlos R., Empresa local", stars: 5 },
+  { text: "Me ayudó con un caso de violencia intrafamiliar. Me sentí protegida en todo momento.", author: "Ana L.", stars: 5 },
+  { text: "Profesional, clara y siempre disponible. La recomiendo al 100%.", author: "Jorge M., Milagro", stars: 5 },
+  { text: "Gracias a Cristina, mi caso de tránsito se resolvió sin problemas. ¡Muy agradecido!", author: "Luis F., Milagro", stars: 5 },
+  { text: "Su asesoría legal me dio la tranquilidad que necesitaba en un momento difícil.", author: "Sofía P., Milagro", stars: 5 },
+  { text: "Cristina es una abogada excepcional. Su dedicación marcó la diferencia en mi caso.", author: "Miguel A., Milagro", stars: 5 },
+  { text: "Me asesoró con un contrato importante y su atención al detalle fue impresionante.", author: "Laura V., Milagro", stars: 5 },
+  { text: "Su apoyo legal me dio la confianza para enfrentar mi situación. Muy agradecida.", author: "Elena S., Milagro", stars: 5 },
+  { text: "Recuperé lo que me correspondía en mi liquidación laboral. Proceso transparente.", author: "Javier M., Guayaquil", stars: 5 },
+  { text: "Mi trámite de herencia lo resolvieron en tiempo récord. Muy profesionales.", author: "Elena S., Quito", stars: 5 },
+  { text: "Excelente gestión en el cobro de deudas. Recuperamos la cartera de mi negocio.", author: "Roberto D., Comerciante local", stars: 5 },
+  { text: "Lo que más valoro es que me hablaron claro desde el primer día. Solo soluciones.", author: "Patricia V., Milagro", stars: 5 },
+  { text: "Atención personalizada de verdad. Sienten tu problema como propio.", author: "Luis F., Cuenca", stars: 5 },
+  { text: "Me asesoraron en la compra de mi primera propiedad. Seguridad legal total.", author: "Mónica T., Inversionista extranjera en Ecuador", stars: 5 },
+  { text: "En un momento difícil con mi custodia, fueron mi mayor apoyo. Expertos y humanos.", author: "Gabriela P., Milagro", stars: 5 },
+  { text: "Resolvieron mi situación migratoria de manera impecable. Estamos tranquilos.", author: "Juan C., Residente extranjero en Ecuador", stars: 5 },
+  { text: "Llevan todos los contratos de mi empresa. No hemos tenido ni un solo vacío legal.", author: "Ricardo H., Emprendedor local", stars: 5 },
+  { text: "Trámite notarial ágil y seguro. Difícil encontrar un servicio tan detallista hoy.", author: "Sofía L., Inmobiliaria local", stars: 5 }
 ];
 
 function initTestimonialsCarousel() {
   const track = document.getElementById("testimonials-track");
   if (!track) return;
 
-  // Función para crear una tarjeta
   function createCard(t) {
     const card = document.createElement("div");
     card.className = "testimonial-card";
@@ -166,9 +145,8 @@ function initTestimonialsCarousel() {
     return card;
   }
 
-  // Generar todas las tarjetas
-  // Renderiza las tarjetas DOS veces — así el loop parece infinito
-  [testimonials,testimonials].forEach(t => {
+  // ✅ CORRECTO: spread operator para iterar cada testimonio DOS veces
+  [...testimonials, ...testimonials].forEach(t => {
     track.appendChild(createCard(t));
   });
 }
@@ -227,50 +205,7 @@ function showOtherField() {
 }
 
 
-// === 7. INICIALIZACIÓN — todo arranca aquí ===
-document.addEventListener("DOMContentLoaded", () => {
-
-  // Aplicar idioma guardado
-  applyTranslations(currentLanguage);
-
-  // Listener del selector de idioma
-  const select = document.getElementById("language-select");
-  if (select) {
-    select.addEventListener("change", (e) => {
-      currentLanguage = e.target.value;
-      localStorage.setItem("lang", currentLanguage);
-      applyTranslations(currentLanguage);
-
-      // Sincronizar el texto rotante con el nuevo idioma
-      phraseIndex = 0;
-      const textElement = document.getElementById("rotating-text");
-      if (textElement) {
-        textElement.textContent = phrases[currentLanguage][0];
-      }
-    });
-  }
-
-  // Iniciar texto rotante si existe la página hero
-  if (document.getElementById("rotating-text")) {
-    setInterval(updateRotatingText, 6500);
-  }
-
-  // Iniciar testimonios si existe el carrusel
-  initTestimonialsCarousel();
-
-  // Iniciar menú hamburguesa
-  initMenu();
-
-  // Reveal inicial (secciones ya visibles al cargar)
-  revealOnScroll();
-
-  checkCounters(); // por si ya está visible al cargar
-});
-
-// Reveal mientras scrolleas
-window.addEventListener("scroll", revealOnScroll);
-
-// === CONTADOR ANIMADO ===
+// === 7. CONTADOR ANIMADO ===
 function animateCounters() {
   const counters = document.querySelectorAll(".stat-number");
   if (!counters.length) return;
@@ -278,20 +213,16 @@ function animateCounters() {
   counters.forEach(counter => {
     const target = parseInt(counter.getAttribute("data-target"));
     const suffix = counter.getAttribute("data-suffix") || "";
-    const duration = 2000; // 2 segundos para llegar al número final
+    const duration = 2000;
     const steps = 60;
-    const increment = target / steps;
-    let current = 0;
     let step = 0;
 
-    // Efecto easing — empieza rápido y frena al final
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
     const timer = setInterval(() => {
       step++;
       const progress = easeOut(step / steps);
-      current = Math.round(progress * target);
-      counter.textContent = current + suffix;
+      counter.textContent = Math.round(progress * target) + suffix;
 
       if (step >= steps) {
         counter.textContent = target + suffix;
@@ -301,7 +232,6 @@ function animateCounters() {
   });
 }
 
-// Activar el contador cuando la sección entra en pantalla (solo 1 vez)
 let countersTriggered = false;
 
 function checkCounters() {
@@ -309,12 +239,43 @@ function checkCounters() {
   const statsSection = document.getElementById("stats");
   if (!statsSection) return;
 
-  const top = statsSection.getBoundingClientRect().top;
-  if (top < window.innerHeight * 0.85) {
+  if (statsSection.getBoundingClientRect().top < window.innerHeight * 0.85) {
     countersTriggered = true;
     animateCounters();
   }
 }
 
-window.addEventListener("scroll", checkCounters);
 
+// === 8. INICIALIZACIÓN — todo arranca aquí ===
+document.addEventListener("DOMContentLoaded", () => {
+
+  applyTranslations(currentLanguage);
+
+  const select = document.getElementById("language-select");
+  if (select) {
+    select.addEventListener("change", (e) => {
+      currentLanguage = e.target.value;
+      localStorage.setItem("lang", currentLanguage);
+      applyTranslations(currentLanguage);
+
+      // Sincronizar texto rotante con el nuevo idioma
+      phraseIndex = 0;
+      const textElement = document.getElementById("rotating-text");
+      if (textElement) {
+        textElement.textContent = phrases[currentLanguage][0];
+      }
+    });
+  }
+
+  if (document.getElementById("rotating-text")) {
+    setInterval(updateRotatingText, 6500);
+  }
+
+  initTestimonialsCarousel();
+  initMenu();
+  revealOnScroll();
+  checkCounters();
+});
+
+window.addEventListener("scroll", revealOnScroll);
+window.addEventListener("scroll", checkCounters);
