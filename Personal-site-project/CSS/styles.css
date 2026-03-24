@@ -8,22 +8,9 @@
   margin-bottom: 2rem;
   color: rgb(0, 0, 0);
   margin-top: 2rem;
-  
-  /* THIS IS THE CHANGE YOU NEED TO MAKE */
-  
-  
-  /* Animation just for the rotating text */
-  animation: fadeInOut 6s infinite;
-  transition: opacity 0.5s ease-in-out;
-}
-
-
-/* Keyframes for smooth fade-in / fade-out effect */
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: translateY(20px); }
-  20% { opacity: 1; transform: translateY(0); }
-  80% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-20px); }
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
 }
 
 /* Hero */
