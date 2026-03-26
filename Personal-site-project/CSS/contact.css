@@ -1,0 +1,238 @@
+/* ============================================================
+   CSS/contact.css
+   Estilos exclusivos de contact.html
+   El resto de estilos (header, nav, footer, botones, etc.)
+   viven en CSS/styles.css
+   ============================================================ */
+
+/* ===== LAYOUT DE DOS COLUMNAS ===== */
+.contact-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 2rem;
+  align-items: start;
+}
+
+
+/* ===== COLUMNA FORMULARIO ===== */
+.contact-form-col h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: #002244;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #002244;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.65rem 0.8rem;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background: #fff;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #015ab4;
+  box-shadow: 0 0 0 3px rgba(1, 90, 180, 0.12);
+}
+
+
+/* ===== VALIDACIÓN EN TIEMPO REAL ===== */
+.form-group input.valid,
+.form-group select.valid,
+.form-group textarea.valid {
+  border-color: #1eb856;
+}
+
+.form-group input.invalid,
+.form-group select.invalid,
+.form-group textarea.invalid {
+  border-color: #e74c3c;
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: #e74c3c;
+  display: none;
+  margin-top: 0.2rem;
+}
+
+.field-error.visible {
+  display: block;
+}
+
+
+/* ===== CAMPO "OTRO" ===== */
+#other-reason-container {
+  display: none;
+  margin-top: 0.5rem;
+}
+
+#other-reason-container textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+#other-reason-container textarea:focus {
+  outline: none;
+  border-color: #015ab4;
+  box-shadow: 0 0 0 3px rgba(1, 90, 180, 0.12);
+}
+
+
+/* ===== RECAPTCHA ===== */
+.g-recaptcha {
+  margin: 1rem 0;
+}
+
+
+/* ===== MENSAJE DE ÉXITO ===== */
+#success-message {
+  display: none;
+  background: #eafaf1;
+  border: 1.5px solid #1eb856;
+  border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+  color: #0f6e3a;
+  font-weight: 600;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+#success-message.visible {
+  display: block;
+}
+
+
+/* ===== COLUMNA INFO DE CONTACTO ===== */
+.contact-info-col h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: #002244;
+  margin-bottom: 1.5rem;
+}
+
+.contact-info-card {
+  background: #f0f4fa;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #002244;
+}
+
+.contact-info-card p {
+  margin-bottom: 0.6rem;
+  color: #333;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.contact-info-card p:last-child {
+  margin-bottom: 0;
+}
+
+.contact-info-card .info-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+
+/* ===== BLOQUE CALENDLY ===== */
+.calendly-wrapper {
+  background: linear-gradient(135deg, #002244, #015ab4);
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+.calendly-wrapper p {
+  color: #cce0ff;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.calendly-wrapper h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.btn-calendly {
+  display: inline-block;
+  background: #f1c40f;
+  color: #002244;
+  padding: 0.85rem 1.8rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.btn-calendly:hover {
+  background: #ffdf4e;
+  transform: translateY(-2px);
+}
+
+
+/* ===== DIVISOR VISUAL ===== */
+.contact-divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.contact-divider::before,
+.contact-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #ddd;
+}
+
+.contact-divider::before { left: 0; }
+.contact-divider::after  { right: 0; }
+
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media (max-width: 768px) {
+  .contact-wrapper {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}

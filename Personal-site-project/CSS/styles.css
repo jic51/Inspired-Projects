@@ -580,7 +580,7 @@ section h2 {
   text-decoration: none;
   font-weight: bold;
   font-size: 1rem;
-  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45);
+  box-shadow: 0 4px 20px rgba(12, 47, 26, 0.45);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: waPulse 4s ease-in-out infinite;
 }
