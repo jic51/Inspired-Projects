@@ -245,6 +245,27 @@ function checkCounters() {
   }
 }
 
+// === FAQ ACORDEÓN ===
+  function initFAQ() {
+    document.querySelectorAll(".faq-question").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item     = btn.closest(".faq-item");
+        const isActive = item.classList.contains("active");
+
+        // Cierra todos
+        document.querySelectorAll(".faq-item").forEach(i => {
+          i.classList.remove("active");
+          i.querySelector(".faq-question").setAttribute("aria-expanded", "false");
+        });
+
+        // Abre el clickeado si estaba cerrado
+        if (!isActive) {
+          item.classList.add("active");
+          btn.setAttribute("aria-expanded", "true");
+        }
+      });
+    });
+  }
 
 // === 8. INICIALIZACIÓN — todo arranca aquí ===
 document.addEventListener("DOMContentLoaded", () => {
@@ -271,10 +292,19 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(updateRotatingText, 6500);
   }
 
+  // Inicializar iconos Lucide
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
+
   initTestimonialsCarousel();
   initMenu();
   revealOnScroll();
   checkCounters();
+  initFAQ();
+
+  if (typeof lucide !== "undefined") lucide.createIcons();
+  
 });
 
 window.addEventListener("scroll", revealOnScroll);

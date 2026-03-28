@@ -723,3 +723,795 @@ footer p {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== EYEBROW / BADGE ===== */
+.section-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #015ab4;
+  margin-bottom: 0.4rem;
+}
+
+.about-badge {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #0c447c;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 0.6rem;
+}
+
+/* ===== MINI STATS EN ABOUT ===== */
+.about-mini-stats {
+  display: flex;
+  gap: 2rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.mini-stat-n {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #002244;
+  line-height: 1;
+}
+
+.mini-stat-l {
+  display: block;
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ===== SERVICE CARDS ===== */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+  margin: 1.5rem 0;
+}
+
+.service-card {
+  border: 1px solid #e8edf4;
+  border-radius: 10px;
+  padding: 1.4rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(to right, #002244, #015ab4);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 34, 68, 0.12);
+  border-color: #015ab4;
+}
+
+.service-card:hover::before {
+  opacity: 1;
+}
+
+.service-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.7rem;
+}
+
+.service-card strong {
+  display: block;
+  font-size: 1rem;
+  color: #002244;
+  margin-bottom: 0.5rem;
+}
+
+.service-card p {
+  font-size: 0.88rem;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
+}
+
+.service-link {
+  font-size: 0.85rem;
+  color: #015ab4;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.service-link:hover {
+  color: #002244;
+}
+
+/* ===== ICONOS LUCIDE EN SERVICE CARDS ===== */
+.service-icon {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.9rem;
+  width: 48px;
+  height: 48px;
+  background: #e8f0fe;
+  border-radius: 10px;
+  padding: 10px;
+  transition: background 0.2s ease;
+}
+
+.service-card:hover .service-icon {
+  background: #002244;
+}
+
+.service-icon i,
+.service-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke: #002244;
+  stroke-width: 1.8;
+  transition: stroke 0.2s ease;
+}
+
+.service-card:hover .service-icon svg {
+  stroke: #f1c40f;
+}
+
+/* ===== FAQ MODERNO ===== */
+.faq-list {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.faq-item {
+  border: 1px solid #e8edf4;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.faq-item.active {
+  border-color: #015ab4;
+  box-shadow: 0 4px 16px rgba(0, 34, 68, 0.10);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #002244;
+  text-align: left;
+  transition: background 0.2s ease;
+  gap: 1rem;
+}
+
+.faq-item.active .faq-question {
+  background: #f0f6ff;
+}
+
+.faq-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8edf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #002244;
+  flex-shrink: 0;
+  transition: transform 0.3s ease, background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.faq-item.active .faq-icon {
+  transform: rotate(45deg);
+  background: #002244;
+  color: #f1c40f;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.faq-answer p {
+  padding: 0 1.2rem 1rem;
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 300px;
+}
+
+/* ============================================================
+   AÑADIR AL FINAL DE CSS/styles.css
+   Estilos para About_me.html y services.html
+   ============================================================ */
+
+
+/* ===== ABOUT — TWO COLUMN LAYOUT ===== */
+
+.about-two-col {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 3.5rem;
+  margin-top: 2rem;
+  align-items: start;
+}
+
+/* Columna foto */
+.about-photo-col {
+  position: sticky;
+  top: 2rem; /* se queda fija mientras scrolleas el texto */
+}
+
+.about-photo-wrapper {
+  position: relative;
+}
+
+.about-photo {
+  width: 100%;
+  height: 460px;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 16px;
+  display: block;
+  box-shadow: 0 8px 32px rgba(0, 34, 68, 0.15);
+}
+
+/* Badge flotante sobre la foto */
+.about-photo-badge {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 34, 68, 0.15);
+  white-space: nowrap;
+  border-left: 4px solid #002244;
+}
+
+.photo-badge-icon {
+  width: 36px;
+  height: 36px;
+  background: #e8f0fe;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.photo-badge-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #002244;
+  stroke-width: 1.8;
+}
+
+.about-photo-badge strong {
+  display: block;
+  font-size: 0.85rem;
+  color: #002244;
+  font-weight: 700;
+}
+
+.about-photo-badge span {
+  display: block;
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* Stats bajo la foto */
+.about-photo-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f0f4fa;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  margin-top: 2rem; /* espacio para el badge */
+}
+
+.photo-stat {
+  text-align: center;
+  flex: 1;
+}
+
+.photo-stat-n {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #002244;
+  line-height: 1;
+}
+
+.photo-stat-l {
+  display: block;
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.photo-stat-divider {
+  width: 1px;
+  height: 40px;
+  background: #d0dae8;
+  flex-shrink: 0;
+}
+
+/* Columna texto */
+.about-text-col {
+  padding-top: 0.5rem;
+}
+
+/* Bloques de contenido con ícono */
+.about-block {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.about-block:last-of-type {
+  border-bottom: none;
+}
+
+.about-block-icon {
+  width: 44px;
+  height: 44px;
+  background: #e8f0fe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.about-block-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: #002244;
+  stroke-width: 1.8;
+}
+
+.about-block h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: #002244;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Chips de servicios */
+.about-services-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 2rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0f4fa;
+  color: #002244;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #d0dae8;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.chip:hover {
+  background: #e8f0fe;
+  border-color: #015ab4;
+}
+
+.chip svg {
+  width: 13px;
+  height: 13px;
+  stroke: #015ab4;
+  stroke-width: 2;
+}
+
+/* Botones CTA */
+.about-cta-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #002244;
+  color: #002244;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+  display: inline-block;
+}
+
+.btn-outline:hover {
+  background: #002244;
+  color: #fff;
+}
+
+/* Intro de servicios */
+.services-intro {
+  color: #666;
+  font-size: 1rem;
+  max-width: 680px;
+  margin-bottom: 1.5rem;
+}
+
+
+/* ===== SERVICES — FULL CARDS GRID ===== */
+
+.services-full-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.8rem;
+  margin: 2.5rem 0;
+}
+
+.service-full-card {
+  background: #fff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  padding: 2rem;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-full-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 34, 68, 0.10);
+  transform: translateY(-3px);
+}
+
+/* Header de la card */
+.sfc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.sfc-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  color: #002244;
+  margin: 0 0 4px;
+}
+
+/* Ícono de la card */
+.sfc-icon {
+  width: 48px;
+  height: 48px;
+  background: #e8f0fe;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sfc-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #002244;
+  stroke-width: 1.8;
+}
+
+/* Colores de ícono por área */
+.sfc-icon--shield   { background: #fff0f0; }
+.sfc-icon--shield   svg { stroke: #993c1d; }
+.sfc-icon--heart    { background: #fff0f6; }
+.sfc-icon--heart    svg { stroke: #993556; }
+.sfc-icon--doc      { background: #f0f8ff; }
+.sfc-icon--doc      svg { stroke: #185fa5; }
+.sfc-icon--alert    { background: #fff8e6; }
+.sfc-icon--alert    svg { stroke: #854f0b; }
+.sfc-icon--car      { background: #f0fff4; }
+.sfc-icon--car      svg { stroke: #3b6d11; }
+
+/* Tags */
+.sfc-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: #f0f4fa;
+  color: #5a7a9a;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.sfc-tag--urgent {
+  background: #fff3e0;
+  color: #854f0b;
+}
+
+/* Párrafos dentro de la card */
+.service-full-card p {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 0.7rem;
+}
+
+.service-full-card p:last-of-type {
+  margin-bottom: 1rem;
+}
+
+/* CTA de la card */
+.sfc-cta {
+  display: inline-block;
+  margin-top: auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #015ab4;
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eef0f4;
+}
+
+.sfc-cta:hover {
+  color: #002244;
+  transform: translateX(3px);
+}
+
+/* Bloque CTA al final */
+.services-cta-block {
+  text-align: center;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #f0f4fa, #e8f0fe);
+  border-radius: 14px;
+  margin-top: 1rem;
+}
+
+.services-cta-block p {
+  color: #444;
+  font-size: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+
+/* ===== LUCIDE ICONS — SERVICE CARDS EN INDEX ===== */
+.service-icon {
+  width: 48px;
+  height: 48px;
+  background: #e8f0fe;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.service-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #002244;
+  stroke-width: 1.8;
+  transition: stroke 0.2s ease;
+}
+
+.service-card:hover .service-icon {
+  background: #002244;
+}
+
+.service-card:hover .service-icon svg {
+  stroke: #f1c40f;
+}
+
+
+/* ===== RESPONSIVE — ABOUT TWO COL ===== */
+@media (max-width: 900px) {
+  .about-two-col {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .about-photo-col {
+    position: static; /* quita sticky en mobile */
+  }
+
+  .about-photo {
+    height: 340px;
+  }
+
+  .about-photo-badge {
+    bottom: -16px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .about-photo-stats {
+    margin-top: 1.8rem;
+  }
+
+  .about-cta-row {
+    flex-direction: column;
+  }
+
+  .about-cta-row .btn,
+  .about-cta-row .btn-outline {
+    text-align: center;
+    width: 100%;
+  }
+}
+
+/* ===== RESPONSIVE — SERVICES FULL GRID ===== */
+@media (max-width: 900px) {
+  .services-full-grid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .service-full-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* About chips más chicos */
+  .chip {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+  }
+
+  /* Stats foto en 3 columnas pequeñas */
+  .photo-stat-n {
+    font-size: 1.5rem;
+  }
+
+  .photo-stat-l {
+    font-size: 0.65rem;
+  }
+
+  /* Services intro */
+  .services-intro {
+    font-size: 0.95rem;
+  }
+
+  /* CTA block */
+  .services-cta-block {
+    padding: 1.5rem;
+  }
+}
+
+/* ===== MOBILE — SERVICES GRID ===== */
+@media (max-width: 768px) {
+
+  /* 1. Header más compacto — el nombre en dos líneas no se desborda */
+  .branding {
+    gap: 0.5rem;
+  }
+  .branding img {
+    width: 60px;
+    height: 50px;
+    padding: 4px;
+    margin: 4px;
+  }
+  .branding h1 {
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+
+  /* 2. Hero — texto más legible en pantalla pequeña */
+  .hero {
+    padding: 3rem 1rem;
+  }
+  #rotating-text {
+    font-size: 1.4rem;
+    min-height: 90px;
+    height: auto;
+    padding: 0 0.5rem;
+  }
+  .hero p {
+    font-size: 1rem;
+  }
+
+  /* 3. Stats — más compactos en 2 columnas */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .stat-number {
+    font-size: 2.2rem;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+  }
+
+  /* 4. About — mini stats en columna */
+  .about-mini-stats {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .mini-stat {
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* 5. FAQ — botón más fácil de tocar (44px mínimo por WCAG) */
+  .faq-question {
+    padding: 1rem;
+    font-size: 0.95rem;
+    min-height: 44px;
+  }
+
+  /* 6. Secciones — menos padding lateral para ganar espacio */
+  section {
+    padding: 2rem 0.75rem;
+    margin-top: 1rem;
+    border-radius: 6px;
+  }
+}
+
+/* Extra pequeño — 360px y menos */
+@media (max-width: 400px) {
+  .branding h1 {
+    font-size: 1.1rem;
+  }
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-number {
+    font-size: 1.8rem;
+  }
+}

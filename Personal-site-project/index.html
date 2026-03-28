@@ -23,6 +23,7 @@
   <link rel="icon" type="image/png" href="IMAGE/favicon.png">
   <script src="JS/translations.js"></script>
   <script src="JS/main.js" defer></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -42,17 +43,6 @@
   }
 </script>
 </head>
-<!-- WHATSAPP FLOTANTE -->
-<a href="https://wa.me/593992347656?text=Hola%20Dra.%20Cristina%2C%20necesito%20asesor%C3%ADa%20legal"
-   target="_blank"
-   class="whatsapp-float"
-   aria-label="Chatear por WhatsApp con Dra. Cristina Vera">
-  <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.824L.057 23.882a.5.5 0 00.606.61l6.208-1.448A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.042-1.38l-.361-.214-3.737.872.936-3.63-.235-.374A9.869 9.869 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
-  </svg>
-  <span class="wa-text">Chatea con Cristina</span>
-</a>
 <body>
   <header>
     <div class="container">
@@ -121,8 +111,25 @@
 
   <section id="about" class="about">
     <div class="container">
+      <!-- Dentro de <section id="about"> reemplaza el h2 y primer párrafo con esto: -->
+      <span class="about-badge">Abogada certificada · Milagro, Ecuador</span>
       <h2 data-i18n="about_title">Abogada Cristina Vera</h2>
-      <img src="Siteplan/services-1.jpg" alt="Cristina Vera en consulta profesional" class="about-img" loading="lazy">
+      <div class="about-mini-stats">
+        <div class="mini-stat">
+          <span class="mini-stat-n">10+</span>
+          <span class="mini-stat-l" data-i18n="stat_years">Años de experiencia</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-stat-n">500+</span>
+          <span class="mini-stat-l" data-i18n="stat_clients">Clientes atendidos</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-stat-n">95%</span>
+          <span class="mini-stat-l" data-i18n="stat_success">Casos exitosos</span>
+        </div>
+      </div>
+      
+      
       <p data-i18n="about_text1">Con más de 10 años de experiencia legal, Cristina Vera se ha consolidado como una asesora y defensora de confianza para cientos de personas y pequeñas empresas en Milagro y en todo Ecuador. Su experiencia abarca una amplia gama de áreas legales, incluyendo derecho civil, derecho corporativo, derecho de familia, planificación patrimonial y actos notariales como contratos, poderes notariales y transacciones inmobiliarias.</p>
       <p data-i18n="about_text1_1">Conoce más sobre <a href="About_me.html">Cristina Vera</a></p>
       <p data-i18n="about_text2">Cristina está profundamente comprometida con brindar soluciones legales personalizadas, adaptadas a las necesidades únicas de cada cliente. Es reconocida por su enfoque minucioso, comunicación clara y dedicación inquebrantable para lograr los mejores resultados posibles.</p>
@@ -139,14 +146,56 @@
       <img src="Siteplan/legal.jpg" alt="Servicios legales profesionales" class="services-img" loading="lazy">
       <p data-i18n="services_title1">Entre los servicios legales que ofrece Cristina Vera se incluyen:</p>
     
-      <ul class="services-list">
-        <li><strong data-i18n="service_1">Familia</strong><p data-i18n="service_1_1">El derecho de familia en Ecuador abarca temas como divorcio, custodia, pensión alimenticia, régimen de visitas y protección de menores.</p></li>
-        <li><strong data-i18n="service_2">Mujer</strong><p data-i18n="service_2_1">Asesoría y representación en casos de violencia de género, derechos laborales y protección legal para mujeres.</p></li>
-        <li><strong data-i18n="service_3">Niñez y Adolescencia</strong><p data-i18n="service_3_1">Casos legales que involucran a menores: custodia, patria potestad, pensión alimenticia, visitas y tutela.</p></li>
-        <li><strong data-i18n="service_4">Actos notariales</strong><p data-i18n="service_4_1">Documentos legales validados ante notario: contratos, escrituras, poderes, autorizaciones y declaraciones juramentadas.</p></li>
-        <li><strong data-i18n="service_5">Violencia intrafamiliar</strong><p data-i18n="service_5_1">Asesoría en casos de abuso físico, psicológico, sexual o económico regulados por la ley ecuatoriana.</p></li>
-        <li><strong data-i18n="service_6">Tránsito</strong><p data-i18n="service_6_1">Infracciones, accidentes, multas, suspensión de licencias y trámites ante la ANT.</p></li>
-      </ul>
+      <div class="services-grid">
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="users"></i>
+          </span>
+          <strong data-i18n="service_1">Familia</strong>
+          <p data-i18n="service_1_1">Divorcio, custodia, pensión alimenticia y protección de menores.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="shield"></i>
+          </span>
+          <strong data-i18n="service_2">Mujer</strong>
+          <p data-i18n="service_2_1">Asesoría y representación en casos de violencia de género y protección legal.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="heart"></i>
+          </span>
+          <strong data-i18n="service_3">Niñez y Adolescencia</strong>
+          <p data-i18n="service_3_1">Tutela, patria potestad y protección del interés superior del menor.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="file-text"></i>
+          </span>
+          <strong data-i18n="service_4">Actos notariales</strong>
+          <p data-i18n="service_4_1">Contratos, escrituras, poderes y declaraciones juramentadas.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="shield-alert"></i>
+          </span>
+          <strong data-i18n="service_5">Violencia intrafamiliar</strong>
+          <p data-i18n="service_5_1">Medidas de protección y representación integral ante la justicia.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+        <div class="service-card">
+          <span class="service-icon">
+            <i data-lucide="car"></i>
+          </span>
+          <strong data-i18n="service_6">Tránsito</strong>
+          <p data-i18n="service_6_1">Multas, accidentes y suspensión de licencias ante la ANT.</p>
+          <a href="services.html" class="service-link" data-i18n="service_link">Ver más →</a>
+        </div>
+      </div>
     
       <a href="contact.html" class="btn" data-i18n="hero_cta">Solicita una Consulta</a>
     </div>
@@ -166,19 +215,42 @@
 
   <section id="faq" class="faq">
     <div class="container">
-      <h2 data-i18n="faq_title">Preguntas Frecuentes</h2>
-      <details>
-        <summary data-i18n="faq_q1">¿Cuánto cuesta una consulta inicial?</summary>
-        <p data-i18n="faq_a1">La consulta inicial puede variar según el tipo de caso, pero muchas veces ofrecemos una primera evaluación gratuita.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq_q2">¿Qué documentos debo llevar a mi cita?</summary>
-        <p data-i18n="faq_a2">Documentación básica como cédula de identidad, contratos, escrituras, etc., según el caso.</p>
-      </details>
-      <details>
-        <summary data-i18n="faq_q3">¿Es necesario agendar una cita en línea?</summary>
-        <p data-i18n="faq_a3">Sí, la cita en línea es necesaria para reservar el tiempo. Sin agendar previamente, deberá esperar disponibilidad.</p>
-      </details>
+      <p class="section-eyebrow">Preguntas frecuentes</p>
+      <h2 data-i18n="faq_title">¿Tienes dudas? Aquí las resolvemos</h2>
+
+      <div class="faq-list">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span data-i18n="faq_q1">¿Cuánto cuesta una consulta inicial?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <p data-i18n="faq_a1">La consulta inicial puede variar según el tipo de caso, pero muchas veces ofrecemos una primera evaluación gratuita.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span data-i18n="faq_q2">¿Qué documentos debo llevar a mi cita?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <p data-i18n="faq_a2">Documentación básica como cédula de identidad, contratos, escrituras, etc., según el caso.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            <span data-i18n="faq_q3">¿Es necesario agendar una cita en línea?</span>
+            <span class="faq-icon" aria-hidden="true">+</span>
+          </button>
+          <div class="faq-answer" role="region">
+            <p data-i18n="faq_a3">Sí, la cita en línea es necesaria para reservar el tiempo. Sin agendar previamente, deberá esperar disponibilidad.</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   </section>
 
@@ -187,10 +259,18 @@
       <p><a href="Siteplan/site-plan.html">Site plan</a></p>
       <p>© 2026 <a href="About_me.html">Cristina Vera</a> - Abogada. <span data-i18n="footer_rights">Todos los derechos reservados.</span></p>
       <p>Created by © <a href="https://Jose_Castro.com" target="_blank">Jose Castro</a></p>
-      <!-- WHATSAPP FLOTANTE -->
-      <!-- <a href="https://wa.me/593992347656?text=Hola%20Dra.%20Cristina%2C%20necesito%20asesor%C3%ADa%20legal" target="_blank" class="whatsapp-btn">Chatea por WhatsApp</a> -->
     </div>
   </footer>
-
+  <!-- WHATSAPP FLOTANTE -->
+  <a href="https://wa.me/593992347656?text=Hola%20Dra.%20Cristina%2C%20necesito%20asesor%C3%ADa%20legal"
+    target="_blank"
+    class="whatsapp-float"
+    aria-label="Chatear por WhatsApp con Dra. Cristina Vera">
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.824L.057 23.882a.5.5 0 00.606.61l6.208-1.448A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.042-1.38l-.361-.214-3.737.872.936-3.63-.235-.374A9.869 9.869 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
+    </svg>
+    <span class="wa-text">Chatea con Cristina</span>
+  </a>
 </body>
 </html>

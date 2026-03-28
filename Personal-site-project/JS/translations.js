@@ -113,7 +113,27 @@ const translations = {
     calendly_btn: "Agendar vía Calendly",
 
     // --- FOOTER (todas las páginas) ---
-    footer_rights: "Todos los derechos reservados."
+    footer_rights: "Todos los derechos reservados.",
+
+    about_eyebrow:         "La abogada",
+    about_block1_title:    "Persona y valores",
+    about_block2_title:    "Trayectoria profesional",
+    about_block3_title:    "¿Por qué elegir a Cristina?",
+    photo_badge_title:     "Abogada certificada",
+    photo_badge_sub:       "Milagro, Ecuador",
+    about_see_services:    "Ver servicios",
+  
+    services_eyebrow:      "Áreas de práctica",
+    services_intro:        "Ofrecemos representación legal especializada en las siguientes áreas, siempre dentro del marco de la legislación ecuatoriana.",
+    services_cta_text:     "¿No encuentras tu caso aquí? Contáctanos — atendemos cualquier consulta legal.",
+    service_link:          "Ver más →",
+  
+    sfc_tag_civil:         "Derecho Civil",
+    sfc_tag_protection:    "Protección legal",
+    sfc_tag_minors:        "Menores",
+    sfc_tag_notarial:      "Notarial",
+    sfc_tag_urgent:        "Atención urgente",
+    sfc_tag_transit:       "ANT · Ecuador",
   },
 
 
@@ -221,7 +241,27 @@ const translations = {
     calendly_btn: "Schedule via Calendly",
 
     // --- FOOTER ---
-    footer_rights: "All rights reserved."
+    footer_rights: "All rights reserved.",
+
+    about_eyebrow:         "The attorney",
+    about_block1_title:    "Person and values",
+    about_block2_title:    "Professional background",
+    about_block3_title:    "Why choose Cristina?",
+    photo_badge_title:     "Certified attorney",
+    photo_badge_sub:       "Milagro, Ecuador",
+    about_see_services:    "View services",
+  
+    services_eyebrow:      "Practice areas",
+    services_intro:        "We provide specialized legal representation in the following areas, always within the framework of Ecuadorian legislation.",
+    services_cta_text:     "Can't find your case here? Contact us — we handle any legal inquiry.",
+    service_link:          "Learn more →",
+  
+    sfc_tag_civil:         "Civil Law",
+    sfc_tag_protection:    "Legal protection",
+    sfc_tag_minors:        "Minors",
+    sfc_tag_notarial:      "Notarial",
+    sfc_tag_urgent:        "Urgent attention",
+    sfc_tag_transit:       "ANT · Ecuador",
   }
 };
 
