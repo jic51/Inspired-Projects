@@ -122,6 +122,54 @@
             </div>
 
             <div class="form-group">
+              <label for="city" data-i18n="label_city">Ciudad de residencia:</label>
+              <input
+                type="text"
+                id="city"
+                name="city"
+                autocomplete="address-level2"
+                placeholder="Ej: Guayaquil, Quito, Milagro..."
+                list="cities-list"
+                required>
+              <datalist id="cities-list">
+                <!-- Ecuador — principales -->
+                <option value="Guayaquil">
+                <option value="Quito">
+                <option value="Cuenca">
+                <option value="Milagro">
+                <option value="Santo Domingo">
+                <option value="Machala">
+                <option value="Manta">
+                <option value="Portoviejo">
+                <option value="Loja">
+                <option value="Ambato">
+                <option value="Esmeraldas">
+                <option value="Riobamba">
+                <option value="Ibarra">
+                <option value="Babahoyo">
+                <option value="Quevedo">
+                <option value="Latacunga">
+                <option value="Tulcán">
+                <option value="Azogues">
+                <option value="Nueva Loja (Lago Agrio)">
+                <option value="El Oro">
+                <!-- Internacional -->
+                <option value="Miami, USA">
+                <option value="New York, USA">
+                <option value="Madrid, España">
+                <option value="Barcelona, España">
+                <option value="Buenos Aires, Argentina">
+                <option value="Bogotá, Colombia">
+                <option value="Lima, Perú">
+                <option value="Ciudad de México">
+                <option value="Santiago, Chile">
+              </datalist>
+              <span class="field-error" id="error-city" data-i18n="error_city">
+                Por favor ingresa tu ciudad de residencia.
+              </span>
+            </div>
+
+            <div class="form-group">
               <label for="motivo" data-i18n="label_motivo">Motivo de consulta:</label>
               <select id="motivo" name="motivo" onchange="showOtherField()">
                 <option value=""                        data-i18n="opt_default">-- Selecciona un motivo --</option>
@@ -159,14 +207,54 @@
             <!-- ✅ REEMPLAZA "TU-SITEKEY-AQUÍ" con tu Site Key de Google reCAPTCHA -->
             <div class="g-recaptcha" data-sitekey="6LdQZ5gsAAAAACek2bMl37KWoqSKH66MC08ZpCuV"></div>
 
+            <!-- Aviso de privacidad — antes del botón submit -->
+            <div class="privacy-notice">
+              <input type="checkbox" id="privacy-check" name="privacy" required>
+              <label for="privacy-check" data-i18n="privacy_label">
+                He leído y acepto el
+                <button type="button" class="privacy-link" onclick="togglePrivacyModal()">
+                  aviso de privacidad
+                </button>.
+                Entiendo que mis datos serán utilizados únicamente por el equipo de la Abogada Cristina Vera para gestionar mi consulta y mejorar el servicio.
+              </label>
+            </div>
+
+            <!-- Modal de privacidad -->
+            <div id="privacy-modal" class="privacy-modal" style="display:none;">
+              <div class="privacy-modal-content">
+                <button class="privacy-modal-close" onclick="togglePrivacyModal()" aria-label="Cerrar">✕</button>
+                <h3 data-i18n="privacy_title">Aviso de Privacidad</h3>
+                <p data-i18n="privacy_p1">Los datos personales que usted proporciona a través de este formulario (nombre, cédula, correo, teléfono, ciudad y motivo de consulta) serán tratados de manera confidencial.</p>
+                <p data-i18n="privacy_p2"><strong>Finalidad:</strong> La información recopilada se utilizará exclusivamente para: (1) dar respuesta a su consulta legal, (2) coordinar citas y seguimiento de su caso, y (3) mejorar la calidad de nuestros servicios.</p>
+                <p data-i18n="privacy_p3"><strong>Uso exclusivo:</strong> Sus datos NO serán vendidos, compartidos ni cedidos a terceros bajo ninguna circunstancia. Solo el equipo de la Abogada Cristina Vera tendrá acceso a esta información.</p>
+                <p data-i18n="privacy_p4"><strong>Retención:</strong> Sus datos se conservarán únicamente durante el tiempo necesario para gestionar su consulta o relación legal.</p>
+                <p data-i18n="privacy_p5">Para ejercer sus derechos de acceso, rectificación o eliminación de sus datos, puede escribirnos a: <a href="mailto:cristina.vera.abogada@gmail.com">cristina.vera.abogada@gmail.com</a></p>
+                <button class="btn" onclick="togglePrivacyModal()" data-i18n="privacy_close">Entendido</button>
+              </div>
+            </div>
+
             <button type="submit" class="btn-submit" id="submit-btn" data-i18n="btn_submit">
               Enviar Consulta
             </button>
 
           </form>
 
-          <div id="success-message" data-i18n="success_message">
-            ✅ ¡Tu consulta fue enviada correctamente! La Abogada Cristina Vera se pondrá en contacto contigo pronto.
+          <!-- Mensaje de éxito + Calendly — aparece tras enviar -->
+          <div id="success-message" style="display:none;">
+            <div class="success-check">✅</div>
+            <h3 data-i18n="success_title">¡Consulta enviada correctamente!</h3>
+            <p data-i18n="success_text">La Abogada Cristina Vera revisará tu caso y se pondrá en contacto pronto.</p>
+
+            <div class="success-calendly">
+              <p data-i18n="success_calendly_text">Mientras tanto, puedes agendar tu cita directamente:</p>
+              <a href="https://calendly.com/cristina-vera-abogada/30min"
+                class="btn"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-i18n="calendly_btn">
+                📅 Agendar cita en Calendly
+              </a>
+            </div>
           </div>
 
         </div>
@@ -249,6 +337,27 @@
     </svg>
     <span class="wa-text">Enviar mensaje a Cristina</span>
   </a>
+  <script>
+    // Modal de privacidad
+    function togglePrivacyModal() {
+      const modal = document.getElementById("privacy-modal");
+      if (!modal) return;
+      modal.style.display = modal.style.display === "none" ? "flex" : "none";
+      document.body.style.overflow = modal.style.display === "flex" ? "hidden" : "";
+    }
+
+    // Cerrar modal con Escape
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const modal = document.getElementById("privacy-modal");
+        if (modal && modal.style.display === "flex") {
+          togglePrivacyModal();
+        }
+      }
+    });
+
+    
+  </script>
 
 </body>
 </html>

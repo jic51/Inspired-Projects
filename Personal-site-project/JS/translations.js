@@ -134,6 +134,20 @@ const translations = {
     sfc_tag_notarial:      "Notarial",
     sfc_tag_urgent:        "Atención urgente",
     sfc_tag_transit:       "ANT · Ecuador",
+
+    label_city:          "Ciudad de residencia:",
+    error_city:          "Por favor ingresa tu ciudad de residencia.",
+    privacy_label:       "He leído y acepto el aviso de privacidad.",
+    privacy_title:       "Aviso de Privacidad",
+    privacy_p1:          "Los datos que proporciona serán tratados de manera confidencial.",
+    privacy_p2:          "Finalidad: responder su consulta, coordinar citas y mejorar el servicio.",
+    privacy_p3:          "Sus datos NO serán vendidos ni compartidos con terceros bajo ninguna circunstancia.",
+    privacy_p4:          "Sus datos se conservarán solo durante el tiempo necesario para gestionar su caso.",
+    privacy_p5:          "Para ejercer sus derechos escriba a: cristina.vera.abogada@gmail.com",
+    privacy_close:       "Entendido",
+    success_title:       "¡Consulta enviada correctamente!",
+    success_text:        "La Abogada Cristina Vera revisará tu caso y se pondrá en contacto pronto.",
+    success_calendly_text: "Mientras tanto, puedes agendar tu cita directamente:",
   },
 
 
@@ -262,6 +276,21 @@ const translations = {
     sfc_tag_notarial:      "Notarial",
     sfc_tag_urgent:        "Urgent attention",
     sfc_tag_transit:       "ANT · Ecuador",
+
+    label_city:          "City of residence:",
+    error_city:          "Please enter your city of residence.",
+    privacy_label:       "I have read and accept the privacy notice.",
+    privacy_title:       "Privacy Notice",
+    privacy_p1:          "The data you provide will be treated confidentially.",
+    privacy_p2:          "Purpose: to respond to your inquiry, coordinate appointments and improve our service.",
+    privacy_p3:          "Your data will NOT be sold or shared with third parties under any circumstances.",
+    privacy_p4:          "Your data will be retained only for as long as necessary to handle your case.",
+    privacy_p5:          "To exercise your rights write to: cristina.vera.abogada@gmail.com",
+    privacy_close:       "Understood",
+    success_title:       "Inquiry sent successfully!",
+    success_text:        "Attorney Cristina Vera will review your case and get in touch soon.",
+    success_calendly_text: "In the meantime, you can schedule your appointment directly:",
+
   }
 };
 

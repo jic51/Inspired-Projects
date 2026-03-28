@@ -303,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
   checkCounters();
   initFAQ();
 
-  if (typeof lucide !== "undefined") lucide.createIcons();
+
   
 });
 

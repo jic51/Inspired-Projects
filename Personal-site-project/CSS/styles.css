@@ -222,78 +222,53 @@ section h2 {
   font-size: 2rem;
 }
 
-/* Botón general reutilizable */
+/* ===== SISTEMA DE BOTONES — UN SOLO LUGAR ===== */
+
+/* Primario — amarillo — "Solicita una Consulta" */
 .btn {
   display: inline-block;
-  padding: 0.75rem 1.5rem;
+  padding: 0.8rem 2rem;
   background: #f1c40f;
   color: #002244;
   text-decoration: none;
-  font-weight: bold;
-  border-radius: 6px;
-  transition: background 0.3s ease;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: 2px solid #f1c40f;
+  transition: background 0.25s ease, transform 0.2s ease;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.3px;
 }
 
 .btn:hover {
   background: #ffdf4e;
+  border-color: #ffdf4e;
+  transform: translateY(-2px);
 }
 
-
-/* ===== IMÁGENES ===== */
-.services1-img,
-.services-img,
-.about-img {
-  width: 100%;
-  max-width: 1000px;
-  height: auto;
-  display: block;
-  margin: 1rem auto;
+/* Secundario — azul outline — "Ver servicios" */
+.btn-outline {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background: transparent;
+  color: #002244;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.95rem;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-
-/* ===== SECCIÓN ABOUT ===== */
-.about .btn {
+  border: 2px solid #002244;
+  transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+  cursor: pointer;
   text-align: center;
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #f1c40f;
-  color: #002244;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 6px;
-  transition: background 0.3s ease;
+  letter-spacing: 0.3px;
 }
 
-.about .btn:hover {
-  background: #ffdf4e;
+.btn-outline:hover {
+  background: #002244;
+  color: #fff;
+  transform: translateY(-2px);
 }
-
-
-/* ===== SERVICIOS ===== */
-.services ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-}
-
-.services .btn {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.75rem 1.5rem;
-  background: #f1c40f;
-  color: #002244;
-  text-decoration: none;
-  font-weight: bold;
-  border-radius: 6px;
-  transition: background 0.3s ease;
-}
-
-.services .btn:hover {
-  background: #ffdf4e;
-}
-
 
 /* ===== STATS COUNTER ===== */
 .stats {
@@ -381,9 +356,9 @@ section h2 {
 
 .testimonials-track {
   display: flex;
-  gap: 1.5rem;
+  gap: 2.5rem;
   width: max-content;
-  animation: scrollLeft 35s linear infinite;
+  animation: scrollLeft 200s linear infinite;
   padding: 1rem 0;
 }
 
@@ -549,20 +524,6 @@ section h2 {
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
-.form .btn {
-  background-color: #002244;
-  color: #fff;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.form .btn:hover {
-  background-color: #004080;
-}
-
 
 /* ===== WHATSAPP FLOTANTE ===== */
 .whatsapp-float {
@@ -954,12 +915,6 @@ footer p {
 .faq-item.active .faq-answer {
   max-height: 300px;
 }
-
-/* ============================================================
-   AÑADIR AL FINAL DE CSS/styles.css
-   Estilos para About_me.html y services.html
-   ============================================================ */
-
 
 /* ===== ABOUT — TWO COLUMN LAYOUT ===== */
 
