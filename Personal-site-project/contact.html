@@ -330,15 +330,17 @@
   <a href="https://wa.me/593992347656?text=Hola%20Dra.%20Cristina%2C%20necesito%20asesor%C3%ADa%20legal"
      target="_blank" rel="noopener noreferrer"
      class="whatsapp-float"
-     aria-label="Consultar por WhatsApp">
+     aria-label="Chatear por WhatsApp con Dra. Cristina Vera">
     <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
       <path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.824L.057 23.882a.5.5 0 00.606.61l6.208-1.448A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.042-1.38l-.361-.214-3.737.872.936-3.63-.235-.374A9.869 9.869 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
     </svg>
-    <span class="wa-text">Enviar mensaje a Cristina</span>
+    <span class="wa-text">Consultar por WhatsApp</span>
   </a>
   <script>
-    // Modal de privacidad
+    // ============================================================
+    // 1. MODAL DE PRIVACIDAD
+    // ============================================================
     function togglePrivacyModal() {
       const modal = document.getElementById("privacy-modal");
       if (!modal) return;
@@ -346,7 +348,7 @@
       document.body.style.overflow = modal.style.display === "flex" ? "hidden" : "";
     }
 
-    // Cerrar modal con Escape
+    // Cerrar modal con tecla Escape
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         const modal = document.getElementById("privacy-modal");
@@ -356,6 +358,171 @@
       }
     });
 
+
+    // ============================================================
+    // 2. SINCRONIZAR IDIOMA EN EL FORMULARIO
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", () => {
+      const langField  = document.getElementById("form-language");
+      const langSelect = document.getElementById("language-select");
+
+      if (langField) langField.value = localStorage.getItem("lang") || "es";
+
+      if (langSelect) {
+        langSelect.addEventListener("change", (e) => {
+          if (langField) langField.value = e.target.value;
+        });
+      }
+    });
+
+
+    // ============================================================
+    // 3. VALIDACIÓN EN TIEMPO REAL DE CADA CAMPO
+    // ============================================================
+    function validateField(field) {
+      const errorEl = document.getElementById("error-" + field.id);
+      let isValid   = true;
+
+      if (field.type === "email") {
+        isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim());
+      } else if (field.tagName === "SELECT") {
+        isValid = field.value !== "";
+      } else {
+        isValid = field.value.trim().length > 0;
+      }
+
+      const hasValue = field.value.trim() !== "";
+      field.classList.toggle("valid",   isValid  && hasValue);
+      field.classList.toggle("invalid", !isValid && hasValue);
+      if (errorEl) errorEl.classList.toggle("visible", !isValid && hasValue);
+      return isValid;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("#contact-form input[required], #contact-form select")
+        .forEach(field => {
+          field.addEventListener("blur",  () => validateField(field));
+          field.addEventListener("input", () => {
+            if (field.classList.contains("invalid")) validateField(field);
+          });
+        });
+    });
+
+
+    // ============================================================
+    // 4. MOSTRAR CAMPO "OTRO"
+    // ============================================================
+    function showOtherField() {
+      const motivo    = document.getElementById("motivo");
+      const container = document.getElementById("other-reason-container");
+      const textarea  = document.getElementById("other-reason");
+      if (!motivo || !container) return;
+
+      if (motivo.value === "Otro") {
+        container.style.display    = "block";
+        container.style.opacity    = "0";
+        container.style.transition = "opacity 0.3s ease";
+        requestAnimationFrame(() => { container.style.opacity = "1"; });
+        if (textarea) textarea.focus();
+      } else {
+        container.style.opacity = "0";
+        setTimeout(() => {
+          container.style.display = "none";
+          container.style.opacity = "1";
+        }, 300);
+      }
+    }
+
+
+    // ============================================================
+    // 5. ENVÍO DEL FORMULARIO CON TODAS LAS VALIDACIONES
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", () => {
+      const form       = document.getElementById("contact-form");
+      const submitBtn  = document.getElementById("submit-btn");
+      const successMsg = document.getElementById("success-message");
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // --- PASO 1: Validar todos los campos requeridos ---
+        let allValid = true;
+        form.querySelectorAll("input[required], select")
+          .forEach(field => {
+            if (!validateField(field)) allValid = false;
+          });
+
+        if (!allValid) {
+          const firstInvalid = form.querySelector(".invalid");
+          if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          return; // ← detiene el envío aquí si hay campos vacíos
+        }
+
+        // --- PASO 2: Validar que aceptó el aviso de privacidad ---
+        const privacyCheck  = document.getElementById("privacy-check");
+        const privacyNotice = document.querySelector(".privacy-notice");
+
+        if (privacyCheck && !privacyCheck.checked) {
+          // Resaltar el checkbox en rojo
+          privacyCheck.style.outline = "2px solid #e74c3c";
+          // Poner el texto en rojo temporalmente
+          if (privacyNotice) {
+            privacyNotice.style.color = "#e74c3c";
+            setTimeout(() => {
+              privacyNotice.style.color = "";
+            }, 3000); // vuelve al color normal después de 3 segundos
+          }
+          // Hacer scroll hasta el checkbox
+          privacyCheck.scrollIntoView({ behavior: "smooth", block: "center" });
+          return; // ← detiene el envío aquí si no aceptó privacidad
+        }
+
+        // Limpiar el borde rojo si ya está marcado
+        if (privacyCheck) {
+          privacyCheck.style.outline = "";
+        }
+
+        // --- PASO 3: Enviar el formulario a Formspree ---
+        submitBtn.textContent   = "Enviando...";
+        submitBtn.disabled      = true;
+        submitBtn.style.opacity = "0.7";
+
+        try {
+          const response = await fetch(form.action, {
+            method:  "POST",
+            body:    new FormData(form),
+            headers: { "Accept": "application/json" }
+          });
+
+          if (response.ok) {
+            // Éxito: esconder el formulario y mostrar mensaje + Calendly
+            form.style.display = "none";
+            successMsg.style.display = "block";
+            successMsg.scrollIntoView({ behavior: "smooth", block: "center" });
+          } else {
+            // Error del servidor
+            const json = await response.json();
+            const msg  = json?.errors?.map(err => err.message).join(", ")
+                         || "Hubo un error al enviar. Intenta de nuevo.";
+            alert(msg);
+            resetButton();
+          }
+        } catch {
+          alert("No se pudo conectar. Verifica tu conexión e intenta de nuevo.");
+          resetButton();
+        }
+
+        function resetButton() {
+          submitBtn.textContent   = "Enviar Consulta";
+          submitBtn.disabled      = false;
+          submitBtn.style.opacity = "1";
+        }
+      });
+    });
+  </script>
 
   </script>
 
