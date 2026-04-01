@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Página no encontrada — Abogada Cristina Vera</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="CSS/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="180x180" href="IMAGE/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="IMAGE/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="IMAGE/favicon-16x16.png">
+  <link rel="manifest" href="IMAGE/site.webmanifest">
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="JS/translations.js"></script>
+  <script src="JS/main.js" defer></script>
+
+  <style>
+    .error-page {
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1rem;
+    }
+
+    .error-content {
+      max-width: 560px;
+    }
+
+    .error-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 8rem;
+      font-weight: 700;
+      color: #e8edf4;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .error-number::after {
+      content: '⚖️';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3.5rem;
+    }
+
+    .error-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      color: #002244;
+      margin: 1.5rem 0 1rem;
+    }
+
+    .error-text {
+      color: #666;
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .error-links {
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid #eee;
+    }
+
+    .error-links p {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+
+    .error-nav {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .error-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+      color: #015ab4;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .error-nav a:hover {
+      color: #002244;
+    }
+
+    .error-nav svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    @media (max-width: 480px) {
+      .error-number {
+        font-size: 5rem;
+      }
+      .error-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+      .error-actions .btn,
+      .error-actions .btn-outline {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <div class="branding">
+        <a id="logo_link" href="index.html">
+          <img src="IMAGE/CristinaVeraAttorney1.png" alt="Cristina Vera Logo">
+        </a>
+        <h1 data-i18n="head_h1">Abogada Cristina Vera</h1>
+      </div>
+
+      <button class="menu-toggle" aria-label="Toggle Menu">☰</button>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html"     data-i18n="nav_home">Inicio</a></li>
+          <li><a href="About_me.html"  data-i18n="nav_about">Sobre mí</a></li>
+          <li><a href="services.html"  data-i18n="nav_services">Servicios</a></li>
+          <li><a href="contact.html"   data-i18n="nav_contact">Contacto</a></li>
+          <li><a href="index.html#faq" data-i18n="nav_faq">Preguntas Frecuentes</a></li>
+        </ul>
+      </nav>
+
+      <select id="language-select">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </header>
+
+
+  <section class="error-page reveal">
+    <div class="error-content">
+
+      <div class="error-number">404</div>
+
+      <h2 class="error-title" data-i18n="error_404_title">
+        Esta página no existe
+      </h2>
+      <p class="error-text" data-i18n="error_404_text">
+        La página que buscas no fue encontrada. Es posible que haya sido movida, eliminada o que hayas escrito mal la dirección. No te preocupes — te ayudamos a encontrar lo que necesitas.
+      </p>
+
+      <div class="error-actions">
+        <a href="index.html" class="btn" data-i18n="error_go_home">
+          Ir al inicio
+        </a>
+        <a href="contact.html" class="btn-outline" data-i18n="error_contact">
+          Contactar a Cristina Vera
+        </a>
+      </div>
+
+      <div class="error-links">
+        <p data-i18n="error_helpful_links">O visita una de estas páginas:</p>
+        <div class="error-nav">
+          <a href="About_me.html">
+            <i data-lucide="user-round"></i>
+            <span data-i18n="nav_about">Sobre mí</span>
+          </a>
+          <a href="services.html">
+            <i data-lucide="briefcase"></i>
+            <span data-i18n="nav_services">Servicios</span>
+          </a>
+          <a href="index.html#faq">
+            <i data-lucide="help-circle"></i>
+            <span data-i18n="nav_faq">Preguntas Frecuentes</span>
+          </a>
+          <a href="contact.html">
+            <i data-lucide="mail"></i>
+            <span data-i18n="nav_contact">Contacto</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <footer>
+    <div class="container">
+      <p>© 2026 <a href="About_me.html">Cristina Vera - Abogada</a>
+         <span data-i18n="footer_rights">Todos los derechos reservados.</span>
+      </p>
+      <p>Created by © <a href="https://Jose_Castro.com" target="_blank">Jose Castro</a></p>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/593992347656?text=Hola%20Abogada%2C%20necesito%20asesor%C3%ADa%20legal"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="whatsapp-float"
+    aria-label="Consultar por WhatsApp con la Abogada Cristina Vera">
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.824L.057 23.882a.5.5 0 00.606.61l6.208-1.448A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.042-1.38l-.361-.214-3.737.872.936-3.63-.235-.374A9.869 9.869 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
+    </svg>
+    <span class="wa-text">Consultar por WhatsApp</span>
+  </a>
+
+  <script>
+    // Inicializar Lucide
+    if (typeof lucide !== "undefined") lucide.createIcons();
+  </script>
+
+</body>
+</html>

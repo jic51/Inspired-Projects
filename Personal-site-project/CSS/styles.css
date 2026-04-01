@@ -32,6 +32,62 @@ p {
   padding: 0 15px;
 }
 
+/* ===== IMÁGENES ===== */
+
+/* Imagen de la abogada en #about de index.html */
+.about-img {
+  width: 100%;
+  max-width: 480px;        /* no más ancha que esto */
+  height: auto;
+  aspect-ratio: 3 / 4;    /* proporción vertical — retrato */
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 34, 68, 0.12);
+}
+
+/* Imagen de servicios en #services de index.html — tipo banner */
+.services-img {
+  width: 100%;
+  max-width: 100%;         /* ocupa todo el ancho del contenedor */
+  height: auto;
+  aspect-ratio: 21 / 6;   /* proporción panorámica */
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  margin: 1.2rem 0 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Imagen de servicios en services.html (la de la página detalle) */
+.services1-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 21 / 6;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile — ajustar proporciones */
+@media (max-width: 768px) {
+  .about-img {
+    max-width: 100%;       /* foto llena todo el ancho en mobile */
+    aspect-ratio: 4 / 5;  /* un poco menos alta en mobile */
+  }
+
+  .services-img,
+  .services1-img {
+    aspect-ratio: 16 / 7; /* banner un poco más alto en mobile */
+  }
+}
 
 /* ===== HEADER ===== */
 header {
@@ -740,6 +796,29 @@ footer p {
   grid-template-columns: repeat(3, 1fr);
   gap: 1.2rem;
   margin: 1.5rem 0;
+}
+
+/* Centra el último card si queda solo en su fila */
+.services-grid .service-card:last-child:nth-child(3n - 2),
+.services-grid .service-card:last-child:nth-child(3n - 1) {
+  grid-column: auto;
+}
+
+/* Cuando hay 5 cards en grid de 3 — centra la última fila */
+.services-grid:has(.service-card:nth-child(5):last-child) {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.services-grid:has(.service-card:nth-child(5):last-child) .service-card {
+  grid-column: span 2;
+}
+
+.services-grid:has(.service-card:nth-child(5):last-child) .service-card:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.services-grid:has(.service-card:nth-child(5):last-child) .service-card:nth-child(5) {
+  grid-column: 4 / span 2;
 }
 
 .service-card {
@@ -1468,5 +1547,132 @@ footer p {
   }
   .stat-number {
     font-size: 1.8rem;
+  }
+}
+ 
+.why-us {
+  background: #fff;
+  padding: 3.5rem 1rem;
+}
+ 
+.why-subtitle {
+  color: #666;
+  font-size: 1rem;
+  max-width: 620px;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+ 
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+ 
+.why-card {
+  background: #f8faff;
+  border: 1px solid #e8edf4;
+  border-radius: 14px;
+  padding: 1.8rem 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+ 
+.why-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, #002244, #015ab4);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+ 
+.why-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 34, 68, 0.10);
+  border-color: #b5d4f4;
+}
+ 
+.why-card:hover::after {
+  opacity: 1;
+}
+ 
+.why-icon {
+  width: 52px;
+  height: 52px;
+  background: #e8f0fe;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: background 0.2s ease;
+}
+ 
+.why-card:hover .why-icon {
+  background: #002244;
+}
+ 
+.why-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke: #002244;
+  stroke-width: 1.8;
+  transition: stroke 0.2s ease;
+}
+ 
+.why-card:hover .why-icon svg {
+  stroke: #f1c40f;
+}
+ 
+.why-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  color: #002244;
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+ 
+.why-card p {
+  font-size: 0.88rem;
+  color: #666;
+  line-height: 1.65;
+  margin: 0;
+}
+ 
+.why-cta {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+ 
+@media (max-width: 900px) {
+  .why-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+ 
+@media (max-width: 600px) {
+  .why-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+ 
+  .why-cta {
+    flex-direction: column;
+    align-items: center;
+  }
+ 
+  .why-cta .btn,
+  .why-cta .btn-outline {
+    width: 100%;
+    text-align: center;
   }
 }

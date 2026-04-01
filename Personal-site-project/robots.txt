@@ -1,0 +1,13 @@
+# robots.txt — Cristina Vera Abogada
+# https://TU-DOMINIO.com
+
+# Permitir a todos los buscadores indexar el sitio
+User-agent: *
+Allow: /
+
+# Bloquear carpetas que no deben indexarse
+Disallow: /Siteplan/
+Disallow: /IMAGE/
+
+# Ubicación del sitemap para que Google lo encuentre automáticamente
+Sitemap: https://TU-DOMINIO.com/sitemap.xml
