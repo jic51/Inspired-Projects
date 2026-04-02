@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Roadmap — José Castro Dev</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Montserrat',sans-serif;font-weight:300;background:#0f0e0b;color:#e0d8c0;font-size:14px;line-height:1.7}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#c9a84c}
+
+/* NAV */
+.top-nav{background:rgba(15,14,11,0.97);border-bottom:1px solid rgba(201,168,76,0.12);padding:16px 60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;backdrop-filter:blur(10px)}
+.nav-brand{font-family:'Cormorant Garamond',serif;font-size:18px;color:#c9a84c;letter-spacing:3px}
+.nav-brand em{font-style:italic;color:#8a7450}
+.phase-tabs{display:flex;gap:4px}
+.phase-tab{padding:8px 18px;background:transparent;border:1px solid rgba(201,168,76,0.15);color:#5a5040;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Montserrat',sans-serif;transition:all 0.2s}
+.phase-tab.active,.phase-tab:hover{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.4);color:#c9a84c}
+
+/* HERO */
+.hero{padding:80px 60px 60px;background:radial-gradient(ellipse at 60% 50%, rgba(201,168,76,0.05) 0%, transparent 65%)}
+.hero-kicker{font-size:9px;letter-spacing:6px;text-transform:uppercase;color:#c9a84c;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.hero-kicker::before{content:'';width:24px;height:1px;background:#c9a84c}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(40px,5vw,72px);font-weight:300;line-height:1.05;color:#f0e8d0;margin-bottom:20px}
+.hero-title em{font-style:italic;color:#c9a84c}
+.hero-sub{font-size:14px;color:#7a6a50;max-width:560px;line-height:1.8;margin-bottom:48px}
+.progress-overview{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(201,168,76,0.06);max-width:700px}
+.prog-item{background:#0f0e0b;padding:28px 24px;text-align:center}
+.prog-phase{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#c9a84c;margin-bottom:8px}
+.prog-time{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#f0e8d0}
+.prog-desc{font-size:11px;color:#5a5040;margin-top:4px}
+
+/* PHASE CONTAINER */
+.phases-container{padding:60px 60px}
+.phase-section{display:none}
+.phase-section.active{display:block}
+.phase-header{display:flex;align-items:flex-start;gap:48px;margin-bottom:60px;padding-bottom:40px;border-bottom:1px solid rgba(201,168,76,0.1)}
+.phase-num{font-family:'Cormorant Garamond',serif;font-size:120px;font-weight:300;color:rgba(201,168,76,0.08);line-height:1;flex-shrink:0}
+.phase-info{}
+.phase-tag{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#c9a84c;margin-bottom:12px}
+.phase-name{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;color:#f0e8d0;line-height:1.1;margin-bottom:12px}
+.phase-name em{font-style:italic;color:#c9a84c}
+.phase-desc{font-size:13px;color:#7a6a50;max-width:600px;line-height:1.8}
+.phase-timeline{display:inline-flex;align-items:center;gap:10px;margin-top:16px;padding:8px 18px;border:1px solid rgba(201,168,76,0.2);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c9a84c}
+
+/* SKILLS GRID */
+.skills-section-title{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#c9a84c;margin-bottom:24px;margin-top:48px;display:flex;align-items:center;gap:16px}
+.skills-section-title::after{content:'';flex:1;height:1px;background:rgba(201,168,76,0.1)}
+.skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:rgba(201,168,76,0.06)}
+.skill-card{background:#0f0e0b;padding:36px 32px;transition:background 0.2s}
+.skill-card:hover{background:rgba(201,168,76,0.03)}
+.skill-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.skill-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:#f0e8d0}
+.skill-badge{font-size:8px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border:1px solid;font-weight:600}
+.badge-must{color:#c9a84c;border-color:rgba(201,168,76,0.3)}
+.badge-important{color:#7ab8b0;border-color:rgba(122,184,176,0.3)}
+.badge-optional{color:#8a8a8a;border-color:rgba(138,138,138,0.2)}
+.skill-desc{font-size:12px;color:#5a5040;line-height:1.8;margin-bottom:16px}
+.skill-resources{margin-top:16px}
+.resource-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#3a3020;margin-bottom:8px}
+.resource-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#6a5a40;padding:4px 0;border-bottom:1px solid rgba(201,168,76,0.05)}
+.resource-item::before{content:'→';color:#c9a84c;font-size:10px}
+.resource-item a{color:#8a7a50;text-decoration:underline;text-decoration-color:rgba(201,168,76,0.3)}
+.skill-time{font-size:10px;color:#3a3020;margin-top:14px;padding-top:12px;border-top:1px solid rgba(201,168,76,0.08);letter-spacing:1px}
+.skill-time span{color:#c9a84c}
+
+/* HOW TO PRACTICE */
+.practice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(201,168,76,0.06);margin-top:24px}
+.practice-card{background:#0f0e0b;padding:32px 28px}
+.practice-num{font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:rgba(201,168,76,0.15);line-height:1;margin-bottom:16px}
+.practice-title{font-size:14px;font-weight:500;color:#f0e8d0;margin-bottom:10px}
+.practice-desc{font-size:12px;color:#5a5040;line-height:1.8}
+
+/* CLIENT STRATEGY */
+.strategy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:rgba(201,168,76,0.06);margin-top:24px}
+.strategy-card{background:#0f0e0b;padding:36px 32px}
+.strategy-icon{font-size:28px;margin-bottom:16px}
+.strategy-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:#c9a84c;margin-bottom:12px}
+.strategy-desc{font-size:12px;color:#5a5040;line-height:1.8}
+.strategy-desc strong{color:#8a7a50}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin-top:16px}
+.checklist li{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.05);font-size:13px;color:#7a6a50}
+.checklist li::before{content:'□';color:rgba(201,168,76,0.4);font-size:16px;flex-shrink:0;line-height:1.2}
+.checklist li strong{color:#c0b090}
+
+/* PRICE TABLE */
+.price-table{width:100%;border-collapse:collapse;margin-top:24px}
+.price-table th{background:rgba(201,168,76,0.08);color:#c9a84c;font-size:9px;letter-spacing:3px;text-transform:uppercase;padding:14px 18px;text-align:left;border-bottom:1px solid rgba(201,168,76,0.15)}
+.price-table td{padding:14px 18px;border-bottom:1px solid rgba(201,168,76,0.06);font-size:12px;color:#7a6a50;vertical-align:top}
+.price-table tr:hover td{background:rgba(201,168,76,0.03)}
+.price-table td:first-child{font-weight:500;color:#c0b090}
+.price-highlight{color:#c9a84c !important;font-weight:600 !important}
+
+@media(max-width:768px){
+  .top-nav{padding:16px 20px}.phase-tabs{gap:2px}
+  .phase-tab{padding:6px 10px;font-size:8px}
+  .hero,.phases-container{padding:40px 20px}
+  .skills-grid,.practice-grid,.strategy-grid{grid-template-columns:1fr}
+  .phase-header{flex-direction:column;gap:16px}
+  .phase-num{font-size:60px}
+  .progress-overview{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-brand">José <em>Castro</em> Dev — Roadmap</div>
+  <div class="phase-tabs">
+    <button class="phase-tab active" onclick="showPhase('p1',this)">Phase 1</button>
+    <button class="phase-tab" onclick="showPhase('p2',this)">Phase 2</button>
+    <button class="phase-tab" onclick="showPhase('p3',this)">Phase 3</button>
+    <button class="phase-tab" onclick="showPhase('clients',this)">Clients</button>
+    <button class="phase-tab" onclick="showPhase('pricing',this)">Pricing</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <p class="hero-kicker">Your Personal Learning Plan</p>
+  <h1 class="hero-title">Freelance Web Dev<br><em>Roadmap</em></h1>
+  <p class="hero-sub">A step-by-step guide from your current HTML/CSS/JS intermediate level to earning freelance income — starting today, scaling over 12 months.</p>
+  <div class="progress-overview">
+    <div class="prog-item">
+      <div class="prog-phase">Phase 1</div>
+      <div class="prog-time">0–3 mo</div>
+      <div class="prog-desc">Land first paid projects</div>
+    </div>
+    <div class="prog-item">
+      <div class="prog-phase">Phase 2</div>
+      <div class="prog-time">3–6 mo</div>
+      <div class="prog-desc">Double your rates</div>
+    </div>
+    <div class="prog-item">
+      <div class="prog-phase">Phase 3</div>
+      <div class="prog-time">6–12 mo</div>
+      <div class="prog-desc">Go international</div>
+    </div>
+  </div>
+</div>
+
+<div class="phases-container">
+
+<!-- ═══════════════════════════════════════════════ PHASE 1 -->
+<div id="p1" class="phase-section active">
+  <div class="phase-header">
+    <div class="phase-num">01</div>
+    <div class="phase-info">
+      <div class="phase-tag">Phase One</div>
+      <h2 class="phase-name">Get Paid for<br>What You <em>Already Know</em></h2>
+      <p class="phase-desc">You already know enough to get paid. This phase is about finishing your portfolio, closing your first 2–3 real clients, and building processes that make delivery smooth.</p>
+      <div class="phase-timeline">⏱ 0 – 3 Months · Goal: 3 paid projects</div>
+    </div>
+  </div>
+
+  <div class="skills-section-title">Polish These Skills First</div>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">CSS Layout Mastery</span>
+        <span class="skill-badge badge-must">Must</span>
+      </div>
+      <p class="skill-desc">Flexbox and CSS Grid fluently. You should be able to build any layout in your head without googling it every time. This is the #1 thing that separates fast devs from slow devs.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">CSS Grid Garden — game (free, 2h)</div>
+        <div class="resource-item">Flexbox Froggy — game (free, 1h)</div>
+        <div class="resource-item">Kevin Powell on YouTube — best CSS teacher</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~10 hours</span> · Build 3 different layouts from scratch</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">CSS Variables & Design Tokens</span>
+        <span class="skill-badge badge-must">Must</span>
+      </div>
+      <p class="skill-desc">Using --variables for colors, fonts and spacing. This is how you build sites that are easy to update and look consistent throughout. Your clients will ask for color changes — this makes it a 2-minute fix.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">MDN CSS Custom Properties (free docs)</div>
+        <div class="resource-item">Watch Kevin Powell's "CSS Variables" video</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~4 hours</span> · Refactor the Cristina Vera site to use variables</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Responsive Design</span>
+        <span class="skill-badge badge-must">Must</span>
+      </div>
+      <p class="skill-desc">Every site must look perfect on mobile. 70%+ of clients' customers will visit on a phone. Master media queries, fluid typography (clamp()), and mobile-first methodology. Non-negotiable.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Google's "Responsive Web Design" course (free)</div>
+        <div class="resource-item">Practice: Open DevTools and test EVERY project on 3 screen sizes</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~8 hours</span> · Make 2 existing projects fully responsive</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">JavaScript DOM Basics</span>
+        <span class="skill-badge badge-must">Must</span>
+      </div>
+      <p class="skill-desc">querySelector, addEventListener, classList, simple animations. You need to be able to build: hamburger menus, scroll-triggered effects, counter animations, FAQ accordions, image sliders. You already have most of this — deepen it.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">javascript.info — best free JS reference</div>
+        <div class="resource-item">Recreate the counter animation from the Cristina Vera site from memory</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~12 hours</span> · Build each UI component listed above</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Git & GitHub Pages</span>
+        <span class="skill-badge badge-must">Must</span>
+      </div>
+      <p class="skill-desc">Version control + free hosting. Every project goes on GitHub. GitHub Pages = free hosting. You already have a GitHub — now learn to commit, push, and deploy from the command line. Also learn Netlify (even easier free hosting with custom domains).</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Learn Git Branching — interactive game (free)</div>
+        <div class="resource-item">Netlify docs — deploy in 2 minutes with drag & drop</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~5 hours</span> · Deploy your portfolio to a live URL today</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Google Fonts & Typography</span>
+        <span class="skill-badge badge-important">Important</span>
+      </div>
+      <p class="skill-desc">Typography is 80% of design. Learn how to pair fonts (serif + sans-serif), set proper line-height and letter-spacing, and use font weights strategically. This is what makes your sites look premium vs cheap.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Google Fonts — free, huge library</div>
+        <div class="resource-item">Fontpair.co — curated font pairings</div>
+        <div class="resource-item">Study the 5 design variations you already have</div>
+      </div>
+      <div class="skill-time">Practice time: <span>~3 hours</span> · Redesign one project using 2 different font pairings</div>
+    </div>
+  </div>
+
+  <div class="skills-section-title">Phase 1 — Weekly Schedule</div>
+  <div class="practice-grid">
+    <div class="practice-card">
+      <div class="practice-num">20h</div>
+      <div class="practice-title">Per week building</div>
+      <div class="practice-desc">Spend 3 hours/weekday or 10h on weekends. Always be building something real — no tutorial hell. If you're not building, you're not learning.</div>
+    </div>
+    <div class="practice-card">
+      <div class="practice-num">1</div>
+      <div class="practice-title">Project per 2 weeks</div>
+      <div class="practice-desc">Build a complete, published site every 2 weeks. Can be fake/practice clients at first. Restaurant, barbershop, dentist — all using real business names.</div>
+    </div>
+    <div class="practice-card">
+      <div class="practice-num">2</div>
+      <div class="practice-title">Real clients in 30 days</div>
+      <div class="practice-desc">Talk to 10 local businesses. Show your portfolio. Offer a "launch special" at $100–$200 to close your first 2–3 paying clients and get testimonials.</div>
+    </div>
+  </div>
+
+  <div class="skills-section-title">Phase 1 — Launch Checklist</div>
+  <ul class="checklist">
+    <li><strong>Portfolio deployed</strong> — your site is live at a real URL (not localhost)</li>
+    <li><strong>3+ projects shown</strong> — including the Cristina Vera site</li>
+    <li><strong>Contact form works</strong> — emails arrive to your inbox</li>
+    <li><strong>GitHub profile complete</strong> — profile pic, bio, pinned repos</li>
+    <li><strong>Contract template ready</strong> — never work without one</li>
+    <li><strong>Payment method set up</strong> — PayPal at minimum, Zelle/Venmo for US clients</li>
+    <li><strong>First pitch made</strong> — you talked to at least 1 potential client</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PHASE 2 -->
+<div id="p2" class="phase-section">
+  <div class="phase-header">
+    <div class="phase-num">02</div>
+    <div class="phase-info">
+      <div class="phase-tag">Phase Two</div>
+      <h2 class="phase-name">Skills That<br><em>2x Your Rates</em></h2>
+      <p class="phase-desc">These skills will take your pricing from $150–$300 to $400–$900 per project. Each one adds real, tangible value that clients will pay more for.</p>
+      <div class="phase-timeline">⏱ 3 – 6 Months · Goal: $500+ average project</div>
+    </div>
+  </div>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">EmailJS / Formspree</span>
+        <span class="skill-badge badge-must">Pays for Itself</span>
+      </div>
+      <p class="skill-desc">Contact forms that actually send emails — without any backend/server. EmailJS is free up to 200 emails/month. This single skill lets you charge $100 more per project and every client needs it.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">emailjs.com — official docs + quickstart (1 day)</div>
+        <div class="resource-item">formspree.io — even easier alternative</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~1 day</span> · Immediate revenue impact</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">CSS Animations & Scroll Effects</span>
+        <span class="skill-badge badge-must">High Visual Impact</span>
+      </div>
+      <p class="skill-desc">@keyframes, transitions, IntersectionObserver for scroll-triggered reveals. This is what makes sites look like they cost $3,000 when they cost $500. Study the 5 design variations you built — those animations are already in the code.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Animate.style — CSS animation library reference</div>
+        <div class="resource-item">MDN IntersectionObserver docs</div>
+        <div class="resource-item">Study the scroll reveal code in your Cristina Vera variations</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~1 week</span> · Add to all new projects</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">SEO Basics</span>
+        <span class="skill-badge badge-must">Clients Love This</span>
+      </div>
+      <p class="skill-desc">Meta tags, Open Graph (for social previews), structured data basics, fast load times, semantic HTML. You don't need to be an SEO expert — just doing the basics puts you above 80% of competitors and justifies $100+ extra per project.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Google's "SEO Starter Guide" (free, official)</div>
+        <div class="resource-item">Ahrefs free SEO course on YouTube</div>
+        <div class="resource-item">PageSpeed Insights — test every project</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~3 days</span> · Template it into every project</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Google Analytics Setup</span>
+        <span class="skill-badge badge-important">Easy Upsell</span>
+      </div>
+      <p class="skill-desc">30 minutes to learn, adds real value. Set up GA4 on every project. Clients love seeing how many visitors they have. Charge $50–$100 extra for this and it takes you 30 minutes per project.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Google Analytics Academy (free official course)</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~2 hours</span></div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Figma Basics</span>
+        <span class="skill-badge badge-important">Professional Workflow</span>
+      </div>
+      <p class="skill-desc">Design mockups before coding. Clients can approve the design before a single line of code is written. This eliminates scope creep and "I don't like how it looks" complaints. Figma is free.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Figma official tutorials (free on YouTube)</div>
+        <div class="resource-item">Figma for Beginners — Figma's own free course</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~1 week</span> · Basic wireframing only needed</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Basic Performance Optimization</span>
+        <span class="skill-badge badge-important">SEO + UX</span>
+      </div>
+      <p class="skill-desc">Image compression (Squoosh.app), lazy loading, minification. Google ranks faster sites higher. Learn to get a 90+ score on Google PageSpeed Insights. This directly affects your client's Google ranking.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">squoosh.app — free image compression</div>
+        <div class="resource-item">web.dev — Google's performance guides (free)</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~1 day</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PHASE 3 -->
+<div id="p3" class="phase-section">
+  <div class="phase-header">
+    <div class="phase-num">03</div>
+    <div class="phase-info">
+      <div class="phase-tag">Phase Three</div>
+      <h2 class="phase-name">International<br><em>Market Access</em></h2>
+      <p class="phase-desc">The US/Spain market pays 3–5x more than Ecuador for the same work. These skills get you there — React, Tailwind, Upwork, and professional English communication.</p>
+      <div class="phase-timeline">⏱ 6 – 12 Months · Goal: First international client</div>
+    </div>
+  </div>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">React Basics</span>
+        <span class="skill-badge badge-must">Industry Standard</span>
+      </div>
+      <p class="skill-desc">Components, props, state, useState, useEffect. You don't need to be a React expert — just enough to build landing pages and multi-page apps. React is the most-requested framework on Upwork by far. Coming from JS, it clicks fast.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">React official docs — react.dev (completely rewritten, excellent)</div>
+        <div class="resource-item">Scrimba React course (free + interactive)</div>
+        <div class="resource-item">Goal: Rebuild one of your HTML sites in React</div>
+      </div>
+      <div class="skill-time">Time to learn basics: <span>~3–4 weeks</span></div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Tailwind CSS</span>
+        <span class="skill-badge badge-must">Speed Multiplier</span>
+      </div>
+      <p class="skill-desc">Utility-first CSS framework. Build beautiful UIs 3x faster than writing raw CSS. Almost every US company uses it. Used in this very portfolio (Claude artifacts use Tailwind). Once you learn it, you won't go back.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">tailwindcss.com/docs — best docs in web dev</div>
+        <div class="resource-item">Tailwind CSS YouTube playlist by official team</div>
+      </div>
+      <div class="skill-time">Time to learn: <span>~1 week</span></div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Upwork Profile Setup</span>
+        <span class="skill-badge badge-must">Gate to US Market</span>
+      </div>
+      <p class="skill-desc">100% complete profile, portfolio images, compelling bio. The first 5 reviews are everything — price low to get them ($5–$15/hr to start), then raise to $25–$50/hr. Most Latin American devs charge $15–$35/hr on Upwork and work consistently.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Upwork's official "How to get started" guide</div>
+        <div class="resource-item">YouTube: "Upwork profile 2025 tips"</div>
+      </div>
+      <div class="skill-time">Setup time: <span>~2 days</span> · First proposal within week 1</div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-header">
+        <span class="skill-name">Technical English</span>
+        <span class="skill-badge badge-must">Required for USA</span>
+      </div>
+      <p class="skill-desc">You don't need perfect English — you need professional written English for emails and proposals. And basic conversational for Zoom calls. Focus on: email etiquette, proposal writing, and explaining technical decisions clearly. Tools help: Grammarly, ChatGPT for email drafts.</p>
+      <div class="skill-resources">
+        <div class="resource-label">Resources</div>
+        <div class="resource-item">Grammarly — free browser extension</div>
+        <div class="resource-item">Watch US dev YouTubers — absorb tone and style</div>
+        <div class="resource-item">Your portfolio is already in English — great start</div>
+      </div>
+      <div class="skill-time">Ongoing skill — <span>practice daily</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ CLIENTS -->
+<div id="clients" class="phase-section">
+  <div class="phase-header">
+    <div class="phase-num">★</div>
+    <div class="phase-info">
+      <div class="phase-tag">Strategy</div>
+      <h2 class="phase-name">How to Get<br><em>Paying Clients</em></h2>
+      <p class="phase-desc">The skills are only half the equation. This is how you turn them into money — locally, nationally, and internationally.</p>
+    </div>
+  </div>
+
+  <div class="strategy-grid">
+    <div class="strategy-card">
+      <div class="strategy-icon">🏃</div>
+      <div class="strategy-title">The Door-to-Door Pitch</div>
+      <div class="strategy-desc">Walk into local businesses with your phone showing your portfolio. Say: <strong>"I searched for your business online and couldn't find a website. I build sites for businesses like yours. Can I show you something?"</strong> Close rate is surprisingly high with warm leads. Target: dentists, barbers, lawyers, restaurants, gyms, tutors.</div>
+    </div>
+    <div class="strategy-card">
+      <div class="strategy-icon">👥</div>
+      <div class="strategy-title">Network in Your Circle</div>
+      <div class="strategy-desc">Tell everyone you know that you build websites. Post your work on Instagram and Facebook. <strong>Your first 5 clients will likely come from people you already know.</strong> Don't be shy about it. Post "before & after" screenshots — they go viral in local communities.</div>
+    </div>
+    <div class="strategy-card">
+      <div class="strategy-icon">💬</div>
+      <div class="strategy-title">Facebook Groups</div>
+      <div class="strategy-desc">Join local business groups and offer free value (tips, feedback on websites). Don't spam — <strong>provide genuine help first, mention your services naturally</strong>. This builds trust and inbound leads. Also join "needing a web developer" type groups nationally.</div>
+    </div>
+    <div class="strategy-card">
+      <div class="strategy-icon">🌐</div>
+      <div class="strategy-title">Upwork & Fiverr (International)</div>
+      <div class="strategy-desc">Create profiles on both platforms. On Fiverr: list specific gigs ("I will build a professional landing page for your law firm"). On Upwork: apply to 5–10 jobs per week with personalized proposals. <strong>First month: aim for reviews, not money.</strong> Reviews = everything.</div>
+    </div>
+    <div class="strategy-card">
+      <div class="strategy-icon">📸</div>
+      <div class="strategy-title">Instagram/TikTok Content</div>
+      <div class="strategy-desc">Post your work. Before/after redesigns. "I built this in 3 days" posts. Time-lapses of you coding. Behind-the-scenes. This builds a following that becomes inbound clients. Takes 3–6 months to work but it's <strong>100% free and compounds forever.</strong></div>
+    </div>
+    <div class="strategy-card">
+      <div class="strategy-icon">🔄</div>
+      <div class="strategy-title">Monthly Maintenance Pitch</div>
+      <div class="strategy-desc">After every project, offer monthly maintenance for $50–$100/month. Frame it as: <strong>"I'll make sure your site stays updated, fast and secure."</strong> Even if it only takes 1 hour a month, the recurring income adds up fast. 10 clients = $500–$1000/month passively.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ PRICING -->
+<div id="pricing" class="phase-section">
+  <div class="phase-header">
+    <div class="phase-num">$</div>
+    <div class="phase-info">
+      <div class="phase-tag">Business</div>
+      <h2 class="phase-name">What to Charge<br><em>& When to Raise</em></h2>
+      <p class="phase-desc">Pricing by market, project type, and your experience level. These are real, researched numbers — not guesses.</p>
+    </div>
+  </div>
+
+  <div class="skills-section-title">Ecuador / Latin America Market</div>
+  <table class="price-table">
+    <thead><tr><th>Project Type</th><th>Starter Pricing</th><th>After 5 Projects</th><th>Timeline</th></tr></thead>
+    <tbody>
+      <tr><td>Landing page (1 page)</td><td>$80–$150</td><td class="price-highlight">$150–$300</td><td>5–7 days</td></tr>
+      <tr><td>Professional site (lawyer, doctor)</td><td>$150–$250</td><td class="price-highlight">$300–$500</td><td>1–2 weeks</td></tr>
+      <tr><td>Small business (4–5 pages)</td><td>$200–$350</td><td class="price-highlight">$400–$700</td><td>2 weeks</td></tr>
+      <tr><td>Restaurant with menu</td><td>$200–$300</td><td class="price-highlight">$350–$600</td><td>1–2 weeks</td></tr>
+      <tr><td>Monthly maintenance</td><td>$30–$50/mo</td><td class="price-highlight">$50–$100/mo</td><td>Recurring</td></tr>
+    </tbody>
+  </table>
+
+  <div class="skills-section-title">USA / Spain Market (via Upwork / direct)</div>
+  <table class="price-table">
+    <thead><tr><th>Project Type</th><th>Starting Out</th><th>After Reviews</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Landing page (1 page)</td><td>$200–$400</td><td class="price-highlight">$400–$800</td><td>First 3 projects: price low for reviews</td></tr>
+      <tr><td>Professional site (lawyer, doctor)</td><td>$400–$700</td><td class="price-highlight">$700–$1,500</td><td>These clients pay premium</td></tr>
+      <tr><td>Small business (4–5 pages)</td><td>$500–$900</td><td class="price-highlight">$1,000–$2,500</td><td>After portfolio established</td></tr>
+      <tr><td>Hourly rate (Upwork)</td><td>$15–$20/hr</td><td class="price-highlight">$25–$50/hr</td><td>Raise after 5 reviews</td></tr>
+      <tr><td>Monthly maintenance</td><td>$80–$150/mo</td><td class="price-highlight">$150–$300/mo</td><td>High-margin passive income</td></tr>
+    </tbody>
+  </table>
+
+  <div class="skills-section-title">Income Projection (Realistic, Part-Time)</div>
+  <table class="price-table">
+    <thead><tr><th>Month</th><th>Activity</th><th>Expected Income</th><th>Goal</th></tr></thead>
+    <tbody>
+      <tr><td>Month 1–2</td><td>2 local projects at $150–$250 each</td><td>$300–$500</td><td>Get testimonials</td></tr>
+      <tr><td>Month 3–4</td><td>3 projects at $250–$400 each</td><td>$750–$1,200</td><td>Refine process</td></tr>
+      <tr><td>Month 5–6</td><td>2–3 projects + 3 maintenance clients</td><td>$1,000–$1,800</td><td>First recurring income</td></tr>
+      <tr><td>Month 7–9</td><td>First Upwork project + local pipeline</td><td>$1,500–$2,500</td><td>International debut</td></tr>
+      <tr><td>Month 10–12</td><td>Upwork flowing + 5–8 maintenance clients</td><td class="price-highlight">$2,000–$4,000+</td><td>Consistent part-time income</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- /phases-container -->
+
+<script>
+function showPhase(id, btn) {
+  document.querySelectorAll('.phase-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.phase-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: document.querySelector('.phases-container').offsetTop - 80, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
