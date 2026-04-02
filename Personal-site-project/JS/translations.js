@@ -169,6 +169,20 @@ const translations = {
     why_6_title:        "Resultados comprobados",
     why_6_text:         "Más de 500 clientes atendidos con 95% de tasa de éxito.",
     why_cta_secondary:  "Conocer más sobre Cristina",
+
+    faq_q4: "¿Atienden clientes fuera de Ecuador?",
+    faq_a4: "Sí. Atendemos clientes en todo Ecuador y en el exterior. Todo puede gestionarse de forma remota.",
+    faq_q5: "¿Cuánto tiempo toma resolver un caso?",
+    faq_a5: "Depende del caso. Trámites notariales: días. Divorcio de mutuo acuerdo: semanas. Casos judiciales: meses. En la consulta inicial te damos un estimado real.",
+    faq_q6: "¿Necesito ir en persona o puedo hacer todo en línea?",
+    faq_a6: "Muchos trámites pueden iniciarse en línea. Te indicamos exactamente qué necesita presencia física desde la primera consulta.",
+    faq_q7: "¿Pueden ayudarme con documentos en inglés?",
+    faq_a7: "Sí. Contamos con atención bilingüe español-inglés para clientes extranjeros o ecuatorianos en el exterior.",
+    faq_q8: "¿Cómo funciona la primera consulta?",
+    faq_a8: "Agendas por WhatsApp, formulario o Calendly. Analizamos tu caso, explicamos opciones y damos un estimado de tiempos y costos. Sin compromisos.",
+    faq_q9: "¿Qué pasa si soy extranjero y necesito un abogado en Ecuador?",
+    faq_a9: "Atendemos a extranjeros con frecuencia — inversores, residentes y expatriados. Conocemos los procesos para extranjeros en español e inglés.",
+
   },
 
 
@@ -332,6 +346,19 @@ const translations = {
     why_6_title:        "Proven results",
     why_6_text:         "Over 500 clients served with a 95% success rate.",
     why_cta_secondary:  "Learn more about Cristina",
+
+    faq_q4: "Do you serve clients outside Ecuador?",
+    faq_a4: "Yes. We serve clients throughout Ecuador and internationally. Everything can be handled remotely.",
+    faq_q5: "How long does it take to resolve a case?",
+    faq_a5: "It depends on the case. Notarial procedures: days. Mutual divorce: weeks. Court cases: months. We give you a realistic estimate at the first consultation.",
+    faq_q6: "Do I need to come in person or can everything be done online?",
+    faq_a6: "Many procedures can be started online. We'll tell you exactly what requires physical presence from the first consultation.",
+    faq_q7: "Can you help me with documents in English?",
+    faq_a7: "Yes. We offer bilingual Spanish-English service for foreign clients or Ecuadorians living abroad.",
+    faq_q8: "How does the first consultation work?",
+    faq_a8: "Schedule via WhatsApp, form or Calendly. We analyze your case, explain options and give a time and cost estimate. No commitment.",
+    faq_q9: "What if I'm a foreigner and need a lawyer in Ecuador?",
+    faq_a9: "We frequently work with foreigners — investors, residents and expats. We know the processes for foreigners in Spanish and English.",
   }
 };
 
