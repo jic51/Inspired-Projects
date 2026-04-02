@@ -46,17 +46,17 @@ const translations = {
     about_page_title: "Conoce a tu abogada",
     about_me_text1: "Cristina Vera no es solo una abogada con experiencia, sino también una persona profundamente comprometida con el servicio, la integridad y la empatía. Originaria de Milagro, Ecuador, Cristina creció con un fuerte sentido de comunidad y una pasión por la justicia. Sus valores personales —honestidad, compasión y resiliencia— guían sus interacciones diarias con clientes, colegas y con la comunidad en general. Es conocida por su capacidad de escuchar con atención, comunicarse con claridad y generar confianza con quienes buscan su asesoría. Fuera del ámbito legal, Cristina participa activamente en iniciativas locales que apoyan a mujeres y familias, reflejando su dedicación a proteger y fortalecer a los más vulnerables.",
     about_me_text2: "Con más de una década de experiencia legal, Cristina Vera ha construido una práctica jurídica reconocida por brindar soluciones legales estratégicas y personalizadas. Se especializa en derecho civil, derecho de familia, planificación patrimonial, actos notariales y derecho de tránsito, todo dentro del marco de la legislación ecuatoriana. Sus servicios incluyen casos complejos de divorcio, custodia y pensión alimenticia, redacción y revisión de contratos, asesoramiento en herencias y transferencias de propiedades, así como representación en casos de tránsito y violencia intrafamiliar.",
-    about_me_text2_1: "Conoce más sobre los <a href='services.html'>Servicios legales</a>",
+    
     about_me_text3: "Lo que distingue a Cristina Vera es su combinación única de conocimiento legal y comprensión humana. No ve a sus clientes como simples expedientes, sino como personas enfrentando desafíos reales. Cristina se toma el tiempo para explicar cada paso del proceso legal en términos claros y accesibles, asegurando que sus clientes puedan tomar decisiones informadas. Su sitio web bilingüe y las opciones para subir documentos en línea facilitan el contacto desde cualquier parte de Ecuador.",
     about_me_text3_1: "¡Agenda una consulta legal hoy!",
 
     // --- SECCIÓN SERVICIOS (index.html — versión corta) ---
     services_title: "Servicios",
     services_title1: "Entre los servicios legales que ofrece Cristina Vera se incluyen:",
-    service_1:   "Familia, Niñez y Adolescencia",
-    service_1_1: "Divorcio, custodia, pensión alimenticia, patria potestad y protección del interés superior del menor.",
-    service_1_2: "Cristina representa en procesos de divorcio, custodia, pensiones alimenticias, tutela, adopción y medidas de protección para menores.",
-    service_1_3: "Los conflictos familiares tienen consecuencias a largo plazo. Cristina garantiza decisiones que protegen tanto a adultos como a menores bajo el Código de la Niñez y Adolescencia ecuatoriano.",
+    service_1:   "Familia, Mujer, Niñez y Adolescencia",
+    service_1_1: "El derecho de familia en Ecuador regula las relaciones entre sus miembros e incluye temas como divorcio, separación, custodia, pensión alimenticia, régimen de visitas y protección de menores. La niñez y adolescencia forma parte integral de este campo legal.",
+    service_1_2: "Cristina representa a sus clientes en procesos de divorcio, acuerdos de custodia, fijación y cobro de pensiones alimenticias, patria potestad, tutela, adopción y medidas de protección para menores en situaciones de vulnerabilidad.",
+    service_1_3: "Los conflictos familiares tienen consecuencias emocionales y legales a largo plazo. Cristina garantiza que las decisiones judiciales protejan tanto los derechos de los adultos como el interés superior del niño, aplicando siempre el marco del Código de la Niñez y Adolescencia ecuatoriano.",
     service_4: "Actos notariales",
     service_4_1: "Documentos legales validados ante notario: contratos, escrituras, poderes, autorizaciones y declaraciones juramentadas.",
     service_5: "Violencia intrafamiliar",
@@ -223,7 +223,7 @@ const translations = {
     about_page_title: "Meet Your Attorney",
     about_me_text1: "Cristina Vera is not only a seasoned attorney but also a person deeply committed to service, integrity, and empathy. Originally from Milagro, Ecuador, Cristina grew up with a strong sense of community and a passion for justice. Her personal values — honesty, compassion, and resilience — guide her daily interactions with clients, colleagues, and the broader community. She is known for her ability to listen attentively, communicate clearly, and build trust with those who seek her counsel. Outside of her legal practice, Cristina is actively involved in local initiatives that support women and families, reflecting her dedication to protecting and empowering the most vulnerable.",
     about_me_text2: "With over a decade of legal experience, Cristina Vera has built a reputable law practice focused on delivering strategic and personalized legal solutions. She specializes in civil law, family law, estate planning, notarial services, and traffic law, all within the framework of Ecuadorian legislation. Her services include complex divorce, custody and child support cases, contract drafting and review, assistance with inheritance and property transfers, and representation in traffic and domestic violence cases.",
-    about_me_text2_1: "Learn more about <a href='services.html'>Legal Services</a>",
+    
     about_me_text3: "What sets Cristina Vera apart is her rare combination of legal expertise and human understanding. She does not see clients as case numbers but as individuals facing real-life challenges. Cristina takes the time to explain each step of the legal process in clear, accessible terms, ensuring clients are empowered to make informed decisions. Her bilingual website makes it easy for people across Ecuador and internationally to reach her, regardless of location.",
     about_me_text3_1: "Schedule a legal consultation today!",
 
