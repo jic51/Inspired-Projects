@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Panel de Administración — Blog Cristina Vera</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: #f4f6fa;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ===== LOGIN ===== */
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #002244, #015ab4);
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-logo h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: #002244;
+    }
+
+    .login-logo p {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .login-card label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+      transition: border-color 0.2s;
+    }
+
+    .login-card input:focus {
+      outline: none;
+      border-color: #015ab4;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: #002244;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .login-btn:hover { background: #015ab4; }
+
+    .login-error {
+      color: #e74c3c;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 0.8rem;
+      display: none;
+    }
+
+    /* ===== ADMIN PANEL ===== */
+    .admin-panel { display: none; }
+
+    .admin-header {
+      background: #002244;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .admin-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+    }
+
+    .admin-header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .admin-header a {
+      color: #f1c40f;
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover { background: rgba(255,255,255,0.1); }
+
+    .admin-content {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* Form panel */
+    .admin-form-panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .admin-form-panel h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: #002244;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .field {
+      margin-bottom: 1.2rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 0.65rem 0.8rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: #015ab4;
+      box-shadow: 0 0 0 3px rgba(1,90,180,0.1);
+    }
+
+    .field textarea { resize: vertical; min-height: 200px; }
+
+    .field small {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .btn-save {
+      flex: 1;
+      padding: 0.85rem;
+      background: #002244;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover { background: #015ab4; }
+
+    .btn-clear {
+      padding: 0.85rem 1.5rem;
+      background: transparent;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      color: #666;
+      transition: border-color 0.2s;
+    }
+
+    .btn-clear:hover { border-color: #999; }
+
+    /* Posts list panel */
+    .admin-posts-panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .admin-posts-panel h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: #002244;
+      margin-bottom: 1rem;
+    }
+
+    .post-list-item {
+      padding: 0.8rem;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .post-list-item:hover {
+      border-color: #015ab4;
+      background: #f8faff;
+    }
+
+    .post-list-item h4 {
+      font-size: 0.85rem;
+      color: #002244;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    .post-list-item p {
+      font-size: 0.75rem;
+      color: #888;
+      margin: 0;
+    }
+
+    .post-list-item .post-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-edit, .btn-delete {
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+    }
+
+    .btn-edit { background: #e8f0fe; color: #002244; }
+    .btn-delete { background: #ffe8e8; color: #c0392b; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #002244;
+      color: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+      z-index: 9999;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .toast.visible { display: block; }
+
+    /* Export section */
+    .export-section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-top: 1.5rem;
+    }
+
+    .export-section h3 {
+      font-size: 1rem;
+      color: #002244;
+      margin-bottom: 0.8rem;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .export-section p {
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+
+    .export-code {
+      background: #f4f6fa;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .btn-copy {
+      margin-top: 0.8rem;
+      padding: 0.6rem 1.2rem;
+      background: #f1c40f;
+      color: #002244;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .btn-copy:hover { background: #ffdf4e; }
+
+    @media (max-width: 900px) {
+      .admin-content { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== PANTALLA DE LOGIN ===== -->
+  <div class="login-screen" id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">
+        <h1>⚖️ Panel de Administración</h1>
+        <p>Blog — Abogada Cristina Vera</p>
+      </div>
+      <label for="admin-user">Usuario</label>
+      <input type="text" id="admin-user" placeholder="Ingresa tu usuario">
+      <label for="admin-pass">Contraseña</label>
+      <input type="password" id="admin-pass" placeholder="Ingresa tu contraseña"
+             onkeydown="if(event.key==='Enter') login()">
+      <button class="login-btn" onclick="login()">Ingresar</button>
+      <p class="login-error" id="login-error">Usuario o contraseña incorrectos.</p>
+    </div>
+  </div>
+
+
+  <!-- ===== PANEL DE ADMINISTRACIÓN ===== -->
+  <div class="admin-panel" id="admin-panel">
+
+    <div class="admin-header">
+      <h1>⚖️ Panel del Blog</h1>
+      <div class="admin-header-actions">
+        <a href="../blog.html" target="_blank">Ver blog →</a>
+        <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+
+      <!-- ===== FORMULARIO DE ARTÍCULO ===== -->
+      <div>
+        <div class="admin-form-panel">
+          <h2 id="form-title">✏️ Nuevo artículo</h2>
+
+          <div class="field">
+            <label>ID del artículo (sin espacios, solo letras y guiones)</label>
+            <input type="text" id="post-id" placeholder="ej: divorcio-ecuador-2026">
+            <small>Este ID aparece en la URL del artículo</small>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Título en español *</label>
+              <input type="text" id="post-title-es" placeholder="Título del artículo">
+            </div>
+            <div class="field">
+              <label>Título en inglés (opcional)</label>
+              <input type="text" id="post-title-en" placeholder="Title in English">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Resumen en español *</label>
+              <input type="text" id="post-excerpt-es" placeholder="Resumen breve (1-2 oraciones)">
+            </div>
+            <div class="field">
+              <label>Resumen en inglés (opcional)</label>
+              <input type="text" id="post-excerpt-en" placeholder="Brief summary in English">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Categoría *</label>
+              <select id="post-category">
+                <option value="familia">Familia, Mujer, Niñez y Adolescencia</option>
+                <option value="notarial">Actos Notariales</option>
+                <option value="violencia">Violencia Intrafamiliar</option>
+                <option value="transito">Tránsito</option>
+                <option value="general">General / Consejos legales</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Fecha</label>
+              <input type="text" id="post-date" placeholder="ej: 29 de marzo de 2026">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Contenido en español * (HTML permitido)</label>
+            <textarea id="post-content-es" placeholder="Escribe el contenido del artículo aquí. Puedes usar HTML básico: &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;blockquote&gt;"></textarea>
+            <small>Usa &lt;h2&gt; para títulos de sección, &lt;p&gt; para párrafos, &lt;ul&gt;&lt;li&gt; para listas</small>
+          </div>
+
+          <div class="field">
+            <label>Contenido en inglés (opcional)</label>
+            <textarea id="post-content-en" placeholder="Article content in English (optional)"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-save" onclick="savePost()">💾 Guardar artículo</button>
+            <button class="btn-clear" onclick="clearForm()">Limpiar</button>
+          </div>
+        </div>
+
+        <!-- Export -->
+        <div class="export-section">
+          <h3>📥 Exportar para publicar</h3>
+          <p>Cuando termines de agregar artículos, copia este código y pégalo en <strong>JS/blog-posts.js</strong> para que se vean en el sitio.</p>
+          <div class="export-code" id="export-code">// Presiona "Generar código" para ver el resultado</div>
+          <button class="btn-copy" onclick="generateExport()">Generar código</button>
+          <button class="btn-copy" style="margin-left:0.5rem; background:#e8f0fe; color:#002244;" onclick="copyExport()">Copiar código</button>
+        </div>
+      </div>
+
+
+      <!-- ===== LISTA DE ARTÍCULOS ===== -->
+      <div>
+        <div class="admin-posts-panel">
+          <h2>📋 Artículos guardados</h2>
+          <div id="posts-list">
+            <p style="font-size:0.85rem;color:#888;">No hay artículos guardados aún.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Toast de confirmación -->
+  <div class="toast" id="toast"></div>
+
+
+  <script>
+    // ============================================================
+    // CONFIGURACIÓN — CAMBIA ESTAS CREDENCIALES
+    // ============================================================
+    const ADMIN_USER = "cristina";
+    const ADMIN_PASS = "abogada2026";
+    // ============================================================
+
+    let editingId = null;
+
+    // Login
+    function login() {
+      const user = document.getElementById("admin-user").value.trim();
+      const pass = document.getElementById("admin-pass").value.trim();
+
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("admin-panel").style.display = "block";
+        loadPosts();
+        setTodayDate();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
+    function logout() {
+      document.getElementById("admin-panel").style.display = "none";
+      document.getElementById("login-screen").style.display = "flex";
+      document.getElementById("admin-user").value = "";
+      document.getElementById("admin-pass").value = "";
+    }
+
+    // Fecha de hoy automática
+    function setTodayDate() {
+      const today = new Date();
+      const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+      document.getElementById("post-date").value =
+        `${today.getDate()} de ${months[today.getMonth()]} de ${today.getFullYear()}`;
+    }
+
+    // Guardar post en localStorage
+    function savePost() {
+      const id      = document.getElementById("post-id").value.trim().replace(/\s+/g, "-").toLowerCase();
+      const titleEs = document.getElementById("post-title-es").value.trim();
+      const titleEn = document.getElementById("post-title-en").value.trim();
+      const excerptEs = document.getElementById("post-excerpt-es").value.trim();
+      const excerptEn = document.getElementById("post-excerpt-en").value.trim();
+      const category  = document.getElementById("post-category").value;
+      const date      = document.getElementById("post-date").value.trim();
+      const contentEs = document.getElementById("post-content-es").value.trim();
+      const contentEn = document.getElementById("post-content-en").value.trim();
+
+      if (!id || !titleEs || !excerptEs || !contentEs) {
+        showToast("❌ Completa los campos obligatorios (*)");
+        return;
+      }
+
+      const post = {
+        id,
+        title: titleEs,
+        title_en: titleEn || undefined,
+        excerpt: excerptEs,
+        excerpt_en: excerptEn || undefined,
+        category,
+        date,
+        author: "Abogada Cristina Vera",
+        content: contentEs,
+        content_en: contentEn || undefined
+      };
+
+      const posts = getPosts();
+      const existingIndex = posts.findIndex(p => p.id === id);
+
+      if (existingIndex >= 0) {
+        posts[existingIndex] = post;
+        showToast("✅ Artículo actualizado");
+      } else {
+        posts.unshift(post); // nuevo post va al inicio
+        showToast("✅ Artículo guardado");
+      }
+
+      localStorage.setItem("blog_posts", JSON.stringify(posts));
+      loadPosts();
+      clearForm();
+    }
+
+    // Cargar lista de posts
+    function loadPosts() {
+      const posts = getPosts();
+      const container = document.getElementById("posts-list");
+
+      if (posts.length === 0) {
+        container.innerHTML = '<p style="font-size:0.85rem;color:#888;">No hay artículos guardados aún.</p>';
+        return;
+      }
+
+      container.innerHTML = posts.map(p => `
+        <div class="post-list-item">
+          <h4>${p.title}</h4>
+          <p>${p.date} · ${p.category}</p>
+          <div class="post-actions">
+            <button class="btn-edit" onclick="editPost('${p.id}')">✏️ Editar</button>
+            <button class="btn-delete" onclick="deletePost('${p.id}')">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Editar post
+    function editPost(id) {
+      const posts = getPosts();
+      const post = posts.find(p => p.id === id);
+      if (!post) return;
+
+      document.getElementById("post-id").value         = post.id;
+      document.getElementById("post-title-es").value   = post.title;
+      document.getElementById("post-title-en").value   = post.title_en || "";
+      document.getElementById("post-excerpt-es").value = post.excerpt;
+      document.getElementById("post-excerpt-en").value = post.excerpt_en || "";
+      document.getElementById("post-category").value   = post.category;
+      document.getElementById("post-date").value       = post.date;
+      document.getElementById("post-content-es").value = post.content;
+      document.getElementById("post-content-en").value = post.content_en || "";
+
+      document.getElementById("form-title").textContent = "✏️ Editando artículo";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Eliminar post
+    function deletePost(id) {
+      if (!confirm("¿Eliminar este artículo? Esta acción no se puede deshacer.")) return;
+      const posts = getPosts().filter(p => p.id !== id);
+      localStorage.setItem("blog_posts", JSON.stringify(posts));
+      loadPosts();
+      showToast("🗑️ Artículo eliminado");
+    }
+
+    // Limpiar formulario
+    function clearForm() {
+      ["post-id","post-title-es","post-title-en","post-excerpt-es","post-excerpt-en",
+       "post-content-es","post-content-en"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("post-category").value = "familia";
+      setTodayDate();
+      document.getElementById("form-title").textContent = "✏️ Nuevo artículo";
+    }
+
+    // Obtener posts del localStorage
+    function getPosts() {
+      try {
+        return JSON.parse(localStorage.getItem("blog_posts")) || [];
+      } catch { return []; }
+    }
+
+    // Generar código para blog-posts.js
+    function generateExport() {
+      const posts = getPosts();
+      if (posts.length === 0) {
+        document.getElementById("export-code").textContent = "// No hay artículos para exportar";
+        return;
+      }
+      const code = `const blogPosts = ${JSON.stringify(posts, null, 2)};`;
+      document.getElementById("export-code").textContent = code;
+    }
+
+    // Copiar código
+    function copyExport() {
+      const code = document.getElementById("export-code").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast("📋 Código copiado — pégalo en JS/blog-posts.js");
+      });
+    }
+
+    // Toast
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 3000);
+    }
+  </script>
+
+</body>
+</html>
