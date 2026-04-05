@@ -19,6 +19,9 @@ const translations = {
     nav_contact: "Contacto",
     nav_faq: "Preguntas Frecuentes",
 
+    // --- BOTÓN WHATSAPP (todas las páginas) ---
+    wa_text: "Consultar por WhatsApp",
+
     // --- HERO (index.html) ---
     hero_title: "Tu Asesor Legal de Confianza",
     hero_subtitle: "Experiencia, Honestidad, Compromiso y Soluciones a tus problemas jurídicos.",
@@ -32,7 +35,7 @@ const translations = {
 
     // --- SECCIÓN ABOUT (index.html) ---
     about_title: "Abogada Cristina Vera",
-    about_text1: "Con más de 10 años de experiencia legal, Cristina Vera se ha consolidado como una asesora y defensora de confianza para cientos de personas y pequeñas empresas en Milagro y en todo Ecuador. Su experiencia abarca una amplia gama de áreas legales, incluyendo derecho civil, derecho corporativo, derecho de familia, planificación patrimonial y actos notariales como contratos, poderes notariales y transacciones inmobiliarias.",
+    about_text1: "Con más de 10 años de experiencia legal, Cristina Vera se ha consolidado como una asesora y defensora de confianza para cientos de personas y pequeñas empresas en Milagro y en todo Ecuador. Su experiencia abarca varias ramas del derecho, incluyendo derecho civil, derecho corporativo, derecho de familia, planificación patrimonial y actos notariales como contratos, poderes notariales y todo tipo de escrituras.",
     // ⚠️ PROBLEMA A: estas claves usan innerHTML porque contienen links <a>
     about_text1_1: "Conoce más sobre <a href='About_me.html'>Cristina Vera</a>",
     about_text2: "Cristina está profundamente comprometida con brindar soluciones legales personalizadas, adaptadas a las necesidades únicas de cada cliente. Es reconocida por su enfoque minucioso, comunicación clara y dedicación inquebrantable para lograr los mejores resultados posibles.",
@@ -73,7 +76,7 @@ const translations = {
     service_3_3: "Los casos con menores requieren protocolos estrictos y sensibilidad. Cristina ofrece representación legal sólida, con enfoque en la niñez y respeto por la ley ecuatoriana.",
     service_4_2: "Ella redacta y revisa tus documentos para asegurar que sean claros, legales y protejan tus intereses antes de ser firmados ante un notario.",
     service_4_3: "Un documento mal redactado puede traer grandes problemas. Cristina garantiza estructura legal correcta y evita errores que puedan afectar tu seguridad jurídica.",
-    service_5_2: "Cristina Vera brinda apoyo legal inmediato a víctimas, solicitando medidas de protección, presentando denuncias formales y guiando a las personas en los procesos ante la policía y la justicia.",
+    service_5_2: "Cristina Vera brinda apoyo legal inmediato a víctimas, solicitando medidas de protección, presentando denuncias formales y guiando a las personas en todo el proceso",
     service_5_3: "Los casos de violencia intrafamiliar son delicados y requieren acción legal firme, rápida y con sensibilidad. Cristina combina su conocimiento jurídico con comprensión humana, protegiendo tu seguridad, tus derechos y ayudándote a recuperar el control de tu vida.",
     service_6_2: "Cristina defiende tus derechos, apela sanciones injustas, gestiona documentación y te representa en audiencias o negociaciones tras incidentes de tránsito.",
     service_6_3: "Los problemas de tránsito pueden generar antecedentes, pérdida de licencia o multas innecesarias. Cristina asegura que se respeten tus derechos y el debido proceso.",
@@ -161,7 +164,7 @@ const translations = {
     why_2_title:        "Respuesta rápida",
     why_2_text:         "Respondemos en menos de 24 horas y brindamos atención urgente cuando es necesario.",
     why_3_title:        "Atención internacional",
-    why_3_text:         "Atendemos clientes en todo Ecuador y en el exterior.",
+    why_3_text:         "Atendemos clientes dentro y fuera del Ecuador.",
     why_4_title:        "Comunicación clara",
     why_4_text:         "Explicamos cada paso sin tecnicismos. Siempre sabes qué pasa con tu caso.",
     why_5_title:        "Trato humano y empático",
@@ -171,7 +174,7 @@ const translations = {
     why_cta_secondary:  "Conocer más sobre Cristina",
 
     faq_q4: "¿Atienden clientes fuera de Ecuador?",
-    faq_a4: "Sí. Atendemos clientes en todo Ecuador y en el exterior. Todo puede gestionarse de forma remota.",
+    faq_a4: "Sí. Atendemos clientes dentro y fuera del Ecuador. Todo puede gestionarse de forma remota.",
     faq_q5: "¿Cuánto tiempo toma resolver un caso?",
     faq_a5: "Depende del caso. Trámites notariales: días. Divorcio de mutuo acuerdo: semanas. Casos judiciales: meses. En la consulta inicial te damos un estimado real.",
     faq_q6: "¿Necesito ir en persona o puedo hacer todo en línea?",
@@ -199,6 +202,9 @@ const translations = {
     nav_contact: "Contact",
     nav_faq: "FAQ",
 
+    // --- whatsapp button (all pages) ---
+    wa_text: "Consult via WhatsApp",
+
     // --- HERO ---
     hero_title: "Your Trusted Legal Advisor",
     hero_subtitle: "Experience, Honesty, Commitment and Solutions to your legal problems.",
@@ -212,7 +218,7 @@ const translations = {
 
     // --- ABOUT (index.html) ---
     about_title: "Attorney Cristina Vera",
-    about_text1: "With over 10 years of legal experience, Cristina Vera has established herself as a trusted advisor and advocate for hundreds of individuals and small businesses in Milagro and across Ecuador. Her expertise spans a wide range of legal areas, including civil law, corporate law, family law, estate planning, and notarial acts such as contracts, powers of attorney, and real estate transactions.",
+    about_text1: "With over 10 years of legal experience, Cristina Vera has established herself as a trusted advisor and advocate for hundreds of individuals and small businesses in Milagro and across Ecuador. Her expertise spans a wide range of legal areas, including civil law, corporate law, family law, estate planning, and notarial acts such as contracts, powers of attorney, and all types of deeds.",
     about_text1_1: "Learn more about <a href='About_me.html'>Cristina Vera</a>",
     about_text2: "Cristina is deeply committed to providing personalized legal solutions tailored to each client's unique needs. She is recognized for her meticulous approach, clear communication, and unwavering dedication to achieving the best possible outcomes.",
     about_text2_1: "Learn more about <a href='services.html'>Legal Services</a>",
@@ -250,7 +256,7 @@ const translations = {
     service_3_3: "Cases involving minors require strict protocols and sensitivity. Cristina provides strong legal representation with a child-focused approach and respect for Ecuadorian juvenile law.",
     service_4_2: "She drafts and reviews your documents to ensure they are clear, lawful, and protect your interests before being signed before a notary.",
     service_4_3: "A poorly drafted document can cause serious problems. Cristina ensures correct legal structure and avoids mistakes that could compromise your legal security.",
-    service_5_2: "Cristina Vera provides immediate legal support to victims — requesting protection orders, filing formal complaints, and guiding individuals through the process with the police and the justice system.",
+    service_5_2: "Cristina Vera provides immediate legal support to victims — requesting protection orders, filing formal complaints, and guiding individuals through all the process.",
     service_5_3: "Domestic violence cases are highly sensitive and require firm, fast, and compassionate legal action. Cristina combines her legal expertise with human understanding, protecting your safety, your rights, and helping you regain control of your life.",
     service_6_2: "Cristina defends your rights, appeals unjust sanctions, manages documentation, and represents you in hearings or negotiations following traffic incidents.",
     service_6_3: "Traffic issues can result in criminal records, license loss, or unnecessary fines. Cristina ensures your rights and due process are fully respected.",
@@ -338,7 +344,7 @@ const translations = {
     why_2_title:        "Fast response",
     why_2_text:         "We respond within 24 hours and provide urgent attention when needed.",
     why_3_title:        "International service",
-    why_3_text:         "We serve clients throughout Ecuador and internationally.",
+    why_3_text:         "We serve clients within and outside of Ecuador.",
     why_4_title:        "Clear communication",
     why_4_text:         "We explain every step without jargon. You always know what's happening.",
     why_5_title:        "Human and empathetic treatment",
@@ -348,7 +354,7 @@ const translations = {
     why_cta_secondary:  "Learn more about Cristina",
 
     faq_q4: "Do you serve clients outside Ecuador?",
-    faq_a4: "Yes. We serve clients throughout Ecuador and internationally. Everything can be handled remotely.",
+    faq_a4: "Yes. We serve clients within and outside of Ecuador. Everything can be handled remotely.",
     faq_q5: "How long does it take to resolve a case?",
     faq_a5: "It depends on the case. Notarial procedures: days. Mutual divorce: weeks. Court cases: months. We give you a realistic estimate at the first consultation.",
     faq_q6: "Do I need to come in person or can everything be done online?",

@@ -2003,16 +2003,7 @@ startGame=function(isRetry=false){
 // PWA — Progressive Web App
 // Permite instalar como app desde el navegador (sin App Store)
 // ════════════════════════════════════════
-const _manifest={
-  name:'Letrix — Word Matrix',short_name:'Letrix',
-  description:'Find hidden words in the matrix before time runs out!',
-  start_url:'.',display:'standalone',orientation:'portrait',
-  background_color:'#03040F',theme_color:'#FFD700',
-  icons:[
-    {src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="32" fill="%2303040F"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="120" font-family="monospace">🔤</text></svg>',sizes:'192x192',type:'image/svg+xml'},
-    {src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="%2303040F"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="320" font-family="monospace">🔤</text></svg>',sizes:'512x512',type:'image/svg+xml'},
-  ]
-};
+
 // Inject manifest link dynamically
 const _mBlob=new Blob([JSON.stringify(_manifest)],{type:'application/json'});
 const _mLink=document.createElement('link');
