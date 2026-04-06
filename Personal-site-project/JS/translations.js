@@ -184,7 +184,36 @@ const translations = {
     faq_q8: "¿Cómo funciona la primera consulta?",
     faq_a8: "Agendas por WhatsApp, formulario o Calendly. Analizamos tu caso, explicamos opciones y damos un estimado de tiempos y costos. Sin compromisos.",
     faq_q9: "¿Qué pasa si soy extranjero y necesito un abogado en Ecuador?",
-    faq_a9: "Atendemos a extranjeros con frecuencia — inversores, residentes y expatriados. Conocemos los procesos para extranjeros en español e inglés.",
+    faq_a9: "Estamos a disposición de atender a extranjeros que tengan la necesidad de un abogado en Ecuador ya que podemos agilizar o tramitar diferentes procesos en municipios e instituciones del estado.",
+
+    // --- WHATSAPP FLOTANTE ---
+    wa_text: "Consultar por WhatsApp",
+ 
+    // --- NAVEGACIÓN (nueva entrada del blog) ---
+    nav_blog: "Blog",
+ 
+    // --- BLOG: LISTADO (blog.html) ---
+    blog_eyebrow:         "Consejos legales",
+    blog_title:           "Blog Legal",
+    blog_subtitle:        "Información legal clara y accesible, escrita por la Abogada Cristina Vera para ayudarte a entender tus derechos.",
+    blog_filter_all:      "Todos",
+    blog_filter_family:   "Familia",
+    blog_filter_notarial: "Notarial",
+    blog_filter_violence: "Violencia",
+    blog_filter_transit:  "Tránsito",
+    blog_filter_general:  "General",
+    blog_empty_title:     "Próximamente",
+    blog_empty_text:      "Estamos preparando artículos legales para ti. ¡Vuelve pronto!",
+    blog_cta_title:       "¿Tienes una pregunta legal?",
+    blog_cta_text:        "Si un artículo generó dudas sobre tu situación, escríbenos. La Abogada Cristina Vera está lista para ayudarte.",
+    blog_cta_wa:          "Consultar por WhatsApp",
+ 
+    // --- BLOG: ARTÍCULO INDIVIDUAL (blog-post.html) ---
+    post_disclaimer:      "Este artículo es informativo y no constituye asesoría legal. Para tu caso específico, consulta con la Abogada Cristina Vera.",
+    post_cta_title:       "¿Tienes una situación similar?",
+    post_cta_text:        "La Abogada Cristina Vera puede ayudarte con tu caso. Primera consulta sin costo.",
+    post_cta_wa:          "WhatsApp",
+    post_back:            "Volver al blog",
 
   },
 
@@ -201,9 +230,6 @@ const translations = {
     nav_services: "Services",
     nav_contact: "Contact",
     nav_faq: "FAQ",
-
-    // --- whatsapp button (all pages) ---
-    wa_text: "Consult via WhatsApp",
 
     // --- HERO ---
     hero_title: "Your Trusted Legal Advisor",
@@ -365,6 +391,37 @@ const translations = {
     faq_a8: "Schedule via WhatsApp, form or Calendly. We analyze your case, explain options and give a time and cost estimate. No commitment.",
     faq_q9: "What if I'm a foreigner and need a lawyer in Ecuador?",
     faq_a9: "We frequently work with foreigners — investors, residents and expats. We know the processes for foreigners in Spanish and English.",
+
+    // --- WHATSAPP FLOTANTE ---
+    wa_text: "Chat on WhatsApp",
+ 
+    // --- NAVEGACIÓN ---
+    nav_blog: "Blog",
+ 
+    // --- BLOG: LISTADO ---
+    blog_eyebrow:         "Legal tips",
+    blog_title:           "Legal Blog",
+    blog_subtitle:        "Clear and accessible legal information, written by Attorney Cristina Vera to help you understand your rights.",
+    blog_filter_all:      "All",
+    blog_filter_family:   "Family",
+    blog_filter_notarial: "Notarial",
+    blog_filter_violence: "Violence",
+    blog_filter_transit:  "Traffic",
+    blog_filter_general:  "General",
+    blog_empty_title:     "Coming soon",
+    blog_empty_text:      "We are preparing legal articles for you. Check back soon!",
+    blog_cta_title:       "Do you have a legal question?",
+    blog_cta_text:        "If an article raised questions about your situation, write to us. Attorney Cristina Vera is ready to help you.",
+    blog_cta_wa:          "Chat on WhatsApp",
+ 
+    // --- BLOG: ARTÍCULO INDIVIDUAL ---
+    post_disclaimer:      "This article is for informational purposes only and does not constitute legal advice. For your specific situation, consult with Attorney Cristina Vera.",
+    post_cta_title:       "Do you have a similar situation?",
+    post_cta_text:        "Attorney Cristina Vera can help you with your case. First consultation at no cost.",
+    post_cta_wa:          "WhatsApp",
+    post_back:            "Back to blog",
+ 
+
   }
 };
 

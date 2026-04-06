@@ -76,7 +76,7 @@ const blogPosts = [
       <p>A divorce by mutual consent without children can be resolved in weeks. With children or in a contested manner, the process can last between 3 and 4 months, depending on the complexity of the case and the court's schedule.</p>
 
       <blockquote>
-        "Every divorce case is unique. The most important thing is to protect the well-being of the children and make decisions that everyone can uphold in the long term."
+        "The divorce process, by its very nature, is traumatic for all family members; children must be protected, and the assets of the marital partnership must be distributed equitably."
         <cite>— Abogada Cristina Vera</cite>
       </blockquote>
     `

@@ -42,7 +42,7 @@
           <li><a href="About_me.html"  data-i18n="nav_about">Sobre mí</a></li>
           <li><a href="services.html"  data-i18n="nav_services">Servicios</a></li>
           <li><a href="contact.html"   data-i18n="nav_contact">Contacto</a></li>
-           <li><a href="blog.html"      data-i18n="nav_blog">Blog</a></li>
+          <li><a href="blog.html"      data-i18n="nav_blog">Blog</a></li>
           <li><a href="index.html#faq" data-i18n="nav_faq">FAQ</a></li>
         </ul>
       </nav>
@@ -185,10 +185,10 @@
       grid.innerHTML = filtered.map(post => {
         const title   = lang === "en" && post.title_en   ? post.title_en   : post.title;
         const excerpt = lang === "en" && post.excerpt_en ? post.excerpt_en : post.excerpt;
-        const categoryLabels = {
-          familia: "Familia", notarial: "Notarial",
-          violencia: "Violencia", transito: "Tránsito", general: "General"
-        };
+        
+        const categoryLabels = lang === "en"
+          ? { familia: "Family", notarial: "Notarial", violencia: "Violence", transito: "Traffic", general: "General" }
+          : { familia: "Familia", notarial: "Notarial", violencia: "Violencia", transito: "Tránsito", general: "General" };
         return `
           <article class="blog-card" onclick="openPost('${post.id}')">
             <div class="blog-card-cat blog-card-cat--${post.category}">
@@ -213,6 +213,10 @@
 
       if (typeof lucide !== "undefined") lucide.createIcons();
     }
+
+    document.getElementById("language-select").addEventListener("change", (e) => {
+      renderBlog(document.querySelector(".blog-filter-btn.active")?.dataset.category || "all");
+    });
 
     function openPost(id) {
       window.location.href = `blog-post.html?id=${id}`;
