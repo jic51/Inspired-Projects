@@ -604,7 +604,7 @@ section h2 {
 
 .whatsapp-float:hover {
   transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 8px 28px rgba(23, 146, 70, 0.55);
+  box-shadow: 0 8px 28px rgba(29, 146, 74, 0.55);
   animation-play-state: paused;
 }
 
@@ -1481,7 +1481,7 @@ footer p {
     margin: 4px;
   }
   .branding h1 {
-    font-size: 1.3rem;
+    font-size: 1.9rem;
     line-height: 1.2;
   }
 
