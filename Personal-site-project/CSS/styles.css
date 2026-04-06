@@ -1540,7 +1540,7 @@ footer p {
 /* Extra pequeño — 360px y menos */
 @media (max-width: 400px) {
   .branding h1 {
-    font-size: 1.1rem;
+    font-size: 1.9rem;
   }
   .services-grid {
     grid-template-columns: 1fr;

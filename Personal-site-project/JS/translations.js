@@ -211,7 +211,7 @@ const translations = {
     // --- BLOG: ARTÍCULO INDIVIDUAL (blog-post.html) ---
     post_disclaimer:      "Este artículo es informativo y no constituye asesoría legal. Para tu caso específico, consulta con la Abogada Cristina Vera.",
     post_cta_title:       "¿Tienes una situación similar?",
-    post_cta_text:        "La Abogada Cristina Vera puede ayudarte con tu caso. Primera consulta sin costo.",
+    post_cta_text:        "La abogada Cristina Vera puede asesorarte en tu caso. Tu primera consulta podría ser a bajo costo o incluso gratuita.",
     post_cta_wa:          "WhatsApp",
     post_back:            "Volver al blog",
 
@@ -417,7 +417,7 @@ const translations = {
     // --- BLOG: ARTÍCULO INDIVIDUAL ---
     post_disclaimer:      "This article is for informational purposes only and does not constitute legal advice. For your specific situation, consult with Attorney Cristina Vera.",
     post_cta_title:       "Do you have a similar situation?",
-    post_cta_text:        "Attorney Cristina Vera can help you with your case. First consultation at no cost.",
+    post_cta_text:        "The attorney Cristina Vera can advise you on your case. Your first consultation could be at a low cost or even free.",
     post_cta_wa:          "WhatsApp",
     post_back:            "Back to blog",
  
