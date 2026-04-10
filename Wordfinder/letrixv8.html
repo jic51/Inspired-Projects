@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Letrix">
 <meta name="description" content="Find hidden words in the matrix before time runs out!">
-<title>Letrix — Word Matrix</title>
+<title>Letrix — Word Matrix v7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -124,7 +124,8 @@ body{font-family:'Rajdhani',sans-serif;color:var(--t);}
 .set-title{font-family:'Orbitron',sans-serif;font-size:clamp(14px,3.5vw,18px);font-weight:700;}
 .set-body{width:100%;padding:0 clamp(14px,3vw,20px) 28px;display:flex;flex-direction:column;gap:18px;max-width:520px;align-self:center;}
 .set-sect-title{font-size:clamp(8px,2vw,10px);letter-spacing:4px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;}
-.anim-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.anim-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;}
+@media(max-width:420px){.anim-grid{grid-template-columns:1fr 1fr 1fr;}}
 .anim-card{background:var(--s);border:1px solid var(--b);border-radius:13px;padding:10px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative;}
 .anim-card.on{border-color:var(--gold);background:rgba(255,215,0,.05);}
 .anim-card:hover:not(.on){border-color:var(--b2);transform:translateY(-2px);}
@@ -134,9 +135,9 @@ body{font-family:'Rajdhani',sans-serif;color:var(--t);}
 .anim-name{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;color:var(--t2);text-align:center;letter-spacing:.8px;}
 .anim-card.on .anim-name{color:var(--gold);}
 .anim-desc{font-size:9px;color:var(--t3);text-align:center;line-height:1.3;}
-@keyframes slotSpin{0%{transform:translateY(0);}100%{transform:translateY(-500px);}}
-.prev-slot-track{display:flex;flex-direction:column;align-items:center;position:absolute;animation:slotSpin 2.2s cubic-bezier(.4,0,.6,1) infinite;}
-.prev-slot-ltr{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--gold);height:50px;display:flex;align-items:center;justify-content:center;width:44px;}
+@keyframes slotSpinUp{0%{transform:translateY(0);}100%{transform:translateY(-350px);}}
+.prev-slot-track{display:flex;flex-direction:column;align-items:center;position:absolute;animation:slotSpinUp 2.4s linear infinite;}
+.prev-slot-ltr{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--cyan);height:44px;display:flex;align-items:center;justify-content:center;width:44px;}
 .prev-drum{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--cyan);animation:drum3d 1.8s ease-in-out infinite;}
 @keyframes drum3d{0%{transform:rotateX(0deg);opacity:1;}20%{transform:rotateX(90deg);opacity:0;}21%{transform:rotateX(-90deg);opacity:0;}40%{transform:rotateX(0deg);opacity:1;}100%{transform:rotateX(0deg);opacity:1;}}
 .prev-shuf{font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--gold);}
@@ -341,7 +342,15 @@ body{font-family:'Rajdhani',sans-serif;color:var(--t);}
 .btn-ghost{background:var(--s);border:1px solid var(--b);color:var(--t2);}
 .btn-ghost:hover{border-color:var(--b2);color:var(--t);}
 
-/* PARTICLES */
+/* ── IN-GAME POWERUP BAR ── */
+.powerup-bar{width:100%;padding:6px clamp(9px,2.5vw,14px) 0;display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.pu-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 6px;background:var(--s);border:1px solid var(--b);border-radius:9px;cursor:pointer;transition:all .18s;min-width:42px;position:relative;}
+.pu-btn:hover:not(:disabled){border-color:var(--b2);background:var(--s2);transform:translateY(-2px);}
+.pu-btn:disabled{opacity:.35;cursor:default;}
+.pu-btn.pu-active{border-color:var(--gold);background:rgba(255,215,0,.08);}
+.pu-icon{font-size:16px;line-height:1;}
+.pu-cost{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:700;color:var(--gold);}
+.pu-badge{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#000;font-family:'Orbitron',sans-serif;font-size:7px;font-weight:700;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;}
 .score-pop{position:fixed;pointer-events:none;font-family:'Orbitron',sans-serif;font-size:clamp(13px,3vw,17px);font-weight:700;color:var(--gold);text-shadow:0 0 12px var(--gold);animation:popUp .8s ease-out forwards;z-index:999;}
 @keyframes popUp{0%{opacity:1;transform:translate(-50%,0);}100%{opacity:0;transform:translate(-50%,-55px);}}
 .bonus-pop{color:var(--cyan)!important;text-shadow:0 0 12px var(--cyan)!important;}
@@ -457,12 +466,25 @@ body{font-family:'Rajdhani',sans-serif;color:var(--t);}
     <div>
       <div class="set-sect-title">Reveal Animation</div>
       <div class="anim-grid">
-        <div class="anim-card on" data-anim="slot"><div class="anim-check">✓</div><div class="anim-preview" style="overflow:hidden;"><div class="prev-slot-track"><span class="prev-slot-ltr">Q</span><span class="prev-slot-ltr">M</span><span class="prev-slot-ltr">Z</span><span class="prev-slot-ltr">K</span><span class="prev-slot-ltr">R</span><span class="prev-slot-ltr">B</span><span class="prev-slot-ltr">W</span><span class="prev-slot-ltr" style="color:var(--gold);">A</span></div></div><div class="anim-name">SLOT</div><div class="anim-desc">Casino scroll</div></div>
+        <div class="anim-card on" data-anim="slot"><div class="anim-check">✓</div><div class="anim-preview" style="overflow:hidden;"><div class="prev-slot-track"><span class="prev-slot-ltr">Q</span><span class="prev-slot-ltr">M</span><span class="prev-slot-ltr">Z</span><span class="prev-slot-ltr">K</span><span class="prev-slot-ltr">R</span><span class="prev-slot-ltr">B</span><span class="prev-slot-ltr">W</span><span class="prev-slot-ltr" style="color:var(--gold);">A</span></div></div><div class="anim-name">SLOT</div><div class="anim-desc">Wheel spins up</div></div>
         <div class="anim-card" data-anim="drum"><div class="anim-check"></div><div class="anim-preview" style="perspective:150px;"><span class="prev-drum" id="prev-drum-l">A</span></div><div class="anim-name">3D DRUM</div><div class="anim-desc">3D flip axis</div></div>
         <div class="anim-card" data-anim="shuffle"><div class="anim-check"></div><div class="anim-preview"><span class="prev-shuf" id="prev-shuf-l">A</span></div><div class="anim-name">SHUFFLE</div><div class="anim-desc">Letters race</div></div>
-        <div class="anim-card" data-anim="morph"><div class="anim-check"></div><div class="anim-preview"><span class="prev-morph" id="prev-morph-l">A</span></div><div class="anim-name">MORPH</div><div class="anim-desc">Dissolve & reform</div></div>
-        <div class="anim-card" data-anim="conveyor"><div class="anim-check"></div><div class="anim-preview" style="overflow:hidden;"><span id="prev-conv-ltr" style="font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--cyan);">L</span></div><div class="anim-name">CONVEYOR</div><div class="anim-desc">Rows slide in</div></div>
-        <div class="anim-card" data-anim="random"><div class="anim-check"></div><div class="anim-preview"><span id="prev-rnd-l" class="prev-rnd">?</span></div><div class="anim-name">RANDOM</div><div class="anim-desc">Surprise each level</div></div>
+        <div class="anim-card" data-anim="morph"><div class="anim-check"></div><div class="anim-preview"><span class="prev-morph" id="prev-morph-l">A</span></div><div class="anim-name">MORPH</div><div class="anim-desc">Dissolve &amp; reform</div></div>
+        <div class="anim-card" data-anim="slide"><div class="anim-check"></div><div class="anim-preview" style="overflow:hidden;"><span id="prev-conv-ltr" style="font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:var(--cyan);">L</span></div><div class="anim-name">SLIDE</div><div class="anim-desc">Cells fly in</div></div>
+        <div class="anim-card" data-anim="conveyor"><div class="anim-check"></div>
+          <div class="anim-preview" style="overflow:hidden;position:relative;">
+            <div id="prev-belt" style="display:flex;position:absolute;left:0;top:50%;transform:translateY(-50%);will-change:transform;">
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#00E5FF;width:14px;text-align:center;flex-shrink:0;">X</span>
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#00E5FF;width:14px;text-align:center;flex-shrink:0;">Q</span>
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#00E5FF;width:14px;text-align:center;flex-shrink:0;">M</span>
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#FFD700;width:14px;text-align:center;flex-shrink:0;">A</span>
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#FFD700;width:14px;text-align:center;flex-shrink:0;">B</span>
+              <span style="font-family:'Space Mono',monospace;font-size:10px;color:#FFD700;width:14px;text-align:center;flex-shrink:0;">C</span>
+            </div>
+          </div>
+          <div class="anim-name">CONVEYOR</div><div class="anim-desc">Belt scrolls</div></div>
+        <div class="anim-card" data-anim="sync"><div class="anim-check"></div><div class="anim-preview" style="overflow:hidden;display:flex;align-items:center;justify-content:center;"><span id="prev-sync-l" style="font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:#00E5FF;">A</span></div><div class="anim-name">SYNC</div><div class="anim-desc">All at once</div></div>
+        <div class="anim-card" data-anim="random"><div class="anim-check"></div><div class="anim-preview"><span id="prev-rnd-l" class="prev-rnd">?</span></div><div class="anim-name">RANDOM</div><div class="anim-desc">Surprise!</div></div>
       </div>
     </div>
     <div><div class="set-sect-title">Animation Speed</div><div class="spd-row"><button class="spd-btn" data-sp="0.35">🐢 SLOW<br><span style="font-size:9px;opacity:.6;">Cinematic</span></button><button class="spd-btn on" data-sp="1">⚡ NORMAL<br><span style="font-size:9px;opacity:.6;">Default</span></button><button class="spd-btn" data-sp="3">🚀 FAST<br><span style="font-size:9px;opacity:.6;">Snappy</span></button></div></div>
@@ -488,7 +510,38 @@ body{font-family:'Rajdhani',sans-serif;color:var(--t);}
   </div>
   <div class="grid-wrap"><div class="grid" id="grid"></div></div>
   <div class="words-sect"><div class="words-lbl" id="words-lbl">Find These Words</div><div class="words-wrap" id="chips"></div></div>
-  <button class="hint-fab" id="hint-btn">💡<span class="hint-count" id="hint-count">3</span></button>
+  <!-- In-game powerup quick bar -->
+  <div class="powerup-bar" id="powerup-bar">
+    <button class="pu-btn" id="pu-hint" title="Hint">
+      <span class="pu-icon">💡</span>
+      <span class="pu-cost" id="pu-hint-cost">3</span>
+      <span class="pu-badge" id="pu-hint-badge" style="display:none;">!</span>
+    </button>
+    <button class="pu-btn" id="pu-time" title="+30s">
+      <span class="pu-icon">⏱</span>
+      <span class="pu-cost">30💎</span>
+    </button>
+    <button class="pu-btn" id="pu-freeze" title="Freeze timer">
+      <span class="pu-icon">❄️</span>
+      <span class="pu-cost">35💎</span>
+    </button>
+    <button class="pu-btn" id="pu-life" title="Extra life">
+      <span class="pu-icon">❤️</span>
+      <span class="pu-cost">40💎</span>
+    </button>
+    <button class="pu-btn" id="pu-reveal" title="Letter hint">
+      <span class="pu-icon">🔍</span>
+      <span class="pu-cost">25💎</span>
+    </button>
+    <button class="pu-btn" id="pu-hint2" title="Super hint (full word)">
+      <span class="pu-icon">🔦</span>
+      <span class="pu-cost">50💎</span>
+    </button>
+    <button class="pu-btn" id="pu-bomb" title="Word Bomb">
+      <span class="pu-icon">💣</span>
+      <span class="pu-cost">80💎</span>
+    </button>
+  </div>
 </div>
 
 <!-- ═══ COMPLETE ═══ -->
@@ -790,7 +843,7 @@ const UI={
 const WCOLORS=['#FF6B6B','#FFD700','#00E5FF','#FF61D2','#6EFF6E','#FF9F43','#B67BFF','#FF4757','#FFBE0B','#3AE374','#64B5F6','#FF8A80','#81ECEC','#FFF564','#C8FF96'];
 const ABC='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const DIRS=[[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
-const ANIM_LIST=['slot','drum','shuffle','morph','conveyor'];
+const ANIM_LIST=['slot','drum','shuffle','morph','slide','conveyor','sync'];
 
 // ══ STATE ══
 let S={
@@ -976,31 +1029,80 @@ function buildGrid(words,rows,cols){
 // ════════════════════════════════════════
 // ANIMATIONS
 // ════════════════════════════════════════
+
+/* ── SLOT: 1 letter visible at a time, scrolls UP at constant speed.
+   Each step is exactly one letter height — no gaps, no overlap. ── */
 function animSlot(cell,ltrEl,final,fs,delay){
   setTimeout(()=>{
     ltrEl.style.opacity='0';
-    const ov=document.createElement('div');ov.style.cssText=`position:absolute;inset:0;z-index:2;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;pointer-events:none;`;
-    const track=document.createElement('div');track.style.cssText=`display:flex;flex-direction:column;align-items:center;`;
-    const steps=9+Math.floor(Math.random()*5),rowH=Math.ceil(fs*1.4);
-    for(let k=0;k<steps;k++){const sp=document.createElement('span');sp.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;height:${rowH}px;display:flex;align-items:center;justify-content:center;width:100%;color:var(--gold);`;sp.textContent=ABC[Math.random()*26|0];track.appendChild(sp);}
-    const fin=document.createElement('span');fin.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;height:${rowH}px;display:flex;align-items:center;justify-content:center;width:100%;color:var(--gold);`;fin.textContent=final;track.appendChild(fin);ov.appendChild(track);cell.appendChild(ov);
-    const spd=S.speed;let step=0;
-    function tick(){if(step<steps){track.style.transform=`translateY(-${step*rowH}px)`;step++;const p=step/steps,d=(p<.5?(55-p*60):(25+p*160))/spd;setTimeout(tick,d);}else{track.style.transform=`translateY(-${steps*rowH}px)`;setTimeout(()=>{ov.remove();ltrEl.style.opacity='1';ltrEl.textContent=final;landFlash(ltrEl);},80);}}
-    tick();
+    const spd=S.speed;
+    const cellH=cell.offsetHeight||Math.ceil(fs*1.6);
+    const rowH=cellH; // each letter is exactly cell height → only 1 visible at a time
+    const randCount=Math.max(3,Math.round(7/spd));
+    const stepDur=Math.round(105/spd); // ms per letter, constant speed
+
+    // Overlay clips everything outside the cell
+    const ov=document.createElement('div');
+    ov.style.cssText='position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;';
+
+    // Tape: flex column, absolutely positioned, initial Y centers letter 0
+    const tape=document.createElement('div');
+    tape.style.cssText='position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;will-change:transform;';
+
+    for(let k=0;k<randCount;k++){
+      const s=document.createElement('span');
+      s.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;`+
+        `height:${rowH}px;display:flex;align-items:center;justify-content:center;`+
+        `width:100%;color:#00E5FF;flex-shrink:0;`;
+      s.textContent=ABC[Math.random()*26|0];
+      tape.appendChild(s);
+    }
+    const finSpan=document.createElement('span');
+    finSpan.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;`+
+      `height:${rowH}px;display:flex;align-items:center;justify-content:center;`+
+      `width:100%;color:#FFD700;flex-shrink:0;`;
+    finSpan.textContent=final;
+    tape.appendChild(finSpan);
+
+    ov.appendChild(tape);
+    cell.appendChild(ov);
+
+    // Start with letter 0 perfectly centered in cell
+    tape.style.transform='translateY(0px)';
+
+    let step=0;
+    function tick(){
+      step++;
+      tape.style.transition=`transform ${stepDur}ms linear`;
+      tape.style.transform=`translateY(-${step*rowH}px)`;
+      const isLast=(step===randCount);
+      if(isLast){
+        setTimeout(()=>{
+          ov.remove();
+          ltrEl.style.opacity='1';
+          ltrEl.textContent=final;
+          landFlash(ltrEl);
+        },stepDur+30);
+      }else{
+        setTimeout(tick,stepDur);
+      }
+    }
+    setTimeout(tick,40);
   },delay);
 }
+
 function animDrum(cell,ltrEl,final,fs,delay){
   setTimeout(()=>{
     ltrEl.style.opacity='0';cell.style.perspective='280px';
     const steps=7+Math.floor(Math.random()*4),spd=S.speed;let step=0;
-    const ov=document.createElement('span');ov.style.cssText=`position:absolute;z-index:2;font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;color:var(--cyan);pointer-events:none;`;ov.textContent=ABC[Math.random()*26|0];cell.appendChild(ov);
-    function tick(){if(step<steps){const cur=step<steps-1?ABC[Math.random()*26|0]:final;ov.style.transition=`transform ${88/spd}ms ease-in,opacity ${68/spd}ms`;ov.style.transform='rotateX(90deg)';ov.style.opacity='0';setTimeout(()=>{ov.textContent=cur;ov.style.color=step===steps-1?'var(--gold)':'var(--cyan)';ov.style.transition=`transform ${115/spd}ms ease-out,opacity ${88/spd}ms`;ov.style.transform='rotateX(0deg)';ov.style.opacity='1';step++;setTimeout(tick,(step===steps?0:155/spd)+105/spd);},95/spd);}else{setTimeout(()=>{ov.remove();cell.style.perspective='';ltrEl.style.opacity='1';ltrEl.textContent=final;landFlash(ltrEl);},155);}}
+    const ov=document.createElement('span');ov.style.cssText=`position:absolute;z-index:2;font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;color:#00E5FF;pointer-events:none;`;ov.textContent=ABC[Math.random()*26|0];cell.appendChild(ov);
+    function tick(){if(step<steps){const cur=step<steps-1?ABC[Math.random()*26|0]:final;ov.style.transition=`transform ${88/spd}ms ease-in,opacity ${68/spd}ms`;ov.style.transform='rotateX(90deg)';ov.style.opacity='0';setTimeout(()=>{ov.textContent=cur;ov.style.color=step===steps-1?'#FFD700':'#00E5FF';ov.style.transition=`transform ${115/spd}ms ease-out,opacity ${88/spd}ms`;ov.style.transform='rotateX(0deg)';ov.style.opacity='1';step++;setTimeout(tick,(step===steps?0:155/spd)+105/spd);},95/spd);}else{setTimeout(()=>{ov.remove();cell.style.perspective='';ltrEl.style.opacity='1';ltrEl.textContent=final;landFlash(ltrEl);},155);}}
     tick();
   },delay);
 }
 function animShuffle(cell,ltrEl,final,fs,delay){
   setTimeout(()=>{
-    ltrEl.style.opacity='1';ltrEl.textContent=ABC[Math.random()*26|0];ltrEl.style.color='var(--pink)';
+    ltrEl.style.opacity='1';ltrEl.textContent=ABC[Math.random()*26|0];ltrEl.style.color='#FF61D2';
     const spd=S.speed,total=14+Math.floor(Math.random()*6);
     const cols2=['#FF61D2','#00E5FF','#6EFF6E','#FF9F43','#B67BFF'];let i=0;
     function tick(){if(i<total){ltrEl.textContent=ABC[Math.random()*26|0];ltrEl.style.color=cols2[i%cols2.length];ltrEl.style.transform=`scale(${.88+Math.random()*.25})`;i++;const p=i/total,d=(20+p*p*220)/spd;setTimeout(tick,d);}else{ltrEl.textContent=final;ltrEl.style.transform='scale(1)';landFlash(ltrEl);}}
@@ -1012,39 +1114,154 @@ function animMorph(cell,ltrEl,final,fs,delay){
     ltrEl.style.opacity='1';ltrEl.textContent=ABC[Math.random()*26|0];
     const spd=S.speed,steps=5+Math.floor(Math.random()*3);
     const cols2=['#FF61D2','#00E5FF','#6EFF6E','#FFD700','#FF9F43'];let i=0;
-    function tick(){if(i<steps){ltrEl.style.transition=`transform ${72/spd}ms ease-in,opacity ${72/spd}ms,filter ${72/spd}ms`;ltrEl.style.transform='scale(0.04)';ltrEl.style.opacity='0';ltrEl.style.filter='blur(5px)';setTimeout(()=>{ltrEl.textContent=i===steps-1?final:ABC[Math.random()*26|0];ltrEl.style.color=i===steps-1?'var(--gold)':cols2[i%cols2.length];ltrEl.style.transition=`transform ${100/spd}ms cubic-bezier(.175,.885,.32,1.275),opacity ${82/spd}ms,filter ${82/spd}ms`;ltrEl.style.transform='scale(1.12)';ltrEl.style.opacity='1';ltrEl.style.filter='blur(0)';setTimeout(()=>{ltrEl.style.transition='transform .1s';ltrEl.style.transform='scale(1)';i++;setTimeout(tick,i===steps?0:165/spd);},115/spd);},82/spd);}else{ltrEl.textContent=final;landFlash(ltrEl);}}
+    function tick(){if(i<steps){ltrEl.style.transition=`transform ${72/spd}ms ease-in,opacity ${72/spd}ms,filter ${72/spd}ms`;ltrEl.style.transform='scale(0.04)';ltrEl.style.opacity='0';ltrEl.style.filter='blur(5px)';setTimeout(()=>{ltrEl.textContent=i===steps-1?final:ABC[Math.random()*26|0];ltrEl.style.color=i===steps-1?'#FFD700':cols2[i%cols2.length];ltrEl.style.transition=`transform ${100/spd}ms cubic-bezier(.175,.885,.32,1.275),opacity ${82/spd}ms,filter ${82/spd}ms`;ltrEl.style.transform='scale(1.12)';ltrEl.style.opacity='1';ltrEl.style.filter='blur(0)';setTimeout(()=>{ltrEl.style.transition='transform .1s';ltrEl.style.transform='scale(1)';i++;setTimeout(tick,i===steps?0:165/spd);},115/spd);},82/spd);}else{ltrEl.textContent=final;landFlash(ltrEl);}}
     tick();
   },delay);
 }
 
-/* ── CONVEYOR (pure slide — letter visible from the start, no random cycling)
-   Even rows: slide in from LEFT. Odd rows: slide in from RIGHT.
-   Within each row, cells stagger so they arrive like links on a chain. */
-function animConveyor(cell,ltrEl,final,fs,delay,rowIdx,colIdx,cellPx){
+/* ── SYNC: all cells spin as one machine — same random letters, same timing,
+   all land on their correct letter at exactly the same moment. ── */
+function animSync(cell,ltrEl,final,fs,_delay,totalCells,cellIndex){
+  // No per-cell delay — all start at the same time (delay=0)
+  ltrEl.style.opacity='0';
+  const spd=S.speed;
+  const cellH=cell.offsetHeight||Math.ceil(fs*1.6);
+  // Shared random sequence seeded once per grid render (stored on S)
+  if(!S._syncLetters){
+    const randCount=Math.max(4,Math.round(8/spd));
+    S._syncLetters=Array.from({length:randCount},()=>ABC[Math.random()*26|0]);
+  }
+  const randSeq=S._syncLetters;
+  const stepDur=Math.round(90/spd);
+
+  const ov=document.createElement('div');
+  ov.style.cssText='position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;';
+  const tape=document.createElement('div');
+  tape.style.cssText='position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;will-change:transform;';
+
+  // Same random letters for every cell, then this cell's own final letter
+  randSeq.forEach(ltr=>{
+    const s=document.createElement('span');
+    s.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;`+
+      `height:${cellH}px;display:flex;align-items:center;justify-content:center;`+
+      `width:100%;color:#00E5FF;flex-shrink:0;`;
+    s.textContent=ltr;tape.appendChild(s);
+  });
+  const finSpan=document.createElement('span');
+  finSpan.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;`+
+    `height:${cellH}px;display:flex;align-items:center;justify-content:center;`+
+    `width:100%;color:#FFD700;flex-shrink:0;`;
+  finSpan.textContent=final;tape.appendChild(finSpan);
+
+  ov.appendChild(tape);cell.appendChild(ov);
+  tape.style.transform='translateY(0px)';
+
+  let step=0;
+  const totalSteps=randSeq.length;
+  function tick(){
+    step++;
+    tape.style.transition=`transform ${stepDur}ms linear`;
+    tape.style.transform=`translateY(-${step*cellH}px)`;
+    if(step===totalSteps){
+      // All cells land together
+      setTimeout(()=>{
+        ov.remove();ltrEl.style.opacity='1';ltrEl.textContent=final;landFlash(ltrEl);
+      },stepDur+30);
+    }else{
+      setTimeout(tick,stepDur);
+    }
+  }
+  setTimeout(tick,40);
+}
+function animSlide(cell,ltrEl,final,fs,rowDelay,rowIdx,colIdx){
   const spd=S.speed;
   const goesRight=rowIdx%2===0;
-  const offX=goesRight?-(cellPx*2+30):(cellPx*2+30);
+  const offX=goesRight?-(S.cellPx*2+30):(S.cellPx*2+30);
   const staggerCol=goesRight?colIdx:(S.actualCols-1-colIdx);
   const staggerMs=staggerCol*Math.max(12,55/spd);
-  const totalDelay=delay+staggerMs;
   const slideDur=Math.max(70,300/spd);
-
   setTimeout(()=>{
-    ltrEl.style.transition='none';
-    ltrEl.style.opacity='1';
-    ltrEl.style.color='#00E5FF';
-    ltrEl.textContent=final; // FINAL letter shown immediately — pure conveyor
-    ltrEl.style.transform=`translateX(${offX}px)`;
+    ltrEl.style.transition='none';ltrEl.style.opacity='1';ltrEl.style.color='#00E5FF';
+    ltrEl.textContent=final;ltrEl.style.transform=`translateX(${offX}px)`;
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       ltrEl.style.transition=`transform ${slideDur}ms cubic-bezier(0.22,0.68,0,1.15),color ${Math.round(slideDur*.7)}ms ease`;
-      ltrEl.style.transform='translateX(0)';
-      ltrEl.style.color='#FFD700';
-      setTimeout(()=>{
-        ltrEl.style.transition='color 0.5s ease';
-        ltrEl.style.color='#ffffff';
-      },slideDur+80);
+      ltrEl.style.transform='translateX(0)';ltrEl.style.color='#FFD700';
+      setTimeout(()=>{ltrEl.style.transition='color 0.5s ease';ltrEl.style.color='#ffffff';},slideDur+80);
     }));
-  },totalDelay);
+  },rowDelay+staggerMs);
+}
+
+/* ── CONVEYOR (real belt): all rows start with random letters, then scroll
+   simultaneously like a conveyor belt until correct letters arrive.
+   Even rows scroll LEFT, odd rows scroll RIGHT.
+   A wide tape sits behind the cells — random half visible at start,
+   scrolls to reveal correct half. No per-cell animation needed. ── */
+function animConveyorBelt(gridEl,rows,cols,grid,cp,fs,spd){
+  // Hide all cell letters while conveyor runs
+  gridEl.querySelectorAll('.letter').forEach(el=>{
+    el.style.opacity='0';
+  });
+
+  const dur=Math.max(500,900/spd);
+
+  for(let r=0;r<rows;r++){
+    // Gather correct letters for this row
+    const correct=[];
+    for(let c=0;c<cols;c++) correct.push(grid[r][c]);
+    const n=correct.length;
+    const goLeft=r%2===0;
+
+    // Create a tape positioned over this row's cells in the grid
+    const tape=document.createElement('div');
+    tape.style.cssText=`position:absolute;height:${cp}px;width:${2*n*cp}px;display:flex;align-items:center;pointer-events:none;z-index:3;will-change:transform;top:${r*(cp+3)}px;left:0;`;
+
+    const makeSpan=(ltr,color)=>{
+      const s=document.createElement('span');
+      s.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${fs}px;color:${color};width:${cp}px;text-align:center;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;height:${cp}px;`;
+      s.textContent=ltr;
+      return s;
+    };
+
+    if(goLeft){
+      // [n random | n correct] → slide left to reveal correct
+      for(let i=0;i<n;i++) tape.appendChild(makeSpan(ABC[Math.random()*26|0],'#00E5FF'));
+      for(let i=0;i<n;i++) tape.appendChild(makeSpan(correct[i],'#FFD700'));
+      tape.style.transform='translateX(0)';
+      gridEl.style.position='relative';
+      gridEl.appendChild(tape);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        tape.style.transition=`transform ${dur}ms linear`;
+        tape.style.transform=`translateX(-${n*cp}px)`;
+        setTimeout(()=>{
+          tape.remove();
+          // Show real cell letters with flash
+          for(let c=0;c<cols;c++){
+            const idx=r*cols+c;
+            const ltrEl=gridEl.querySelector(`.cell[data-idx="${idx}"] .letter`);
+            if(ltrEl){ltrEl.style.opacity='1';ltrEl.textContent=correct[c];landFlash(ltrEl);}
+          }
+        },dur+40);
+      }));
+    }else{
+      // [n correct | n random] → start showing random (right half), slide right to show correct
+      for(let i=0;i<n;i++) tape.appendChild(makeSpan(correct[i],'#FFD700'));
+      for(let i=0;i<n;i++) tape.appendChild(makeSpan(ABC[Math.random()*26|0],'#00E5FF'));
+      tape.style.transform=`translateX(-${n*cp}px)`;
+      gridEl.appendChild(tape);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        tape.style.transition=`transform ${dur}ms linear`;
+        tape.style.transform='translateX(0)';
+        setTimeout(()=>{
+          tape.remove();
+          for(let c=0;c<cols;c++){
+            const idx=r*cols+c;
+            const ltrEl=gridEl.querySelector(`.cell[data-idx="${idx}"] .letter`);
+            if(ltrEl){ltrEl.style.opacity='1';ltrEl.textContent=correct[c];landFlash(ltrEl);}
+          }
+        },dur+40);
+      }));
+    }
+  }
 }
 
 function landFlash(el){
@@ -1070,32 +1287,49 @@ function renderGrid(){
   document.documentElement.style.setProperty('--fs',fs+'px');
   el.style.gridTemplateColumns=`repeat(${cols},${cp}px)`;
   el.innerHTML='';
+  el.style.position='relative'; // needed for conveyor belt absolute tapes
   S.animating=true;
   S.activeAnim=chooseAnim(); // pick once per level
+  S._syncLetters=null; // reset shared letters for sync animation
 
   for(let r=0;r<rows;r++){
     for(let c=0;c<cols;c++){
       const idx=r*cols+c;
       const cell=document.createElement('div');cell.className='cell';cell.dataset.idx=idx;
-      const ltr=document.createElement('span');ltr.className='letter';ltr.style.opacity='0';
-      ltr.textContent=S.grid[r][c];cell.appendChild(ltr);el.appendChild(cell);
+      const ltr=document.createElement('span');ltr.className='letter';
+      ltr.textContent=S.grid[r][c];
+      ltr.style.opacity='0'; // all animations start hidden, reveal themselves
+      cell.appendChild(ltr);el.appendChild(cell);
       const final=S.grid[r][c];
-      // For conveyor, need lower base delay (stagger is per-cell within row)
-      const baseDelay=S.activeAnim==='conveyor'
-        ? r*clamp(30,120/spd_approx(rows),80)   // row-based delay
-        : idx*10;
-      if(S.activeAnim==='slot')      animSlot(cell,ltr,final,fs,baseDelay);
-      else if(S.activeAnim==='drum') animDrum(cell,ltr,final,fs,baseDelay);
-      else if(S.activeAnim==='shuffle')  animShuffle(cell,ltr,final,fs,baseDelay);
-      else if(S.activeAnim==='conveyor') animConveyor(cell,ltr,final,fs,r*clamp(30,100/rows,70),r,c,cp);
-      else                               animMorph(cell,ltr,final,fs,baseDelay);
+
+      if(S.activeAnim==='conveyor') continue; // handled below per-row
+
+      const baseDelay=S.activeAnim==='slide'
+        ? r*clamp(30,120/spd_approx(rows),80)
+        : idx*Math.max(4,12/S.speed);
+
+      if(S.activeAnim==='slot')         animSlot(cell,ltr,final,fs,baseDelay);
+      else if(S.activeAnim==='drum')    animDrum(cell,ltr,final,fs,baseDelay);
+      else if(S.activeAnim==='shuffle') animShuffle(cell,ltr,final,fs,baseDelay);
+      else if(S.activeAnim==='slide')   animSlide(cell,ltr,final,fs,r*clamp(30,100/rows,70),r,c);
+      else if(S.activeAnim==='sync')    animSync(cell,ltr,final,fs,0,rows*cols,r*cols+c);
+      else                              animMorph(cell,ltr,final,fs,baseDelay);
     }
   }
+
+  // Conveyor belt: run after all cells are in DOM
+  if(S.activeAnim==='conveyor'){
+    requestAnimationFrame(()=>animConveyorBelt(el,rows,cols,S.grid,cp,fs,S.speed));
+  }
+
   // Total anim duration estimate
+  const convDur=Math.max(500,900/S.speed)+200;
   const totalMs=S.activeAnim==='conveyor'
-    ? rows*clamp(30,100/rows,70)+cols*clamp(18,85/cols,55)+600
-    : rows*cols*10+2400;
-  setTimeout(()=>{S.animating=false;},totalMs/S.speed+400);
+    ? convDur
+    : S.activeAnim==='slide'
+      ? rows*clamp(30,100/rows,70)+cols*clamp(18,85/cols,55)+600
+      : rows*cols*Math.max(4,12/S.speed)+2500/S.speed;
+  setTimeout(()=>{S.animating=false;updatePowerupBar();},totalMs+300);
 }
 function spd_approx(n){return Math.max(1,n/8);} // helper for conveyor base
 
@@ -1268,25 +1502,14 @@ function buyItem(item){
   saveGame();
 }
 function updateHintBtn(){
-  const hb=document.getElementById('hint-btn');
-  const hc=document.getElementById('hint-count');
-  if(!hb)return;
-  if(S.hints>0){
-    hb.style.opacity='1';
-    hb.title='Use a hint';
-    if(hc)hc.textContent=S.hints;
-  }else{
-    // Empty — show buy indicator
-    hb.style.opacity='0.7';
-    hb.title='Buy more hints';
-    if(hc)hc.textContent='+';
-  }
+  updatePowerupBar();
 }
+function applyHint(full){
   const unfound=S.placed.filter(p=>!S.found.includes(p.word));if(!unfound.length)return;
   const target=unfound[Math.random()*unfound.length|0];
   const cells=full?target.pos:target.pos.slice(0,2);
   cells.forEach(([r,c2])=>{const idx=r*S.actualCols+c2;const el=document.querySelector(`.cell[data-idx="${idx}"]`);if(el){el.style.boxShadow='0 0 18px 5px var(--gold)';el.style.borderColor='var(--gold)';setTimeout(()=>{el.style.boxShadow='';el.style.borderColor='';},2000);}});
-
+}
 function autoBomb(){
   const unfound=S.placed.filter(p=>!S.found.includes(p.word));if(!unfound.length)return;
   const target=unfound.sort((a,b)=>a.word.length-b.word.length)[0];
@@ -1311,9 +1534,10 @@ function resumeGame(){S.paused=false;document.getElementById('pause-overlay').cl
 // TIMES UP
 // ════════════════════════════════════════
 function timesUp(){
-  clearInterval(S.timerID);
+  if(S.timesUpShown)return; // prevent double-call from timer/lives race
+  clearInterval(S.timerID);S.timerID=null;
   if(S.found.length===S.words.length){levelComplete();return;}
-  // FIX: use fail-stats-wrap only (fail-found/fail-total don't exist)
+  S.timesUpShown=true;
   const fs=document.getElementById('fail-stats');
   if(fs)fs.innerHTML=`<div class="sm-item"><div class="sm-val">${S.found.length}/${S.words.length}</div><div class="sm-lbl">WORDS</div></div><div class="sm-item"><div class="sm-val">${(S.score-S.levelScoreStart).toLocaleString()}</div><div class="sm-lbl">SCORE</div></div><div class="sm-item"><div class="sm-val">x${S.bestCombo}</div><div class="sm-lbl">COMBO</div></div>`;
   checkContinueAffordability();
@@ -1398,7 +1622,7 @@ function startGame(isRetry=false){
   S.allPoolWords=new Set();POOLS[S.lang][S.cat].forEach(p=>p.forEach(w=>S.allPoolWords.add(w)));
   S.found=[];S.bonusFound=[];
   if(!isRetry)S.levelScoreStart=S.score;else S.score=S.levelScoreStart;
-  S.lives=3;S.combo=0;S.bestCombo=1;S.timeLeft=lv.time;
+  S.lives=3;S.combo=0;S.bestCombo=1;S.timeLeft=lv.time;S.timesUpShown=false;
   S.actualRows=rows;S.actualCols=cols;S.hints=3;S.animating=true;S.dragging=false;S.sel=[];
   const{g,placed}=buildGrid(candidates,rows,cols);
   S.grid=g;S.placed=placed;
@@ -1420,6 +1644,7 @@ function startGame(isRetry=false){
   const comb=document.getElementById('combo');if(comb)comb.classList.remove('on');
   updateHintBtn();
   updateLives();updateTimer();
+  updatePowerupBar();
   const chips=document.getElementById('chips');chips.innerHTML='';
   S.words.forEach(w=>{const d=document.createElement('div');d.className='chip';d.dataset.word=w;d.textContent=w;chips.appendChild(d);});
   renderGrid();attachDrag();
@@ -1473,10 +1698,6 @@ function refreshHomeUI(){
   // Home buttons
   const pb=document.getElementById('play-btn');if(pb)pb.innerHTML=ui.playNow;
   const sb=document.getElementById('settings-btn');if(sb)sb.innerHTML=ui.settingsBtn;
-  // Streak widget labels
-  const sw=document.querySelector('#streak-widget div div:last-child');if(sw)sw.textContent=ui.dayStreak;
-  // Daily widget
-  const dw=document.querySelectorAll('.auth-inner ~ * .logo-cell'); // skip
   // Settings screen
   const settTitle=document.querySelector('#settings .set-title');if(settTitle)settTitle.textContent=ui.settings;
   const setBack=document.getElementById('set-back');if(setBack)setBack.title=ui.mainMenu;
@@ -1496,8 +1717,6 @@ function refreshHomeUI(){
   // Settings account section
   const vp=document.getElementById('view-prof-btn');if(vp)vp.textContent=ui.profile;
   const so=document.getElementById('so-btn');if(so)so.textContent=ui.signOut;
-  // Settings back button text
-  const setBackSpan=document.querySelector('#settings .set-title');if(setBackSpan)setBackSpan.textContent=ui.settings;
   // Profile screen
   const profTitle=document.querySelector('#profile .set-title');if(profTitle)profTitle.textContent=ui.profile;
   const profBack=document.getElementById('prof-back');if(profBack)profBack.title=ui.mainMenu;
@@ -1509,7 +1728,12 @@ function refreshHomeUI(){
   const exitBtn=document.getElementById('exit-btn');if(exitBtn)exitBtn.textContent=ui.exitMenu;
   const failTitle=document.querySelector('#failed-overlay .ov-title');if(failTitle)failTitle.textContent=ui.timesUp;
   const contBtn=document.getElementById('continue-btn');
-  if(contBtn)contBtn.childNodes[0].textContent=ui.continueBtn+' ';
+  if(contBtn){
+    const costBadge=contBtn.querySelector('.cost-badge');
+    const txt=contBtn.childNodes[0];
+    if(txt&&txt.nodeType===3)txt.nodeValue=ui.continueBtn+' ';
+    else if(!costBadge)contBtn.prepend(document.createTextNode(ui.continueBtn+' '));
+  }
   const neh=document.getElementById('not-enough-hint');if(neh)neh.textContent=ui.notEnough;
   const retryBtn=document.getElementById('retry-btn');if(retryBtn)retryBtn.textContent=ui.retryLevel;
   const failExit=document.getElementById('fail-exit-btn');if(failExit)failExit.textContent=ui.exitMenu;
@@ -1523,7 +1747,6 @@ function refreshHomeUI(){
   const upe=document.getElementById('up-email');if(upe)upe.placeholder=ui.emailPlaceholder;
   const upp=document.getElementById('up-pass');if(upp)upp.placeholder=ui.passwordMin;
   const supBtn=document.getElementById('signup-btn');if(supBtn)supBtn.textContent=ui.createAccount;
-  const gBtn=document.querySelector('.google-btn span')||document.querySelector('.google-btn');
   // Auth tabs
   document.getElementById('tab-in').textContent=ui.signIn;
   document.getElementById('tab-up').textContent=ui.createAccount;
@@ -1540,8 +1763,41 @@ document.getElementById('sound-toggle').addEventListener('click',function(){S.so
 document.getElementById('so-btn').addEventListener('click',()=>{localStorage.removeItem(LS_KEY);S.user={name:'Guest',email:'',avatar:'🦁',isGuest:true};S.score=0;S.lvl=0;S.gems=100;S.st={levelsCompleted:0,totalWords:0,totalBonus:0,bestComboEver:1,totalScore:0,streak:0,hadPerfectLevel:false,totalGemsEarned:100};S.purchases=[];updateGems();go('auth');});
 
 // ════════════════════════════════════════
-// GAME NAV
+// IN-GAME POWERUP BAR — quick access buttons
 // ════════════════════════════════════════
+function updatePowerupBar(){
+  // Hint button: show count or + if empty
+  const ph=document.getElementById('pu-hint');
+  const phc=document.getElementById('pu-hint-cost');
+  const phb=document.getElementById('pu-hint-badge');
+  if(ph&&phc){
+    if(S.hints>0){phc.textContent=S.hints;ph.disabled=false;phc.style.color='var(--gold)';if(phb)phb.style.display='none';}
+    else{phc.textContent='35💎';ph.disabled=false;phc.style.color='var(--cyan)';if(phb){phb.style.display='flex';phb.textContent='+';}}
+  }
+  // Disable all gem-cost buttons if animating
+  ['pu-time','pu-freeze','pu-life','pu-reveal','pu-hint2','pu-bomb'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=S.animating;
+  });
+}
+
+// Hint (free, uses S.hints)
+document.getElementById('pu-hint')?.addEventListener('click',()=>{
+  if(S.animating)return;
+  if(S.hints>0){applyHint(false);S.hints--;updatePowerupBar();if(S.sound)playTone(520,.08);}
+  else{buyItem(SHOP_ITEMS.find(i=>i.id==='hints'));updatePowerupBar();}
+});
+// +30s
+document.getElementById('pu-time')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='time'));});
+// Freeze
+document.getElementById('pu-freeze')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='freeze'));});
+// Extra life
+document.getElementById('pu-life')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='life'));});
+// Letter hint (reveal)
+document.getElementById('pu-reveal')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='reveal'));});
+// Super hint (full word)
+document.getElementById('pu-hint2')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='hint'));});
+// Word Bomb
+document.getElementById('pu-bomb')?.addEventListener('click',()=>{if(!S.animating)buyItem(SHOP_ITEMS.find(i=>i.id==='bomb'));});
 document.getElementById('back-btn').addEventListener('click',()=>{clearInterval(S.timerID);if(S.freezeID){clearTimeout(S.freezeID);S.freezeID=null;}go('home');});
 document.getElementById('pause-btn').addEventListener('click',pauseGame);
 document.getElementById('resume-btn').addEventListener('click',resumeGame);
@@ -1549,20 +1805,6 @@ document.getElementById('shop-btn').addEventListener('click',()=>{buildShop();do
 document.getElementById('restart-btn').addEventListener('click',()=>startGame(true));
 document.getElementById('exit-btn').addEventListener('click',()=>{clearInterval(S.timerID);document.getElementById('pause-overlay').classList.add('off');go('home');});
 document.getElementById('shop-close').addEventListener('click',()=>document.getElementById('shop-overlay').classList.add('off'));
-document.getElementById('hint-btn').addEventListener('click',()=>{
-  if(S.animating)return;
-  if(S.hints<=0){
-    // Out of hints — open powerup shop to buy more
-    buildShop();
-    document.getElementById('shop-overlay').classList.remove('off');
-    showToast('💡 Buy "+3 Hints" to refill!');
-    return;
-  }
-  applyHint(false);
-  S.hints--;
-  updateHintBtn();
-});
-
 // ════════════════════════════════════════
 // FAILED NAV
 // ════════════════════════════════════════
@@ -1575,7 +1817,13 @@ document.getElementById('continue-btn').addEventListener('click',()=>{
   S.timerID=setInterval(()=>{if(!S.paused){S.timeLeft--;updateTimer();}},1000);
 });
 document.getElementById('retry-btn').addEventListener('click',()=>{document.getElementById('failed-overlay').classList.add('off');startGame(true);});
-document.getElementById('fail-exit-btn').addEventListener('click',()=>{clearInterval(S.timerID);document.getElementById('failed-overlay').classList.add('off');go('home');});
+document.getElementById('fail-exit-btn').addEventListener('click',()=>{
+  S.timesUpShown=false;
+  clearInterval(S.timerID);S.timerID=null;
+  if(S.freezeID){clearTimeout(S.freezeID);S.freezeID=null;}
+  document.getElementById('failed-overlay').classList.add('off');
+  go('home');
+});
 
 // ════════════════════════════════════════
 // COMPLETE
@@ -1626,11 +1874,11 @@ function updatePrevIntervals(){
     },90/spd);
   },Math.max(200,750/spd));
 
-  // CONVEYOR preview — pure slide in from left, pause, exit right, repeat
-  const cvLetters='LETRIX';let cvIdx=0;
-  function runConvPrev(){
+  // SLIDE preview — letter slides in from left, pauses, exits right, repeats
+  const slideLetters='LETRIX';let slideIdx=0;
+  function runSlidePrev(){
     const el=document.getElementById('prev-conv-ltr');if(!el)return;
-    el.style.transition='none';el.textContent=cvLetters[cvIdx%cvLetters.length];
+    el.style.transition='none';el.textContent=slideLetters[slideIdx%slideLetters.length];
     el.style.color='#00E5FF';el.style.transform='translateX(-26px)';el.style.opacity='0';
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const dur=Math.max(60,260/spd);
@@ -1642,12 +1890,58 @@ function updatePrevIntervals(){
           const exitDur=Math.max(45,160/spd);
           el.style.transition=`transform ${exitDur}ms ease-in,opacity ${exitDur}ms`;
           el.style.transform='translateX(26px)';el.style.opacity='0';
-          setTimeout(()=>{cvIdx++;runConvPrev();},exitDur+20);
+          setTimeout(()=>{slideIdx++;runSlidePrev();},exitDur+20);
         },Math.max(80,350/spd));
       },dur+50);
     }));
   }
-  runConvPrev();
+  runSlidePrev();
+
+  // CONVEYOR belt preview — tape slides left, resets, repeats
+  let _beltPos=0;
+  function runBelt(){
+    const el=document.getElementById('prev-belt');if(!el)return;
+    const dur=Math.max(300,500/spd);
+    el.style.transition=`transform ${dur}ms linear`;
+    _beltPos-=14; // slide left by one cell width
+    el.style.transform=`translateX(${_beltPos}px) translateY(-50%)`;
+    // After sliding 3 cells, reset
+    if(_beltPos<=-42){
+      setTimeout(()=>{
+        el.style.transition='none';
+        _beltPos=0;
+        el.style.transform='translateX(0) translateY(-50%)';
+        setTimeout(runBelt,80);
+      },dur+40);
+    }else{
+      setTimeout(runBelt,dur+40);
+    }
+  }
+  runBelt();
+
+  // SYNC preview — letter cycles fast then lands, repeats
+  const syncAbc='ABCDEFGHIJKLMNOPQRSTUVWXYZ';let syncStep=0;
+  function runSyncPrev(){
+    const el=document.getElementById('prev-sync-l');if(!el)return;
+    const dur=Math.round(90/spd);
+    el.style.transition=`opacity ${dur*0.3}ms`;
+    el.style.opacity='0';
+    setTimeout(()=>{
+      syncStep=(syncStep+1)%syncAbc.length;
+      el.textContent=syncAbc[syncStep];
+      el.style.color=syncStep%4===3?'#FFD700':'#00E5FF';
+      el.style.opacity='1';
+      const isLand=(syncStep%8===7);
+      if(isLand){
+        el.style.color='#FFD700';
+        el.style.textShadow='0 0 10px #FFD700';
+        setTimeout(()=>{el.style.textShadow='none';setTimeout(runSyncPrev,Math.max(200,400/spd));},200/spd);
+      }else{
+        setTimeout(runSyncPrev,dur+10);
+      }
+    },dur*0.35);
+  }
+  runSyncPrev();
 
   // RANDOM
   _prevIDs.rnd=setInterval(()=>{
@@ -1934,8 +2228,13 @@ function buildAchievements(){
   ACHIEVEMENTS.forEach(a=>{
     const ok=a.check(S.st);
     const d=document.createElement('div');
-    d.style.cssText=`display:flex;align-items:center;gap:9px;background:var(--s);border:1px solid ${ok?'rgba(255,215,0,.35)':'var(--b)'};border-radius:11px;padding:11px;${ok?'background:rgba(255,215,0,.05);':''}`;
-    me ds">${a.icon}</div><div><div style="font-size:11px;font-weight:700;color:${ok?'var(--gold)':'var(--t2)'}">${a.name}${ok?' ✓':''}</div><div style="font-size:9px;color:var(--t3);line-height:1.3;margin-top:2px;">${a.desc}</div></div>`;
+    d.className='achieve-card'+(ok?' unlocked':'');
+    const iconEl=document.createElement('div');iconEl.style.cssText='font-size:22px;opacity:'+(ok?'1':'0.35');iconEl.textContent=a.icon;
+    const textEl=document.createElement('div');
+    const nameEl=document.createElement('div');nameEl.style.cssText='font-size:11px;font-weight:700;color:'+(ok?'var(--gold)':'var(--t2)');nameEl.textContent=a.name+(ok?' ✓':'');
+    const descEl=document.createElement('div');descEl.style.cssText='font-size:9px;color:var(--t3);line-height:1.3;margin-top:2px;';descEl.textContent=a.desc;
+    textEl.appendChild(nameEl);textEl.appendChild(descEl);
+    d.appendChild(iconEl);d.appendChild(textEl);
     grid.appendChild(d);
   });
 }
@@ -2023,10 +2322,29 @@ function buildShareCard(){
   // Left strip
   const lp=28,lw=290;
   ctx.fillStyle='rgba(255,255,255,.03)';ctx.fillRect(lp,lp,lw,H-lp*2);
-  // LETRIX logo
-  ctx.font='900 20px monospace';
-  const lg=ctx.createLinearGradient(lp+10,0,lp+120,0);lg.addColorStop(0,'#FFD700');lg.addColorStop(1,'#FF61D2');
-  ctx.fillStyle=lg;ctx.fillText('LETRIX',lp+10,lp+30);
+
+  // ── LOGO: cell box + LETRIX gradient text ──
+  const logoY=lp+22;
+  const boxSz=28;
+  // Cell box (same style as game cells)
+  ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.5;
+  ctx.fillStyle='rgba(255,255,255,.1)';
+  const bx=lp+8,by=logoY-boxSz+4;
+  const bR=4;// rounded rect polyfill
+  ctx.beginPath();ctx.moveTo(bx+bR,by);ctx.lineTo(bx+boxSz-bR,by);ctx.quadraticCurveTo(bx+boxSz,by,bx+boxSz,by+bR);ctx.lineTo(bx+boxSz,by+boxSz-bR);ctx.quadraticCurveTo(bx+boxSz,by+boxSz,bx+boxSz-bR,by+boxSz);ctx.lineTo(bx+bR,by+boxSz);ctx.quadraticCurveTo(bx,by+boxSz,bx,by+boxSz-bR);ctx.lineTo(bx,by+bR);ctx.quadraticCurveTo(bx,by,bx+bR,by);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  // Letter inside box
+  ctx.font='700 17px "Space Mono",monospace';ctx.fillStyle='#FFD700';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('L',bx+boxSz/2,by+boxSz/2);
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  // LETRIX text with gradient
+  ctx.font='900 22px Orbitron,monospace';
+  const lg=ctx.createLinearGradient(lp+44,0,lp+130,0);
+  lg.addColorStop(0,'#FFD700');lg.addColorStop(0.45,'#FF9500');lg.addColorStop(1,'#FF61D2');
+  ctx.fillStyle=lg;ctx.fillText('LETRIX',lp+44,logoY);
+  // Tagline
+  ctx.font='10px Rajdhani,monospace';ctx.fillStyle='rgba(255,255,255,.35)';ctx.letterSpacing='2px';
+  ctx.fillText('WORD · MATRIX · GAME',lp+44,logoY+14);ctx.letterSpacing='0';
   // Mini grid visualization
   const sd=S.lastShareData;
   if(sd&&sd.grid){
@@ -2115,92 +2433,87 @@ document.getElementById('comp-share-btn')?.addEventListener('click',()=>openShar
 
 <script>
 // ════════════════════════════════════════
-// LOGO CELL — slot animation (slower than game, stops on X, gold→white flash)
+// LOGO CELL — slot machine: spins fast, decelerates, stops on each letter of LETRIX
 // ════════════════════════════════════════
 (function initLogoCells(){
   const WORD='LETRIX';
-  const TRACK_H=clamp(24,window.innerWidth*0.06,36); // px per letter row
+  const REPEATS=60; // long tape so we never run out of letters
 
-  document.querySelectorAll('.logo-cell').forEach(el=>{
-    // Build slot track inside the cell
-    el.innerHTML=''; // clear the static span
-    const wrap=document.createElement('div');
-    wrap.style.cssText='position:absolute;inset:0;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;';
-    const track=document.createElement('div');
-    track.style.cssText=`display:flex;flex-direction:column;align-items:center;will-change:transform;`;
+  document.querySelectorAll('.logo-cell').forEach((el,elIdx)=>{
+    el.innerHTML='';
+    const cellSz=el.offsetWidth||48;
+    const letterFs=Math.round(cellSz*0.55);
 
-    // Populate: LETRIX + final X repeated to allow clean loop
-    const seq=[...WORD.split(''), WORD[WORD.length-1]]; // L E T R I X X
-    seq.forEach((ltr,i)=>{
-      const span=document.createElement('span');
-      span.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${TRACK_H*0.78}px;height:${TRACK_H}px;display:flex;align-items:center;justify-content:center;width:100%;color:#FFD700;line-height:1;`;
-      span.textContent=ltr;
-      track.appendChild(span);
-    });
-    wrap.appendChild(track);
-    el.appendChild(wrap);
+    // Clip: shows exactly 1 cell worth of height
+    const clip=document.createElement('div');
+    clip.style.cssText='position:absolute;inset:0;overflow:hidden;';
 
-    let pos=0; // current letter index (0=L)
-    let running=false;
+    // Tape: LETRIX repeated REPEATS times — we scroll down into it
+    const tape=document.createElement('div');
+    tape.style.cssText='position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;will-change:transform;';
 
-    function step(){
-      if(running)return;
-      running=true;
-      const totalLetters=WORD.length; // 6
-      // Scroll from current pos through all letters, stopping at last (X = index 5)
-      animSlotTo(0); // always restart from top visually
+    const spans=[];
+    for(let r=0;r<REPEATS;r++){
+      WORD.split('').forEach(ltr=>{
+        const s=document.createElement('span');
+        s.style.cssText=`font-family:'Space Mono',monospace;font-weight:700;font-size:${letterFs}px;`+
+          `height:${cellSz}px;display:flex;align-items:center;justify-content:center;`+
+          `color:#FFD700;flex-shrink:0;`;
+        s.textContent=ltr;
+        tape.appendChild(s);
+        spans.push(s);
+      });
     }
+    clip.appendChild(tape);
+    el.appendChild(clip);
+    tape.style.transform='translateY(0)';
 
-    function animSlotTo(targetIdx){
-      // targetIdx = 5 (X)
-      // We scroll from 0 down through each letter with increasing slowdown
-      pos=0;
-      track.style.transition='none';
-      track.style.transform='translateY(0)';
+    let currentIdx=0; // tape index we're currently stopped at
+    let wordStep=0;   // which letter of LETRIX to stop on next (0=L,1=E,...5=X)
 
-      function scrollNext(){
-        pos++;
-        const isLast=(pos===WORD.length-1); // landing on X
-        // Speed: starts fast, slows down near the end (like a real slot)
-        const progress=pos/(WORD.length-1);
-        const dur=isLast?520:Math.round(180+progress*progress*280); // ms
+    function spinToNext(){
+      const targetLetter=wordStep%WORD.length;
 
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          track.style.transition=`transform ${dur}ms ${isLast?'cubic-bezier(.2,0,.4,1)':'ease-in-out'}`;
-          track.style.transform=`translateY(-${pos*TRACK_H}px)`;
-        }));
+      // Spin exactly 1 full LETRIX cycle before landing — enough to feel like spinning
+      const minAdvance=WORD.length; // 6 letters
+      let targetIdx=currentIdx+minAdvance;
+      while(targetIdx%WORD.length!==targetLetter) targetIdx++;
 
-        if(isLast){
-          // Landed on X — flash gold then settle to white
-          setTimeout(()=>{
-            const xSpan=track.children[pos];
-            if(xSpan){
-              xSpan.style.transition='color .08s';
-              xSpan.style.color='#FFD700';
-              xSpan.style.textShadow='0 0 14px #FFD700';
-              setTimeout(()=>{
-                xSpan.style.transition='color .4s,text-shadow .4s';
-                xSpan.style.color='#ffffff';
-                xSpan.style.textShadow='none';
-              },120);
-            }
-            // Pause 1.8s then restart
-            setTimeout(()=>{
-              // Reset all span colors
-              Array.from(track.children).forEach(s=>{s.style.color='#FFD700';s.style.textShadow='none';s.style.transition='none';});
-              running=false;
-              setTimeout(step,0);
-            },1800);
-          },dur+40);
-        }else{
-          setTimeout(scrollNext,dur+18);
-        }
+      if(targetIdx>=spans.length-6){
+        tape.style.transition='none';
+        tape.style.transform='translateY(0)';
+        currentIdx=0;
+        setTimeout(spinToNext,0);
+        return;
       }
-      scrollNext();
+
+      const dy=targetIdx*cellSz;
+      // 3500ms with a gentle start so the spin is visibly slow throughout
+      const spinDur=3500;
+
+      tape.style.transition=`transform ${spinDur}ms cubic-bezier(0.4,0,0.1,1)`;
+      tape.style.transform=`translateY(-${dy}px)`;
+      currentIdx=targetIdx;
+
+      setTimeout(()=>{
+        const sp=spans[targetIdx];
+        if(sp){
+          sp.style.transition='color .06s,text-shadow .06s';
+          sp.style.color='#FFD700';
+          sp.style.textShadow='0 0 18px #FFD700,0 0 6px #FFD700';
+          setTimeout(()=>{
+            sp.style.transition='color .4s,text-shadow .4s';
+            sp.style.color='#ffffff';
+            sp.style.textShadow='none';
+          },100);
+        }
+        wordStep++;
+        setTimeout(spinToNext,1600);
+      },spinDur+20);
     }
 
-    // Kick off after a short stagger so cells don't all start together
-    setTimeout(step,200);
+    // Stagger start slightly between the two logo cells (auth + home)
+    setTimeout(spinToNext,400+elIdx*180);
   });
 })();
 
