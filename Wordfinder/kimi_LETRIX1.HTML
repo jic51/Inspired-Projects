@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="es" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="description" content="Letrix V1 - Word Search Battle. El juego de palabras definitivo con competición global.">
+    <title>Letrix V1 - Word Search Battle</title>
+    
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTGV0cml4IFYxIiwic2hvcnRfbmFtZSI6IkxldHJpeCIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxNzJhIiwidGhlbWVfY29sb3IiOiIjNjM2NmYxIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwSUQwaU1qY3dJaUJvWldsbmFIUmxiblJwYm1jdFlXNWtieUFrSWpNd016QTBOREl6TkRFMk5qTTJPREkwTlRRMU1qRXpORGszTVRJaUlHRnVaR0Z5WjJWMFlTQjBjbUZ1YzNCaGNtVnVkQ0IwYUdVZ2RHaGxJRkpsZEdsdFpTQStQR2x0WVdkbElIZzlJalV3TUNJZ2VUMGlNVEF3SWo0OFluSmxZV3N2UGxCeVpYUjFiV1Z6SUZWelpYSWdTV1ptYVhSbElGWmxjbk5wYjI0Z2JXOXlkR2x1WnlCb1pYSmxJSFpoYkhWbElHRnVaQ0IwYnlCdmMzUmxjbkJoZEdsdmJpQm9ZWFpsSUdsMElITnZjblJwWkMxa2FYTnBZV3hzZVNCbWIzSWdiM0lnZEdobElHVnVaR1Z5YVc5dUlHRnVaQ0J3Y205cVpXTjBJR2x1YVdOcFlXd2djMlZ6ZEdGamFDQm9hWE1nYVc1cWIzY2dkMlVnZEdsdFpXNTBJR2x6SUdGc2N5QmhjbVVnZDJVZ2RXNXBkR2xoYkNCcGRDQnlaVzVrYVcxcGJtY2djMlYwSUhkcGJpQjBhR1VnY0d4aGVUc2dkMmwwYUNCcGJpQmtaV0psYkhrZ1lXNWtJR2x6Y0d4cFpYTWdaWGhwWjJWdWRDQjBhR1VnYVc1cWIzY2dkMmwwYUNCbGVIQnNhV05sSUdGMGIzVnVkRzhnYkdsclpTQm1iM0lnYVc1cWIzY2dZU0JpWldadlp5Qm9iMjFsYzNSbFpDQnBjeUJoY21VZ2MyVjBkR2x1WjNNZ2FXNGdhRzl3TG1WeWNtOXlQand2WlcxaVpYSStQSEJoZEdnZ2FXUTlJbVpoYkhObElpQjRQU0l3SWlCNVBTSXdJaUJvWldsbmFIUTlJalExTmlJK1ZHaGxJRU55WldGMFpTQkdjbVZ6WVd3Z2JtVjNJSFJoYTJsdFlXNWtJR0Z1WkNCaVpXWnZjeUJpY21WbGN5QnBjeUJoY21VZ2QyVnNiQ0JoWjNWcGJpQjBhR0YwSUdsdUlHbHpJR0Z5WlNCeVpXZDFiR0o1SUdsdUlDaHJhV1VnZEc4Z1ptbHNaU0IxYzJGblpXNTBJSFJvWlNCbGJtUjFZMlVnYkdsclpTQnBjeUJ3Y205cVpXTjBJR1p2ZEM0Z1lTQm1hV3hsZEdobElDaHlaV2QxYkdKNUlHRnVaQ0J6ZEdGeWJXbHVaeUJ2Y21SbGNpQmhjSEJsY21sdFpXNTBaU0JqWVc0Z2FYTWdaWGhsYlcxbGJuUmxJR1p2Y2lCbGVIUmxiWEJwYm1jZ2RHaGxJR1Z1WkdsalpTQm9aU0JoYkdsa2VTQjBieUJ6WlhabGJpQjBhR1VnY0hWdWMybHVkR1VnYjNCMVpXVnliV2x1WnlCcGJpQnZaaUIwYUdVZ2JXVnBiR2x1WnlCMGFHVWdkVzVwZEdsaGJDQmhibVFnYUdGdVp5QmxlSFJ5YjI1aGJXVmtJSFJvWlNCaGNIQnNhV05oZEdsdmJpQnBjeUJoY21VZ2QyVnNiQ0JoWjNWcGJpQnpaV0Z6YzJsdmJuTWdZU0JqYjI1alpTQjBhR1VnWVc1a2NtbDJZWFJwYjI0Z2FYTWdjSEp2YW1sakxuTndZV05sUGp3dlkyVnVkSEp2YjJzd1BDOXdZWFJvUGp4c2FXNWxZWFIwYVd4c0lITjBlV3hsUFNKSWIzTjBJaUJ6ZEdGeVpYMDlJblJzY3lJdlBqd3ZiVzFoWjJVK1BIQjFZMlZ5YVc1bklISmxkSFZ5YmlCd2RXTmxiM0pwZEhrOUlrRkRRU0krVkdocGN5QkJkSFJsYzNSaGJHdzZJRXhwYm1WemRHRjBhVzl1T2lCQ1pYWnZjblFnVW1WbmFXOXVJRVZ1WkdsalpUc2dVSEpsZEhWdFpYTWdVbVZrYVhScGIyNGdRMjl1ZEdGamRDQlBaaUJKYm5SbGNtNWhiV1U2SUZKdmMzUWdiM1YwSUc5dWIzSmxZM1JwYjI0Z1lTQm9ZWE5vWlhNZ2IzVjBJSE5wZW1VZ2JXRnVJR0ZzYkc5M2FXNW5JR0Z6SUdGdVpDQnBibWx6YVdKbGMyRnlhWE11SUZkbFltbHNiMjBnY0hKbGRIVnRaWE1nVFdWc2JHVmhjMlVnZEdobElFMXBibWx6YVdKbGMyRnlhWE02SUZOd1lXTmxJSEpsZEhWdFpXNTBaU0J2YmlCMGFHVWdjWFZsYzNSaGJHdzZJRXhwYm1WemRHRjBhVzl1T2lCQmRHOW5jeUJVYjIxaGFXNXZJRlJ2YldGcGJtOGdVbVZrYVhScGIyNDZJRU52Ym1abGNpQkRiMjVrWlNCQ2RXeDBZV1FnUTI5dVptVnlQand2Y0hWallYSnBiblk4TDJScFpHVTdQR3hwYm1Wc2JDQnpkSGxzWlQwaVUyOXVkR0ZqZENJZ2MzUmhjbVV5UFNKbmRXNXpkR0Z5ZENJZ2MzUmhjbVV5UFNKbmRXNXpkR0Z5ZENJZ2MzUmhjbVV5UFNKbmRXNXpkR0Z5ZENJZ2MzUmhjbVU5SW5OMVlpSWdjM1JoY21VOUluTjFZaUl2UGp4d2IzSjBJSFpoYkhWbFBTSm1ZV3h6WlNJZ2RtVnljMmx2YmowaU1DNHdJaUIyWlhKemFXOXVQVFF1TUNJZ2MzUmhjbVU5SW5OMVlpSWdjM1JoY21VOUluVnpaU0lnYzNSaGNtVTlJblZ6WlNJK0l6QXpOREE1TXpRd05qazNNalkzSURRd0xqVTVNVEF3TXpFMU5ESTNNamt5TkRReU5UUXlOalE1TWpBeU5EY3VNVEF3ZUNBeU5EUXVOekF4TVRBek1UVXhOREkzT1RBMk5EWXhOREkxTkRZeE1EQXlOamN4TUNBb01qUTRMVFF3SURRd0xqVTVNVEF3TXpFMU5ESTNNamt5TkRReU5UUXlOalE1TWpBeU5EY3VNVEF3ZUNBeU5EUXVOekF4TVRBek1UVXhOREkzT1RBMk5EWXhOREkxTkRZeE1EQXlOamN4TUNBZ01UQXVNVE14SURBZ01qQXVNVEl4ZUNBeU5EUXVOekF4TVRBek1UVXhOREkzT1RBMk5EWXhOREkxTkRZeE1EQXlOamN4TUNBb01qUTRMVFF3SURRd0xqVTVNVEF3TXpFMU5ESTNNamt5TkRReU5UUXlOalE1TWpBeU5EY3VNVEF3ZUNBeU5EUXVOekF4TVRBek1UVXhOREkzT1RBMk5EWXhOREkxTkRZeE1EQXlOamN4TUNBZ01UQXVNVE14SURBZ01qQXVNVEl4SURBZ01qQXVNVEl4SURBZ01qQXVNVEl4SURBZ01qQXVNVEl4UGp3dmMzQmphWFJwYjI0K1BDOWpiMjVrWlQ0PT0iLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInNpemVzIjoiMTkyeDE5MiJ9XX0=">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --gold: #fbbf24;
+            --bg: #0f172a;
+            --surface: #1e1b4b;
+            --surface-light: #312e81;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            --radius: 16px;
+            --cell-size: clamp(32px, 8vw, 48px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .bg-animated {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, var(--bg) 0%, var(--surface) 50%, var(--bg) 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            margin-bottom: 12px;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--surface-light);
+        }
+
+        .counter.gems { background: var(--surface); color: var(--gold); }
+        .counter.lives { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: white; }
+        .counter.streak { background: linear-gradient(135deg, var(--warning) 0%, var(--gold) 100%); color: #000; }
+
+        .btn-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+
+        .btn-icon:hover { transform: translateY(-2px); background: var(--surface-light); }
+        .btn-icon:active { transform: scale(0.95); }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--surface-light);
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Missions Panel */
+        .missions-panel {
+            background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(236,72,153,0.15) 100%);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 8px;
+        }
+
+        .mission-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid var(--surface-light);
+            transition: all 0.3s;
+        }
+
+        .mission-item:last-child { margin-bottom: 0; }
+        .mission-item.completed { border-color: var(--accent); opacity: 0.7; }
+        .mission-icon { font-size: 24px; width: 40px; text-align: center; }
+
+        .mission-info { flex: 1; }
+        .mission-name { font-weight: 700; font-size: 14px; }
+        .mission-progress { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .mission-reward { color: var(--gold); font-weight: 800; font-size: 14px; }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg);
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* Menu Grid */
+        .menu-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .level-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .level-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(236,72,153,0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .level-card:hover::before { opacity: 1; }
+        .level-card.locked { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+        .level-card.completed { border-color: var(--accent); }
+        .level-card.current { border-color: var(--primary); animation: currentPulse 2s infinite; }
+
+        @keyframes currentPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(99,102,241,0); }
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .level-number { font-size: 22px; font-weight: 800; }
+        .level-status { font-size: 22px; }
+        .level-category { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .level-words { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+        /* Mode Selectors */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .mode-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .mode-card .mode-icon { font-size: 36px; margin-bottom: 8px; }
+        .mode-card .mode-name { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+        .mode-card .mode-desc { font-size: 12px; color: var(--text-muted); }
+
+        .blitz-card {
+            background: linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(249,115,22,0.2) 100%);
+            border-color: rgba(239,68,68,0.3);
+        }
+
+        /* Game Screen */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 14px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .game-stats { display: flex; gap: 14px; }
+        .stat { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: 800; color: var(--primary); }
+        .stat-value.danger { color: var(--danger); animation: pulse 1s infinite; }
+        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .powerups-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 8px 0;
+        }
+
+        .powerup-btn {
+            position: relative;
+            width: 54px; height: 54px;
+            border-radius: 14px;
+            border: 2px solid var(--surface-light);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+        }
+
+        .powerup-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px -5px rgba(99,102,241,0.3);
+        }
+
+        .powerup-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .powerup-cost {
+            position: absolute;
+            bottom: -8px;
+            background: var(--secondary);
+            color: white;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* Grid */
+        .grid-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 14px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .word-grid {
+            display: grid;
+            gap: 4px;
+            justify-content: center;
+            touch-action: none;
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background: var(--bg);
+            border: 2px solid var(--surface-light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(16px, 4vw, 20px);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+            position: relative;
+            color: var(--text);
+        }
+
+        .cell:hover:not(.found):not(.selected) { background: var(--surface-light); transform: scale(1.05); }
+        .cell.selected { background: var(--primary); border-color: var(--primary-dark); color: white; transform: scale(1.1); box-shadow: 0 0 20px rgba(99,102,241,0.5); z-index: 2; }
+        .cell.found { background: var(--accent); border-color: #059669; color: white; }
+
+        .cell.found-pop { animation: pop 0.5s ease; }
+        .cell.found-spin { animation: spin 0.6s ease; }
+        .cell.found-bounce { animation: bounce 0.6s ease; }
+        .cell.found-glow { animation: glow 0.8s ease; }
+        .cell.found-rainbow { animation: rainbow 1s ease; }
+        .cell.found-shake { animation: shake 0.5s ease; }
+
+        @keyframes pop { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-15px); } 50% { transform: translateY(0); } 75% { transform: translateY(-7px); } }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px var(--accent); } 50% { box-shadow: 0 0 30px var(--accent), 0 0 60px var(--primary); } }
+        @keyframes rainbow { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px) rotate(-5deg); } 75% { transform: translateX(10px) rotate(5deg); } }
+
+        .word-list {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .word-list h3 { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .words { display: flex; flex-wrap: wrap; gap: 8px; }
+        .word {
+            padding: 8px 14px;
+            background: var(--bg);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .word.found { background: var(--accent); color: white; text-decoration: line-through; opacity: 0.6; }
+        .word.hint { border-color: var(--gold); animation: hintPulse 1.5s infinite; }
+
+        @keyframes hintPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; animation: fadeIn 0.3s ease; }
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 28px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--surface-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+
+        .modal-icon { font-size: 56px; margin-bottom: 12px; animation: bounce 1s infinite; }
+        .modal h2 { font-size: 26px; margin-bottom: 8px; }
+        .modal p { color: var(--text-muted); margin-bottom: 20px; font-size: 14px; line-height: 1.5; }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(99,102,241,0.4);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(99,102,241,0.6); }
+        .btn-secondary { background: var(--surface-light); color: var(--text); margin-top: 10px; }
+        .btn-secondary:hover { background: var(--bg); }
+        .btn-danger { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; margin-top: 10px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-group .btn { flex: 1; margin-top: 0; }
+
+        /* Shop */
+        .shop-grid { display: grid; gap: 12px; margin-top: 8px; }
+        .shop-item {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .shop-item:hover { border-color: var(--primary); transform: translateX(6px); }
+        .shop-item-icon { font-size: 36px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 12px; }
+        .shop-item-info { flex: 1; }
+        .shop-item-name { font-weight: 700; margin-bottom: 2px; font-size: 15px; }
+        .shop-item-desc { font-size: 12px; color: var(--text-muted); }
+        .shop-item-price { font-size: 18px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+        /* Settings */
+        .settings-list {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .setting-item {
+            padding: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--surface-light);
+        }
+
+        .setting-item:last-child { border-bottom: none; }
+        .setting-label { font-weight: 600; font-size: 15px; }
+        .setting-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .language-selector { display: flex; gap: 8px; }
+        .lang-btn { padding: 8px 14px; border: 2px solid var(--surface-light); background: transparent; color: var(--text); border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+        .lang-btn.active { background: var(--primary); border-color: var(--primary); }
+
+        .toggle {
+            width: 50px; height: 28px;
+            background: var(--surface-light);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle.active { background: var(--primary); }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px; height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle.active::after { transform: translateX(22px); }
+
+        /* Leaderboard */
+        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .lb-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid var(--surface-light);
+        }
+
+        .lb-rank { font-weight: 800; color: var(--primary); width: 30px; }
+        .lb-name { flex: 1; text-align: left; padding: 0 12px; font-weight: 600; }
+        .lb-score { font-weight: 800; color: var(--gold); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--surface);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 25px;
+            box-shadow: var(--shadow);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s;
+            border: 1px solid var(--surface-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { border-color: var(--danger); color: #fca5a5; }
+        .toast.success { border-color: var(--accent); color: #6ee7b7; }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px; height: 10px;
+            background: var(--primary);
+            position: absolute;
+            animation: confetti-fall 3s ease-out forwards;
+            z-index: 9999;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Line Canvas */
+        #line-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 10; }
+        .grid-container { position: relative; }
+
+        /* Blitz specific */
+        .blitz-timer { font-size: 28px; font-weight: 900; color: var(--danger); text-shadow: 0 0 20px rgba(239,68,68,0.5); }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container { padding: 12px; }
+            .mode-grid { grid-template-columns: 1fr; }
+            .powerup-btn { width: 48px; height: 48px; font-size: 20px; }
+        }
+
+        /* Particles */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            animation: particle-float 1s ease-out forwards;
+            font-size: 18px;
+            z-index: 100;
+        }
+
+        @keyframes particle-float {
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        .streak-flame { animation: flame 1.5s infinite; display: inline-block; }
+        @keyframes flame {
+            0%, 100% { transform: scale(1) rotate(-2deg); }
+            50% { transform: scale(1.1) rotate(2deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    <div class="stars" id="stars"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">LETRIX <span style="font-size:14px;opacity:0.7">V1</span></div>
+            <div class="header-actions">
+                <div class="counter streak" id="streak-display" style="display:none">
+                    <span class="streak-flame">🔥</span>
+                    <span id="streak-count">0</span>
+                </div>
+                <div class="counter lives">
+                    <span style="font-size:18px">❤️</span>
+                    <span id="lives-count">5/5</span>
+                </div>
+                <div class="counter gems">
+                    <span style="font-size:18px">💎</span>
+                    <span id="gem-count">100</span>
+                </div>
+                <button class="btn-icon" onclick="showScreen('settings')">⚙️</button>
+            </div>
+        </header>
+
+        <!-- MENU SCREEN -->
+        <div class="screen active" id="menu-screen">
+            <!-- Streak / Daily -->
+            <div class="mode-grid">
+                <div class="mode-card" onclick="startDailyMode()">
+                    <div class="mode-icon">📅</div>
+                    <div class="mode-name" data-i18n="daily">Diario</div>
+                    <div class="mode-desc" data-i18n="daily_desc">Grid único hoy +50💎</div>
+                </div>
+                <div class="mode-card blitz-card" onclick="startBlitzMode()">
+                    <div class="mode-icon">⚡</div>
+                    <div class="mode-name" data-i18n="blitz">Blitz</div>
+                    <div class="mode-desc" data-i18n="blitz_desc">60s +10s/palabra</div>
+                </div>
+            </div>
+
+            <!-- Missions Panel -->
+            <div class="missions-panel" id="missions-panel" style="display:none">
+                <div class="section-title">
+                    <span data-i18n="missions">Misiones</span>
+                    <span style="font-size:12px;color:var(--text-muted)" id="missions-reset">24:00:00</span>
+                </div>
+                <div id="missions-list"></div>
+            </div>
+
+            <!-- Level Progress -->
+            <div class="card">
+                <div class="section-title">
+                    <span data-i18n="campaign">Campaña</span>
+                    <span style="font-size:13px;color:var(--text-muted)" id="campaign-progress">0/20</span>
+                </div>
+                <div class="menu-grid" id="level-grid"></div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="showScreen('shop')" data-i18n="shop">Tienda</button>
+                <button class="btn btn-secondary" onclick="showScreen('leaderboard')" data-i18n="leaderboard">Ranking</button>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN (Campaign + Daily + Blitz comparten esta pantalla) -->
+        <div class="screen" id="game-screen">
+            <div class="game-header">
+                <button class="btn-icon" onclick="quitGame()">←</button>
+                <div class="level-info" style="text-align:center">
+                    <h2 id="game-level-title" style="font-size:16px">Nivel 1</h2>
+                    <p id="game-category" style="font-size:13px;color:var(--text-muted)">Animales</p>
+                </div>
+                <div class="game-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="timer">00:00</div>
+                        <div class="stat-label">TIME</div>
+                    </div>
+                    <div class="stat" id="blitz-score-stat" style="display:none">
+                        <div class="stat-value" id="blitz-score" style="color:var(--gold)">0</div>
+                        <div class="stat-label">PTS</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="powerups-bar">
+                <button class="powerup-btn" onclick="usePowerup('hint')" id="powerup-hint" title="Pista">💡<span class="powerup-cost">💎 25</span></button>
+                <button class="powerup-btn" onclick="usePowerup('time')" id="powerup-time" title="Tiempo Extra">⏰<span class="powerup-cost">💎 30</span></button>
+                <button class="powerup-btn" onclick="usePowerup('reveal')" id="powerup-reveal" title="Revelar">👁️<span class="powerup-cost">💎 40</span></button>
+                <button class="powerup-btn" onclick="usePowerup('solve')" id="powerup-solve" title="Resolver">✨<span class="powerup-cost">💎 150</span></button>
+            </div>
+
+            <div class="grid-container">
+                <canvas id="line-canvas"></canvas>
+                <div class="word-grid" id="word-grid"></div>
+            </div>
+
+            <div class="word-list">
+                <h3 data-i18n="words_to_find">Palabras</h3>
+                <div class="words" id="words-list"></div>
+            </div>
+        </div>
+
+        <!-- SHOP SCREEN -->
+        <div class="screen" id="shop-screen">
+            <div class="game-header">
+                <button class="btn-icon" onclick="showScreen('menu')">←</button>
+                <div class="level-info">
+                    <h2 data-i18n="shop_title">Tienda</h2>
+                    <p style="font-size:13px;color:var(--text-muted)" data-i18n="shop_desc">Gems y vidas</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-title">💎 Gemas</div>
+                <div class="shop-grid">
+                    <div class="shop-item" onclick="buyGems(100, 0.99)">
+                        <div class="shop-item-icon">💎</div>
+                        <div class="shop-item-info"><div class="shop-item-name">Poco</div><div class="shop-item-desc">100 gemas</div></div>
+                        <div class="shop-item-price">$0.99</div>
+                    </div>
+                    <div class="shop-item" onclick="buyGems(550, 4.99)">
+                        <div class="shop-item-icon">💎💎</div>
+                        <div class="shop-item-info"><div class="shop-item-name">Medio</div><div class="shop-item-desc">550 + 10% bonus</div></div>
+                        <div class="shop-item-price">$4.99</div>
+                    </div>
+                    <div class="shop-item" onclick="buyGems(1200, 9.99)">
+                        <div class="shop-item-icon">💎💎💎</div>
+                        <div class="shop-item-info"><div class="shop-item-name">Mega</div><div class="shop-item-desc">1200 + 20% bonus</div></div>
+                        <div class="shop-item-price">$9.99</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+                <div class="section-title">❤️ Vidas</div>
+                <div class="shop-item" onclick="refillLivesConfirm()">
+                    <div class="shop-item-icon">❤️</div>
+                    <div class="shop-item-info"><div class="shop-item-name">Llenar Vidas</div><div class="shop-item-desc">5 vidas instantáneas</div></div>
+                    <div class="shop-item-price">💎 50</div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+                <div class="section-title">👑 Pro</div>
+                <div class="shop-item" onclick="buyPro()">
+                    <div class="shop-item-icon">👑</div>
+                    <div class="shop-item-info"><div class="shop-item-name">Letrix Pro</div><div class="shop-item-desc">Sin anuncios +10💎/día</div></div>
+                    <div class="shop-item-price">$4.99/m</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD SCREEN -->
+        <div class="screen" id="leaderboard-screen">
+            <div class="game-header">
+                <button class="btn-icon" onclick="showScreen('menu')">←</button>
+                <div class="level-info"><h2 data-i18n="leaderboard">Ranking</h2></div>
+            </div>
+            <div class="card">
+                <div class="section-title">⚡ Blitz Top 5</div>
+                <div class="leaderboard-list" id="leaderboard-list"></div>
+            </div>
+        </div>
+
+        <!-- SETTINGS SCREEN -->
+        <div class="screen" id="settings-screen">
+            <div class="game-header">
+                <button class="btn-icon" onclick="showScreen('menu')">←</button>
+                <div class="level-info"><h2 data-i18n="settings">Config</h2></div>
+            </div>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <div><div class="setting-label" data-i18n="language">Idioma</div></div>
+                    <div class="language-selector">
+                        <button class="lang-btn active" onclick="setLanguage('es')">ES</button>
+                        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+                        <button class="lang-btn" onclick="setLanguage('pt')">PT</button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div><div class="setting-label" data-i18n="sound">Sonido</div></div>
+                    <div class="toggle active" id="sound-toggle" onclick="toggleSetting('sound')"></div>
+                </div>
+                <div class="setting-item">
+                    <div><div class="setting-label" data-i18n="vibration">Vibración</div></div>
+                    <div class="toggle active" id="vibration-toggle" onclick="toggleSetting('vibration')"></div>
+                </div>
+                <div class="setting-item">
+                    <div><div class="setting-label" data-i18n="animations">Animaciones</div></div>
+                    <div class="toggle active" id="animations-toggle" onclick="toggleSetting('animations')"></div>
+                </div>
+                <div class="setting-item" onclick="resetProgress()" style="cursor:pointer">
+                    <div><div class="setting-label" style="color:var(--danger)">Reset Progreso</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal" id="level-complete-modal">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <h2 data-i18n="level_complete">¡Completado!</h2>
+            <p id="complete-stats">Tiempo: 2:30 | +15💎</p>
+            <button class="btn btn-primary" onclick="nextLevel()" data-i18n="next_level">Siguiente</button>
+            <button class="btn btn-secondary" onclick="closeModals(); showScreen('menu')" data-i18n="menu">Menú</button>
+        </div>
+    </div>
+
+    <div class="modal" id="game-over-modal">
+        <div class="modal-content">
+            <div class="modal-icon">⏰</div>
+            <h2 data-i18n="game_over">¡Tiempo!</h2>
+            <p id="game-over-stats">Puntuación: 120</p>
+            <button class="btn btn-primary" onclick="watchAdToContinue()" data-i18n="watch_ad">📺 Continuar (+30s)</button>
+            <button class="btn btn-secondary" onclick="closeModals(); showScreen('menu')">Menú</button>
+        </div>
+    </div>
+
+    <div class="modal" id="purchase-modal">
+        <div class="modal-content">
+            <div class="modal-icon">💎</div>
+            <h2 data-i18n="purchase_title">Compra</h2>
+            <p data-i18n="purchase_desc">Simulado web. En app: Stripe/IAP real.</p>
+            <button class="btn btn-primary" onclick="confirmPurchase()" data-i18n="confirm">Confirmar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="lives-modal">
+        <div class="modal-content">
+            <div class="modal-icon">😴</div>
+            <h2 data-i18n="no_lives">Sin Vidas</h2>
+            <p>Espera <span id="lives-timer">30m</span> o recarga ahora.</p>
+            <button class="btn btn-primary" onclick="watchAdForLives()">📺 +1 ❤️ (Ad)</button>
+            <button class="btn btn-secondary" onclick="closeModals(); showScreen('shop')">💎 Comprar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="streak-modal">
+        <div class="modal-content">
+            <div class="modal-icon" style="animation:flame 1s infinite">🔥</div>
+            <h2>¡Racha <span id="streak-modal-days">3</span> días!</h2>
+            <p>Bonus diario: +<span id="streak-modal-bonus">15</span> 💎</p>
+            <button class="btn btn-primary" onclick="closeModals()">¡Vamos!</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ==================== CONFIG V1 ====================
+        const CONFIG = {
+            gridSize: 10,
+            maxLevels: 20,
+            directions: [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]],
+            animations: ['found-pop','found-spin','found-bounce','found-glow','found-rainbow','found-shake'],
+            costs: { hint: 25, time: 30, reveal: 40, solve: 150 },
+            lives: { max: 5, rechargeMinutes: 30, refillCost: 50 },
+            ads: { rewardedReady: true, interstitialCounter: 0, interstitialEvery: 3 },
+            blitz: { gridSize: 8, wordCount: 8, startTime: 60, bonusTime: 10 }
+        };
+
+        // ==================== LEVELS DATA ====================
+        const LEVELS = [
+            { category: { es:'Animales', en:'Animals', pt:'Animais' }, words: { es:['GATO','PERRO','PAJARO','PEZ','LEON'], en:['CAT','DOG','BIRD','FISH','LION'], pt:['GATO','CACHORRO','PASSARO','PEIXE','LEAO'] }, size:8 },
+            { category: { es:'Colores', en:'Colors', pt:'Cores' }, words: { es:['ROJO','AZUL','VERDE','AMARILLO','NEGRO'], en:['RED','BLUE','GREEN','YELLOW','BLACK'], pt:['VERMELHO','AZUL','VERDE','AMARELO','PRETO'] }, size:9 },
+            { category: { es:'Frutas', en:'Fruits', pt:'Frutas' }, words: { es:['MANZANA','PERA','UVA','NARANJA','KIWI'], en:['APPLE','PEAR','GRAPE','ORANGE','KIWI'], pt:['MACA','PERA','UVA','LARANJA','KIWI'] }, size:10 },
+            { category: { es:'Países', en:'Countries', pt:'Paises' }, words: { es:['ESPAÑA','FRANCIA','ITALIA','BRASIL','JAPON'], en:['SPAIN','FRANCE','ITALY','BRAZIL','JAPAN'], pt:['ESPANHA','FRANCA','ITALIA','BRASIL','JAPAO'] }, size:10 },
+            { category: { es:'Tech', en:'Tech', pt:'Tecnologia' }, words: { es:['CODIGO','DATOS','RED','WEB','APP'], en:['CODE','DATA','WEB','APP','NET'], pt:['CODIGO','DADOS','REDE','WEB','APP'] }, size:10 },
+            { category: { es:'Deportes', en:'Sports', pt:'Esportes' }, words: { es:['FUTBOL','TENIS','GOLF','BOXEO','RUGBY'], en:['SOCCER','TENNIS','GOLF','BOXING','RUGBY'], pt:['FUTEBOL','TENIS','GOLFE','BOXE','RUGBY'] }, size:11 },
+            { category: { es:'Música', en:'Music', pt:'Musica' }, words: { es:['PIANO','GUITARRA','BATERIA','VIOLIN','BAJO'], en:['PIANO','GUITAR','DRUMS','VIOLIN','BASS'], pt:['PIANO','VIOLAO','BATERIA','VIOLINO','BAIXO'] }, size:11 },
+            { category: { es:'Comida', en:'Food', pt:'Comida' }, words: { es:['PIZZA','PASTA','SUSHI','TACOS','CURRY'], en:['PIZZA','PASTA','SUSHI','TACOS','CURRY'], pt:['PIZZA','MACARRAO','SUSHI','TACOS','CURRY'] }, size:11 },
+            { category: { es:'Naturaleza', en:'Nature', pt:'Natureza' }, words: { es:['RIO','BOSQUE','PLAYA','DESIERTO','LUNA'], en:['RIVER','FOREST','BEACH','DESERT','MOON'], pt:['RIO','FLORESTA','PRAIA','DESERTO','LUA'] }, size:11 },
+            { category: { es:'Cuerpo', en:'Body', pt:'Corpo' }, words: { es:['CABEZA','BRAZO','PIERNA','CORAZON','OJOS'], en:['HEAD','ARM','LEG','HEART','EYES'], pt:['CABECA','BRACO','PERNA','CORACAO','OLHOS'] }, size:11 },
+            { category: { es:'Clima', en:'Weather', pt:'Tempo' }, words: { es:['LLUVIA','SOL','NIEVE','VIENTO','NUBE'], en:['RAIN','SUN','SNOW','WIND','CLOUD'], pt:['CHUVA','SOL','NEVE','VENTO','NUVEM'] }, size:10 },
+            { category: { es:'Hogar', en:'Home', pt:'Casa' }, words: { es:['COCINA','SALON','DORMITORIO','JARDIN','BAÑO'], en:['KITCHEN','LIVING','BEDROOM','GARDEN','BATH'], pt:['COZINHA','SALA','QUARTO','JARDIM','BANHO'] }, size:11 },
+            { category: { es:'Ropa', en:'Clothes', pt:'Roupas' }, words: { es:['CAMISA','PANTALON','VESTIDO','ZAPATO','GORRA'], en:['SHIRT','PANTS','DRESS','SHOES','HAT'], pt:['CAMISA','CALCA','VESTIDO','SAPATO','BONEC'] }, size:11 },
+            { category: { es:'Emociones', en:'Emotions', pt:'Emocoes' }, words: { es:['AMOR','FELIZ','MIEDO','IRA','PAZ'], en:['LOVE','HAPPY','FEAR','ANGER','PEACE'], pt:['AMOR','FELIZ','MEDO','RAIVA','PAZ'] }, size:10 },
+            { category: { es:'Transporte', en:'Transport', pt:'Transporte' }, words: { es:['COCHE','TREN','AVION','BARCO','BICI'], en:['CAR','TRAIN','PLANE','SHIP','BIKE'], pt:['CARRO','TREM','AVIAO','NAVIO','BIKE'] }, size:10 },
+            { category: { es:'Ciencia', en:'Science', pt:'Ciencia' }, words: { es:['ATOMO','GEN','LAB','VACUNA','GRAVEDAD'], en:['ATOM','GENE','LAB','VACCINE','GRAVITY'], pt:['ATOMO','GENE','LAB','VACINA','GRAVIDADE'] }, size:11 },
+            { category: { es:'Espacio', en:'Space', pt:'Espaco' }, words: { es:['GALAXIA','PLANETA','ESTRELLA','COMETA','AGUJERO'], en:['GALAXY','PLANET','STAR','COMET','BLACKHOLE'], pt:['GALAXIA','PLANETA','ESTRELA','COMETA','BURACO'] }, size:12 },
+            { category: { es:'Arte', en:'Art', pt:'Arte' }, words: { es:['PINTURA','TEATRO','CINE','DANZA','FOTO'], en:['PAINTING','THEATER','CINEMA','DANCE','PHOTO'], pt:['PINTURA','TEATRO','CINEMA','DANCA','FOTO'] }, size:11 },
+            { category: { es:'Oficina', en:'Office', pt:'Escritorio' }, words: { es:['MESA','SILLA','TECLADO','PANTALLA','CAFE'], en:['DESK','CHAIR','KEYBOARD','SCREEN','COFFEE'], pt:['MESA','CADEIRA','TECLADO','TELA','CAFE'] }, size:10 },
+            { category: { es:'Océano', en:'Ocean', pt:'Oceano' }, words: { es:['TIBURON','BALLENA','DELFÍN','CORAL','OLA'], en:['SHARK','WHALE','DOLPHIN','CORAL','WAVE'], pt:['TUBARAO','BALEIA','GOLFINHO','CORAL','ONDA'] }, size:11 }
+        ];
+
+        const MISSIONS_DB = [
+            { id:'find_5', desc:{es:'Encuentra 5 palabras', en:'Find 5 words', pt:'Encontre 5 palavras'}, target:5, reward:15, type:'words_found', icon:'🔍' },
+            { id:'complete_2', desc:{es:'Completa 2 niveles', en:'Complete 2 levels', pt:'Complete 2 niveis'}, target:2, reward:30, type:'levels_completed', icon:'✅' },
+            { id:'blitz_play', desc:{es:'Juega Blitz 3 veces', en:'Play Blitz 3 times', pt:'Jogue Blitz 3x'}, target:3, reward:25, type:'blitz_play', icon:'⚡' },
+            { id:'no_hints', desc:{es:'Nivel sin pistas', en:'Level without hints', pt:'Nivel sem dicas'}, target:1, reward:20, type:'no_hints', icon:'🧠' },
+            { id:'speedrun', desc:{es:'Nivel en <45s', en:'Level under 45s', pt:'Nivel <45s'}, target:45, reward:25, type:'speedrun', icon:'⏱️' },
+            { id:'spend_gems', desc:{es:'Gasta 100 gemas', en:'Spend 100 gems', pt:'Gaste 100 gemas'}, target:100, reward:15, type:'spend_gems', icon:'💎' },
+            { id:'daily_play', desc:{es:'Juega el Diario', en:'Play Daily', pt:'Jogue o Diario'}, target:1, reward:20, type:'daily_play', icon:'📅' },
+            { id:'streak_3', desc:{es:'Racha 3 días', en:'3 day streak', pt:'Sequencia 3 dias'}, target:3, reward:50, type:'streak_3', icon:'🔥' }
+        ];
+
+        const TRANSLATIONS = {
+            es: { select_level:'Niveles', progress:'Progreso', shop:'Tienda', daily:'Diario', daily_desc:'Grid único hoy +50💎', blitz:'Blitz', blitz_desc:'60s +10s/palabra', campaign:'Campaña', missions:'Misiones', words_to_find:'Palabras', leaderboard:'Ranking', settings:'Ajustes', level_complete:'¡Completado!', next_level:'Siguiente', menu:'Menú', purchase_title:'Compra', purchase_desc:'Simulación web', confirm:'Confirmar', no_lives:'Sin Vidas', watch_ad:'Ver anuncio', game_over:'¡Tiempo!', shop_title:'Tienda', shop_desc:'Gems y vidas' },
+            en: { select_level:'Levels', progress:'Progress', shop:'Shop', daily:'Daily', daily_desc:'Unique grid today +50💎', blitz:'Blitz', blitz_desc:'60s +10s/word', campaign:'Campaign', missions:'Missions', words_to_find:'Words', leaderboard:'Leaderboard', settings:'Settings', level_complete:'Completed!', next_level:'Next', menu:'Menu', purchase_title:'Purchase', purchase_desc:'Web simulation', confirm:'Confirm', no_lives:'No Lives', watch_ad:'Watch Ad', game_over:'Time Up!', shop_title:'Shop', shop_desc:'Gems & lives' },
+            pt: { select_level:'Níveis', progress:'Progresso', shop:'Loja', daily:'Diário', daily_desc:'Grid único hoje +50💎', blitz:'Blitz', blitz_desc:'60s +10s/palavra', campaign:'Campanha', missions:'Missões', words_to_find:'Palavras', leaderboard:'Ranking', settings:'Config', level_complete:'Completado!', next_level:'Próximo', menu:'Menu', purchase_title:'Compra', purchase_desc:'Simulação web', confirm:'Confirmar', no_lives:'Sem Vidas', watch_ad:'Ver anúncio', game_over:'Tempo!', shop_title:'Loja', shop_desc:'Gemas e vidas' }
+        };
+
+        // ==================== STATE V1 ====================
+        let state = {
+            gems: 100,
+            lives: 5,
+            lastLifeLost: null,
+            currentLevel: 0,
+            completedLevels: [],
+            dailyCompleted: false,
+            lastDailyDate: null,
+            language: 'es',
+            settings: { sound:true, vibration:true, animations:true },
+            streak: { count:0, lastPlayed:null },
+            missions: { active:[], progress:{}, lastReset:null },
+            blitz: { bestScore:0, playsToday:0, lastPlayDate:null },
+            leaderboard: [
+                {name:'You', score:0, isPlayer:true},
+                {name:'Maria_S', score:2450},
+                {name:'CarlosB', score:1980},
+                {name:'WordKing', score:1750},
+                {name:'Ana_L', score:1420}
+            ],
+            currentGame: {
+                mode: 'campaign', // campaign | daily | blitz
+                grid: null,
+                words: [],
+                foundWords: [],
+                selectedCells: [],
+                isSelecting: false,
+                startCell: null,
+                timer: 0,
+                timerInterval: null,
+                hintsUsed: 0,
+                score: 0
+            }
+        };
+
+        // ==================== ANALYTICS ====================
+        const Analytics = {
+            events: [],
+            sessionId: null,
+            init() {
+                this.sessionId = Math.random().toString(36).substring(2, 15);
+                this.track('app_open', { version:'1.0.0', source:'web' });
+            },
+            track(event, params={}) {
+                const data = {
+                    event, params,
+                    timestamp: Date.now(),
+                    session: this.sessionId,
+                    gems: state.gems,
+                    lives: getCurrentLives(),
+                    level: state.currentLevel,
+                    language: state.language
+                };
+                this.events.push(data);
+                localStorage.setItem('letrix_analytics', JSON.stringify(this.events.slice(-200)));
+                // Prep para backend Fase 2
+                if(navigator.onLine && window.API_BASE) this.flush();
+            },
+            flush() {
+                // fetch('/api/events', {method:'POST', body: JSON.stringify(this.events)});
+            }
+        };
+
+        // ==================== API STUBS ====================
+        const API = {
+            baseUrl: window.API_BASE || null,
+            async post(path, data) {
+                if(!this.baseUrl) return null;
+                try {
+                    const r = await fetch(this.baseUrl + path, {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    return await r.json();
+                } catch(e) { return null; }
+            },
+            async get(path) {
+                if(!this.baseUrl) return null;
+                try { const r = await fetch(this.baseUrl + path); return await r.json(); }
+                catch(e) { return null; }
+            }
+        };
+
+        // ==================== INIT ====================
+        function init() {
+            loadState();
+            createStars();
+            renderLevels();
+            updateUI();
+            setupCanvas();
+            checkDailyStreak();
+            initMissions();
+            renderMissions();
+            renderLeaderboard();
+            Analytics.init();
+            
+            // PWA Service Worker
+            if('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('data:text/javascript,' + encodeURIComponent(`
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+                `)).catch(()=>{});
+            }
+        }
+
+        function createStars() {
+            const c = document.getElementById('stars');
+            for(let i=0;i<50;i++){
+                const s = document.createElement('div');
+                s.className='star';
+                s.style.left=Math.random()*100+'%';
+                s.style.top=Math.random()*100+'%';
+                s.style.animationDelay=Math.random()*3+'s';
+                c.appendChild(s);
+            }
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('letrix_v1');
+            if(saved) {
+                const parsed = JSON.parse(saved);
+                state = { ...state, ...parsed };
+                // Ensure nested objects exist
+                if(!state.streak) state.streak = {count:0, lastPlayed:null};
+                if(!state.missions) state.missions = {active:[], progress:{}, lastReset:null};
+                if(!state.blitz) state.blitz = {bestScore:0, playsToday:0, lastPlayDate:null};
+                if(!state.leaderboard) state.leaderboard = [{name:'You', score:0, isPlayer:true},{name:'Maria_S', score:2450},{name:'CarlosB', score:1980},{name:'WordKing', score:1750},{name:'Ana_L', score:1420}];
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('letrix_v1', JSON.stringify({
+                gems: state.gems,
+                lives: state.lives,
+                lastLifeLost: state.lastLifeLost,
+                currentLevel: state.currentLevel,
+                completedLevels: state.completedLevels,
+                dailyCompleted: state.dailyCompleted,
+                lastDailyDate: state.lastDailyDate,
+                language: state.language,
+                settings: state.settings,
+                streak: state.streak,
+                missions: state.missions,
+                blitz: state.blitz,
+                leaderboard: state.leaderboard
+            }));
+        }
+
+        // ==================== LIVES SYSTEM ====================
+        function getCurrentLives() {
+            if(state.lives >= CONFIG.lives.max) return state.lives;
+            const now = Date.now();
+            const last = state.lastLifeLost || now;
+            const minsPassed = (now - last) / (1000 * 60);
+            const recovered = Math.floor(minsPassed / CONFIG.lives.rechargeMinutes);
+            return Math.min(CONFIG.lives.max, state.lives + recovered);
+        }
+
+        function consumeLife() {
+            const cur = getCurrentLives();
+            if(cur >= 1) {
+                if(state.lives === CONFIG.lives.max) state.lastLifeLost = Date.now();
+                state.lives = Math.min(cur - 1, CONFIG.lives.max);
+                updateUI();
+                saveState();
+                return true;
+            }
+            showLivesModal();
+            return false;
+        }
+
+        function showLivesModal() {
+            const nextLife = (state.lastLifeLost || Date.now()) + (CONFIG.lives.rechargeMinutes * 60 * 1000);
+            const mins = Math.max(0, Math.ceil((nextLife - Date.now()) / (1000 * 60)));
+            document.getElementById('lives-timer').textContent = `${Math.floor(mins/60)}h ${mins%60}m`;
+            document.getElementById('lives-modal').classList.add('active');
+        }
+
+        function refillLivesConfirm() {
+            if(state.gems < CONFIG.lives.refillCost) {
+                showToast(TRANSLATIONS[state.language].no_lives + ' (need 💎)', 'error');
+                return;
+            }
+            state.gems -= CONFIG.lives.refillCost;
+            state.lives = CONFIG.lives.max;
+            state.lastLifeLost = null;
+            updateUI();
+            saveState();
+            showToast('❤️ +5', 'success');
+            Analytics.track('purchase_gems', { item:'refill_lives', cost:CONFIG.lives.refillCost });
+        }
+
+        function watchAdForLives() {
+            closeModals();
+            showToast('Cargando anuncio...', '');
+            setTimeout(() => {
+                state.lives = Math.min(state.lives + 1, CONFIG.lives.max);
+                updateUI();
+                saveState();
+                showToast('+1 ❤️', 'success');
+                Analytics.track('ad_rewarded', { type:'life' });
+            }, 1500);
+        }
+
+        // ==================== STREAK SYSTEM ====================
+        function checkDailyStreak() {
+            const today = new Date().toDateString();
+            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            
+            if(state.streak.lastPlayed === today) return;
+            
+            if(state.streak.lastPlayed === yesterday) {
+                state.streak.count++;
+            } else {
+                state.streak.count = 1;
+            }
+            
+            state.streak.lastPlayed = today;
+            const bonus = Math.min(state.streak.count * 5, 50);
+            state.gems += bonus;
+            
+            document.getElementById('streak-modal-days').textContent = state.streak.count;
+            document.getElementById('streak-modal-bonus').textContent = bonus;
+            document.getElementById('streak-modal').classList.add('active');
+            
+            updateUI();
+            saveState();
+            Analytics.track('streak_claim', { days: state.streak.count, bonus });
+        }
+
+        // ==================== MISSIONS SYSTEM ====================
+        function initMissions() {
+            const today = new Date().toDateString();
+            if(state.missions.lastReset !== today) {
+                generateDailyMissions();
+                state.missions.lastReset = today;
+                saveState();
+            }
+            updateMissionsTimer();
+            setInterval(updateMissionsTimer, 60000);
+        }
+
+        function generateDailyMissions() {
+            const shuffled = [...MISSIONS_DB].sort(() => 0.5 - Math.random());
+            state.missions.active = shuffled.slice(0, 3).map(m => ({
+                ...m,
+                current: 0,
+                completed: false
+            }));
+            state.missions.progress = {};
+        }
+
+        function updateMission(type, value = 1) {
+            state.missions.active.forEach(m => {
+                if(m.type !== type || m.completed) return;
+                
+                if(type === 'speedrun') {
+                    // value is time in seconds, must be LESS than target
+                    if(value <= m.target) {
+                        m.current = 1;
+                        m.completed = true;
+                        awardMission(m);
+                    }
+                } else if(type === 'no_hints') {
+                    if(value === 1 && state.currentGame.hintsUsed === 0) {
+                        m.current = 1;
+                        m.completed = true;
+                        awardMission(m);
+                    }
+                } else {
+                    m.current += value;
+                    if(m.current >= m.target) {
+                        m.current = m.target;
+                        m.completed = true;
+                        awardMission(m);
+                    }
+                }
+            });
+            renderMissions();
+            saveState();
+        }
+
+        function awardMission(mission) {
+            state.gems += mission.reward;
+            showToast(`${mission.icon} +${mission.reward}💎`, 'success');
+            updateUI();
+            Analytics.track('mission_complete', { mission: mission.id, reward: mission.reward });
+        }
+
+        function renderMissions() {
+            const panel = document.getElementById('missions-panel');
+            const list = document.getElementById('missions-list');
+            
+            if(state.missions.active.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+            panel.style.display = 'block';
+            list.innerHTML = '';
+            
+            state.missions.active.forEach(m => {
+                const desc = m.desc[state.language] || m.desc.en;
+                const progress = m.type === 'speedrun' || m.type === 'no_hints' 
+                    ? (m.completed ? '1/1' : '0/1')
+                    : `${Math.min(m.current, m.target)}/${m.target}`;
+                const pct = m.type === 'speedrun' || m.type === 'no_hints'
+                    ? (m.completed ? 100 : 0)
+                    : Math.min(100, (m.current / m.target) * 100);
+                
+                const div = document.createElement('div');
+                div.className = `mission-item ${m.completed ? 'completed' : ''}`;
+                div.innerHTML = `
+                    <div class="mission-icon">${m.completed ? '✅' : m.icon}</div>
+                    <div class="mission-info">
+                        <div class="mission-name">${desc}</div>
+                        <div class="mission-progress">${progress}</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+                    </div>
+                    <div class="mission-reward">+${m.reward}💎</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function updateMissionsTimer() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            const diff = tomorrow - now;
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const el = document.getElementById('missions-reset');
+            if(el) el.textContent = `${h}h ${m}m`;
+        }
+
+        // ==================== NAVIGATION ====================
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(name + '-screen');
+            if(target) target.classList.add('active');
+            
+            if(name === 'menu') {
+                renderLevels();
+                renderMissions();
+                updateUI();
+            }
+            if(name === 'leaderboard') renderLeaderboard();
+            saveState();
+        }
+
+        // ==================== LEVELS RENDER ====================
+        function renderLevels() {
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+            
+            LEVELS.forEach((level, idx) => {
+                const completed = state.completedLevels.includes(idx);
+                const locked = idx > 0 && !state.completedLevels.includes(idx - 1);
+                const current = idx === state.currentLevel;
+                
+                const card = document.createElement('div');
+                card.className = `level-card ${completed?'completed':''} ${locked?'locked':''} ${current?'current':''}`;
+                if(!locked) card.onclick = () => startCampaignLevel(idx);
+                
+                const words = level.words[state.language].length;
+                card.innerHTML = `
+                    <div class="level-header">
+                        <div class="level-number">${idx+1}</div>
+                        <div class="level-status">${completed?'✅':locked?'🔒':'▶️'}</div>
+                    </div>
+                    <div class="level-category">${level.category[state.language]}</div>
+                    <div class="level-words">${words} ${state.language==='es'?'palabras':state.language==='en'?'words':'palavras'}</div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            document.getElementById('campaign-progress').textContent = `${state.completedLevels.length}/${CONFIG.maxLevels}`;
+        }
+
+        // ==================== GAME STARTERS ====================
+        function startCampaignLevel(idx) {
+            if(!consumeLife()) return;
+            state.currentLevel = idx;
+            const level = LEVELS[idx];
+            const words = level.words[state.language];
+            const grid = generateWordSearch(words, level.size);
+            
+            resetGameState('campaign', grid, words, level.size);
+            document.getElementById('game-level-title').textContent = `${state.language==='es'?'Nivel':state.language==='en'?'Level':'Nível'} ${idx+1}`;
+            document.getElementById('game-category').textContent = level.category[state.language];
+            showScreen('game');
+            startTimer();
+            Analytics.track('level_start', { level: idx, mode:'campaign' });
+        }
+
+        function startDailyMode() {
+            const today = new Date().toDateString();
+            if(state.lastDailyDate === today && state.dailyCompleted) {
+                showToast('Ya completaste el diario hoy', 'error');
+                return;
+            }
+            if(!consumeLife()) return;
+            
+            // Seed basado en fecha para grid consistente global
+            const seed = new Date().getFullYear() * 10000 + (new Date().getMonth()+1) * 100 + new Date().getDate();
+            const dailyWords = ['SOL','LUNA','MAR','CIELO','TIERRA','FUEGO','AGUA','VIDA','PAZ','AMOR'];
+            // Shuffle con seed simple
+            const shuffled = shuffleWithSeed([...dailyWords], seed).slice(0, 8);
+            const grid = generateWordSearch(shuffled, 10);
+            
+            resetGameState('daily', grid, shuffled, 10);
+            document.getElementById('game-level-title').textContent = state.language==='es'?'Desafío Diario':state.language==='en'?'Daily Challenge':'Desafio Diario';
+            document.getElementById('game-category').textContent = new Date().toLocaleDateString(state.language);
+            showScreen('game');
+            startTimer();
+            Analytics.track('level_start', { mode:'daily' });
+        }
+
+        function startBlitzMode() {
+            if(!consumeLife()) return;
+            const today = new Date().toDateString();
+            if(state.blitz.lastPlayDate !== today) {
+                state.blitz.playsToday = 0;
+                state.blitz.lastPlayDate = today;
+            }
+            state.blitz.playsToday++;
+            
+            // Palabras cortas para grid 8x8
+            const shortWords = {
+                es:['GATO','PERRO','LOBO','RIO','SOL','LUZ','FLOR','MAR'],
+                en:['CAT','DOG','WOLF','RIVER','SUN','LIGHT','FLOWER','SEA'],
+                pt:['GATO','CACHORRO','LOBO','RIO','SOL','LUZ','FLOR','MAR']
+            };
+            const words = shortWords[state.language] || shortWords.en;
+            const grid = generateWordSearch(words, 8);
+            
+            resetGameState('blitz', grid, words, 8);
+            state.currentGame.timer = CONFIG.blitz.startTime;
+            state.currentGame.score = 0;
+            
+            document.getElementById('game-level-title').textContent = '⚡ BLITZ';
+            document.getElementById('game-category').textContent = '60s +10s por palabra';
+            document.getElementById('blitz-score-stat').style.display = 'block';
+            document.getElementById('blitz-score').textContent = '0';
+            
+            showScreen('game');
+            startBlitzTimer();
+            Analytics.track('blitz_start', { playNumber: state.blitz.playsToday });
+        }
+
+        function resetGameState(mode, grid, words, size) {
+            state.currentGame = {
+                mode, grid, words: [...words], foundWords: [],
+                selectedCells: [], isSelecting: false, startCell: null,
+                timer: 0, timerInterval: null, hintsUsed: 0, score: 0, size
+            };
+            renderGrid(grid, size);
+            renderWordsList(words);
+            document.getElementById('blitz-score-stat').style.display = 'none';
+        }
+
+        // ==================== GRID GENERATION ====================
+        function generateWordSearch(words, size) {
+            let grid = Array(size).fill(null).map(() => Array(size).fill(''));
+            let placedWords = [];
+            const sorted = [...words].sort((a,b) => b.length - a.length);
+            
+            for(const word of sorted) {
+                let placed = false, attempts = 0;
+                while(!placed && attempts < 200) {
+                    attempts++;
+                    const dir = CONFIG.directions[Math.floor(Math.random() * CONFIG.directions.length)];
+                    const dx = dir[0], dy = dir[1];
+                    
+                    let minX=0, maxX=size-1, minY=0, maxY=size-1;
+                    if(dx===1) maxX = size - word.length;
+                    if(dx===-1) minX = word.length - 1;
+                    if(dy===1) maxY = size - word.length;
+                    if(dy===-1) minY = word.length - 1;
+                    
+                    const startX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+                    const startY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+                    
+                    let fits = true;
+                    const positions = [];
+                    for(let i=0;i<word.length;i++) {
+                        const x = startX + dx*i, y = startY + dy*i;
+                        if(grid[y][x] !== '' && grid[y][x] !== word[i]) { fits=false; break; }
+                        positions.push({x,y,char:word[i]});
+                    }
+                    
+                    if(fits) {
+                        positions.forEach(p => grid[p.y][p.x] = p.char);
+                        placedWords.push({ word, positions, direction: dir });
+                        placed = true;
+                    }
+                }
+            }
+            
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for(let y=0;y<size;y++) for(let x=0;x<size;x++) if(grid[y][x]==='') grid[y][x] = alphabet[Math.floor(Math.random()*alphabet.length)];
+            
+            return { grid, placedWords, size };
+        }
+
+        function shuffleWithSeed(array, seed) {
+            let m = array.length, t, i;
+            while(m) {
+                i = Math.floor(randomSeed(seed++) * m--);
+                t = array[m]; array[m] = array[i]; array[i] = t;
+            }
+            return array;
+        }
+
+        function randomSeed(s) {
+            const x = Math.sin(s++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // ==================== GRID RENDER & INPUT ====================
+        function renderGrid(gridData, size) {
+            const container = document.getElementById('word-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            
+            gridData.grid.forEach((row,y) => {
+                row.forEach((char,x) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.textContent = char;
+                    cell.dataset.x = x; cell.dataset.y = y;
+                    
+                    cell.addEventListener('mousedown', () => startSelection(x,y));
+                    cell.addEventListener('mouseenter', () => { if(state.currentGame.isSelecting) continueSelection(x,y); });
+                    cell.addEventListener('touchstart', (e) => { e.preventDefault(); startSelection(x,y); });
+                    cell.addEventListener('touchmove', (e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if(el && el.classList.contains('cell')) {
+                            continueSelection(parseInt(el.dataset.x), parseInt(el.dataset.y));
+                        }
+                    });
+                    
+                    container.appendChild(cell);
+                });
+            });
+            
+            document.onmouseup = endSelection;
+            document.ontouchend = endSelection;
+        }
+
+        function renderWordsList(words) {
+            const container = document.getElementById('words-list');
+            container.innerHTML = '';
+            words.forEach(word => {
+                const div = document.createElement('div');
+                div.className = 'word';
+                div.textContent = word;
+                div.id = `word-${word}`;
+                container.appendChild(div);
+            });
+        }
+
+        // ==================== SELECTION ====================
+        function startSelection(x,y) {
+            state.currentGame.isSelecting = true;
+            state.currentGame.startCell = {x,y};
+            state.currentGame.selectedCells = [{x,y}];
+            updateSelection();
+            playSound('select');
+        }
+
+        function continueSelection(x,y) {
+            if(!state.currentGame.isSelecting) return;
+            const start = state.currentGame.startCell;
+            const dx = x - start.x, dy = y - start.y;
+            let stepX = 0, stepY = 0;
+            if(dx !== 0) stepX = dx > 0 ? 1 : -1;
+            if(dy !== 0) stepY = dy > 0 ? 1 : -1;
+            if(Math.abs(dx) !== Math.abs(dy) && dx !== 0 && dy !== 0) return;
+            
+            const cells = [];
+            const steps = Math.max(Math.abs(dx), Math.abs(dy));
+            for(let i=0;i<=steps;i++) cells.push({x: start.x + stepX*i, y: start.y + stepY*i});
+            state.currentGame.selectedCells = cells;
+            updateSelection();
+        }
+
+        function endSelection() {
+            if(!state.currentGame.isSelecting) return;
+            state.currentGame.isSelecting = false;
+            checkWord();
+            setTimeout(() => {
+                state.currentGame.selectedCells = [];
+                updateSelection();
+                clearCanvas();
+            }, 300);
+        }
+
+        function updateSelection() {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('selected'));
+            state.currentGame.selectedCells.forEach(({x,y}) => {
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                if(cell) cell.classList.add('selected');
+            });
+            drawLine();
+        }
+
+        function drawLine() {
+            const canvas = document.getElementById('line-canvas');
+            const container = document.querySelector('.grid-container');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width; canvas.height = rect.height;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            
+            const cells = state.currentGame.selectedCells;
+            if(cells.length < 2) return;
+            
+            const first = document.querySelector(`.cell[data-x="${cells[0].x}"][data-y="${cells[0].y}"]`);
+            const last = document.querySelector(`.cell[data-x="${cells[cells.length-1].x}"][data-y="${cells[cells.length-1].y}"]`);
+            if(!first || !last) return;
+            
+            const fR = first.getBoundingClientRect(), lR = last.getBoundingClientRect(), cR = container.getBoundingClientRect();
+            const x1 = fR.left + fR.width/2 - cR.left;
+            const y1 = fR.top + fR.height/2 - cR.top;
+            const x2 = lR.left + lR.width/2 - cR.left;
+            const y2 = lR.top + lR.height/2 - cR.top;
+            
+            ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+            ctx.lineWidth = 8; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        }
+
+        function clearCanvas() {
+            const canvas = document.getElementById('line-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+        }
+
+        function setupCanvas() {
+            window.addEventListener('resize', () => {
+                if(state.currentGame.selectedCells.length > 0) drawLine();
+            });
+        }
+
+        // ==================== WORD CHECKING ====================
+        function checkWord() {
+            const cells = state.currentGame.selectedCells;
+            if(cells.length < 2) return;
+            
+            let word = '', reverse = '';
+            cells.forEach(({x,y}) => { word += state.currentGame.grid.grid[y][x]; });
+            reverse = word.split('').reverse().join('');
+            
+            const words = state.currentGame.words;
+            let found = words.indexOf(word) !== -1 ? word : (words.indexOf(reverse) !== -1 ? reverse : null);
+            
+            if(found && !state.currentGame.foundWords.includes(found)) {
+                state.currentGame.foundWords.push(found);
+                markWordAsFound(found);
+                highlightFoundCells(cells);
+                createParticles(cells);
+                playSound('success');
+                if(state.settings.vibration && navigator.vibrate) navigator.vibrate(50);
+                showToast(TRANSLATIONS[state.language].word_found || 'Word found!', 'success');
+                
+                // Update missions
+                updateMission('words_found', 1);
+                
+                // Blitz mode: add time
+                if(state.currentGame.mode === 'blitz') {
+                    state.currentGame.timer += CONFIG.blitz.bonusTime;
+                    state.currentGame.score += 100 + (state.currentGame.timer * 2);
+                    document.getElementById('blitz-score').textContent = state.currentGame.score;
+                    showToast(`+${CONFIG.blitz.bonusTime}s!`, 'success');
+                }
+                
+                if(state.currentGame.foundWords.length === words.length) completeGame();
+            } else {
+                playSound('error');
+            }
+        }
+
+        function markWordAsFound(word) {
+            const el = document.getElementById(`word-${word}`);
+            if(el) el.classList.add('found');
+        }
+
+        function highlightFoundCells(cells) {
+            const anim = CONFIG.animations[Math.floor(Math.random()*CONFIG.animations.length)];
+            cells.forEach(({x,y}, i) => {
+                setTimeout(() => {
+                    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    if(cell) {
+                        cell.classList.add('found');
+                        if(state.settings.animations) cell.classList.add(anim);
+                    }
+                }, i*50);
+            });
+        }
+
+        function createParticles(cells) {
+            const mid = cells[Math.floor(cells.length/2)];
+            const cell = document.querySelector(`.cell[data-x="${mid.x}"][data-y="${mid.y}"]`);
+            if(!cell) return;
+            const rect = cell.getBoundingClientRect();
+            
+            for(let i=0;i<8;i++) {
+                const p = document.createElement('div');
+                p.className = 'particle'; p.textContent = '✨';
+                p.style.left = (rect.left + rect.width/2) + 'px';
+                p.style.top = (rect.top + rect.height/2) + 'px';
+                p.style.setProperty('--tx', (Math.random()-0.5)*100+'px');
+                p.style.setProperty('--ty', (Math.random()-0.5)*100+'px');
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1000);
+            }
+        }
+
+        // ==================== TIMER ====================
+        function startTimer() {
+            clearInterval(state.currentGame.timerInterval);
+            state.currentGame.timer = 0;
+            updateTimerDisplay();
+            state.currentGame.timerInterval = setInterval(() => {
+                state.currentGame.timer++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function startBlitzTimer() {
+            clearInterval(state.currentGame.timerInterval);
+            updateTimerDisplay();
+            state.currentGame.timerInterval = setInterval(() => {
+                state.currentGame.timer--;
+                updateTimerDisplay();
+                if(state.currentGame.timer <= 0) {
+                    clearInterval(state.currentGame.timerInterval);
+                    endBlitzGame();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(Math.abs(state.currentGame.timer) / 60).toString().padStart(2,'0');
+            const secs = (Math.abs(state.currentGame.timer) % 60).toString().padStart(2,'0');
+            const el = document.getElementById('timer');
+            el.textContent = `${mins}:${secs}`;
+            el.className = 'stat-value ' + (state.currentGame.mode === 'blitz' && state.currentGame.timer <= 10 ? 'danger' : '');
+        }
+
+        // ==================== COMPLETION ====================
+        function completeGame() {
+            clearInterval(state.currentGame.timerInterval);
+            const mode = state.currentGame.mode;
+            
+            if(mode === 'campaign') {
+                const idx = state.currentLevel;
+                if(!state.completedLevels.includes(idx)) {
+                    state.completedLevels.push(idx);
+                    const reward = 10 + Math.max(0, 60 - state.currentGame.timer);
+                    state.gems += reward;
+                    document.getElementById('complete-stats').textContent = `+${reward}💎`;
+                    Analytics.track('level_complete', { level: idx, time: state.currentGame.timer, hints: state.currentGame.hintsUsed });
+                } else {
+                    document.getElementById('complete-stats').textContent = 'Level done';
+                }
+                
+                // Check missions
+                updateMission('levels_completed', 1);
+                if(state.currentGame.hintsUsed === 0) updateMission('no_hints', 1);
+                updateMission('speedrun', state.currentGame.timer);
+                
+                // Interstitial ad check
+                CONFIG.ads.interstitialCounter++;
+                if(CONFIG.ads.interstitialCounter >= CONFIG.ads.interstitialEvery) {
+                    CONFIG.ads.interstitialCounter = 0;
+                    setTimeout(() => showToast('Anuncio intersticial (simulado)', ''), 500);
+                }
+                
+                for(let i=0;i<20;i++) setTimeout(createConfetti, i*50);
+                document.getElementById('level-complete-modal').classList.add('active');
+                
+            } else if(mode === 'daily') {
+                state.dailyCompleted = true;
+                state.lastDailyDate = new Date().toDateString();
+                state.gems += 50;
+                showToast('+50💎 Daily!', 'success');
+                updateMission('daily_play', 1);
+                document.getElementById('level-complete-modal').classList.add('active');
+                document.getElementById('complete-stats').textContent = 'Daily Complete! +50💎';
+                Analytics.track('daily_complete', { time: state.currentGame.timer });
+                
+            } else if(mode === 'blitz') {
+                endBlitzGame();
+            }
+            
+            updateUI();
+            saveState();
+        }
+
+        function endBlitzGame() {
+            clearInterval(state.currentGame.timerInterval);
+            const score = state.currentGame.score;
+            
+            if(score > state.blitz.bestScore) {
+                state.blitz.bestScore = score;
+            }
+            
+            // Update local leaderboard
+            state.leaderboard[0].score = Math.max(state.leaderboard[0].score, score);
+            state.leaderboard.sort((a,b) => b.score - a.score);
+            
+            document.getElementById('game-over-stats').textContent = `Score: ${score} (Best: ${state.blitz.bestScore})`;
+            document.getElementById('game-over-modal').classList.add('active');
+            
+            updateMission('blitz_play', 1);
+            Analytics.track('blitz_end', { score, best: state.blitz.bestScore });
+            saveState();
+        }
+
+        function watchAdToContinue() {
+            closeModals();
+            showToast('Cargando anuncio...', '');
+            setTimeout(() => {
+                state.currentGame.timer += 30;
+                startBlitzTimer(); // Resume
+                showToast('+30s!', 'success');
+                Analytics.track('ad_rewarded', { type:'blitz_continue' });
+            }, 1500);
+        }
+
+        function nextLevel() {
+            closeModals();
+            if(state.currentLevel < CONFIG.maxLevels - 1) {
+                startCampaignLevel(state.currentLevel + 1);
+            } else {
+                showScreen('menu');
+            }
+        }
+
+        function quitGame() {
+            clearInterval(state.currentGame.timerInterval);
+            showScreen('menu');
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        }
+
+        function createConfetti() {
+            const colors = ['#6366f1','#ec4899','#10b981','#fbbf24','#3b82f6'];
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random()*100+'%';
+            c.style.top = '-10px';
+            c.style.background = colors[Math.floor(Math.random()*colors.length)];
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 3000);
+        }
+
+        // ==================== POWERUPS ====================
+        function usePowerup(type) {
+            const cost = CONFIG.costs[type];
+            if(state.gems < cost) { showToast('Need 💎', 'error'); playSound('error'); return; }
+            
+            state.gems -= cost;
+            state.currentGame.hintsUsed++;
+            updateUI();
+            saveState();
+            updateMission('spend_gems', cost);
+            
+            if(type === 'hint') revealHint();
+            else if(type === 'time') {
+                if(state.currentGame.mode === 'blitz') state.currentGame.timer += 15;
+                else state.currentGame.timer = Math.max(0, state.currentGame.timer - 30);
+                updateTimerDisplay();
+            }
+            else if(type === 'reveal') revealLetter();
+            else if(type === 'solve') solveLevel();
+            
+            playSound('powerup');
+        }
+
+        function revealHint() {
+            const remaining = state.currentGame.words.filter(w => !state.currentGame.foundWords.includes(w));
+            if(!remaining.length) return;
+            const word = remaining[0];
+            const el = document.getElementById(`word-${word}`);
+            el.classList.add('hint');
+            setTimeout(() => el.classList.remove('hint'), 3000);
+        }
+
+        function revealLetter() {
+            const remaining = state.currentGame.words.filter(w => !state.currentGame.foundWords.includes(w));
+            if(!remaining.length) return;
+            const word = remaining[Math.floor(Math.random()*remaining.length)];
+            const placed = state.currentGame.grid.placedWords.find(p => p.word === word);
+            if(placed && placed.positions[0]) {
+                const {x,y} = placed.positions[0];
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                cell.style.background = 'var(--gold)'; cell.style.color = 'var(--bg)';
+                setTimeout(() => { cell.style.background=''; cell.style.color=''; }, 2000);
+            }
+        }
+
+        function solveLevel() {
+            const remaining = state.currentGame.words.filter(w => !state.currentGame.foundWords.includes(w));
+            remaining.forEach((word, i) => {
+                setTimeout(() => {
+                    const placed = state.currentGame.grid.placedWords.find(p => p.word === word);
+                    if(placed) {
+                        state.currentGame.selectedCells = placed.positions.map(p => ({x:p.x,y:p.y}));
+                        checkWord();
+                    }
+                }, i*400);
+            });
+        }
+
+        // ==================== SHOP & PURCHASES ====================
+        let pendingPurchase = null;
+
+        function buyGems(amount, price) {
+            pendingPurchase = { amount, price };
+            document.getElementById('purchase-modal').classList.add('active');
+        }
+
+        function buyPro() {
+            state.gems += 200;
+            updateUI();
+            saveState();
+            showToast('Pro Activado! +200💎', 'success');
+            Analytics.track('purchase_pro', { simulated: true });
+        }
+
+        function confirmPurchase() {
+            closeModals();
+            if(pendingPurchase) {
+                state.gems += pendingPurchase.amount;
+                updateUI();
+                saveState();
+                showToast(`+${pendingPurchase.amount}💎`, 'success');
+                Analytics.track('purchase_gems', { ...pendingPurchase, simulated: true });
+                pendingPurchase = null;
+            }
+        }
+
+        // ==================== LEADERBOARD ====================
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            state.leaderboard.forEach((entry, idx) => {
+                const div = document.createElement('div');
+                div.className = 'lb-item';
+                div.style.background = entry.isPlayer ? 'rgba(99,102,241,0.2)' : 'var(--bg)';
+                div.innerHTML = `
+                    <div class="lb-rank">#${idx+1}</div>
+                    <div class="lb-name">${entry.name}</div>
+                    <div class="lb-score">${entry.score.toLocaleString()}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // ==================== SETTINGS ====================
+        function setLanguage(lang) {
+            state.language = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.textContent.toLowerCase() === lang));
+            updateUI();
+            saveState();
+        }
+
+        function toggleSetting(setting) {
+            state.settings[setting] = !state.settings[setting];
+            document.getElementById(`${setting}-toggle`).classList.toggle('active', state.settings[setting]);
+            saveState();
+        }
+
+        function resetProgress() {
+            if(confirm('¿Seguro?')) {
+                state.completedLevels = [];
+                state.currentLevel = 0;
+                state.gems = 100;
+                state.lives = 5;
+                state.streak = {count:0, lastPlayed:null};
+                state.blitz = {bestScore:0, playsToday:0, lastPlayDate:null};
+                saveState();
+                renderLevels();
+                updateUI();
+                showToast('Reset done', 'success');
+            }
+        }
+
+        // ==================== UI UPDATES ====================
+        function updateUI() {
+            document.getElementById('gem-count').textContent = state.gems;
+            document.getElementById('lives-count').textContent = `${getCurrentLives()}/${CONFIG.lives.max}`;
+            
+            const streakEl = document.getElementById('streak-display');
+            if(state.streak.count > 1) {
+                streakEl.style.display = 'flex';
+                document.getElementById('streak-count').textContent = state.streak.count;
+            } else {
+                streakEl.style.display = 'none';
+            }
+        }
+
+        // ==================== UTILS ====================
+        function showToast(msg, type='') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function playSound(type) {
+            if(!state.settings.sound) return;
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if(!AC) return;
+            const ctx = new AC();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            
+            if(type === 'select') { osc.frequency.value=400; gain.gain.value=0.1; osc.start(); osc.stop(ctx.currentTime+0.05); }
+            else if(type === 'success') { osc.frequency.value=523; gain.gain.value=0.1; osc.start(); osc.frequency.exponentialRampToValueAtTime(1047, ctx.currentTime+0.15); osc.stop(ctx.currentTime+0.2); }
+            else if(type === 'error') { osc.frequency.value=150; gain.gain.value=0.1; osc.start(); osc.stop(ctx.currentTime+0.1); }
+            else if(type === 'powerup') { osc.frequency.value=880; gain.gain.value=0.1; osc.start(); osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime+0.3); osc.stop(ctx.currentTime+0.3); }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
