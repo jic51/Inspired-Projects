@@ -1,0 +1,36 @@
+[
+  {
+    "business_name": "Relax and Smile Dental Care",
+    "category": "Dental clinic",
+    "address": "271 NE 2nd St, Miami, FL 33132",
+    "city": "Miami",
+    "state": "Florida",
+    "phone": "(786) 983-4812",
+    "website": "https://www.relaxandsmile.com/?utm_source=GMB&utm_medium=organic&utm_campaign=DevOptimization&utm_content=Website",
+    "rating": "4.9",
+    "review_count": "870",
+    "permanentlyClosed": false,
+    "temporarilyClosed": false,
+    "source": "google_maps",
+    "raw_url": "https://www.google.com/maps/search/?api=1&query=Relax%20and%20Smile%20Dental%20Care&query_place_id=ChIJ8WVD9Z622YgRTsE_RcBq1Qk",
+    "cid": "708589890408792398",
+    "status": "qualified"
+  },
+  {
+    "business_name": "ONE Dental Miami",
+    "category": "Dentist",
+    "address": "1330 Coral Wy #100, Miami, FL 33145",
+    "city": "Miami",
+    "state": "Florida",
+    "phone": "(305) 285-5150",
+    "website": "http://www.onedentalmiami.com/",
+    "rating": "4.8",
+    "review_count": "358",
+    "permanentlyClosed": false,
+    "temporarilyClosed": false,
+    "source": "google_maps",
+    "raw_url": "https://www.google.com/maps/search/?api=1&query=ONE%20Dental%20Miami&query_place_id=ChIJOeo2vFu22YgRnXmUhbsc1LE",
+    "cid": "12813898431501466013",
+    "status": "qualified"
+  }
+]

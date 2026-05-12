@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutomateX — AI-Powered Business Automation</title>
+<!-- SEO Meta Tags -->
+<meta name="description" content="AutomateX: AI-powered automation solutions for businesses of all sizes. Chatbots, CRM, lead generation, workflow automation and more.">
+<meta name="keywords" content="AI automation, business automation, chatbots, CRM automation, lead generation, workflow automation, AutomateX, Jose Castro">
+<meta name="author" content="Jose Castro">
+<meta name="robots" content="index, follow">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="AutomateX — AI-Powered Business Automation">
+<meta property="og:description" content="We automate your business so you can focus on growth. AI-powered solutions tailored to your needs.">
+<meta property="og:url" content="https://automatex.io">
+<meta property="og:image" content="https://automatex.io/og-image.png">
+<meta property="og:site_name" content="AutomateX">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="es_ES">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AutomateX — AI-Powered Business Automation">
+<meta name="twitter:description" content="We automate your business so you can focus on growth. AI-powered solutions tailored to your needs.">
+<meta name="twitter:image" content="https://automatex.io/og-image.png">
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "AutomateX",
+  "description": "AI-powered automation solutions for businesses of all sizes. Chatbots, CRM, lead generation, workflow automation and more.",
+  "url": "https://automatex.io",
+  "email": "joseisrael5101@gmail.com",
+  "founder": {
+    "@type": "Person",
+    "name": "Jose Castro"
+  },
+  "priceRange": "$497 - $5000",
+  "areaServed": ["US", "Latin America"],
+  "serviceType": ["AI Automation", "Chatbot Development", "CRM Automation", "Lead Generation", "Workflow Automation"],
+  "sameAs": []
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ========== CSS RESET & VARIABLES ========== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-primary:#0a0e1a;--bg-secondary:#111827;--bg-card:#1a1f35;--bg-card-hover:#222845;
+  --accent:#00d4ff;--accent-dark:#0099cc;--accent-glow:rgba(0,212,255,0.15);--accent-glow-strong:rgba(0,212,255,0.3);
+  --text-primary:#f0f4ff;--text-secondary:#94a3b8;--text-muted:#64748b;
+  --border:rgba(148,163,184,0.1);--border-accent:rgba(0,212,255,0.25);
+  --gradient-1:linear-gradient(135deg,#00d4ff 0%,#0099ff 50%,#7c3aed 100%);
+  --gradient-2:linear-gradient(135deg,#0a0e1a 0%,#111827 100%);
+  --shadow-card:0 4px 24px rgba(0,0,0,0.3);--shadow-glow:0 0 30px rgba(0,212,255,0.1);
+  --radius:12px;--radius-lg:20px;
+  --transition:0.3s cubic-bezier(0.4,0,0.2,1);
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit;transition:color var(--transition)}
+img{max-width:100%;display:block}
+ul{list-style:none}
+/* ========== UTILITY ========== */
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.section{padding:100px 0;position:relative}
+.section-label{font-family:var(--font-mono);font-size:0.8rem;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:block}
+.section-title{font-size:clamp(2rem,4vw,3rem);font-weight:800;line-height:1.15;margin-bottom:20px;background:linear-gradient(135deg,var(--text-primary) 0%,var(--text-secondary) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-subtitle{font-size:1.1rem;color:var(--text-secondary);max-width:600px;line-height:1.7}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:50px;font-weight:600;font-size:0.95rem;cursor:pointer;border:none;transition:all var(--transition);text-decoration:none;font-family:var(--font)}
+.btn-primary{background:var(--gradient-1);color:#fff;box-shadow:0 4px 20px rgba(0,212,255,0.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,0.5)}
+.btn-secondary{background:transparent;color:var(--accent);border:1px solid var(--border-accent)}
+.btn-secondary:hover{background:var(--accent-glow);border-color:var(--accent)}
+.fade-in{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+/* ========== NAVBAR ========== */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 0;transition:all var(--transition);background:transparent}
+.navbar.scrolled{background:rgba(10,14,26,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 0}
+.navbar .container{display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:0.9rem;font-weight:500;color:var(--text-secondary);position:relative;padding:4px 0}
+.nav-links a::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:2px;background:var(--accent);transition:width var(--transition)}
+.nav-links a:hover{color:var(--text-primary)}
+.nav-links a:hover::after{width:100%}
+.lang-toggle{display:flex;background:var(--bg-card);border-radius:50px;padding:3px;border:1px solid var(--border);cursor:pointer}
+.lang-btn{padding:6px 14px;border-radius:50px;font-size:0.8rem;font-weight:600;border:none;cursor:pointer;transition:all var(--transition);background:transparent;color:var(--text-muted);font-family:var(--font)}
+.lang-btn.active{background:var(--accent);color:var(--bg-primary)}
+.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+.nav-toggle span{width:24px;height:2px;background:var(--text-primary);transition:all var(--transition);border-radius:2px}
+@media(max-width:900px){
+  .nav-toggle{display:flex}
+  .nav-links{position:fixed;top:0;right:-100%;width:280px;height:100vh;background:var(--bg-secondary);flex-direction:column;padding:80px 32px 32px;gap:24px;transition:right var(--transition);border-left:1px solid var(--border);z-index:999}
+  .nav-links.open{right:0}
+  .nav-links a{font-size:1.1rem}
+  .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:998}
+  .mobile-overlay.open{display:block}
+}
+/* ========== HERO ========== */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding-top:80px}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,rgba(0,212,255,0.06) 0%,transparent 50%),radial-gradient(circle at 70% 60%,rgba(124,58,237,0.04) 0%,transparent 50%);animation:heroBg 20s ease infinite}
+@keyframes heroBg{0%,100%{transform:translate(0,0)}50%{transform:translate(-2%,2%)}}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;position:relative;z-index:1}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:var(--accent-glow);border:1px solid var(--border-accent);border-radius:50px;font-size:0.8rem;font-weight:500;color:var(--accent);margin-bottom:24px}
+.hero-badge .dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;line-height:1.08;margin-bottom:24px;letter-spacing:-1.5px}
+.hero h1 .highlight{background:var(--gradient-1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:1.15rem;color:var(--text-secondary);line-height:1.7;margin-bottom:36px;max-width:520px}
+.hero-buttons{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px}
+/* Animated Counters Row */
+.hero-counters{display:flex;gap:40px;margin-bottom:0}
+.hero-counter{text-align:left}
+.hero-counter-num{font-size:2.2rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.hero-counter-label{font-size:0.85rem;color:var(--text-muted);margin-top:4px}
+/* Hero Visual */
+.hero-visual{position:relative;display:flex;align-items:center;justify-content:center}
+.hero-graphic{width:100%;max-width:500px;aspect-ratio:1;position:relative}
+.hero-circle{position:absolute;border-radius:50%;border:1px solid var(--border-accent)}
+.hero-circle-1{width:100%;height:100%;top:0;left:0;animation:spin 30s linear infinite}
+.hero-circle-2{width:75%;height:75%;top:12.5%;left:12.5%;animation:spin 25s linear infinite reverse;border-color:rgba(124,58,237,0.2)}
+.hero-circle-3{width:50%;height:50%;top:25%;left:25%;animation:spin 20s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero-center-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;background:var(--gradient-1);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 0 40px rgba(0,212,255,0.3)}
+.hero-float-card{position:absolute;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;font-size:0.85rem;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-card);animation:float 6s ease-in-out infinite}
+.hero-float-card:nth-child(5){top:10%;right:-10%;animation-delay:0s}
+.hero-float-card:nth-child(6){bottom:15%;left:-5%;animation-delay:2s}
+.hero-float-card:nth-child(7){bottom:5%;right:5%;animation-delay:4s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.float-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;text-align:center}
+  .hero-sub{margin-left:auto;margin-right:auto}
+  .hero-buttons{justify-content:center}
+  .hero-counters{justify-content:center;flex-wrap:wrap}
+  .hero-counter{text-align:center}
+  .hero-visual{display:none}
+}
+/* ========== SERVICES ========== */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:48px}
+.service-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;transition:all var(--transition);position:relative;overflow:hidden}
+.service-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient-1);opacity:0;transition:opacity var(--transition)}
+.service-card:hover{border-color:var(--border-accent);transform:translateY(-4px);box-shadow:var(--shadow-glow)}
+.service-card:hover::before{opacity:1}
+.service-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:20px;background:var(--accent-glow);border:1px solid var(--border-accent)}
+.service-card h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}
+.service-card p{color:var(--text-secondary);font-size:0.95rem;line-height:1.6}
+/* ========== HOW IT WORKS ========== */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:48px;position:relative}
+.steps-grid::before{content:'';position:absolute;top:50px;left:15%;right:15%;height:2px;background:linear-gradient(90deg,var(--accent),var(--border-accent),var(--accent));opacity:0.3}
+.step-card{text-align:center;position:relative;z-index:1}
+.step-num{width:60px;height:60px;border-radius:50%;background:var(--gradient-1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;margin:0 auto 24px;box-shadow:0 0 30px rgba(0,212,255,0.2)}
+.step-card h3{font-size:1.2rem;font-weight:700;margin-bottom:10px}
+.step-card p{color:var(--text-secondary);font-size:0.95rem;line-height:1.6;max-width:300px;margin:0 auto}
+@media(max-width:768px){.steps-grid{grid-template-columns:1fr}.steps-grid::before{display:none}}
+/* ========== VIDEO DEMO ========== */
+.video-demo-section{background:var(--bg-primary)}
+.video-wrapper{max-width:800px;margin:48px auto 0;position:relative;border-radius:var(--radius-lg);overflow:hidden;aspect-ratio:16/9;cursor:pointer;background:#000;border:2px solid transparent;background-clip:padding-box}
+.video-wrapper::before{content:'';position:absolute;inset:-2px;border-radius:calc(var(--radius-lg) + 2px);background:var(--gradient-1);z-index:0}
+.video-inner{position:absolute;inset:2px;border-radius:calc(var(--radius-lg) - 1px);background:var(--bg-card);z-index:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;overflow:hidden}
+.video-inner::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(0,212,255,0.05) 0%,transparent 70%)}
+.video-play-btn{width:80px;height:80px;border-radius:50%;background:var(--gradient-1);display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 0 40px rgba(0,212,255,0.4);transition:all var(--transition);z-index:2;position:relative}
+.video-play-btn:hover{transform:scale(1.1);box-shadow:0 0 60px rgba(0,212,255,0.6)}
+.video-label{font-size:1rem;color:var(--text-secondary);font-weight:500;z-index:2;position:relative}
+/* ========== PRICING ========== */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin-top:48px}
+.pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px 32px;text-align:center;transition:all var(--transition);position:relative}
+.pricing-card.featured{border-color:var(--accent);box-shadow:var(--shadow-glow);transform:scale(1.03)}
+.pricing-card.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient-1)}
+.pricing-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--gradient-1);color:#fff;padding:6px 20px;border-radius:50px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.pricing-card h3{font-size:1.3rem;font-weight:700;margin-bottom:8px;margin-top:10px}
+.pricing-price{font-size:3rem;font-weight:900;color:var(--accent);margin:16px 0 4px}
+.pricing-price span{font-size:1rem;font-weight:400;color:var(--text-muted)}
+.pricing-desc{color:var(--text-secondary);font-size:0.9rem;margin-bottom:24px}
+.pricing-features{text-align:left;margin-bottom:32px}
+.pricing-features li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:0.9rem;color:var(--text-secondary)}
+.pricing-features li::before{content:'\2713';color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+.pricing-card:hover{transform:translateY(-4px);border-color:var(--border-accent)}
+.pricing-card.featured:hover{transform:scale(1.03) translateY(-4px)}
+.pricing-custom{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;margin-top:32px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.pricing-custom h3{font-size:1.2rem;font-weight:700}
+.pricing-custom p{color:var(--text-secondary);font-size:0.95rem;margin-top:6px}
+/* ========== INDUSTRIES ========== */
+.industries-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;margin-top:48px}
+.industry-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 24px;text-align:center;transition:all var(--transition)}
+.industry-card:hover{border-color:var(--border-accent);transform:translateY(-4px);box-shadow:var(--shadow-glow)}
+.industry-icon{font-size:2.2rem;margin-bottom:14px;display:block}
+.industry-card h3{font-size:0.95rem;font-weight:600}
+/* ========== ABOUT ========== */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:48px}
+.about-img{width:100%;aspect-ratio:1;background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.about-img::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(124,58,237,0.05))}
+.about-avatar{font-size:6rem;position:relative;z-index:1}
+.about-content h3{font-size:1.6rem;font-weight:800;margin-bottom:16px}
+.about-content p{color:var(--text-secondary);font-size:1rem;line-height:1.7;margin-bottom:16px}
+.about-highlights{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.about-highlight{display:flex;align-items:center;gap:10px;font-size:0.9rem;color:var(--text-secondary)}
+.about-highlight span:first-child{color:var(--accent);font-size:1.2rem}
+@media(max-width:768px){.about-grid{grid-template-columns:1fr}.about-highlights{grid-template-columns:1fr}}
+/* ========== TESTIMONIALS ========== */
+.testimonials-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;margin-top:48px}
+.testimonial-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;position:relative}
+.testimonial-card::before{content:'\201C';position:absolute;top:20px;left:28px;font-size:4rem;color:var(--accent);opacity:0.15;font-family:serif;line-height:1}
+.testimonial-stars{color:#fbbf24;font-size:0.9rem;margin-bottom:16px;letter-spacing:2px}
+.testimonial-card blockquote{color:var(--text-secondary);font-size:0.95rem;line-height:1.7;font-style:italic;margin-bottom:20px}
+.testimonial-author{display:flex;align-items:center;gap:12px}
+.testimonial-avatar{width:44px;height:44px;border-radius:50%;background:var(--gradient-1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem}
+.testimonial-name{font-weight:600;font-size:0.9rem}
+.testimonial-role{font-size:0.8rem;color:var(--text-muted)}
+.testimonial-note{text-align:center;margin-top:12px;font-size:0.7rem;color:var(--text-muted);font-style:italic;opacity:0.6}
+/* ========== CTA / CONTACT ========== */
+.cta-section{background:var(--bg-secondary);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.cta-inner{text-align:center;max-width:700px;margin:0 auto}
+.cta-inner h2{font-size:clamp(2rem,4vw,2.8rem);font-weight:800;margin-bottom:16px}
+.cta-inner p{color:var(--text-secondary);font-size:1.1rem;margin-bottom:36px;line-height:1.7}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:48px}
+.contact-form{display:flex;flex-direction:column;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:0.85rem;font-weight:500;color:var(--text-secondary)}
+.form-group input,.form-group textarea,.form-group select{background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;color:var(--text-primary);font-family:var(--font);font-size:0.95rem;transition:border-color var(--transition);outline:none}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:120px}
+.form-group select option{background:var(--bg-secondary);color:var(--text-primary)}
+.contact-info{display:flex;flex-direction:column;gap:24px}
+.contact-icon{width:48px;height:48px;border-radius:12px;background:var(--accent-glow);border:1px solid var(--border-accent);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.contact-item{display:flex;gap:16px;align-items:flex-start}
+.contact-item h4{font-size:0.95rem;font-weight:600;margin-bottom:4px}
+.contact-item p{font-size:0.9rem;color:var(--text-secondary)}
+.form-success{display:none;text-align:center;padding:40px 20px;background:var(--bg-card);border-radius:var(--radius-lg);border:1px solid rgba(16,185,129,0.3)}
+.form-success.show{display:block}
+.form-success .success-icon{font-size:3rem;margin-bottom:16px}
+.form-success h3{font-size:1.3rem;font-weight:700;margin-bottom:8px;color:#10b981}
+.form-success p{color:var(--text-secondary);font-size:0.95rem}
+@media(max-width:768px){.contact-grid{grid-template-columns:1fr}}
+/* ========== FREE AUDIT SECTION ========== */
+.audit-section{position:relative;overflow:hidden}
+.audit-section::before{content:'';position:absolute;inset:0;background:var(--gradient-1);opacity:0.08}
+.audit-section::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.15),transparent 70%)}
+.audit-inner{position:relative;z-index:1;text-align:center;max-width:600px;margin:0 auto}
+.audit-inner h2{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:800;margin-bottom:12px;color:var(--text-primary)}
+.audit-inner>p{color:var(--text-secondary);font-size:1.05rem;margin-bottom:36px;line-height:1.7}
+.audit-form{display:flex;flex-direction:column;gap:14px;max-width:440px;margin:0 auto}
+.audit-form input,.audit-form select{background:rgba(10,14,26,0.7);border:1px solid var(--border-accent);border-radius:var(--radius);padding:14px 16px;color:var(--text-primary);font-family:var(--font);font-size:0.95rem;transition:border-color var(--transition);outline:none;backdrop-filter:blur(8px)}
+.audit-form input:focus,.audit-form select:focus{border-color:var(--accent)}
+.audit-form select option{background:var(--bg-secondary);color:var(--text-primary)}
+.audit-success{display:none;text-align:center;padding:32px 20px}
+.audit-success.show{display:block}
+.audit-success .success-icon{font-size:2.5rem;margin-bottom:12px}
+.audit-success h3{font-size:1.2rem;font-weight:700;color:#10b981;margin-bottom:6px}
+.audit-success p{color:var(--text-secondary);font-size:0.9rem}
+/* ========== WHATSAPP FLOAT ========== */
+.whatsapp-float{position:fixed;bottom:28px;right:28px;z-index:900;width:60px;height:60px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,0.4);transition:all var(--transition);cursor:pointer;border:none}
+.whatsapp-float:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(37,211,102,0.6)}
+.whatsapp-float svg{width:32px;height:32px;fill:#fff}
+.whatsapp-tooltip{position:absolute;right:72px;top:50%;transform:translateY(-50%);background:var(--bg-card);color:var(--text-primary);padding:8px 14px;border-radius:8px;font-size:0.8rem;font-weight:500;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--transition);border:1px solid var(--border)}
+.whatsapp-float:hover .whatsapp-tooltip{opacity:1}
+/* ========== FOOTER ========== */
+.footer{background:var(--bg-secondary);border-top:1px solid var(--border);padding:60px 0 30px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{color:var(--text-secondary);font-size:0.9rem;margin-top:12px;line-height:1.6}
+.footer-social{display:flex;gap:12px;margin-top:20px}
+.footer-social a{width:40px;height:40px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all var(--transition)}
+.footer-social a:hover{border-color:var(--accent);background:var(--accent-glow);color:var(--accent)}
+.footer h4{font-size:0.9rem;font-weight:600;margin-bottom:16px;color:var(--text-primary)}
+.footer ul li{margin-bottom:10px}
+.footer ul a{font-size:0.85rem;color:var(--text-muted);transition:color var(--transition)}
+.footer ul a:hover{color:var(--accent)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-bottom p{font-size:0.8rem;color:var(--text-muted)}
+@media(max-width:768px){.footer-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.footer-grid{grid-template-columns:1fr}}
+</style>
+</head><body>
+<!-- ========== NAVBAR ========== -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <a href="#" class="logo">Automate<span>X</span></a>
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#services" data-en="Services" data-es="Servicios">Services</a></li>
+      <li><a href="#pricing" data-en="Pricing" data-es="Precios">Pricing</a></li>
+      <li><a href="#how-it-works" data-en="How It Works" data-es="Proceso">How It Works</a></li>
+      <li><a href="#about" data-en="About" data-es="Nosotros">About</a></li>
+      <li><a href="#contact" data-en="Contact" data-es="Contacto">Contact</a></li>
+      <li>
+        <div class="lang-toggle">
+          <button class="lang-btn active" id="btnEn" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" id="btnEs" onclick="setLang('es')">ES</button>
+        </div>
+      </li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section class="hero section" id="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <span data-en="AI-Powered Automation Agency" data-es="Agencia de Automatizaci&oacute;n con IA">AI-Powered Automation Agency</span>
+        </div>
+        <h1>
+          <span data-en="We Automate Your Business" data-es="Automatizamos Tu Negocio">We Automate Your Business</span><br>
+          <span class="highlight" data-en="So You Can Focus on Growth" data-es="Para Que Te Enfoques en Crecer">So You Can Focus on Growth</span>
+        </h1>
+        <p class="hero-sub" data-en="We build custom AI-powered automations that save you 20+ hours per week, reduce costs, and scale your operations — so you can focus on what matters most." data-es="Creamos automatizaciones personalizadas con IA que te ahorran m&aacute;s de 20 horas por semana, reducen costos y escalan tus operaciones — para que te enfoques en lo que m&aacute;s importa.">We build custom AI-powered automations that save you 20+ hours per week, reduce costs, and scale your operations — so you can focus on what matters most.</p>
+        <div class="hero-buttons">
+          <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-primary" data-en="&#128197; Book Your Free Discovery Call" data-es="&#128197; Agenda Tu Llamada de Descubrimiento Gratis">&#128197; Book Your Free Discovery Call</a>
+          <a href="#services" class="btn btn-secondary" data-en="See Our Services" data-es="Ver Servicios">See Our Services</a>
+        </div>
+        <!-- Animated Counters -->
+        <div class="hero-counters">
+          <div class="hero-counter">
+            <div class="hero-counter-num" data-target="500">0</div>
+            <div class="hero-counter-label" data-en="Hours Saved" data-es="Horas Ahorradas">Hours Saved</div>
+          </div>
+          <div class="hero-counter">
+            <div class="hero-counter-num" data-target="50">0</div>
+            <div class="hero-counter-label" data-en="Automations Deployed" data-es="Automatizaciones Desplegadas">Automations Deployed</div>
+          </div>
+          <div class="hero-counter">
+            <div class="hero-counter-num" data-target="10">0</div>
+            <div class="hero-counter-label" data-en="Industries Served" data-es="Industrias Servidas">Industries Served</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-graphic">
+          <div class="hero-circle hero-circle-1"></div>
+          <div class="hero-circle hero-circle-2"></div>
+          <div class="hero-circle hero-circle-3"></div>
+          <div class="hero-center-icon">&#9889;</div>
+          <div class="hero-float-card">
+            <div class="float-icon" style="background:rgba(16,185,129,0.15);color:#10b981;">&#9989;</div>
+            <div>
+              <div style="font-weight:600;" data-en="Task Automated" data-es="Tarea Automatizada">Task Automated</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);" data-en="Just now" data-es="Ahora">Just now</div>
+            </div>
+          </div>
+          <div class="hero-float-card">
+            <div class="float-icon" style="background:rgba(0,212,255,0.15);color:var(--accent);">&#128200;</div>
+            <div>
+              <div style="font-weight:600;" data-en="Revenue +34%" data-es="Ingresos +34%">Revenue +34%</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);" data-en="This month" data-es="Este mes">This month</div>
+            </div>
+          </div>
+          <div class="hero-float-card">
+            <div class="float-icon" style="background:rgba(124,58,237,0.15);color:#7c3aed;">&#129302;</div>
+            <div>
+              <div style="font-weight:600;" data-en="AI Bot Active" data-es="Bot IA Activo">AI Bot Active</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);" data-en="24/7 running" data-es="Activo 24/7">24/7 running</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== SERVICES ========== -->
+<section class="section" id="services" style="background:var(--bg-secondary);">
+  <div class="container">
+    <div class="fade-in">
+      <span class="section-label" data-en="What We Do" data-es="Lo Que Hacemos">What We Do</span>
+      <h2 class="section-title" data-en="AI-Powered Automation Services" data-es="Servicios de Automatizaci&oacute;n con IA">AI-Powered Automation Services</h2>
+      <p class="section-subtitle" data-en="From chatbots to full workflow automation, we build solutions that run 24/7 so your team can focus on high-value work." data-es="Desde chatbots hasta automatizaci&oacute;n completa de flujos, creamos soluciones que funcionan 24/7 para que tu equipo se enfoque en lo importante.">From chatbots to full workflow automation, we build solutions that run 24/7 so your team can focus on high-value work.</p>
+    </div>
+    <div class="services-grid">
+      <div class="service-card fade-in">
+        <div class="service-icon">&#129302;</div>
+        <h3 data-en="AI Chatbots &amp; Customer Support" data-es="Chatbots IA y Soporte al Cliente">AI Chatbots &amp; Customer Support</h3>
+        <p data-en="Deploy intelligent chatbots that handle customer inquiries 24/7, qualify leads, and route complex issues to your team — reducing response times by 90%." data-es="Implementa chatbots inteligentes que atienden consultas 24/7, califican leads y escalan problemas complejos a tu equipo — reduciendo tiempos de respuesta en un 90%.">Deploy intelligent chatbots that handle customer inquiries 24/7, qualify leads, and route complex issues to your team — reducing response times by 90%.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon">&#127919;</div>
+        <h3 data-en="Lead Generation &amp; CRM Automation" data-es="Generaci&oacute;n de Leads y Automatizaci&oacute;n CRM">Lead Generation &amp; CRM Automation</h3>
+        <p data-en="Automate your entire lead pipeline — from capture to nurture to close. Sync your CRM, score leads with AI, and never let a prospect fall through the cracks." data-es="Automatiza tu pipeline de leads completo — desde captura hasta cierre. Sincroniza tu CRM, califica leads con IA y nunca pierdas un prospecto.">Automate your entire lead pipeline — from capture to nurture to close. Sync your CRM, score leads with AI, and never let a prospect fall through the cracks.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon">&#128241;</div>
+        <h3 data-en="Social Media Automation" data-es="Automatizaci&oacute;n de Redes Sociales">Social Media Automation</h3>
+        <p data-en="Schedule posts, auto-respond to comments and DMs, track engagement metrics, and grow your audience on autopilot across all platforms." data-es="Programa publicaciones, responde autom&aacute;ticamente a comentarios y DMs, rastrea m&eacute;tricas de engagement y crece tu audiencia en piloto autom&aacute;tico.">Schedule posts, auto-respond to comments and DMs, track engagement metrics, and grow your audience on autopilot across all platforms.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon">&#9993;</div>
+        <h3 data-en="Email Marketing Automation" data-es="Automatizaci&oacute;n de Email Marketing">Email Marketing Automation</h3>
+        <p data-en="Build automated email sequences that convert. Welcome series, abandoned cart recovery, re-engagement campaigns — all personalized with AI-driven content." data-es="Crea secuencias de email automatizadas que convierten. Series de bienvenida, recuperaci&oacute;n de carritos, campa&ntilde;as de re-engagement — todo personalizado con IA.">Build automated email sequences that convert. Welcome series, abandoned cart recovery, re-engagement campaigns — all personalized with AI-driven content.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon">&#9881;</div>
+        <h3 data-en="Workflow &amp; Process Automation" data-es="Automatizaci&oacute;n de Flujos y Procesos">Workflow &amp; Process Automation</h3>
+        <p data-en="Connect your tools, eliminate manual data entry, and streamline operations. We integrate 500+ apps to create seamless, error-free workflows." data-es="Conecta tus herramientas, elimina la entrada manual de datos y optimiza operaciones. Integramos m&aacute;s de 500 apps para crear flujos sin errores.">Connect your tools, eliminate manual data entry, and streamline operations. We integrate 500+ apps to create seamless, error-free workflows.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon">&#128202;</div>
+        <h3 data-en="Data Scraping &amp; Enrichment" data-es="Scraping de Datos y Enriquecimiento">Data Scraping &amp; Enrichment</h3>
+        <p data-en="Extract valuable data from any source, enrich your databases with AI, and turn raw information into actionable business intelligence." data-es="Extrae datos valiosos de cualquier fuente, enriquece tus bases de datos con IA y transforma informaci&oacute;n cruda en inteligencia de negocio accionable.">Extract valuable data from any source, enrich your databases with AI, and turn raw information into actionable business intelligence.</p>
+      </div>
+      <div class="service-card fade-in">
+        <div class="service-icon" style="background:rgba(124,58,237,0.15);border-color:rgba(124,58,237,0.3);">&#10024;</div>
+        <h3 data-en="Custom AI Solutions" data-es="Soluciones de IA Personalizadas">Custom AI Solutions</h3>
+        <p data-en="Need something unique? We design and build custom AI-powered tools tailored to your specific business challenges and goals." data-es="&iquest;Necesitas algo &uacute;nico? Dise&ntilde;amos y construimos herramientas de IA personalizadas a los desaf&iacute;os y objetivos espec&iacute;ficos de tu negocio.">Need something unique? We design and build custom AI-powered tools tailored to your specific business challenges and goals.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== HOW IT WORKS ========== -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;">
+      <span class="section-label" data-en="Our Process" data-es="Nuestro Proceso">Our Process</span>
+      <h2 class="section-title" style="margin-left:auto;margin-right:auto;" data-en="How It Works" data-es="C&oacute;mo Funciona">How It Works</h2>
+      <p class="section-subtitle" style="margin-left:auto;margin-right:auto;text-align:center;" data-en="Getting started is simple. Three steps to transforming your business operations." data-es="Comenzar es simple. Tres pasos para transformar las operaciones de tu negocio.">Getting started is simple. Three steps to transforming your business operations.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card fade-in">
+        <div class="step-num">1</div>
+        <h3 data-en="Discovery Call" data-es="Llamada de Descubrimiento">Discovery Call</h3>
+        <p data-en="We learn about your business, identify bottlenecks, and map out your biggest automation opportunities — completely free, no strings attached." data-es="Conocemos tu negocio, identificamos cuellos de botella y mapeamos tus mayores oportunidades de automatizaci&oacute;n — completamente gratis, sin compromiso.">We learn about your business, identify bottlenecks, and map out your biggest automation opportunities — completely free, no strings attached.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">2</div>
+        <h3 data-en="Custom Solution Design" data-es="Dise&ntilde;o de Soluci&oacute;n Personalizada">Custom Solution Design</h3>
+        <p data-en="Our team designs a tailored automation strategy with clear timelines, ROI projections, and a transparent pricing breakdown." data-es="Nuestro equipo dise&ntilde;a una estrategia de automatizaci&oacute;n personalizada con tiempos claros, proyecciones de ROI y precios transparentes.">Our team designs a tailored automation strategy with clear timelines, ROI projections, and a transparent pricing breakdown.</p>
+      </div>
+      <div class="step-card fade-in">
+        <div class="step-num">3</div>
+        <h3 data-en="Launch &amp; Optimize" data-es="Lanzamiento y Optimizaci&oacute;n">Launch &amp; Optimize</h3>
+        <p data-en="We build, test, and deploy your automations. Then we continuously monitor and optimize performance to maximize your ROI." data-es="Construimos, probamos y desplegamos tus automatizaciones. Luego monitoreamos y optimizamos continuamente el rendimiento para maximizar tu ROI.">We build, test, and deploy your automations. Then we continuously monitor and optimize performance to maximize your ROI.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== VIDEO DEMO ========== -->
+<section class="section video-demo-section" id="video-demo">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;">
+      <span class="section-label" data-en="See It In Action" data-es="M&iacute;ralo en Acci&oacute;n">See It In Action</span>
+      <h2 class="section-title" style="margin-left:auto;margin-right:auto;" data-en="See AutomateX in Action" data-es="Mira AutomateX en Acci&oacute;n">See AutomateX in Action</h2>
+      <p class="section-subtitle" style="margin-left:auto;margin-right:auto;text-align:center;" data-en="Watch how we transform manual workflows into intelligent, automated systems that work around the clock." data-es="Mira c&oacute;mo transformamos flujos manuales en sistemas inteligentes y automatizados que trabajan las 24 horas.">Watch how we transform manual workflows into intelligent, automated systems that work around the clock.</p>
+    </div>
+    <div class="video-wrapper fade-in" onclick="alert(currentLang==='es'?'Video de demostraci&oacute;n pr&oacute;ximamente':'Demo video coming soon');">
+      <div class="video-inner">
+        <div class="video-play-btn">&#9654;</div>
+        <span class="video-label" data-en="Watch the 2-Minute Demo" data-es="Mira el Demo de 2 Minutos">Watch the 2-Minute Demo</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PRICING ========== -->
+<section class="section" id="pricing" style="background:var(--bg-secondary);">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;">
+      <span class="section-label" data-en="Pricing" data-es="Precios">Pricing</span>
+      <h2 class="section-title" style="margin-left:auto;margin-right:auto;" data-en="Simple, Transparent Pricing" data-es="Precios Simples y Transparentes">Simple, Transparent Pricing</h2>
+      <p class="section-subtitle" style="margin-left:auto;margin-right:auto;text-align:center;" data-en="Choose the plan that fits your needs. All plans include ongoing support and optimization." data-es="Elige el plan que se adapte a tus necesidades. Todos los planes incluyen soporte y optimizaci&oacute;n continua.">Choose the plan that fits your needs. All plans include ongoing support and optimization.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card fade-in">
+        <h3 data-en="Starter" data-es="Inicial">Starter</h3>
+        <div class="pricing-price">$497<span>/mo</span></div>
+        <p class="pricing-desc" data-en="Perfect for small businesses getting started with automation." data-es="Perfecto para peque&ntilde;os negocios comenzando con la automatizaci&oacute;n.">Perfect for small businesses getting started with automation.</p>
+        <ul class="pricing-features">
+          <li data-en="1 custom automation" data-es="1 automatizaci&oacute;n personalizada">1 custom automation</li>
+          <li data-en="Standard support (48h response)" data-es="Soporte est&aacute;ndar (respuesta 48h)">Standard support (48h response)</li>
+          <li data-en="Monthly performance report" data-es="Reporte de rendimiento mensual">Monthly performance report</li>
+          <li data-en="Up to 2 tool integrations" data-es="Hasta 2 integraciones de herramientas">Up to 2 tool integrations</li>
+          <li data-en="Basic analytics dashboard" data-es="Panel de anal&iacute;tica b&aacute;sico">Basic analytics dashboard</li>
+        </ul>
+        <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:center;" data-en="Get Started" data-es="Comenzar">Get Started</a>
+      </div>
+      <div class="pricing-card featured fade-in">
+        <div class="pricing-badge" data-en="Most Popular" data-es="M&aacute;s Popular">Most Popular</div>
+        <h3 data-en="Growth" data-es="Crecimiento">Growth</h3>
+        <div class="pricing-price">$1,497<span>/mo</span></div>
+        <p class="pricing-desc" data-en="For growing businesses ready to scale their operations." data-es="Para negocios en crecimiento listos para escalar sus operaciones.">For growing businesses ready to scale their operations.</p>
+        <ul class="pricing-features">
+          <li data-en="3 custom automations" data-es="3 automatizaciones personalizadas">3 custom automations</li>
+          <li data-en="Priority support (12h response)" data-es="Soporte prioritario (respuesta 12h)">Priority support (12h response)</li>
+          <li data-en="Weekly performance reports" data-es="Reportes de rendimiento semanales">Weekly performance reports</li>
+          <li data-en="Up to 10 tool integrations" data-es="Hasta 10 integraciones de herramientas">Up to 10 tool integrations</li>
+          <li data-en="Advanced analytics &amp; AI insights" data-es="Anal&iacute;tica avanzada e insights de IA">Advanced analytics &amp; AI insights</li>
+          <li data-en="Quarterly strategy review" data-es="Revisi&oacute;n de estrategia trimestral">Quarterly strategy review</li>
+        </ul>
+        <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;" data-en="Get Started" data-es="Comenzar">Get Started</a>
+      </div>
+      <div class="pricing-card fade-in">
+        <h3>Enterprise</h3>
+        <div class="pricing-price">$2,997<span>/mo</span></div>
+        <p class="pricing-desc" data-en="For established businesses that need full-scale automation." data-es="Para negocios establecidos que necesitan automatizaci&oacute;n a gran escala.">For established businesses that need full-scale automation.</p>
+        <ul class="pricing-features">
+          <li data-en="Unlimited automations" data-es="Automatizaciones ilimitadas">Unlimited automations</li>
+          <li data-en="Dedicated account manager" data-es="Gerente de cuenta dedicado">Dedicated account manager</li>
+          <li data-en="24/7 priority support (2h response)" data-es="Soporte prioritario 24/7 (respuesta 2h)">24/7 priority support (2h response)</li>
+          <li data-en="Unlimited integrations" data-es="Integraciones ilimitadas">Unlimited integrations</li>
+          <li data-en="Custom analytics &amp; reporting" data-es="Anal&iacute;tica y reportes personalizados">Custom analytics &amp; reporting</li>
+          <li data-en="Monthly strategy sessions" data-es="Sesiones de estrategia mensuales">Monthly strategy sessions</li>
+          <li data-en="White-label solutions available" data-es="Soluciones de marca blanca disponibles">White-label solutions available</li>
+        </ul>
+        <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:center;" data-en="Contact Us" data-es="Cont&aacute;ctanos">Contact Us</a>
+      </div>
+    </div>
+    <div class="pricing-custom fade-in">
+      <div>
+        <h3 data-en="&#128640; Custom Project" data-es="&#128640; Proyecto Personalizado">&#128640; Custom Project</h3>
+        <p data-en="One-time automation builds starting at $1,500 — $5,000. Perfect for specific projects with defined scope and deliverables." data-es="Automatizaciones de &uacute;nica vez desde $1,500 — $5,000. Perfecto para proyectos espec&iacute;ficos con alcance y entregables definidos.">One-time automation builds starting at $1,500 — $5,000. Perfect for specific projects with defined scope and deliverables.</p>
+      </div>
+      <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-primary" data-en="Request a Quote" data-es="Solicitar Cotizaci&oacute;n">Request a Quote</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== INDUSTRIES ========== -->
+<section class="section" id="industries">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;">
+      <span class="section-label" data-en="Industries" data-es="Industrias">Industries</span>
+      <h2 class="section-title" style="margin-left:auto;margin-right:auto;" data-en="Industries We Serve" data-es="Industrias Que Servimos">Industries We Serve</h2>
+      <p class="section-subtitle" style="margin-left:auto;margin-right:auto;text-align:center;" data-en="We build automation solutions for businesses across diverse industries." data-es="Creamos soluciones de automatizaci&oacute;n para negocios en diversas industrias.">We build automation solutions for businesses across diverse industries.</p>
+    </div>
+    <div class="industries-grid">
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#129657;</span>
+        <h3 data-en="Healthcare &amp; Dental" data-es="Salud y Dental">Healthcare &amp; Dental</h3>
+      </div>
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#127978;</span>
+        <h3 data-en="Local Businesses" data-es="Negocios Locales">Local Businesses</h3>
+      </div>
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#128722;</span>
+        <h3 data-en="E-Commerce" data-es="E-Commerce">E-Commerce</h3>
+      </div>
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#128640;</span>
+        <h3 data-en="Startups &amp; SaaS" data-es="Startups y SaaS">Startups &amp; SaaS</h3>
+      </div>
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#127793;</span>
+        <h3 data-en="Agencies" data-es="Agencias">Agencies</h3>
+      </div>
+      <div class="industry-card fade-in">
+        <span class="industry-icon">&#127968;</span>
+        <h3 data-en="Real Estate" data-es="Bienes Ra&iacute;ces">Real Estate</h3>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ABOUT ========== -->
+<section class="section" id="about" style="background:var(--bg-secondary);">
+  <div class="container">
+    <div class="fade-in">
+      <span class="section-label" data-en="About Us" data-es="Sobre Nosotros">About Us</span>
+      <h2 class="section-title" data-en="Why AutomateX?" data-es="&iquest;Por Qu&eacute; AutomateX?">Why AutomateX?</h2>
+    </div>
+    <div class="about-grid">
+      <div class="about-img fade-in">
+        <div class="about-avatar">&#128104;&#8205;&#128187;</div>
+      </div>
+      <div class="about-content fade-in">
+        <h3 data-en="Founded by Jose Castro" data-es="Fundado por Jose Castro">Founded by Jose Castro</h3>
+        <p data-en="With deep expertise in web development and AI automation, Jose Castro founded AutomateX to help businesses of all sizes harness the power of intelligent automation. His experience building solutions for companies like DentAccept taught him that most businesses waste countless hours on repetitive tasks that AI can handle better, faster, and cheaper." data-es="Con amplia experiencia en desarrollo web y automatizaci&oacute;n con IA, Jose Castro fund&oacute; AutomateX para ayudar a negocios de todos los tama&ntilde;os a aprovechar el poder de la automatizaci&oacute;n inteligente. Su experiencia construyendo soluciones para empresas como DentAccept le ense&ntilde;&oacute; que la mayor&iacute;a de los negocios pierden innumerables horas en tareas repetitivas que la IA puede manejar mejor, m&aacute;s r&aacute;pido y a menor costo.">With deep expertise in web development and AI automation, Jose Castro founded AutomateX to help businesses of all sizes harness the power of intelligent automation. His experience building solutions for companies like DentAccept taught him that most businesses waste countless hours on repetitive tasks that AI can handle better, faster, and cheaper.</p>
+        <p data-en="At AutomateX, we don't just automate — we transform how your business operates. Every solution is custom-built, thoroughly tested, and continuously optimized to deliver measurable ROI." data-es="En AutomateX, no solo automatizamos — transformamos c&oacute;mo opera tu negocio. Cada soluci&oacute;n es construida a medida, probada a fondo y optimizada continuamente para entregar ROI medible.">At AutomateX, we don't just automate — we transform how your business operates. Every solution is custom-built, thoroughly tested, and continuously optimized to deliver measurable ROI.</p>
+        <div class="about-highlights">
+          <div class="about-highlight"><span>&#9889;</span><span data-en="AI &amp; Automation Expert" data-es="Experto en IA y Automatizaci&oacute;n">AI &amp; Automation Expert</span></div>
+          <div class="about-highlight"><span>&#128200;</span><span data-en="Proven ROI Results" data-es="Resultados de ROI Comprobados">Proven ROI Results</span></div>
+          <div class="about-highlight"><span>&#129657;</span><span data-en="DentAccept Experience" data-es="Experiencia en DentAccept">DentAccept Experience</span></div>
+          <div class="about-highlight"><span>&#128187;</span><span data-en="Full-Stack Developer" data-es="Desarrollador Full-Stack">Full-Stack Developer</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== TESTIMONIALS ========== -->
+<section class="section" id="testimonials">
+  <div class="container">
+    <div class="fade-in" style="text-align:center;">
+      <span class="section-label" data-en="Testimonials" data-es="Testimonios">Testimonials</span>
+      <h2 class="section-title" style="margin-left:auto;margin-right:auto;" data-en="What Our Clients Say" data-es="Lo Que Dicen Nuestros Clientes">What Our Clients Say</h2>
+      <p class="section-subtitle" style="margin-left:auto;margin-right:auto;text-align:center;" data-en="Real results from real businesses that trust AutomateX." data-es="Resultados reales de negocios reales que conf&iacute;an en AutomateX.">Real results from real businesses that trust AutomateX.</p>
+    </div>
+    <div class="testimonials-grid">
+      <!-- Testimonial 1: Dental Office Owner -->
+      <div class="testimonial-card fade-in">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <blockquote data-en="Before AutomateX, our front desk spent 3 hours a day manually confirming appointments and following up with no-shows. They built us an AI scheduling assistant that handles confirmations, sends personalized reminders via text and email, and even reschedules cancellations automatically. Our no-show rate dropped from 18% to under 4% in the first two months. That alone saved us over $8,000 per month in lost revenue." data-es="Antes de AutomateX, nuestra recepci&oacute;n pasaba 3 horas al d&iacute;a confirmando citas manualmente y dando seguimiento a las ausencias. Nos construyeron un asistente de programaci&oacute;n con IA que maneja confirmaciones, env&iacute;a recordatorios personalizados por texto y email, e incluso reprograma cancelaciones autom&aacute;ticamente. Nuestra tasa de ausencias baj&oacute; del 18% a menos del 4% en los primeros dos meses. Solo eso nos ahorr&oacute; m&aacute;s de $8,000 mensuales en ingresos perdidos.">Before AutomateX, our front desk spent 3 hours a day manually confirming appointments and following up with no-shows. They built us an AI scheduling assistant that handles confirmations, sends personalized reminders via text and email, and even reschedules cancellations automatically. Our no-show rate dropped from 18% to under 4% in the first two months. That alone saved us over $8,000 per month in lost revenue.</blockquote>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">RM</div>
+          <div>
+            <div class="testimonial-name">Dr. Roberto Mendoza</div>
+            <div class="testimonial-role" data-en="Owner, Mendoza Family Dental — Phoenix, AZ" data-es="Due&ntilde;o, Mendoza Family Dental — Phoenix, AZ">Owner, Mendoza Family Dental — Phoenix, AZ</div>
+          </div>
+        </div>
+        <p class="testimonial-note" data-en="* Sample testimonial for illustration" data-es="* Testimonio de ejemplo para ilustraci&oacute;n">* Sample testimonial for illustration</p>
+      </div>
+      <!-- Testimonial 2: Local Restaurant Owner -->
+      <div class="testimonial-card fade-in">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <blockquote data-en="I was posting on Instagram and Facebook maybe twice a week when I had time, which was never. AutomateX set up a complete social media engine for my two restaurant locations — auto-generated posts from our daily specials, responded to reviews on Google within minutes, and scheduled stories featuring customer photos. Our social following grew 340% in 90 days, and we now get 15-20 new reservation requests per week directly from social media. I wish I'd found them sooner." data-es="Publicaba en Instagram y Facebook quiz&aacute;s dos veces por semana cuando ten&iacute;a tiempo, lo cual era nunca. AutomateX configur&oacute; un motor completo de redes sociales para mis dos restaurantes — publicaciones auto-generadas desde nuestros especiales del d&iacute;a, respuestas a rese&ntilde;as en Google en minutos, e historias programadas con fotos de clientes. Nuestros seguidores crecieron 340% en 90 d&iacute;as, y ahora recibimos 15-20 nuevas solicitudes de reserva por semana directamente desde redes sociales. Ojal&aacute; los hubiera encontrado antes.">I was posting on Instagram and Facebook maybe twice a week when I had time, which was never. AutomateX set up a complete social media engine for my two restaurant locations — auto-generated posts from our daily specials, responded to reviews on Google within minutes, and scheduled stories featuring customer photos. Our social following grew 340% in 90 days, and we now get 15-20 new reservation requests per week directly from social media. I wish I'd found them sooner.</blockquote>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">CP</div>
+          <div>
+            <div class="testimonial-name">Carmen Padilla</div>
+            <div class="testimonial-role" data-en="Owner, Sabor Autentico — Houston, TX" data-es="Due&ntilde;a, Sabor Aut&eacute;ntico — Houston, TX">Owner, Sabor Autentico — Houston, TX</div>
+          </div>
+        </div>
+        <p class="testimonial-note" data-en="* Sample testimonial for illustration" data-es="* Testimonio de ejemplo para ilustraci&oacute;n">* Sample testimonial for illustration</p>
+      </div>
+      <!-- Testimonial 3: E-Commerce Startup Founder -->
+      <div class="testimonial-card fade-in">
+        <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <blockquote data-en="We were burning through our ad budget with a 1.2% conversion rate and had no idea which leads were worth pursuing. AutomateX built a lead scoring system that integrates with our Shopify store, Facebook Ads, and HubSpot CRM. Now every lead gets an instant AI-scored qualification, a personalized welcome sequence, and automatic routing to the right sales rep. Our cost per acquisition dropped 52% and our conversion rate tripled to 3.6%. These guys understand e-commerce at a deep level." data-es="Est&aacute;bamos quemando nuestro presupuesto publicitario con una tasa de conversi&oacute;n del 1.2% y no ten&iacute;amos idea de qu&eacute; leads val&iacute;a la pena perseguir. AutomateX construy&oacute; un sistema de calificaci&oacute;n de leads que se integra con nuestra tienda Shopify, Facebook Ads y HubSpot CRM. Ahora cada lead recibe una calificaci&oacute;n instant&aacute;nea con IA, una secuencia de bienvenida personalizada y enrutamiento autom&aacute;tico al representante de ventas correcto. Nuestro costo por adquisici&oacute;n baj&oacute; un 52% y nuestra tasa de conversi&oacute;n se triplic&oacute; al 3.6%. Estos tipos entienden el e-commerce a un nivel profundo.">We were burning through our ad budget with a 1.2% conversion rate and had no idea which leads were worth pursuing. AutomateX built a lead scoring system that integrates with our Shopify store, Facebook Ads, and HubSpot CRM. Now every lead gets an instant AI-scored qualification, a personalized welcome sequence, and automatic routing to the right sales rep. Our cost per acquisition dropped 52% and our conversion rate tripled to 3.6%. These guys understand e-commerce at a deep level.</blockquote>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">JK</div>
+          <div>
+            <div class="testimonial-name">Jason Kim</div>
+            <div class="testimonial-role" data-en="Co-Founder &amp; CEO, VoltEdge Commerce — Austin, TX" data-es="Co-Fundador y CEO, VoltEdge Commerce — Austin, TX">Co-Founder &amp; CEO, VoltEdge Commerce — Austin, TX</div>
+          </div>
+        </div>
+        <p class="testimonial-note" data-en="* Sample testimonial for illustration" data-es="* Testimonio de ejemplo para ilustraci&oacute;n">* Sample testimonial for illustration</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== CONTACT / CTA ========== -->
+<section class="section cta-section" id="contact">
+  <div class="container">
+    <div class="cta-inner fade-in">
+      <span class="section-label" data-en="Get Started" data-es="Comienza Ahora">Get Started</span>
+      <h2 data-en="Ready to Automate Your Business?" data-es="&iquest;Listo Para Automatizar Tu Negocio?">Ready to Automate Your Business?</h2>
+      <p data-en="Book a free discovery call today or send us a message. Find out how much time and money you could save with AI-powered automation." data-es="Agenda una llamada de descubrimiento gratis hoy o env&iacute;anos un mensaje. Descubre cu&aacute;nto tiempo y dinero podr&iacute;as ahorrar con automatizaci&oacute;n impulsada por IA.">Book a free discovery call today or send us a message. Find out how much time and money you could save with AI-powered automation.</p>
+      <div style="margin-bottom:32px;">
+        <a href="https://calendly.com/automatex/discovery" target="_blank" class="btn btn-primary" data-en="&#128197; Book Your Free Discovery Call" data-es="&#128197; Agenda Tu Llamada de Descubrimiento Gratis">&#128197; Book Your Free Discovery Call</a>
+      </div>
+    </div>
+    <div class="contact-grid">
+      <!-- Formspree-connected form -->
+      <div>
+        <form class="contact-form fade-in" id="contactForm" action="https://formspree.io/f/PLACEHOLDER" method="POST">
+          <div class="form-group">
+            <label data-en="Full Name" data-es="Nombre Completo">Full Name</label>
+            <input type="text" name="name" required>
+          </div>
+          <div class="form-group">
+            <label data-en="Email Address" data-es="Correo Electr&oacute;nico">Email Address</label>
+            <input type="email" name="email" required>
+          </div>
+          <div class="form-group">
+            <label data-en="Company / Business Name" data-es="Nombre de la Empresa / Negocio">Company / Business Name</label>
+            <input type="text" name="company">
+          </div>
+          <div class="form-group">
+            <label data-en="What service are you interested in?" data-es="&iquest;Qu&eacute; servicio te interesa?">What service are you interested in?</label>
+            <select name="service">
+              <option value="" data-en="Select a service..." data-es="Selecciona un servicio...">Select a service...</option>
+              <option value="chatbots" data-en="AI Chatbots &amp; Customer Support" data-es="Chatbots IA y Soporte al Cliente">AI Chatbots &amp; Customer Support</option>
+              <option value="leads" data-en="Lead Generation &amp; CRM Automation" data-es="Generaci&oacute;n de Leads y Automatizaci&oacute;n CRM">Lead Generation &amp; CRM Automation</option>
+              <option value="social" data-en="Social Media Automation" data-es="Automatizaci&oacute;n de Redes Sociales">Social Media Automation</option>
+              <option value="email" data-en="Email Marketing Automation" data-es="Automatizaci&oacute;n de Email Marketing">Email Marketing Automation</option>
+              <option value="workflow" data-en="Workflow &amp; Process Automation" data-es="Automatizaci&oacute;n de Flujos y Procesos">Workflow &amp; Process Automation</option>
+              <option value="data" data-en="Data Scraping &amp; Enrichment" data-es="Scraping de Datos y Enriquecimiento">Data Scraping &amp; Enrichment</option>
+              <option value="custom" data-en="Custom AI Solutions" data-es="Soluciones de IA Personalizadas">Custom AI Solutions</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label data-en="Tell us about your project" data-es="Cu&eacute;ntanos sobre tu proyecto">Tell us about your project</label>
+            <textarea name="message" data-en-placeholder="Describe your business needs and what you'd like to automate..." data-es-placeholder="Describe las necesidades de tu negocio y qu&eacute; te gustar&iacute;a automatizar..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" data-en="Send Message &#8594;" data-es="Enviar Mensaje &#8594;">Send Message &#8594;</button>
+        </form>
+        <div class="form-success" id="contactSuccess">
+          <div class="success-icon">&#9989;</div>
+          <h3 data-en="Message Sent Successfully!" data-es="&iexcl;Mensaje Enviado Exitosamente!">Message Sent Successfully!</h3>
+          <p data-en="Thank you for reaching out. We'll get back to you within 24 hours." data-es="Gracias por contactarnos. Te responderemos dentro de 24 horas.">Thank you for reaching out. We'll get back to you within 24 hours.</p>
+        </div>
+      </div>
+      <div class="contact-info fade-in">
+        <div class="contact-item">
+          <div class="contact-icon">&#128197;</div>
+          <div>
+            <h4 data-en="Book a Discovery Call" data-es="Agenda una Llamada">Book a Discovery Call</h4>
+            <p><a href="https://calendly.com/automatex/discovery" target="_blank" style="color:var(--accent);" data-en="Schedule your free 30-minute call on Calendly" data-es="Agenda tu llamada gratuita de 30 minutos en Calendly">Schedule your free 30-minute call on Calendly</a></p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#9993;</div>
+          <div>
+            <h4 data-en="Email Us" data-es="Escr&iacute;benos">Email Us</h4>
+            <p><a href="mailto:joseisrael5101@gmail.com" style="color:var(--accent);">joseisrael5101@gmail.com</a></p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#128337;</div>
+          <div>
+            <h4 data-en="Response Time" data-es="Tiempo de Respuesta">Response Time</h4>
+            <p data-en="We typically respond within 24 hours" data-es="Normalmente respondemos dentro de 24 horas">We typically respond within 24 hours</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon">&#127758;</div>
+          <div>
+            <h4 data-en="We Work Remotely" data-es="Trabajamos Remotamente">We Work Remotely</h4>
+            <p data-en="Serving clients worldwide with a focus on US and Latin American markets" data-es="Sirviendo clientes en todo el mundo con enfoque en mercados de EE.UU. y Latinoam&eacute;rica">Serving clients worldwide with a focus on US and Latin American markets</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FREE AUTOMATION AUDIT ========== -->
+<section class="section audit-section" id="audit">
+  <div class="container">
+    <div class="audit-inner fade-in">
+      <span class="section-label" data-en="Free Resource" data-es="Recurso Gratis">Free Resource</span>
+      <h2 data-en="Get Your Free Automation Audit" data-es="Obt&eacute;n Tu Auditor&iacute;a de Automatizaci&oacute;n Gratis">Get Your Free Automation Audit</h2>
+      <p data-en="Tell us a bit about your business and we'll send you a personalized report identifying your top 3 automation opportunities — with estimated time and cost savings." data-es="Cu&eacute;ntanos un poco sobre tu negocio y te enviaremos un reporte personalizado identificando tus 3 principales oportunidades de automatizaci&oacute;n — con estimados de ahorro en tiempo y costos.">Tell us a bit about your business and we'll send you a personalized report identifying your top 3 automation opportunities — with estimated time and cost savings.</p>
+      <form class="audit-form" id="auditForm" action="https://formspree.io/f/PLACEHOLDER" method="POST">
+        <input type="hidden" name="_subject" value="Free Automation Audit Request">
+        <input type="text" name="name" required data-en-placeholder="Your full name" data-es-placeholder="Tu nombre completo">
+        <input type="email" name="email" required data-en-placeholder="Your email address" data-es-placeholder="Tu correo electr&oacute;nico">
+        <select name="business_type" required>
+          <option value="" data-en="Select your industry..." data-es="Selecciona tu industria...">Select your industry...</option>
+          <option value="healthcare" data-en="Healthcare / Dental" data-es="Salud / Dental">Healthcare / Dental</option>
+          <option value="restaurant" data-en="Restaurant / Food Service" data-es="Restaurante / Servicio de Comida">Restaurant / Food Service</option>
+          <option value="ecommerce" data-en="E-Commerce" data-es="E-Commerce">E-Commerce</option>
+          <option value="saas" data-en="SaaS / Tech Startup" data-es="SaaS / Startup Tecnol&oacute;gica">SaaS / Tech Startup</option>
+          <option value="agency" data-en="Marketing / Agency" data-es="Marketing / Agencia">Marketing / Agency</option>
+          <option value="realestate" data-en="Real Estate" data-es="Bienes Ra&iacute;ces">Real Estate</option>
+          <option value="other" data-en="Other" data-es="Otro">Other</option>
+        </select>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" data-en="Get My Free Audit &#8594;" data-es="Obtener Mi Auditor&iacute;a Gratis &#8594;">Get My Free Audit &#8594;</button>
+      </form>
+      <div class="audit-success" id="auditSuccess">
+        <div class="success-icon">&#127881;</div>
+        <h3 data-en="Audit Request Received!" data-es="&iexcl;Solicitud de Auditor&iacute;a Recibida!">Audit Request Received!</h3>
+        <p data-en="We'll analyze your business and send your personalized automation audit within 48 hours." data-es="Analizaremos tu negocio y enviaremos tu auditor&iacute;a de automatizaci&oacute;n personalizada dentro de 48 horas.">We'll analyze your business and send your personalized automation audit within 48 hours.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo">Automate<span>X</span></a>
+        <p data-en="AI-powered automation solutions that help businesses save time, reduce costs, and scale operations. Built by experts, tailored to your needs." data-es="Soluciones de automatizaci&oacute;n impulsadas por IA que ayudan a negocios a ahorrar tiempo, reducir costos y escalar operaciones. Creadas por expertos, adaptadas a tus necesidades.">AI-powered automation solutions that help businesses save time, reduce costs, and scale operations. Built by experts, tailored to your needs.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="LinkedIn" title="LinkedIn">in</a>
+          <a href="#" aria-label="Twitter" title="Twitter">X</a>
+          <a href="#" aria-label="Instagram" title="Instagram">IG</a>
+          <a href="#" aria-label="YouTube" title="YouTube">YT</a>
+        </div>
+      </div>
+      <div>
+        <h4 data-en="Services" data-es="Servicios">Services</h4>
+        <ul>
+          <li><a href="#services" data-en="AI Chatbots" data-es="Chatbots IA">AI Chatbots</a></li>
+          <li><a href="#services" data-en="Lead Generation" data-es="Generaci&oacute;n de Leads">Lead Generation</a></li>
+          <li><a href="#services" data-en="Social Media" data-es="Redes Sociales">Social Media</a></li>
+          <li><a href="#services" data-en="Email Marketing" data-es="Email Marketing">Email Marketing</a></li>
+          <li><a href="#services" data-en="Workflow Automation" data-es="Automatizaci&oacute;n de Flujos">Workflow Automation</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-en="Company" data-es="Empresa">Company</h4>
+        <ul>
+          <li><a href="#about" data-en="About Us" data-es="Sobre Nosotros">About Us</a></li>
+          <li><a href="#pricing" data-en="Pricing" data-es="Precios">Pricing</a></li>
+          <li><a href="#testimonials" data-en="Testimonials" data-es="Testimonios">Testimonials</a></li>
+          <li><a href="#contact" data-en="Contact" data-es="Contacto">Contact</a></li>
+          <li><a href="#audit" data-en="Free Audit" data-es="Auditor&iacute;a Gratis">Free Audit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-en="Resources" data-es="Recursos">Resources</h4>
+        <ul>
+          <li><a href="#" data-en="Blog (Coming Soon)" data-es="Blog (Pr&oacute;ximamente)">Blog (Coming Soon)</a></li>
+          <li><a href="#" data-en="Case Studies" data-es="Casos de Estudio">Case Studies</a></li>
+          <li><a href="https://calendly.com/automatex/discovery" target="_blank" data-en="Free Consultation" data-es="Consulta Gratis">Free Consultation</a></li>
+          <li><a href="#" data-en="Privacy Policy" data-es="Pol&iacute;tica de Privacidad">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 AutomateX. <span data-en="All rights reserved." data-es="Todos los derechos reservados.">All rights reserved.</span></p>
+      <p data-en="Founded by Jose Castro | Powered by AI" data-es="Fundado por Jose Castro | Impulsado por IA">Founded by Jose Castro | Powered by AI</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ========== FLOATING WHATSAPP BUTTON ========== -->
+<a href="https://wa.me/PLACEHOLDER" target="_blank" class="whatsapp-float" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16.004 0h-.008C7.174 0 0 7.176 0 16c0 3.5 1.132 6.744 3.054 9.378L1.054 31.29l6.118-1.958A15.906 15.906 0 0016.004 32C24.826 32 32 24.822 32 16S24.826 0 16.004 0zm9.316 22.594c-.39 1.1-1.932 2.014-3.156 2.28-.838.18-1.932.322-5.618-1.208-4.714-1.956-7.748-6.744-7.984-7.058-.226-.314-1.9-2.532-1.9-4.83s1.2-3.426 1.628-3.894c.39-.428.922-.612 1.242-.612.154 0 .294.008.42.014.428.018.642.042.924.714.352.838 1.21 2.948 1.316 3.164.108.216.216.504.07.792-.136.296-.258.476-.474.73-.216.254-.422.448-.638.722-.198.238-.42.494-.172.922.248.428 1.102 1.816 2.368 2.944 1.628 1.448 2.994 1.904 3.422 2.112.428.208.678.176.928-.106.258-.29 1.106-1.29 1.402-1.732.29-.442.582-.366.982-.22.404.148 2.556 1.206 2.994 1.426.438.22.73.33.838.514.106.184.106 1.068-.284 2.168z"/></svg>
+  <span class="whatsapp-tooltip" data-en="Chat with us on WhatsApp" data-es="Chatea con nosotros por WhatsApp">Chat with us on WhatsApp</span>
+</a>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+/* ===== LANGUAGE TOGGLE ===== */
+var currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.getElementById('btnEs').classList.toggle('active', lang === 'es');
+
+  /* Switch all elements with data-en / data-es */
+  document.querySelectorAll('[data-' + lang + ']').forEach(function(el) {
+    var text = el.getAttribute('data-' + lang);
+    if (text !== null && el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') {
+      el.innerHTML = text;
+    }
+  });
+
+  /* Handle input/textarea placeholders */
+  document.querySelectorAll('[data-' + lang + '-placeholder]').forEach(function(el) {
+    el.placeholder = el.getAttribute('data-' + lang + '-placeholder');
+  });
+
+  /* Update meta description */
+  var metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+    metaDesc.setAttribute('content', lang === 'es'
+      ? 'AutomateX: Soluciones de automatizacion impulsadas por IA para negocios de todos los tamanos. Chatbots, CRM, generacion de leads, automatizacion de flujos y mas.'
+      : 'AutomateX: AI-powered automation solutions for businesses of all sizes. Chatbots, CRM, lead generation, workflow automation and more.');
+  }
+
+  /* Update OG tags */
+  var ogTitle = document.querySelector('meta[property="og:title"]');
+  var ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogTitle) ogTitle.setAttribute('content', lang === 'es' ? 'AutomateX — Automatizacion de Negocios con IA' : 'AutomateX — AI-Powered Business Automation');
+  if (ogDesc) ogDesc.setAttribute('content', lang === 'es' ? 'Automatizamos tu negocio para que te enfoques en crecer. Soluciones de IA personalizadas.' : 'We automate your business so you can focus on growth. AI-powered solutions tailored to your needs.');
+}
+
+/* ===== NAVBAR SCROLL ===== */
+var navbar = document.getElementById('navbar');
+window.addEventListener('scroll', function() {
+  navbar.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+/* ===== MOBILE NAV ===== */
+var navToggle = document.getElementById('navToggle');
+var navLinks = document.getElementById('navLinks');
+var mobileOverlay = document.getElementById('mobileOverlay');
+
+navToggle.addEventListener('click', function() {
+  navLinks.classList.toggle('open');
+  mobileOverlay.classList.toggle('open');
+});
+mobileOverlay.addEventListener('click', function() {
+  navLinks.classList.remove('open');
+  mobileOverlay.classList.remove('open');
+});
+navLinks.querySelectorAll('a[href^="#"]').forEach(function(link) {
+  link.addEventListener('click', function() {
+    navLinks.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+  });
+});
+
+/* ===== SCROLL ANIMATIONS ===== */
+var fadeEls = document.querySelectorAll('.fade-in');
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+fadeEls.forEach(function(el) { observer.observe(el); });
+
+/* ===== SMOOTH SCROLL ===== */
+document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+  anchor.addEventListener('click', function(e) {
+    var targetId = this.getAttribute('href');
+    if (targetId && targetId !== '#') {
+      e.preventDefault();
+      var target = document.querySelector(targetId);
+      if (target) {
+        var top = target.getBoundingClientRect().top + window.pageYOffset - 80;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+      }
+    }
+  });
+});
+
+/* ===== ANIMATED COUNTERS ===== */
+var countersStarted = false;
+function animateCounters() {
+  if (countersStarted) return;
+  countersStarted = true;
+  document.querySelectorAll('.hero-counter-num').forEach(function(counter) {
+    var target = parseInt(counter.getAttribute('data-target'), 10);
+    var duration = 2000;
+    var start = 0;
+    var startTime = null;
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3); /* easeOutCubic */
+      var current = Math.floor(eased * target);
+      counter.textContent = current + '+';
+      if (progress < 1) requestAnimationFrame(step);
+      else counter.textContent = target + '+';
+    }
+    requestAnimationFrame(step);
+  });
+}
+var counterObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      animateCounters();
+      counterObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+var counterSection = document.querySelector('.hero-counters');
+if (counterSection) counterObserver.observe(counterSection);
+
+/* ===== FORMSPREE: CONTACT FORM ===== */
+var contactForm = document.getElementById('contactForm');
+var contactSuccess = document.getElementById('contactSuccess');
+if (contactForm) {
+  contactForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var formData = new FormData(contactForm);
+    fetch(contactForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    }).then(function(response) {
+      if (response.ok) {
+        contactForm.style.display = 'none';
+        contactSuccess.classList.add('show');
+        contactForm.reset();
+      } else {
+        alert(currentLang === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error sending. Please try again.');
+      }
+    }).catch(function() {
+      alert(currentLang === 'es' ? 'Error de conexion. Intenta de nuevo.' : 'Connection error. Please try again.');
+    });
+  });
+}
+
+/* ===== FORMSPREE: AUDIT FORM ===== */
+var auditForm = document.getElementById('auditForm');
+var auditSuccess = document.getElementById('auditSuccess');
+if (auditForm) {
+  auditForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var formData = new FormData(auditForm);
+    fetch(auditForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    }).then(function(response) {
+      if (response.ok) {
+        auditForm.style.display = 'none';
+        auditSuccess.classList.add('show');
+        auditForm.reset();
+      } else {
+        alert(currentLang === 'es' ? 'Error al enviar. Intenta de nuevo.' : 'Error sending. Please try again.');
+      }
+    }).catch(function() {
+      alert(currentLang === 'es' ? 'Error de conexion. Intenta de nuevo.' : 'Connection error. Please try again.');
+    });
+  });
+}
+
+/* ===== INIT PLACEHOLDERS ===== */
+(function() {
+  document.querySelectorAll('[data-en-placeholder]').forEach(function(el) {
+    el.placeholder = el.getAttribute('data-en-placeholder');
+  });
+})();
+</script>
+</body>
+</html>

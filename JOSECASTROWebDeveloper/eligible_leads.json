@@ -1,0 +1,53 @@
+[
+  {
+    "row_number": 2,
+    "lead_name": "Bright Smile Dental",
+    "business_name": "Bright Smile Dental",
+    "email": "test+brightsmile@example.com",
+    "location": "Austin, TX",
+    "category": "Dental Clinic",
+    "website": "https://example.com/brightsmile",
+    "automation_score": "86",
+    "automation_notes": "Website has phone-only appointment requests and no online booking flow; likely losing after-hours inquiries.",
+    "status": "new",
+    "contacted_at": "",
+    "touchpoints": "0",
+    "last_reply_at": "",
+    "language": "English",
+    "service_pitched": "AI Chatbot + Appointment Scheduling"
+  },
+  {
+    "row_number": 3,
+    "lead_name": "La Esquina Bakery",
+    "business_name": "La Esquina Bakery",
+    "email": "test+laesquina@example.com",
+    "location": "East Los Angeles, CA",
+    "category": "Bakery / Local Shop",
+    "website": "https://example.com/laesquina",
+    "automation_score": "78",
+    "automation_notes": "No email capture or abandoned customer re-engagement; social presence is active but customer list building is weak.",
+    "status": "qualified",
+    "contacted_at": "",
+    "touchpoints": "0",
+    "last_reply_at": "",
+    "language": "Spanish",
+    "service_pitched": "Email Marketing Automation"
+  },
+  {
+    "row_number": 4,
+    "lead_name": "Northside Auto Repair",
+    "business_name": "Northside Auto Repair",
+    "email": "test+northsideauto@example.com",
+    "location": "Denver, CO",
+    "category": "Auto Repair",
+    "website": "https://example.com/northsideauto",
+    "automation_score": "71",
+    "automation_notes": "Manual quote requests by phone only and no automated follow-up for service reminders.",
+    "status": "new",
+    "contacted_at": "",
+    "touchpoints": "0",
+    "last_reply_at": "",
+    "language": "English",
+    "service_pitched": "Automated Quote Follow-Up + Service Reminders"
+  }
+]
