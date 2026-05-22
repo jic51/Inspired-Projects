@@ -980,6 +980,20 @@ let colorSeleccionado = 'rainbow'; /* Color activo: 'rainbow' o un hex */
 const DPR          = window.devicePixelRatio || 1;
 const allColorDots = document.querySelectorAll('.color-dot');
 
+/* ── ESCALA "CONTAIN" PARA CROSS-DEVICE ──
+   Calcula el factor de escala y offset para ajustar un dibujo
+   hecho en origW×origH al espacio targetW×targetH, manteniendo
+   proporciones y centrando (como object-fit:contain). */
+function getScaleTransform(origW, origH, targetW, targetH) {
+  if (!origW || !origH || (origW === targetW && origH === targetH)) {
+    return { scale:1, ox:0, oy:0 };
+  }
+  const scale = Math.min(targetW / origW, targetH / origH);
+  const ox = (targetW - origW * scale) / 2;
+  const oy = (targetH - origH * scale) / 2;
+  return { scale, ox, oy };
+}
+
 /* Bandeja de mensajes recibidos (simulados — Firebase los reemplazará en Paso 2) */
 let bandejaEntrada = [];
 
@@ -1155,7 +1169,8 @@ function iniciarDibujo(e) {
   currentStrokeId++;
   lastDrawTime = 0; /* reset velocity tracking */
   const { x, y } = coords(e); ultimo = { x, y };
-  trazos.push({ tipo:'inicio', x, y, h:herramienta, sid:currentStrokeId, t:Date.now() });
+  trazos.push({ tipo:'inicio', x, y, h:herramienta, sid:currentStrokeId, t:Date.now(),
+                origW: Math.round(cv.width/DPR), origH: Math.round(cv.height/DPR) });
   actualizarBotones();
 }
 
@@ -1268,12 +1283,21 @@ document.addEventListener('keydown', e => {
 function redibujar() {
   const w = cv.width/DPR, h = cv.height/DPR;
   ctx.clearRect(0, 0, w, h); fondoCanvas(ctx, w, h);
+  if (!trazos.length) return;
+  const meta = trazos.find(t => t.tipo === 'inicio' && t.origW);
+  const { scale, ox, oy } = getScaleTransform(
+    meta ? meta.origW : w, meta ? meta.origH : h, w, h
+  );
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.scale(scale, scale);
   for (const t of trazos) {
     if (t.tipo==='seg') {
       ctx.beginPath(); ctx.moveTo(t.de.x, t.de.y);
       ctx.strokeStyle=t.color; ctx.lineWidth=t.gw; ctx.lineTo(t.a.x, t.a.y); ctx.stroke();
     }
   }
+  ctx.restore();
 }
 
 /* ── LIMPIAR ── */
@@ -1368,7 +1392,7 @@ function generarDibujoSimulado(senderName) {
     const startX = 50 + Math.random()*200;
     const startY = 50 + Math.random()*200;
     t += 200 + Math.random()*500;
-    strokes.push({ tipo:'inicio', x:startX, y:startY, sid, t });
+    strokes.push({ tipo:'inicio', x:startX, y:startY, sid, t, origW:300, origH:300 });
     let cx = startX, cy = startY;
     const points = 10 + Math.floor(Math.random()*30);
     for (let p = 0; p < points; p++) {
@@ -1937,19 +1961,25 @@ function reproducirLoop(strokes, rc, rctx, cssW, cssH) {
   const segs = strokes.filter(s => s.tipo === 'seg' && s.t !== undefined);
   if (!segs.length) return;
 
+  /* Escala contain: ajustar dibujo del emisor al canvas del receptor */
+  const meta = strokes.find(s => s.tipo === 'inicio' && s.origW);
+  const { scale, ox, oy } = getScaleTransform(
+    meta ? meta.origW : cssW, meta ? meta.origH : cssH, cssW, cssH
+  );
+
   /* Comprimir gaps */
   const compressed = comprimirGaps(segs);
   const duracionMs = compressed[compressed.length - 1].tRel;
 
-  /* Programar cada segmento con setTimeout */
+  /* Programar cada segmento con setTimeout (coordenadas pre-transformadas) */
   compressed.forEach(seg => {
     const timer = setTimeout(() => {
       if (!replayActivo) return;
       rctx.beginPath();
-      rctx.moveTo(seg.de.x, seg.de.y);
+      rctx.moveTo(ox + seg.de.x * scale, oy + seg.de.y * scale);
       rctx.strokeStyle = seg.color;
-      rctx.lineWidth   = seg.gw;
-      rctx.lineTo(seg.a.x, seg.a.y);
+      rctx.lineWidth   = seg.gw * scale;
+      rctx.lineTo(ox + seg.a.x * scale, oy + seg.a.y * scale);
       rctx.stroke();
     }, seg.tRel);
     replayTimers.push(timer);
