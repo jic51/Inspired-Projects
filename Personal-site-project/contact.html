@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <meta name="robots" content="index, follow">
@@ -12,10 +12,10 @@
   <meta name="keywords" content="abogada Milagro, abogada Ecuador, derecho familiar Milagro, violencia intrafamiliar Ecuador, actos notariales Milagro, abogada tránsito, ecuadorian lawyer english speaking, attorney in Ecuador for foreigners">
   <meta property="og:title" content="Contacto — Abogada Cristina Vera, Milagro Ecuador">
   <meta property="og:description" content="Agenda tu consulta legal con la Dra. Cristina Vera. Especialista en derecho familiar, violencia intrafamiliar y actos notariales.">
-  <meta property="og:image" content="https://TU-DOMINIO.com/Siteplan/CristinaVeraAttorney1.png">
-  <meta property="og:url" content="https://TU-DOMINIO.com/contact.html">
+  <meta property="og:image" content="https://cristinaveraabogada.com/IMAGE/CristinaVeraAttorney1.png">
+  <meta property="og:url" content="https://cristinaveraabogada.com/contact.html">
   <meta property="og:type" content="website">
-  <link rel="canonical" href="https://TU-DOMINIO.com/contact.html">
+  <link rel="canonical" href="https://cristinaveraabogada.com/contact.html">
   <link rel="apple-touch-icon" sizes="180x180" href="IMAGE/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="IMAGE/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="IMAGE/favicon-16x16.png">
@@ -23,9 +23,6 @@
   <link rel="stylesheet" href="CSS/styles.css">
   <link rel="stylesheet" href="CSS/contact.css">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
-
-  <!-- ✅ REEMPLAZA TU-SITEKEY-AQUÍ con tu Site Key de Google reCAPTCHA -->
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <script src="JS/translations.js"></script>
   <script src="JS/main.js" defer></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -49,7 +46,7 @@
           <li><a href="About_me.html"  data-i18n="nav_about">Sobre mí</a></li>
           <li><a href="services.html"  data-i18n="nav_services">Servicios</a></li>
           <li><a href="contact.html"   data-i18n="nav_contact">Contacto</a></li>
-           <li><a href="blog.html"      data-i18n="nav_blog">Blog</a></li>
+          <li><a href="blog.html"      data-i18n="nav_blog">Blog</a></li>
           <li><a href="index.html#faq" data-i18n="nav_faq">Preguntas Frecuentes</a></li>
         </ul>
       </nav>
@@ -66,277 +63,59 @@
     <div class="container">
 
       <h2 data-i18n="contact_title">Contáctanos</h2>
-      <img src="IMAGE/contact_form.jpg"
-           alt="Formulario de contacto legal con la Dra. Cristina Vera"
-           class="about-img"
-           loading="lazy"
-           width="1000" height="500">
+      <p class="contact-intro" data-i18n="contact_intro">
+        Elige la forma más conveniente para comunicarte con la Abogada Cristina Vera.
+        Respondemos en menos de 24 horas.
+      </p>
 
-      <div class="contact-wrapper">
+      <div class="contact-info-card">
+        <p>
+          <span class="info-icon">📧</span>
+          <a href="mailto:cristina.vera.abogada@gmail.com">cristina.vera.abogada@gmail.com</a>
+        </p>
+        <p>
+          <span class="info-icon">📞</span>
+          <a href="tel:+593992347656" data-i18n="contact_phone">Teléfono: +593 99 234 7656</a>
+        </p>
+        <p>
+          <span class="info-icon">📍</span>
+          <span data-i18n="contact_location">Milagro, Guayas, Ecuador</span>
+        </p>
+        <p>
+          <span class="info-icon">🌐</span>
+          <span data-i18n="contact_service_area">Atendemos clientes dentro y fuera del Ecuador</span>
+        </p>
+      </div>
 
-        <!-- ===== COLUMNA IZQUIERDA: FORMULARIO ===== -->
-        <div class="contact-form-col">
-          <h3 data-i18n="contact_form_title">Envíanos tu consulta</h3>
+      <div class="contact-actions">
 
-          <!--
-            ✅ REEMPLAZA "TU-FORM-ID-AQUÍ" con tu Form ID de Formspree
-            Ejemplo: https://formspree.io/f/xyzabcde
-          -->
-          <form
-            id="contact-form"
-            action="https://formspree.io/f/xpqozjpy"
-            method="POST"
-            novalidate>
+        <a href="https://wa.me/593992347656?text=Hola%20Abogada%2C%20necesito%20asesor%C3%ADa%20legal"
+           class="btn-action btn-action--whatsapp"
+           target="_blank"
+           rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.554 4.103 1.523 5.824L.057 23.882a.5.5 0 00.606.61l6.208-1.448A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.878 9.878 0 01-5.042-1.38l-.361-.214-3.737.872.936-3.63-.235-.374A9.869 9.869 0 012.118 12C2.118 6.533 6.533 2.118 12 2.118c5.466 0 9.882 4.415 9.882 9.882 0 5.466-4.416 9.882-9.882 9.882z"/>
+          </svg>
+          <span data-i18n="wa_text">Consultar por WhatsApp</span>
+        </a>
 
-            <div class="form-group">
-              <label for="name" data-i18n="label_name">Nombre completo:</label>
-              <input type="text" id="name" name="name"
-                     autocomplete="name" placeholder="Ej: María García" required>
-              <span class="field-error" id="error-name" data-i18n="error_name">
-                Por favor ingresa tu nombre completo.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="cedula" data-i18n="label_cedula">Número de cédula/ID:</label>
-              <input type="text" id="cedula" name="cedula"
-                     autocomplete="off" placeholder="Ej: 0912345678"
-                     inputmode="numeric" required>
-              <span class="field-error" id="error-cedula" data-i18n="error_cedula">
-                Por favor ingresa tu número de cédula o ID.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="email" data-i18n="label_email">Correo electrónico:</label>
-              <input type="email" id="email" name="email"
-                     autocomplete="email" placeholder="Ej: correo@ejemplo.com" required>
-              <span class="field-error" id="error-email" data-i18n="error_email">
-                Por favor ingresa un correo electrónico válido.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="phone" data-i18n="label_phone">Número de teléfono:</label>
-              <input type="tel" id="phone" name="phone"
-                     autocomplete="tel" placeholder="Ej: 099-999-9999" required>
-              <span class="field-error" id="error-phone" data-i18n="error_phone">
-                Por favor ingresa tu número de teléfono.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="city" data-i18n="label_city">Ciudad de residencia:</label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                autocomplete="address-level2"
-                placeholder="Ej: Guayaquil, Quito, Milagro..."
-                list="cities-list"
-                required>
-              <datalist id="cities-list">
-                <!-- Ecuador — principales -->
-                <option value="Guayaquil">
-                <option value="Quito">
-                <option value="Cuenca">
-                <option value="Milagro">
-                <option value="Santo Domingo">
-                <option value="Machala">
-                <option value="Manta">
-                <option value="Portoviejo">
-                <option value="Loja">
-                <option value="Ambato">
-                <option value="Esmeraldas">
-                <option value="Riobamba">
-                <option value="Ibarra">
-                <option value="Babahoyo">
-                <option value="Quevedo">
-                <option value="Latacunga">
-                <option value="Tulcán">
-                <option value="Azogues">
-                <option value="Nueva Loja (Lago Agrio)">
-                <option value="El Oro">
-                <!-- Internacional -->
-                <option value="Miami, USA">
-                <option value="New York, USA">
-                <option value="Madrid, España">
-                <option value="Barcelona, España">
-                <option value="Buenos Aires, Argentina">
-                <option value="Bogotá, Colombia">
-                <option value="Lima, Perú">
-                <option value="Ciudad de México">
-                <option value="Santiago, Chile">
-              </datalist>
-              <span class="field-error" id="error-city" data-i18n="error_city">
-                Por favor ingresa tu ciudad de residencia.
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label for="motivo" data-i18n="label_motivo">Motivo de consulta:</label>
-              <select id="motivo" name="motivo" onchange="showOtherField()">
-                <option value=""                        data-i18n="opt_default">-- Selecciona un motivo --</option>
-                <option value="Familia"                 data-i18n="opt_familia">Asunto de Familia</option>
-                <option value="Mujer"                   data-i18n="opt_mujer">Asuntos de Mujer</option>
-                <option value="Niñez y Adolescencia"    data-i18n="opt_ninez">Asuntos de Niñez y Adolescencia</option>
-                <option value="Actos Notariales"        data-i18n="opt_notariales">Escrituras, Contratos, Poderes, etc.</option>
-                <option value="Violencia Intrafamiliar" data-i18n="opt_intrafamiliar">Violencia en la Familia</option>
-                <option value="Tránsito"                data-i18n="opt_transito">Tránsito</option>
-                <option value="Otro"                    data-i18n="opt_otro">Otro</option>
-              </select>
-              <span class="field-error" id="error-motivo" data-i18n="error_motivo">
-                Por favor selecciona el motivo de tu consulta.
-              </span>
-
-              <div id="other-reason-container">
-                <label for="other-reason" data-i18n="label_specify">Especifique:</label>
-                <textarea id="other-reason" name="other-reason" rows="3"
-                          placeholder="Describe brevemente tu situación..."></textarea>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="message" data-i18n="label_message">Mensaje adicional (opcional):</label>
-              <textarea id="message" name="message" rows="4"
-                        placeholder="Cuéntanos más sobre tu caso si lo deseas..."></textarea>
-            </div>
-
-            <!-- Campo oculto: idioma del usuario -->
-            <input type="hidden" name="_language" id="form-language" value="es">
-
-            <!-- Honeypot anti-spam -->
-            <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-
-            <!-- ✅ REEMPLAZA "TU-SITEKEY-AQUÍ" con tu Site Key de Google reCAPTCHA -->
-            <div class="g-recaptcha" data-sitekey="6LdQZ5gsAAAAACek2bMl37KWoqSKH66MC08ZpCuV"></div>
-
-            <!-- Aviso de privacidad — antes del botón submit -->
-            <div class="privacy-notice">
-              <input type="checkbox" id="privacy-check" name="privacy" required>
-              <label for="privacy-check" data-i18n="privacy_label">
-                He leído y acepto el
-                <button type="button" class="privacy-link" onclick="togglePrivacyModal()">
-                  aviso de privacidad
-                </button>.
-                Entiendo que mis datos serán utilizados únicamente por el equipo de la Abogada Cristina Vera para gestionar mi consulta y mejorar el servicio.
-              </label>
-            </div>
-
-            <!-- Modal de privacidad -->
-            <div id="privacy-modal" class="privacy-modal" style="display:none;">
-              <div class="privacy-modal-content">
-                <button class="privacy-modal-close" onclick="togglePrivacyModal()" aria-label="Cerrar">✕</button>
-                <h3 data-i18n="privacy_title">Aviso de Privacidad</h3>
-                <p data-i18n="privacy_p1">Los datos personales que usted proporciona a través de este formulario (nombre, cédula, correo, teléfono, ciudad y motivo de consulta) serán tratados de manera confidencial.</p>
-                <p data-i18n="privacy_p2"><strong>Finalidad:</strong> La información recopilada se utilizará exclusivamente para: (1) dar respuesta a su consulta legal, (2) coordinar citas y seguimiento de su caso, y (3) mejorar la calidad de nuestros servicios.</p>
-                <p data-i18n="privacy_p3"><strong>Uso exclusivo:</strong> Sus datos NO serán vendidos, compartidos ni cedidos a terceros bajo ninguna circunstancia. Solo el equipo de la Abogada Cristina Vera tendrá acceso a esta información.</p>
-                <p data-i18n="privacy_p4"><strong>Retención:</strong> Sus datos se conservarán únicamente durante el tiempo necesario para gestionar su consulta o relación legal.</p>
-                <p data-i18n="privacy_p5">Para ejercer sus derechos de acceso, rectificación o eliminación de sus datos, puede escribirnos a: <a href="mailto:cristina.vera.abogada@gmail.com">cristina.vera.abogada@gmail.com</a></p>
-                <button class="btn" onclick="togglePrivacyModal()" data-i18n="privacy_close">Entendido</button>
-              </div>
-            </div>
-
-            <button type="submit" class="btn-submit" id="submit-btn" data-i18n="btn_submit">
-              Enviar Consulta
-            </button>
-
-          </form>
-
-          <!-- Mensaje de éxito + Calendly — aparece tras enviar -->
-          <div id="success-message" style="display:none;">
-            <div class="success-check">✅</div>
-            <h3 data-i18n="success_title">¡Consulta enviada correctamente!</h3>
-            <p data-i18n="success_text">La Abogada Cristina Vera revisará tu caso y se pondrá en contacto pronto.</p>
-
-            <div class="success-calendly">
-              <p data-i18n="success_calendly_text">Mientras tanto, puedes agendar tu cita directamente:</p>
-              <a href="https://calendly.com/cristina-vera-abogada/30min"
-                class="btn"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-i18n="calendly_btn">
-                📅 Agendar cita en Calendly
-              </a>
-            </div>
-          </div>
-
-        </div>
-
-
-        <!-- ===== COLUMNA DERECHA: INFO + CALENDLY ===== -->
-        <div class="contact-info-col">
-          <h3 data-i18n="contact_info_title">Información de contacto</h3>
-
-          <div class="contact-info-card">
-            <p>
-              <span class="info-icon">📧</span>
-              <a href="mailto:cristina.vera.abogada@gmail.com">
-                	cristina.vera.abogada@gmail.com
-              </a>
-            </p>
-            <p>
-              <span class="info-icon">📞</span>
-              <a href="tel:+593992347656" data-i18n="contact_phone">
-                Teléfono: +593 99 234 7656
-              </a>
-            </p>
-            <p>
-              <span class="info-icon">📍</span>
-              <span data-i18n="contact_location">Milagro, Guayas, Ecuador</span>
-            </p>
-            <p>
-              <span class="info-icon">🌐</span>
-              <span data-i18n="contact_service_area">
-                Atendemos clientes dentro y fuera del Ecuador
-              </span>
-            </p>
-          </div>
-
-          <div class="contact-divider" data-i18n="contact_or">— o agenda directamente —</div>
-
-          <div class="calendly-wrapper">
-            <h4 data-i18n="calendly_title">Agenda tu cita online</h4>
-            <p data-i18n="calendly_desc">
-              Reserva tu consulta directamente en el calendario de la Abogada Cristina Vera.
-              Elige el día y hora que mejor te convenga.
-            </p>
-            <!--
-              ✅ REEMPLAZA la URL con tu link real de Calendly
-              Ejemplo: https://calendly.com/cristinavera/consulta-legal
-            -->
-            <a href="https://calendly.com/cristina-vera-abogada/30min"
-               class="btn-calendly"
-               target="_blank"
-               rel="noopener noreferrer"
-               data-i18n="calendly_btn">
-              Agendar vía Calendly
-            </a>
-          </div>
-
-        </div>
+        <a href="https://calendly.com/cristina-vera-abogada/30min"
+           class="btn-action btn-action--calendly"
+           target="_blank"
+           rel="noopener noreferrer"
+           data-i18n="calendly_btn">
+          Agendar vía Calendly
+        </a>
 
       </div>
+
     </div>
   </section>
 
 
   <footer>
     <div class="container">
-      <div class="footer-social">
-        <a href="https://facebook.com/TU-PERFIL" target="_blank" rel="noopener noreferrer"
-          class="social-btn social-btn--facebook" aria-label="Facebook">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        </a>
-        <a href="https://instagram.com/TU-PERFIL" target="_blank" rel="noopener noreferrer"
-          class="social-btn social-btn--instagram" aria-label="Instagram">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-        </a>
-        <a href="https://linkedin.com/in/TU-PERFIL" target="_blank" rel="noopener noreferrer"
-          class="social-btn social-btn--linkedin" aria-label="LinkedIn">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-        </a>
-      </div>
       <p>© 2026 <a href="About_me.html">Cristina Vera - Abogada.</a>
          <span data-i18n="footer_rights">Todos los derechos reservados.</span>
       </p>
@@ -356,194 +135,6 @@
     </svg>
     <span class="wa-text" data-i18n="wa_text">Consultar por WhatsApp</span>
   </a>
-  <script>
-    // ============================================================
-    // 1. MODAL DE PRIVACIDAD
-    // ============================================================
-    function togglePrivacyModal() {
-      const modal = document.getElementById("privacy-modal");
-      if (!modal) return;
-      modal.style.display = modal.style.display === "none" ? "flex" : "none";
-      document.body.style.overflow = modal.style.display === "flex" ? "hidden" : "";
-    }
-
-    // Cerrar modal con tecla Escape
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        const modal = document.getElementById("privacy-modal");
-        if (modal && modal.style.display === "flex") {
-          togglePrivacyModal();
-        }
-      }
-    });
-
-
-    // ============================================================
-    // 2. SINCRONIZAR IDIOMA EN EL FORMULARIO
-    // ============================================================
-    document.addEventListener("DOMContentLoaded", () => {
-      const langField  = document.getElementById("form-language");
-      const langSelect = document.getElementById("language-select");
-
-      if (langField) langField.value = localStorage.getItem("lang") || "es";
-
-      if (langSelect) {
-        langSelect.addEventListener("change", (e) => {
-          if (langField) langField.value = e.target.value;
-        });
-      }
-    });
-
-
-    // ============================================================
-    // 3. VALIDACIÓN EN TIEMPO REAL DE CADA CAMPO
-    // ============================================================
-    function validateField(field) {
-      const errorEl = document.getElementById("error-" + field.id);
-      let isValid   = true;
-
-      if (field.type === "email") {
-        isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim());
-      } else if (field.tagName === "SELECT") {
-        isValid = field.value !== "";
-      } else {
-        isValid = field.value.trim().length > 0;
-      }
-
-      const hasValue = field.value.trim() !== "";
-      field.classList.toggle("valid",   isValid  && hasValue);
-      field.classList.toggle("invalid", !isValid && hasValue);
-      if (errorEl) errorEl.classList.toggle("visible", !isValid && hasValue);
-      return isValid;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll("#contact-form input[required], #contact-form select")
-        .forEach(field => {
-          field.addEventListener("blur",  () => validateField(field));
-          field.addEventListener("input", () => {
-            if (field.classList.contains("invalid")) validateField(field);
-          });
-        });
-    });
-
-
-    // ============================================================
-    // 4. MOSTRAR CAMPO "OTRO"
-    // ============================================================
-    function showOtherField() {
-      const motivo    = document.getElementById("motivo");
-      const container = document.getElementById("other-reason-container");
-      const textarea  = document.getElementById("other-reason");
-      if (!motivo || !container) return;
-
-      if (motivo.value === "Otro") {
-        container.style.display    = "block";
-        container.style.opacity    = "0";
-        container.style.transition = "opacity 0.3s ease";
-        requestAnimationFrame(() => { container.style.opacity = "1"; });
-        if (textarea) textarea.focus();
-      } else {
-        container.style.opacity = "0";
-        setTimeout(() => {
-          container.style.display = "none";
-          container.style.opacity = "1";
-        }, 300);
-      }
-    }
-
-
-    // ============================================================
-    // 5. ENVÍO DEL FORMULARIO CON TODAS LAS VALIDACIONES
-    // ============================================================
-    document.addEventListener("DOMContentLoaded", () => {
-      const form       = document.getElementById("contact-form");
-      const submitBtn  = document.getElementById("submit-btn");
-      const successMsg = document.getElementById("success-message");
-      if (!form) return;
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        // --- PASO 1: Validar todos los campos requeridos ---
-        let allValid = true;
-        form.querySelectorAll("input[required], select")
-          .forEach(field => {
-            if (!validateField(field)) allValid = false;
-          });
-
-        if (!allValid) {
-          const firstInvalid = form.querySelector(".invalid");
-          if (firstInvalid) {
-            firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-          return; // ← detiene el envío aquí si hay campos vacíos
-        }
-
-        // --- PASO 2: Validar que aceptó el aviso de privacidad ---
-        const privacyCheck  = document.getElementById("privacy-check");
-        const privacyNotice = document.querySelector(".privacy-notice");
-
-        if (privacyCheck && !privacyCheck.checked) {
-          // Resaltar el checkbox en rojo
-          privacyCheck.style.outline = "2px solid #e74c3c";
-          // Poner el texto en rojo temporalmente
-          if (privacyNotice) {
-            privacyNotice.style.color = "#e74c3c";
-            setTimeout(() => {
-              privacyNotice.style.color = "";
-            }, 3000); // vuelve al color normal después de 3 segundos
-          }
-          // Hacer scroll hasta el checkbox
-          privacyCheck.scrollIntoView({ behavior: "smooth", block: "center" });
-          return; // ← detiene el envío aquí si no aceptó privacidad
-        }
-
-        // Limpiar el borde rojo si ya está marcado
-        if (privacyCheck) {
-          privacyCheck.style.outline = "";
-        }
-
-        // --- PASO 3: Enviar el formulario a Formspree ---
-        submitBtn.textContent   = "Enviando...";
-        submitBtn.disabled      = true;
-        submitBtn.style.opacity = "0.7";
-
-        try {
-          const response = await fetch(form.action, {
-            method:  "POST",
-            body:    new FormData(form),
-            headers: { "Accept": "application/json" }
-          });
-
-          if (response.ok) {
-            // Éxito: esconder el formulario y mostrar mensaje + Calendly
-            form.style.display = "none";
-            successMsg.style.display = "block";
-            successMsg.scrollIntoView({ behavior: "smooth", block: "center" });
-          } else {
-            // Error del servidor
-            const json = await response.json();
-            const msg  = json?.errors?.map(err => err.message).join(", ")
-                         || "Hubo un error al enviar. Intenta de nuevo.";
-            alert(msg);
-            resetButton();
-          }
-        } catch {
-          alert("No se pudo conectar. Verifica tu conexión e intenta de nuevo.");
-          resetButton();
-        }
-
-        function resetButton() {
-          submitBtn.textContent   = "Enviar Consulta";
-          submitBtn.disabled      = false;
-          submitBtn.style.opacity = "1";
-        }
-      });
-    });
-  </script>
-
-  </script>
 
 </body>
 </html>

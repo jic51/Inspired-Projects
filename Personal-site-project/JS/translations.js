@@ -181,8 +181,9 @@ const translations = {
     faq_a6: "Muchos trámites pueden iniciarse en línea. Te indicamos exactamente qué necesita presencia física desde la primera consulta.",
     faq_q7: "¿Pueden ayudarme con documentos en inglés?",
     faq_a7: "Sí. Contamos con atención bilingüe español-inglés para clientes extranjeros o ecuatorianos en el exterior.",
+    contact_intro: "Elige la forma más conveniente para comunicarte con la Abogada Cristina Vera. Respondemos en menos de 24 horas.",
     faq_q8: "¿Cómo funciona la primera consulta?",
-    faq_a8: "Agendas por WhatsApp, formulario o Calendly. Analizamos tu caso, explicamos opciones y damos un estimado de tiempos y costos. Sin compromisos.",
+    faq_a8: "Agendas por WhatsApp o Calendly. Analizamos tu caso, explicamos opciones y damos un estimado de tiempos y costos. Sin compromisos.",
     faq_q9: "¿Qué pasa si soy extranjero y necesito un abogado en Ecuador?",
     faq_a9: "Estamos a disposición de atender a extranjeros que tengan la necesidad de un abogado en Ecuador ya que podemos agilizar o tramitar diferentes procesos en municipios e instituciones del estado.",
 
@@ -387,8 +388,9 @@ const translations = {
     faq_a6: "Many procedures can be started online. We'll tell you exactly what requires physical presence from the first consultation.",
     faq_q7: "Can you help me with documents in English?",
     faq_a7: "Yes. We offer bilingual Spanish-English service for foreign clients or Ecuadorians living abroad.",
+    contact_intro: "Choose the most convenient way to contact Attorney Cristina Vera. We respond within 24 hours.",
     faq_q8: "How does the first consultation work?",
-    faq_a8: "Schedule via WhatsApp, form or Calendly. We analyze your case, explain options and give a time and cost estimate. No commitment.",
+    faq_a8: "Schedule via WhatsApp or Calendly. We analyze your case, explain options and give a time and cost estimate. No commitment.",
     faq_q9: "What if I'm a foreigner and need a lawyer in Ecuador?",
     faq_a9: "We frequently work with foreigners — investors, residents and expats. We know the processes for foreigners in Spanish and English.",
 
