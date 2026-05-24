@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clase del Sacerdocio: El Diezmo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Suavizar transiciones */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 text-center shadow-md">
+        <h1 class="text-xl font-bold tracking-wide text-indigo-400">Quórum de Élderes</h1>
+        <p class="text-xs text-slate-400 mt-1">Poner a Dios en primer lugar — Élder Jorge T. Becerra</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-md w-full mx-auto px-4 py-6 flex-grow flex flex-col justify-center">
+        
+        <!-- Dinámica 1: Termómetro del Doble Ánimo -->
+        <div id="dinamica1" class="tab-content active text-center space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <span class="bg-indigo-500/20 text-indigo-400 text-xs px-3 py-1 rounded-full font-semibold">DINÁMICA 1</span>
+                <h2 class="text-lg font-bold mt-3">El Termómetro del "Doble Ánimo"</h2>
+                <p class="text-slate-400 text-sm mt-2">¿Qué tan difícil es para el hombre natural mantener un solo propósito frente a los desafíos económicos del mundo?</p>
+                
+                <div class="mt-6">
+                    <a href="TU_ENLACE_DE_SLIDO_ENCUESTA" target="_blank" class="inline-block w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-indigo-600/30">
+                        Votar en Tiempo Real 📊
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dinámica 2: Nube de Palabras Anónima -->
+        <div id="dinamica2" class="tab-content text-center space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <span class="bg-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full font-semibold">DINÁMICA 2</span>
+                <h2 class="text-lg font-bold mt-3">¿Qué tienes en tu Altar?</h2>
+                <p class="text-slate-400 text-sm mt-2">Además de las finanzas, escribe de forma anónima una palabra que represente tu mayor sacrificio de valor hoy en día.</p>
+                
+                <div class="mt-6">
+                    <a href="TU_ENLACE_DE_SLIDO_NUBE_PALABRAS" target="_blank" class="inline-block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-emerald-600/30">
+                        Enviar mi Palabra 💬
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dinámica 5: Pizarra de Primicias -->
+        <div id="dinamica5" class="tab-content text-center space-y-6">
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <span class="bg-amber-500/20 text-amber-400 text-xs px-3 py-1 rounded-full font-semibold">DINÁMICA 3 (FINAL)</span>
+                <h2 class="text-lg font-bold mt-3">El Mapa de las Primicias</h2>
+                <p class="text-slate-400 text-sm mt-2">Añade una nota adhesiva digital en la columna correspondiente sobre cómo dar lo primero al Señor.</p>
+                
+                <div class="mt-6">
+                    <a href="TU_ENLACE_DE_PADLET" target="_blank" class="inline-block w-full bg-amber-600 hover:bg-amber-500 text-black font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-amber-600/30">
+                        Abrir Pizarra Colaborativa ✏️
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Control Remoto en Teléfonos) -->
+    <nav class="bg-slate-800/80 backdrop-blur-md border-t border-slate-700 sticky bottom-0 left-0 right-0 py-2 shadow-2xl">
+        <div class="max-w-md mx-auto flex justify-around px-2">
+            <button onclick="switchTab('dinamica1')" id="btn-dinamica1" class="flex flex-col items-center gap-1 text-indigo-400 text-xs font-medium py-2 px-3 rounded-xl bg-slate-700/50 transition-all">
+                <span>📊</span>
+                <span>Votación</span>
+            </button>
+            <button onclick="switchTab('dinamica2')" id="btn-dinamica2" class="flex flex-col items-center gap-1 text-slate-400 text-xs font-medium py-2 px-3 rounded-xl hover:bg-slate-700/30 transition-all">
+                <span>💬</span>
+                <span>Nube</span>
+            </button>
+            <button onclick="switchTab('dinamica5')" id="btn-dinamica5" class="flex flex-col items-center gap-1 text-slate-400 text-xs font-medium py-2 px-3 rounded-xl hover:bg-slate-700/30 transition-all">
+                <span>✏️</span>
+                <span>Pizarra</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- JavaScript para manejo de pestañas sin recargar -->
+    <script>
+        function switchTab(tabId) {
+            // Ocultar todo el contenido
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Quitar estilos activos de los botones
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('text-indigo-400', 'bg-slate-700/50');
+                btn.classList.add('text-slate-400');
+            });
+
+            // Mostrar contenido seleccionado
+            document.getElementById(tabId).classList.add('active');
+            
+            // Estilizar botón activo
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('text-slate-400');
+            activeBtn.classList.add('text-indigo-400', 'bg-slate-700/50');
+        }
+    </script>
+</body>
+</html>
