@@ -2151,41 +2151,7 @@ footer p {
 }
 
 
-/* ===== SOCIAL BUTTONS EN FOOTER ===== */
-.footer-social {
-  display: flex;
-  justify-content: center;
-  gap: 0.8rem;
-  margin-bottom: 1.2rem;
-}
-
-.social-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.social-btn:hover {
-  transform: translateY(-3px);
-  opacity: 0.9;
-}
-
-.social-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.social-btn--facebook  { background: #1877f2; color: #fff; }
-.social-btn--instagram {
-  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
-  color: #fff;
-}
-.social-btn--linkedin  { background: #0a66c2; color: #fff; }
+/* ===== SOCIAL BUTTONS — reservado para cuando haya redes oficiales ===== */
 
 
 /* ===== RESPONSIVE ===== */
