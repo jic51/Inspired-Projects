@@ -5,13 +5,59 @@
    viven en CSS/styles.css
    ============================================================ */
 
-/* ===== LAYOUT DE DOS COLUMNAS ===== */
-.contact-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  margin-top: 2rem;
-  align-items: start;
+/* ===== INTRO TEXTO ===== */
+.contact-intro {
+  text-align: center;
+  color: #555;
+  font-size: 1.05rem;
+  margin: 0.5rem auto 2rem;
+  max-width: 600px;
+}
+
+/* ===== BOTONES DE ACCIÓN (WhatsApp + Calendly) ===== */
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 220px;
+  justify-content: center;
+}
+
+.btn-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action--whatsapp {
+  background: #25d366;
+  color: #fff;
+}
+
+.btn-action--whatsapp:hover {
+  background: #1ebe5d;
+}
+
+.btn-action--calendly {
+  background: #006bff;
+  color: #fff;
+}
+
+.btn-action--calendly:hover {
+  background: #0057cc;
 }
 
 
