@@ -1,0 +1,33 @@
+{
+  "name": "scenix",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.117.3",
+    "@react-three/fiber": "^8.17.10",
+    "@supabase/supabase-js": "^2.49.8",
+    "@aws-sdk/client-s3": "^3.797.0",
+    "@aws-sdk/s3-request-presigner": "^3.797.0",
+    "next": "14.2.29",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.175.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/three": "^0.175.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
