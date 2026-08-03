@@ -7,7 +7,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '8.10';
+var APP_VERSION = '8.18';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -1025,6 +1025,8 @@ function _processMovementInner(ss, action, data, auth) {
   if (action === 'lockMaterial')          return lockMaterial(data, auth);
   if (action === 'unlockMaterial')        return unlockMaterial(data, auth);
   if (action === 'updateMinStockBulk')    return updateMinStockBulk(data, auth);
+  if (action === 'parseImportFile')       return parseImportFile(data);
+  if (action === 'commitImport')          return commitImport(data, auth);
   // ── User management (ADMIN only) ─────────────────────────────────────────
   if (action === 'getUsers')       return getUsers(auth);
   if (action === 'addUser')        return addUser(data, auth);
@@ -1764,6 +1766,85 @@ function _ensureArchiveTrigger() {
     if (triggers[i].getHandlerFunction() === 'archiveOldMovementsTrigger') return;
   }
   ScriptApp.newTrigger('archiveOldMovementsTrigger').timeBased().everyDays(1).atHour(3).create();
+}
+
+// ─── AUTOMATIC BACKUP ─────────────────────────────────────────────────────────
+// Answers the objection every prospective customer has about "the spreadsheet
+// IS the database": a full point-in-time copy of the entire spreadsheet — every
+// sheet, not just the archive — made daily and kept for a rolling window. This
+// covers failure modes the app's own write-verify/lock logic can't: someone
+// deletes the live spreadsheet, a manual edit wipes a sheet, Drive corrupts a
+// file. Runs at 2am, one hour before the archive job at 3am, so a backup always
+// reflects pre-archive state — an extra safety margin if the archive job itself
+// ever had a bug.
+//
+// Restoring is intentionally NOT automated. An automated "restore" that can
+// overwrite the live spreadsheet is itself a way to destroy real data with one
+// wrong click. To recover: open the dated copy in the OX_WMS_v3_Backups Drive
+// folder, and either copy the needed rows back by hand, or promote that whole
+// file to be the new live spreadsheet (Extensions → Apps Script in the copy is
+// already bound and ready — just needs deploying).
+var BACKUP_FOLDER_NAME    = 'OX_WMS_v3_Backups';
+var BACKUP_RETENTION_DAYS = 30;   // tune down if Drive storage becomes a concern
+
+function dailyBackupTrigger() {
+  _requireOwnerContext();   // time-based triggers run as the owner; a google.script.run call from anyone else does not
+  _setVerifiedAuth({ role: 'ADMIN', email: 'system@scheduled-trigger', name: 'Scheduled trigger' });
+  runBackupNow();
+}
+
+// Shared by the daily trigger and the "Run Backup Now" menu item, so a manual
+// test run behaves identically to the automated one.
+function runBackupNow() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    var folder   = _getOrCreateFolder(BACKUP_FOLDER_NAME);
+    var stamp    = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmm');
+    var copyName = ss.getName() + ' — Backup ' + stamp;
+    var copyFile = DriveApp.getFileById(ss.getId()).makeCopy(copyName, folder);
+
+    _pruneOldBackups(folder);
+
+    _auditLog(ss, 'BACKUP_CREATED', 'system', copyName, '', copyFile.getId());
+    return { status: 'success', name: copyName, id: copyFile.getId() };
+  } catch (e) {
+    _logError(ss, 'ERROR', 'backend', 'runBackupNow', 'system', e.message, null, _newRequestId());
+    // Only email on FAILURE, never on success — a daily "it worked" email would
+    // just be more noise against the same recipient quota already flagged as a
+    // thing to watch for the PM/admin notification emails elsewhere.
+    try {
+      var cfg = loadConfig();
+      MailApp.sendEmail(cfg.adminEmail || Session.getEffectiveUser().getEmail(),
+        '⚠ OX WMS — Daily backup failed',
+        'The automatic daily backup did not complete: ' + e.message +
+        '\n\nCheck Settings → Error Log in the app, or the Executions log in the Apps Script editor.');
+    } catch (e2) { /* don't let a failed alert mask the original failure */ }
+    throw e;
+  }
+}
+
+// Deletes backups older than the retention window. Runs every time a new
+// backup is made, so retention stays enforced without a separate trigger.
+function _pruneOldBackups(folder) {
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - BACKUP_RETENTION_DAYS);
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var f = files.next();
+    if (f.getDateCreated() < cutoff) f.setTrashed(true);
+  }
+}
+
+// Idempotent — installs the daily trigger once. Bound to the "Enable Daily
+// Backup" menu item rather than onOpen(): onOpen is a SIMPLE trigger under
+// Apps Script's security model and can't call authorized services like
+// ScriptApp.newTrigger() or DriveApp — it would throw on every single open.
+function _ensureBackupTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'dailyBackupTrigger') return;
+  }
+  ScriptApp.newTrigger('dailyBackupTrigger').timeBased().everyDays(1).atHour(2).create();
 }
 
 // ADMIN only. Returns movements older than the cutoff, for on-demand viewing/
@@ -2733,6 +2814,162 @@ function updateMinStockBulk(data, auth) {
   return { status: 'success', updated: updates.length };
 }
 
+// ─── BULK IMPORT (CSV) ────────────────────────────────────────────────────────
+// Lets an admin migrate an existing inventory (from Excel, a competitor's
+// export, a paper count) into the app in one shot instead of typing every line
+// by hand — the single biggest thing that was blocking a new customer from
+// actually starting to use this on day one.
+//
+// Deliberately CSV-only for now, not .xlsx. Reading a real Excel file needs
+// Apps Script's Advanced Drive Service, which has to be turned on by hand in
+// the editor (Services → + → Google Drive API) and can't be verified from
+// here. CSV needs nothing beyond Utilities.parseCsv(), which is built in and
+// always available — every spreadsheet tool (Excel, Sheets, Numbers) exports
+// to CSV in two clicks, so this isn't a real limitation for getting started.
+//
+// Two-step flow, never a blind commit: parseImportFile() only reads and
+// validates, returning a preview for the admin to review row by row.
+// commitImport() is a SEPARATE call that only runs after the frontend re-sends
+// the rows the admin actually saw — and it writes through _addMovementsBatch,
+// the exact same locked, stock-validated, write-verified engine a normal ENTRY
+// goes through, so an imported row can never be less trustworthy than one
+// typed in by hand.
+var IMPORT_REQUIRED_HEADERS = ['category', 'name', 'qty'];
+var IMPORT_ALL_HEADERS      = ['category', 'name', 'qty', 'unit', 'location', 'project', 'supplier', 'po', 'comments'];
+
+function parseImportFile(data) {
+  _requireAuth('ADMIN');
+  var fileName = String(data.fileName || '');
+  if (!/\.csv$/i.test(fileName)) {
+    throw new Error('Please upload a .csv file. If this is an Excel file, use File → Save As → CSV in Excel or Google Sheets first, then upload that file. (Direct .xlsx import is on the roadmap.)');
+  }
+
+  var bytes = Utilities.base64Decode(data.fileData);
+  var text  = Utilities.newBlob(bytes, 'text/csv').getDataAsString();
+
+  // Strip a UTF-8 byte-order-mark. Excel's "CSV UTF-8 (Comma delimited)" export
+  // adds one at the very start of the file; left in place it silently glues
+  // itself onto the first header cell ("Category" becomes "﻿Category"),
+  // which then fails to match anything below — a classic, hard-to-spot Apps
+  // Script CSV gotcha.
+  text = text.replace(/^﻿/, '');
+
+  // Raw line count, independent of how parseCsv interprets the content —
+  // shown in the preview so "why did only 1 row show up" is answerable at a
+  // glance: either the file itself only has 2 lines (nothing to fix here,
+  // the edited version wasn't actually the one uploaded), or it has more and
+  // something below failed to recognize them.
+  var rawLineCount = text.split(/\r\n|\r|\n/).filter(function (l) { return l.trim() !== ''; }).length;
+
+  var rows;
+  try {
+    rows = Utilities.parseCsv(text);
+  } catch (e) {
+    throw new Error('Could not read this as a CSV file: ' + e.message);
+  }
+
+  // Excel's "CSV (Comma delimited)" export actually follows the OS/Excel
+  // locale's list separator — which for Spanish and several other locales is a
+  // SEMICOLON, not a comma, even though the menu item is labeled "comma
+  // delimited". When that happens, no line has a real comma in it, so the
+  // comma-based parse above collapses every row into a single cell. A
+  // one-column header containing semicolons is the unambiguous signature of
+  // that — re-parse with a semicolon delimiter instead.
+  if (rows.length && rows[0].length === 1 && String(rows[0][0]).indexOf(';') !== -1) {
+    rows = Utilities.parseCsv(text, ';');
+  }
+
+  if (!rows.length) throw new Error('The file appears to be empty.');
+
+  var header = rows[0].map(function (h) { return String(h || '').trim().toLowerCase(); });
+  var col    = {};
+  IMPORT_ALL_HEADERS.forEach(function (h) { col[h] = header.indexOf(h); });
+
+  var missing = IMPORT_REQUIRED_HEADERS.filter(function (h) { return col[h] === -1; });
+  if (missing.length) {
+    throw new Error('Missing required column header(s): ' + missing.join(', ') +
+      '. Download the template from this screen to see the exact format expected.');
+  }
+
+  var parsed = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r || r.every(function (c) { return String(c || '').trim() === ''; })) continue;  // skip blank rows
+
+    var item = {
+      rowNum:   i + 1,
+      category: String(r[col.category] || '').trim(),
+      name:     String(r[col.name]     || '').trim(),
+      qty:      Number(r[col.qty]),
+      unit:     col.unit     !== -1 ? (String(r[col.unit]     || '').trim() || 'UNIT') : 'UNIT',
+      location: col.location !== -1 ?  String(r[col.location] || '').trim() : '',
+      project:  col.project  !== -1 ?  String(r[col.project]  || '').trim() : '',
+      supplier: col.supplier !== -1 ?  String(r[col.supplier] || '').trim() : '',
+      po:       col.po       !== -1 ?  String(r[col.po]       || '').trim() : '',
+      comments: col.comments !== -1 ?  String(r[col.comments] || '').trim() : ''
+    };
+
+    var errors = [];
+    if (!item.category) errors.push('Missing Category');
+    if (!item.name)     errors.push('Missing Name');
+    if (!item.qty || item.qty <= 0 || isNaN(item.qty)) errors.push('Qty must be a number greater than 0');
+    item.valid  = errors.length === 0;
+    item.errors = errors;
+    parsed.push(item);
+  }
+
+  if (!parsed.length) throw new Error('No data rows found below the header row.');
+
+  var validCount = parsed.filter(function (p) { return p.valid; }).length;
+  return {
+    status:       'success',
+    totalRows:    parsed.length,
+    validRows:    validCount,
+    invalidRows:  parsed.length - validCount,
+    rawLineCount: rawLineCount,
+    rows:         parsed.slice(0, 500)   // a preview, not a data dump
+  };
+}
+
+// Commits a previously-previewed set of rows as real ENTRY movements. Only
+// ever called with rows the admin has already seen in the preview table.
+function commitImport(data, auth) {
+  auth = _requireAuth('ADMIN');   // ignores any caller-supplied `auth` — see _requireAuth
+  var rows = Array.isArray(data.rows) ? data.rows : [];
+  if (!rows.length) throw new Error('No rows to import.');
+
+  var ss      = SpreadsheetApp.getActiveSpreadsheet();
+  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
+  var tzDate  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  var movements = rows.map(function (r) {
+    return {
+      moveType:    'ENTRY',
+      category:    r.category,
+      name:        r.name,
+      project:     r.project || '',
+      isGeneric:   !r.project,
+      qty:         r.qty,
+      unit:        r.unit || 'UNIT',
+      dateRec:     tzDate,
+      sourceLoc:   '',
+      destLoc:     r.location || '',
+      supplier:    r.supplier || '',
+      po:          r.po || '',
+      comments:    ('Imported from file' + (r.comments ? ' — ' + r.comments : '')).trim(),
+      responsible: auth.email,
+      // A bulk import legitimately contains similar-looking rows (same
+      // category, same rack, different SKUs entered close together); the
+      // duplicate guard exists to catch an accidental double-click, not this.
+      forceSubmit: true
+    };
+  });
+
+  var res = _addMovementsBatch(ss, archive, movements, auth);
+  _auditLog(ss, 'BULK_IMPORT', auth.email, rows.length + ' row(s) imported', '', '');
+  return { status: 'success', rowCount: res.rowCount };
+}
+
 function _runReconciliation(ss) {
   _refreshDerivedSheets(ss);
   return { status: 'success', message: 'Reconciliation complete. LIVE_STOCK and SITE_STOCK refreshed.' };
@@ -2842,6 +3079,61 @@ function logClientError(data, auth) {
   return { status: 'success', requestId: requestId };
 }
 
+// Floating "Report a Problem" button. Standalone entry point (not routed
+// through processMovement) so a VIEWER can use it too — processMovement()
+// hard-blocks VIEWER before dispatch, but a read-only user is exactly the
+// kind of person who'd spot a display bug worth reporting.
+function reportIssue(data) {
+  var auth = _setVerifiedAuth(getUserRole(data && data._sessionToken));
+  if (auth.role === 'NO_SESSION' || auth.role === 'DENIED') {
+    throw new Error('Not authenticated. Please sign in and use the app from its own page.');
+  }
+  var message = String((data && data.message) || '').trim();
+  if (!message) throw new Error('Please describe what happened.');
+  if (message.length > 4000) message = message.substring(0, 4000);
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var photos = (data && data.photos) || [];
+  var attachments = [];
+  var driveLinks = [];
+
+  if (photos.length) {
+    var stamp  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmm');
+    var safeBy = auth.email.replace(/[^a-zA-Z0-9]/g, '_');
+    var folder = _getOrCreateFolder('OX_WMS_v3_Feedback/' + stamp + '_' + safeBy);
+    for (var i = 0; i < photos.length; i++) {
+      var p = photos[i];
+      if (!p || !p.fileData) continue;
+      var bytes = Utilities.base64Decode(p.fileData);
+      var blob  = Utilities.newBlob(bytes, p.fileMimeType || 'image/jpeg', p.fileName || ('photo_' + (i + 1) + '.jpg'));
+      var file  = folder.createFile(blob); // private by default — no public sharing
+      driveLinks.push(file.getId());
+      attachments.push(blob);
+    }
+  }
+
+  var cfg     = loadConfig();
+  var toEmail = cfg.adminEmail || Session.getEffectiveUser().getEmail();
+  var body = 'Reported by: ' + auth.email + ' (' + auth.role + ')\n' +
+    'App version: ' + APP_VERSION + '\n' +
+    'When: ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm') + '\n' +
+    (data && data.url ? 'Page: ' + data.url + '\n' : '') +
+    '\n' + message +
+    (driveLinks.length
+      ? '\n\nPhoto(s) also saved to Drive:\n' + driveLinks.map(function(id){ return 'https://drive.google.com/file/d/' + id + '/view'; }).join('\n')
+      : '');
+
+  MailApp.sendEmail({
+    to: toEmail,
+    subject: '🐞 OX WMS — problem reported by ' + auth.email,
+    body: body,
+    attachments: attachments
+  });
+
+  _auditLog(ss, 'ISSUE_REPORTED', auth.email, message.substring(0, 200), '', driveLinks.join(','));
+  return { status: 'success' };
+}
+
 // ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
 // Only called automatically for WASTE. ENTRY notifications are user-triggered
 // via the modal checkbox and handled directly in _addMovementsBatch() /
@@ -2885,7 +3177,18 @@ function onOpen() {
     .addItem('Open WMS App',       'menuOpenApp')
     .addSeparator()
     .addItem('🔒 Revoke Public Sharing on Existing Files (run once)', 'menuRevokePublicSharing')
+    .addItem('🗄 Enable Daily Backup (run once)', 'menuRunBackupNow')
     .addToUi();
+}
+
+function menuRunBackupNow() {
+  var ui = SpreadsheetApp.getUi();   // throws outside the Sheets UI — the real gate
+  _setVerifiedAuth({ role: 'ADMIN', email: _requireOwnerContext(), name: 'Spreadsheet menu' });
+  _ensureBackupTrigger();
+  var res = runBackupNow();
+  ui.alert('✓ Backup created: ' + res.name +
+    '\n\nDaily automatic backups are now scheduled for 2am, kept for ' + BACKUP_RETENTION_DAYS + ' days, in a Drive folder called "' + BACKUP_FOLDER_NAME + '".' +
+    '\n\nYou only need to run this menu item again if you want an extra backup right now — the daily schedule is already set.');
 }
 
 // ONE-TIME CLEANUP. Every photo/document uploaded before this version was

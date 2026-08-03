@@ -56,7 +56,12 @@
     .btn-icon:hover{transform:scale(1.15)}
     /* ── TABLES ── */
     .table-wrapper{overflow-x:auto;max-height:65vh;overflow-y:auto;position:relative}
-    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    /* separate + 0 spacing, not collapse: Chrome mis-paints collapsed borders on
+       sticky <th> whenever the table repaints (e.g. a detail row expanding),
+       leaving thin gaps of the page background between header cells. Separate
+       border model isn't subject to that bug and looks identical here since no
+       cell defines side borders for collapse to visually merge in the first place. */
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:.82rem}
     thead th{position:sticky;top:0;background:var(--navy);color:#fff;z-index:10;padding:.6rem .75rem;text-align:left;font-size:.72rem;text-transform:uppercase;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.1)}
     td{padding:.55rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
     tbody tr:hover{background:#F8FAFC}
@@ -140,12 +145,20 @@
     .alert-banner.show{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
     /* ── OVERLAY / MODAL ── */
     .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:550;align-items:center;justify-content:center;padding:15px}
+    /* Floating "report a problem" button — z-index sits well under .overlay (550)
+       so any open modal already covers it; no extra show/hide logic needed. */
+    .report-issue-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;border-radius:50%;background:var(--navy);color:#fff;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);z-index:400;display:flex;align-items:center;justify-content:center;transition:.15s}
+    .report-issue-fab:hover{background:var(--accent);transform:scale(1.06)}
+    @media (max-width:640px){.report-issue-fab{bottom:16px;right:16px;width:46px;height:46px;font-size:1.2rem}}
+    .ri-photo-thumb{position:relative;width:52px;height:52px;flex-shrink:0}
+    .ri-photo-thumb img{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block}
+    .ri-photo-thumb button{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;line-height:1;padding:0}
     .overlay.show{display:flex}
     /* height (not max-height): the box is ALWAYS this size, tied only to the
        viewport — never shrinks for a short form, never grows for a long one.
        Short content just leaves empty space at the bottom; long content scrolls
        inside via overflow-y. Every .modal instance shares this one fixed size. */
-    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);height:min(82vh,700px);overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);height:min(82vh,700px);overflow-y:auto;scrollbar-gutter:stable;box-shadow:0 12px 30px rgba(0,0,0,.25)}
     /* Standardized size tiers (scale with viewport via min(), never grow past
        that from content) — every popup uses one of these three instead of an
        ad-hoc per-modal pixel value. Content still picks the tier that fits it
@@ -262,13 +275,14 @@
        stretches to match whatever ancestor happens to be position:relative
        (that used to make it balloon huge in some places, thin in others).
        Caps to 40vw so it can't overflow a narrow/mobile viewport either. */
-    .inc-suggest-box{position:absolute;width:260px;max-width:40vw;max-height:280px;overflow-y:auto;z-index:1300;background:var(--card);border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
+    .inc-suggest-box{position:absolute;width:260px;max-width:40vw;max-height:280px;overflow-y:auto;overflow-x:hidden;z-index:1300;background:var(--card);border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
     .inc-suggest-hdr{padding:.3rem .7rem;font-size:.68rem;font-weight:700;color:var(--accent2);background:#EFF6FF;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #DBEAFE}
-    .inc-suggest-item{padding:.5rem .75rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;transition:background .12s}
+    .inc-suggest-item{padding:.5rem .75rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;align-items:center;gap:.2rem .5rem;transition:background .12s}
     .inc-suggest-item:last-child{border-bottom:none}
     .inc-suggest-item:hover{background:#EFF6FF}
     .inc-suggest-item .inc-tag{font-size:.68rem;font-weight:700;background:#DBEAFE;color:var(--accent2);border-radius:10px;padding:1px 7px;flex-shrink:0}
-    .inc-suggest-item .inc-meta{font-size:.72rem;color:var(--muted);margin-left:auto}
+    .inc-suggest-item>span:not(.inc-tag):not(.inc-meta){flex:1 1 100px;min-width:0;overflow-wrap:break-word;word-break:break-word}
+    .inc-suggest-item .inc-meta{font-size:.72rem;color:var(--muted);margin-left:auto;flex-shrink:0;max-width:100%}
     /* ── GMAIL SCANNER ── */
     .gmail-scan-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:900;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1.5rem 1rem 3rem}
     .gmail-scan-overlay.show{display:flex}
@@ -1573,6 +1587,7 @@
         <button class="settings-tab"        data-tab="locations"   onclick="switchSettingsTab('locations')">📍 <span>Locations</span></button>
         <button class="settings-tab"        data-tab="materials"   onclick="switchSettingsTab('materials')">🔧 <span>Materials</span></button>
         <button class="settings-tab"        data-tab="pmdirectory" onclick="switchSettingsTab('pmdirectory')">📇 <span>Directory</span></button>
+        <button class="settings-tab"        data-tab="import"      onclick="switchSettingsTab('import')">📥 <span>Import</span></button>
         <div class="settings-sidebar-label">Diagnostics</div>
         <button class="settings-tab"        data-tab="errorlog"    onclick="switchSettingsTab('errorlog')">🐞 <span>Error Log</span></button>
         <button class="settings-tab"        data-tab="system"      onclick="switchSettingsTab('system')">🗄 <span>System</span></button>
@@ -1648,6 +1663,36 @@
   </div>
 </div>
 
+<!-- Floating "report a problem" button — available from every screen -->
+<button id="reportIssueFab" class="report-issue-fab" onclick="openReportIssueModal()" title="Report a problem">🐞</button>
+
+<div class="overlay" id="reportIssueOverlay">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>🐞 Report a Problem</h3>
+      <button class="modal-x" onclick="closeModal('reportIssueOverlay')" title="Close">✕</button>
+    </div>
+    <div class="field">
+      <label>What happened? (required)</label>
+      <textarea id="riMessage" rows="4" placeholder="Describe what you were doing and what went wrong…"></textarea>
+    </div>
+    <div class="field" style="margin-top:.75rem">
+      <label>Photo(s) <span style="font-weight:400;color:var(--muted)">(optional, but helps a lot)</span></label>
+      <div style="display:flex;gap:.5rem;margin:.4rem 0">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('riPhotoCamera').click()">📷 Camera</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('riPhotoFiles').click()">📁 Files</button>
+      </div>
+      <input type="file" id="riPhotoCamera" accept="image/*" capture="environment" style="display:none" onchange="_onReportIssuePhotos(this.files);this.value=''">
+      <input type="file" id="riPhotoFiles" accept="image/*" multiple style="display:none" onchange="_onReportIssuePhotos(this.files);this.value=''">
+      <div id="riPhotoPreview" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem"></div>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('reportIssueOverlay')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="riSubmitBtn" onclick="submitReportIssue()">Send Report</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SCRIPT ════════════════════════════════════════════════════════════════ -->
 <script>
 // ── Global State ──────────────────────────────────────────────────────────────
@@ -1674,7 +1719,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '8.10';
+var APP_VERSION = '8.18';
 var userRole = 'WAREHOUSE';
 var userEmail = '';
 // Signed session token for non-org users (issued by the backend after Google
@@ -1807,6 +1852,63 @@ function getBase64(file){
     r.onload = function(){ res(r.result.split(',')[1]); };
     r.onerror = rej;
   });
+}
+
+// ── Report a Problem (floating button) ──────────────────────────────────────
+var _riPhotos = []; // { fileData, fileMimeType, fileName }
+
+function openReportIssueModal(){
+  document.getElementById('riMessage').value = '';
+  _riPhotos = [];
+  _renderReportIssuePreview();
+  document.getElementById('reportIssueOverlay').classList.add('show');
+}
+
+function _onReportIssuePhotos(fileList){
+  Array.from(fileList || []).forEach(function(file){
+    getBase64(file).then(function(b64){
+      _riPhotos.push({
+        fileData: b64,
+        fileMimeType: file.type || 'image/jpeg',
+        fileName: file.name || ('photo_' + (_riPhotos.length + 1) + '.jpg')
+      });
+      _renderReportIssuePreview();
+    }).catch(function(){ showToast('Could not read that photo.', 'err'); });
+  });
+}
+
+function _renderReportIssuePreview(){
+  var box = document.getElementById('riPhotoPreview');
+  if (!box) return;
+  box.innerHTML = _riPhotos.map(function(p, i){
+    return '<div class="ri-photo-thumb">' +
+      '<img src="data:' + _escAttr(p.fileMimeType) + ';base64,' + p.fileData + '">' +
+      '<button type="button" onclick="_removeReportIssuePhoto(' + i + ')" title="Remove">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function _removeReportIssuePhoto(i){
+  _riPhotos.splice(i, 1);
+  _renderReportIssuePreview();
+}
+
+function submitReportIssue(){
+  var message = (document.getElementById('riMessage').value || '').trim();
+  if (!message) { showToast('Please describe what happened.', 'warn'); return; }
+  var btn = document.getElementById('riSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  google.script.run
+    .withSuccessHandler(function(){
+      btn.disabled = false; btn.textContent = 'Send Report';
+      closeModal('reportIssueOverlay');
+      showToast('Thanks — your report was sent.', 'ok');
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false; btn.textContent = 'Send Report';
+      showToast('Could not send the report: ' + ((err && err.message) || err), 'err');
+    })
+    .reportIssue(_h({ message: message, photos: _riPhotos, url: location.href }));
 }
 
 function locSummary(locs){
@@ -2144,8 +2246,8 @@ function renderStock(){
     var docs    = docMap[docKey] || [];
     var lastNote = noteMap[docKey] || '';
     var noteCell = lastNote
-      ? '<span style="font-size:.75rem;color:var(--muted);word-break:break-word;display:block;max-width:180px" title="'+_he(lastNote)+'">'
-          + _he(lastNote.length > 60 ? lastNote.substring(0,58)+'…' : lastNote) + '</span>'
+      ? '<span style="font-size:.75rem;color:var(--muted);display:block;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_he(lastNote)+'">'
+          + _he(lastNote) + '</span>'
       : '<span style="color:var(--muted);font-size:.72rem">—</span>';
 
     var entryDate = entryDateMap[docKey] || '';
@@ -2185,7 +2287,7 @@ function renderStock(){
             ? '<button class="rpc-btn" data-action="rack-photo-upload" data-rack="'+_he(rack)+'">' + (photo ? '🔄 Replace' : '+ Add Photo') + '</button>'
             : '';
           return '<div class="rack-photo-card">' +
-            '<div class="rpc-hdr"><span>📦 '+rack+'</span><span class="rpc-qty">'+s.warehouseLocs[rack]+'</span></div>' +
+            '<div class="rpc-hdr"><span>📦 '+_he(rack)+'</span><span class="rpc-qty">'+s.warehouseLocs[rack]+'</span></div>' +
             img + (action ? '<div class="rpc-actions">'+action+'</div>' : '') +
           '</div>';
         }).join('')
@@ -2199,9 +2301,9 @@ function renderStock(){
             ? _privImgTag(d.url, 'loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{innerHTML:\'📄\',style:\'width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:1.6rem\'}))"', d.name)
             : '<div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:1.6rem">📄</div>';
           var shortName = d.name.length > 14 ? d.name.substring(0, 13) + '…' : d.name;
-          return '<div class="doc-card" data-action="preview-media" data-url="'+_he(d.url)+'" data-label="'+_he(d.name)+'" title="' + d.name + (d.dateRec ? ' · ' + d.dateRec : '') + '">' +
+          return '<div class="doc-card" data-action="preview-media" data-url="'+_he(d.url)+'" data-label="'+_he(d.name)+'" title="' + _he(d.name) + (d.dateRec ? ' · ' + _he(d.dateRec) : '') + '">' +
             thumb +
-            '<span class="doc-label">' + shortName + '</span>' +
+            '<span class="doc-label">' + _he(shortName) + '</span>' +
             (d.dateRec ? '<span class="doc-date">' + d.dateRec + '</span>' : '') +
           '</div>';
         }).join('') + '</div>'
@@ -2234,7 +2336,7 @@ function renderStock(){
       '<td style="color:'+(s.wastedQty>0?'var(--red)':'var(--muted)')+';font-size:.82rem;font-weight:'+(s.wastedQty>0?'600':'400')+'">'+
         (s.wastedQty>0?'✕ '+s.wastedQty:'—')+'</td>'+
       '<td style="color:var(--muted);font-size:.8rem">'+(s.reservedQty>0?'<span class="badge badge-orange">'+s.reservedQty+' reserved</span>':'—')+'</td>'+
-      '<td style="color:var(--muted);font-size:.78rem;max-width:180px">'+locSummary(s.warehouseLocs)+'</td>'+
+      '<td style="color:var(--muted);font-size:.78rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(locSummary(s.warehouseLocs))+'">'+_he(locSummary(s.warehouseLocs))+'</td>'+
       '<td>'+stockBadge(s)+'</td>'+
       '<td>'+dateCell+'</td>'+
       '<td>'+noteCell+'</td>'+
@@ -2376,18 +2478,18 @@ function renderDocLinks(linksStr){
         'loading="lazy" style="width:34px;height:34px;object-fit:cover;border-radius:5px;border:1px solid var(--border);display:block;background:#f3f4f6" ' +
         'onerror="this.src=\'\';this.style.display=\'none\';this.nextSibling&&(this.nextSibling.style.display=\'flex\')"',
         docName);
-      return '<a href="javascript:void(0)" data-action="preview-media" data-url="' + _he(url) + '" data-label="' + _he(docName) + '" title="' + docName + '" ' +
+      return '<a href="javascript:void(0)" data-action="preview-media" data-url="' + _he(url) + '" data-label="' + _he(docName) + '" title="' + _he(docName) + '" ' +
              'style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;text-decoration:none">' +
              thumbImg +
              '<span style="display:none;width:34px;height:34px;background:#DBEAFE;border-radius:5px;font-size:1rem;align-items:center;justify-content:center">📄</span>' +
-             '<span style="font-size:.58rem;color:var(--muted);max-width:38px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + shortLabel + '</span>' +
+             '<span style="font-size:.58rem;color:var(--muted);max-width:38px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + _he(shortLabel) + '</span>' +
              '</a>';
     }
     // Non-Drive or PDF icon fallback
-    return '<a href="' + url + '" target="_blank" title="' + docName + '" ' +
+    return '<a href="' + _escAttr(url) + '" target="_blank" title="' + _he(docName) + '" ' +
            'style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;text-decoration:none">' +
            '<span style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:#DBEAFE;border-radius:5px;font-size:1rem;border:1px solid #BFDBFE">📄</span>' +
-           '<span style="font-size:.58rem;color:var(--muted);max-width:38px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + shortLabel + '</span>' +
+           '<span style="font-size:.58rem;color:var(--muted);max-width:38px;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + _he(shortLabel) + '</span>' +
            '</a>';
   }).join('');
   return '<div style="display:flex;gap:5px;align-items:flex-end;flex-wrap:wrap">' + thumbs + '</div>';
@@ -2478,7 +2580,7 @@ function renderMovements(){
       (v.project?'<td style="font-size:.78rem">'+_he(m.project||'—')+'</td>':'')+
       (v.supplier?'<td style="font-size:.78rem">'+_he(m.supplier||'—')+'</td>':'')+
       (v.resp   ?'<td style="font-size:.78rem">'+_he(m.responsible||'—')+'</td>':'')+
-      (v.comment?'<td style="font-size:.78rem;max-width:300px;word-break:break-word;white-space:normal">'+_he(m.comments||'—')+'</td>':'')+
+      (v.comment?'<td style="font-size:.78rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(m.comments||'')+'">'+_he(m.comments||'—')+'</td>':'')+
       (v.pm     ?'<td style="font-size:.78rem">'+_he(m.pm||'—')+'</td>':'')+
       (v.sysDate?'<td style="font-size:.72rem;color:var(--muted)">'+_he(m.timestamp||'—')+'</td>':'')+
       '<td style="font-size:.7rem;color:var(--muted)">'+_he(m.userEmail||'—')+'</td>'+
@@ -2606,10 +2708,10 @@ function renderProjectView(){
       '<td>'+stockBadge({availableQty:net,warehouseQty:net,siteQty:0,reservedQty:0})+'</td></tr>'+
       '<tr id="pd-'+i+'" class="details-row"><td colspan="6"><div class="details-container">'+
         '<div><strong>Movement history:</strong><br>'+
-        s.history.map(function(h){ return '• '+h.date+': <span style="color:'+(h.isOut?'var(--red)':'var(--green)')+'">'+
-          (h.isOut?'−':'+')+h.qty+'</span> @ '+h.loc+(h.comment?' — '+h.comment:''); }).join('<br>')+
-        '</div><div><strong>Last location:</strong> '+s.history[s.history.length-1].loc+'<br>'+
-        '<strong>Last user:</strong> '+s.history[s.history.length-1].user+'</div>'+
+        s.history.map(function(h){ return '• '+_he(h.date)+': <span style="color:'+(h.isOut?'var(--red)':'var(--green)')+'">'+
+          (h.isOut?'−':'+')+h.qty+'</span> @ '+_he(h.loc)+(h.comment?' — '+_he(h.comment):''); }).join('<br>')+
+        '</div><div><strong>Last location:</strong> '+_he(s.history[s.history.length-1].loc)+'<br>'+
+        '<strong>Last user:</strong> '+_he(s.history[s.history.length-1].user)+'</div>'+
       '</div></td></tr>';
   }).join('');
 
@@ -2767,7 +2869,7 @@ function renderTransferLocPicker(){
       var isUsed = !!usedRacks[rack.toUpperCase()];
       return '<div class="transfer-loc-chip' + (isUsed ? ' used' : '') + '" data-rack="' + safeRack + '" data-qty="' + qty +
              '"' + (isUsed ? '' : ' onmousedown="addTransferRowFromChip(this);return false;"') + '>' +
-             rack + '<span class="tlc-qty">' + qty + '</span></div>';
+             _he(rack) + '<span class="tlc-qty">' + qty + '</span></div>';
     }).join('') +
     '</div>';
   box.style.display = 'block';
@@ -3118,10 +3220,10 @@ function checkStock(){
       warn.innerHTML = '⛔ Zero available stock (Warehouse: '+s.warehouseQty+', Reserved: '+s.reservedQty+')';
       warn.style.cssText = 'background:#FEE2E2;color:var(--red);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
     } else if (s.availableQty < 5){
-      warn.innerHTML = '⚠️ Low stock: '+s.availableQty+' available @ '+locSummary(s.warehouseLocs);
+      warn.innerHTML = '⚠️ Low stock: '+s.availableQty+' available @ '+_he(locSummary(s.warehouseLocs));
       warn.style.cssText = 'background:#FEF3C7;color:var(--yellow);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
     } else {
-      warn.innerHTML = '✓ Available: '+s.availableQty+' units | '+locSummary(s.warehouseLocs);
+      warn.innerHTML = '✓ Available: '+s.availableQty+' units | '+_he(locSummary(s.warehouseLocs));
       warn.style.cssText = 'background:#D1FAE5;color:var(--green);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
     }
   } else {
@@ -3880,7 +3982,7 @@ function addExitLocRowMat(n, rack, qty, silent){
   var row = document.createElement('div');
   row.className = 'exit-loc-row';
   row.innerHTML =
-    '<input type="text"   class="el-rack" list="rackList" placeholder="Rack / Location" value="'+(rack||'')+'">'+
+    '<input type="text"   class="el-rack" list="rackList" placeholder="Rack / Location" value="'+_escAttr(rack||'')+'">'+
     '<input type="number" class="el-qty"  min="1" placeholder="Qty" value="'+(qty||'')+'">'+
     '<span  class="el-avail neutral">—</span>'+
     '<button type="button" class="el-rm" onclick="removeExitLocRowMat('+n+',this)" title="Remove">×</button>';
@@ -4435,6 +4537,120 @@ function _renderSystemTab() {
     '</div>';
 }
 
+// ── Bulk Import (CSV) ─────────────────────────────────────────────────────────
+// Two-step: parse+preview first (nothing written yet), then a separate confirm
+// step actually commits — same principle as everywhere else risky in this app
+// (WASTE requires a reason, deleting a movement asks first, etc.). Every
+// imported row becomes a real ENTRY movement through the same engine a normal
+// save uses, so it gets the same lock/validation/write-verify, not a shortcut.
+var _importParsedRows = [];
+
+function _renderImportTab() {
+  var content = document.getElementById('settingsTabContent');
+  content.innerHTML =
+    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">' +
+      'Bulk-import an existing inventory from a CSV file — useful for the first setup, or catching up after counting on paper. ' +
+      'Every row becomes a real ENTRY movement, reviewed here before anything is saved. Excel/Sheets: File → Save As → CSV first.' +
+    '</p>' +
+    '<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">' +
+      '<button class="btn btn-ghost btn-sm" onclick="_downloadImportTemplate()">⬇ Download CSV Template</button>' +
+      '<input type="file" id="importFileInput" accept=".csv" style="font-size:.82rem">' +
+    '</div>' +
+    '<div id="importPreviewBox"></div>';
+  document.getElementById('importFileInput').addEventListener('change', _onImportFileChange);
+  _importParsedRows = [];
+}
+
+function _downloadImportTemplate() {
+  var headers = ['Category','Name','Qty','Unit','Location','Project','Supplier','PO','Comments'];
+  var example = ['WINDOW','Example Window Model','25','UNIT','A1A','','Example Supplier','',''];
+  var csv = [headers.join(','), example.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',')].join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'OX_WMS_Import_Template.csv';
+  a.click();
+}
+
+function _onImportFileChange(e){
+  var file = e.target.files[0];
+  if (!file) return;
+  var box = document.getElementById('importPreviewBox');
+  box.innerHTML = '<p style="color:var(--muted);font-size:.85rem"><span class="spin-hg">⏳</span> Reading file…</p>';
+  _readFileAsBase64(file, function(b64, mime){
+    if (!b64) { box.innerHTML = '<p style="color:var(--red);font-size:.85rem">Could not read this file.</p>'; return; }
+    google.script.run
+      .withSuccessHandler(function(res){ _importParsedRows = res.rows || []; _renderImportPreview(res); })
+      .withFailureHandler(function(err){
+        box.innerHTML = '<p style="color:var(--red);font-size:.85rem">' + _he((err.message || err).replace(/^Error:\s*/i,'')) + '</p>';
+      })
+      .processMovement('parseImportFile', _h({ fileData: b64, mimeType: mime, fileName: file.name }));
+  });
+}
+
+function _renderImportPreview(res){
+  var box  = document.getElementById('importPreviewBox');
+  var rows = res.rows || [];
+
+  var lineNote = res.rawLineCount
+    ? '<p style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">The file itself has ' + res.rawLineCount +
+      ' non-empty line(s), including the header. If that number looks too low, the file you selected doesn\'t have all your rows in it yet — re-save/export it and upload again.</p>'
+    : '';
+
+  var summary = lineNote + '<div style="display:flex;gap:.6rem;margin:.5rem 0 .75rem;flex-wrap:wrap">' +
+    '<span class="badge badge-blue">' + res.totalRows + ' row(s) found</span>' +
+    '<span class="badge badge-green">' + res.validRows + ' ready to import</span>' +
+    (res.invalidRows ? '<span class="badge badge-red">' + res.invalidRows + ' need fixing in the file</span>' : '') +
+  '</div>';
+
+  var tableRows = rows.slice(0, 100).map(function(r){
+    var rowBg = r.valid ? '' : 'background:var(--red-bg)';
+    return '<tr style="'+rowBg+'">' +
+      '<td style="padding:.3rem .5rem;color:var(--muted)">' + r.rowNum + '</td>' +
+      '<td style="padding:.3rem .5rem">' + _he(r.category) + '</td>' +
+      '<td style="padding:.3rem .5rem">' + _he(r.name) + '</td>' +
+      '<td style="padding:.3rem .5rem">' + (isNaN(r.qty) ? '' : r.qty) + '</td>' +
+      '<td style="padding:.3rem .5rem">' + _he(r.location || '—') + '</td>' +
+      '<td style="padding:.3rem .5rem;color:var(--red);font-size:.75rem">' + (r.errors.length ? _he(r.errors.join('; ')) : '') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  box.innerHTML = summary +
+    '<div style="max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:.75rem">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:.8rem">' +
+        '<thead><tr style="position:sticky;top:0;background:var(--bg)">' +
+          '<th style="padding:.3rem .5rem;text-align:left">Row</th><th style="padding:.3rem .5rem;text-align:left">Category</th>' +
+          '<th style="padding:.3rem .5rem;text-align:left">Name</th><th style="padding:.3rem .5rem;text-align:left">Qty</th>' +
+          '<th style="padding:.3rem .5rem;text-align:left">Location</th><th style="padding:.3rem .5rem;text-align:left">Issue</th>' +
+        '</tr></thead>' +
+        '<tbody>' + tableRows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+    (rows.length > 100 ? '<p style="font-size:.72rem;color:var(--muted);margin-bottom:.6rem">Showing the first 100 of ' + rows.length + ' rows.</p>' : '') +
+    '<button class="btn btn-primary" id="btnCommitImport" ' + (res.validRows ? '' : 'disabled') + ' onclick="_commitImport()">' +
+      '✓ Import ' + res.validRows + ' Valid Row(s)' +
+    '</button>';
+}
+
+function _commitImport(){
+  var validRows = _importParsedRows.filter(function(r){ return r.valid; });
+  if (!validRows.length) return;
+  var btn = document.getElementById('btnCommitImport');
+  btn.disabled = true; btn.innerHTML = 'Importing… <span class="spin-hg">⏳</span>';
+  google.script.run
+    .withSuccessHandler(function(res){
+      showToast('✓ Imported ' + res.rowCount + ' row(s) as new ENTRY movements.', 'ok', 6000);
+      _importParsedRows = [];
+      var box = document.getElementById('importPreviewBox'); if (box) box.innerHTML = '';
+      var fi  = document.getElementById('importFileInput');  if (fi)  fi.value = '';
+      loadDataFromGoogle(true);
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false; btn.innerHTML = '✓ Import ' + validRows.length + ' Valid Row(s)';
+      showToast('Import failed: ' + (err.message || err).replace(/^Error:\s*/i,''), 'err', 8000);
+    })
+    .processMovement('commitImport', _h({ rows: validRows }));
+}
+
 function switchSettingsTab(tab) {
   _settingsTab = tab;
   document.querySelectorAll('.settings-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
@@ -4447,6 +4663,7 @@ function _renderSettingsTab(tab) {
   if (tab === 'errorlog')    { _renderErrorLogTab(); return; }
   if (tab === 'system')      { _renderSystemTab(); return; }
   if (tab === 'pmdirectory') { _renderPmDirectoryTab(); return; }
+  if (tab === 'import')      { _renderImportTab(); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
@@ -4481,7 +4698,7 @@ function _renderErrorLogTab() {
   content.innerHTML = '<p style="padding:1rem;color:var(--muted);font-size:.85rem">Loading…</p>';
   google.script.run
     .withSuccessHandler(function(rows) { _errorLogData = rows || []; _drawErrorLog(); })
-    .withFailureHandler(function(e) { content.innerHTML = '<p style="padding:1rem;color:#c0392b;font-size:.85rem">Error: '+(e.message||e)+'</p>'; })
+    .withFailureHandler(function(e) { content.innerHTML = '<p style="padding:1rem;color:#c0392b;font-size:.85rem">Error: '+_he(e.message||e)+'</p>'; })
     .processMovement('getErrorLog', _h({}));
 }
 
@@ -4535,7 +4752,7 @@ function _renderPmDirectoryTab() {
   content.innerHTML = '<p style="padding:1rem;color:var(--muted);font-size:.85rem">Loading…</p>';
   google.script.run
     .withSuccessHandler(function(list) { _pmDirectoryData = list || []; _drawPmDirectory(); })
-    .withFailureHandler(function(e) { content.innerHTML = '<p style="padding:1rem;color:#c0392b;font-size:.85rem">Error: '+(e.message||e)+'</p>'; })
+    .withFailureHandler(function(e) { content.innerHTML = '<p style="padding:1rem;color:#c0392b;font-size:.85rem">Error: '+_he(e.message||e)+'</p>'; })
     .processMovement('getPmDirectory', _h({}));
 }
 
@@ -4671,7 +4888,7 @@ function _loadMatList() {
       _matListAll = list;
       _filterMatList();
     })
-    .withFailureHandler(function(e){ if(cont) cont.innerHTML = '<p style="color:var(--red);font-size:.82rem">Error: '+(e.message||e)+'</p>'; })
+    .withFailureHandler(function(e){ if(cont) cont.innerHTML = '<p style="color:var(--red);font-size:.82rem">Error: '+_he(e.message||e)+'</p>'; })
     .processMovement('listMaterials', _h({}));
 }
 
@@ -5339,18 +5556,18 @@ function renderWarehouseMap(){
     var dots = items.filter(function(i){ if(catsSeen[i.category]) return false; catsSeen[i.category]=1; return true; })
       .slice(0,6).map(function(i){
         var col = CAT_DOT_COLORS[nt(i.category)] || '#9CA3AF';
-        return '<span class="rack-cat-dot" style="background:'+col+'" title="'+nt(i.category)+'"></span>';
+        return '<span class="rack-cat-dot" style="background:'+col+'" title="'+_he(nt(i.category))+'"></span>';
       }).join('');
 
     if (isEmpty){
       return '<div class="rack-card rack-empty-card" title="Empty">'+
-        '<div class="rack-name">📦 '+name+'</div>'+
+        '<div class="rack-name">📦 '+_he(name)+'</div>'+
         '<div class="rack-fill-bar"></div>'+
         '<div class="rack-count-row"><span class="rc-items">empty</span><span class="rc-total">0</span></div>'+
       '</div>';
     }
     return '<div class="rack-card'+dimCls+'" data-action="open-rack" data-rack="'+_he(name)+'" title="Click to see contents">'+
-      '<div class="rack-name">📦 '+name+'</div>'+
+      '<div class="rack-name">📦 '+_he(name)+'</div>'+
       '<div class="rack-fill-bar"><div class="rack-fill-inner '+fillCls+'" style="width:'+pct+'%"></div></div>'+
       '<div class="rack-cats">'+dots+'</div>'+
       '<div class="rack-count-row">'+
@@ -5733,7 +5950,7 @@ function openMonitorModal() {
             (checked ? ' checked' : '') + '>' +
           '<span class="monitor-item-wh" title="Units currently in the warehouse (wh = warehouse)">' + (s.warehouseQty||0) + ' wh</span>' +
         '</div>' +
-        '<span class="monitor-item-name" title="' + _he(s.name) + '">' + s.name + '</span>' +
+        '<span class="monitor-item-name" title="' + _he(s.name) + '">' + _he(s.name) + '</span>' +
         '<div class="monitor-item-min">' +
           '<label>Min</label>' +
           '<input type="number" class="mon-min-inp" min="0" placeholder="—" data-name="' + upperName.replace(/"/g,'&quot;') + '"' +
@@ -6016,10 +6233,10 @@ function _onIncFileChange(){
   var f = inp.files[0];
   if (/^image\//.test(f.type)){
     var url = URL.createObjectURL(f);
-    prev.innerHTML = '<img src="'+url+'" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--border)">' +
-      '<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">'+f.name+'</div>';
+    prev.innerHTML = '<img src="'+_escAttr(url)+'" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--border)">' +
+      '<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">'+_he(f.name)+'</div>';
   } else {
-    prev.innerHTML = '<div style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.8rem">📄 '+f.name+'</div>';
+    prev.innerHTML = '<div style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:.8rem">📄 '+_he(f.name)+'</div>';
   }
 }
 
@@ -6296,7 +6513,7 @@ function _loadUsersTable() {
       _renderUsersTable();
     })
     .withFailureHandler(function(err) {
-      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:.75rem">' + (err.message || err) + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:.75rem">' + _he(err.message || err) + '</td></tr>';
     })
     .processMovement('getUsers', _h({}));
 }
@@ -6315,10 +6532,10 @@ function _renderUsersTable() {
   tbody.innerHTML = _usersData.map(function(u) {
     var isSelf = u.email === userEmail;
     return '<tr class="' + (u.active ? '' : 'user-inactive') + '">' +
-      '<td style="font-size:.8rem;word-break:break-all">' + u.email + (isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem">you</span>' : '') + '</td>' +
-      '<td style="font-size:.82rem">' + (u.name || '—') + '</td>' +
+      '<td style="font-size:.8rem;word-break:break-all">' + _he(u.email) + (isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem">you</span>' : '') + '</td>' +
+      '<td style="font-size:.82rem">' + _he(u.name || '—') + '</td>' +
       '<td>' + _roleBadge(u.role) + '</td>' +
-      '<td style="font-size:.75rem;color:var(--muted)">' + (u.addedBy || '—') + '</td>' +
+      '<td style="font-size:.75rem;color:var(--muted)">' + _he(u.addedBy || '—') + '</td>' +
       '<td style="font-size:.75rem;color:var(--muted);white-space:nowrap">' + (u.addedAt || '—') + '</td>' +
       '<td><span class="badge ' + (u.active ? 'badge-green' : 'badge-gray') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
       '<td style="white-space:nowrap">' +
@@ -6596,14 +6813,14 @@ function loadDataFromGoogle(skipCache){
         try { renderAll();                } catch(e){ console.error('renderAll:', e);
           // Show error so user knows what happened instead of blank page
           var sr = document.getElementById('statsRow');
-          if (sr) sr.innerHTML = '<p style="padding:1rem;color:var(--red)">⚠ Render error: '+e.message+'</p>';
+          if (sr) sr.innerHTML = '<p style="padding:1rem;color:var(--red)">⚠ Render error: '+_he(e.message)+'</p>';
         }
         try { _restoreTab();              } catch(e){ console.error('_restoreTab:', e); }
         try { checkMorningPopup();        } catch(e){ console.error('checkMorningPopup:', e); }
       } catch(outerErr) {
         setConnStatus('offline');
         var sr2 = document.getElementById('statsRow');
-        if (sr2) sr2.innerHTML = '<p style="padding:1rem;color:var(--red)">⚠ Load handler error: '+outerErr.message+'</p>';
+        if (sr2) sr2.innerHTML = '<p style="padding:1rem;color:var(--red)">⚠ Load handler error: '+_he(outerErr.message)+'</p>';
         console.error('loadDataFromGoogle success handler:', outerErr);
       }
     })
@@ -6679,6 +6896,17 @@ function _checkVersionMatch(serverVersion) {
 
 // ── Toast Notifications ───────────────────────────────────────────────────────
 var _toastIdSeq = 0;
+// SECURITY: msg is escaped via _he() before it ever touches innerHTML. Many
+// callers pass a server-thrown Error's .message straight through (e.g. "Error:
+// ' + msg"), and several of those messages echo back a value someone typed
+// into a Category/Name/Project field verbatim -- "INSUFFICIENT STOCK for
+// <name>. Available: ..." (Code_v3_fixed.gs). Any signed-in WAREHOUSE user (not
+// just ADMIN) can set that name, so an unescaped showToast was a stored XSS
+// reachable by anyone who ever triggers that validation message -- and since
+// this function is the single shared choke point for ~40 call sites across
+// the app, fixing it here closes all of them at once instead of auditing each
+// call site individually. No caller relies on real HTML inside msg (verified:
+// none embed <br>/<strong>/etc.), so escaping is safe everywhere it's used.
 function showToast(msg, type, duration) {
   type     = type     || 'ok';
   duration = duration || 3500;
@@ -6689,7 +6917,7 @@ function showToast(msg, type, duration) {
   el.id        = id;
   el.innerHTML =
     '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span>' +
-    '<span class="toast-msg">'  + msg + '</span>' +
+    '<span class="toast-msg">'  + _he(msg) + '</span>' +
     '<button class="toast-close" onclick="dismissToast(\'' + id + '\')">✕</button>';
   var container = document.getElementById('toastContainer');
   if (container) container.appendChild(el);
@@ -6958,10 +7186,10 @@ function renderActiveUsers(users){
     var display  = (u.name && u.name.trim()) ? u.name : u.email; // fall back to email if no name on file
     return '<div class="presence-user">' +
       '<span class="presence-dot ' + (away ? 'away' : 'active') + '"></span>' +
-      '<span class="presence-email ' + (isYou ? 'presence-you' : '') + '" title="' + u.email + '">' +
-        display + (isYou ? ' (you)' : '') +
+      '<span class="presence-email ' + (isYou ? 'presence-you' : '') + '" title="' + _he(u.email) + '">' +
+        _he(display) + (isYou ? ' (you)' : '') +
       '</span>' +
-      '<span class="presence-role">' + (u.role || '—') + '</span>' +
+      '<span class="presence-role">' + _he(u.role || '—') + '</span>' +
       '<span class="presence-time">' + ageStr + '</span>' +
       '</div>';
   }).join('');
