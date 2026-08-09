@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OX Glass Co. — WMS v3.0</title>
+  <title>Acopio — Warehouse Management</title>
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -144,6 +144,49 @@
     .alert-banner{background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;font-size:.82rem;color:var(--yellow);display:none}
     .alert-banner.show{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
     /* ── OVERLAY / MODAL ── */
+    /* ── SETUP WIZARD ──
+       Fixed light palette on purpose: the wizard runs before the user has any
+       relationship with the app, and half of it was unreadable in dark mode
+       because several elements used literal light colours while the tokens
+       around them flipped. Rather than audit every rule for both themes on a
+       screen seen once, it commits to one look. */
+    .wiz-overlay{display:none;position:fixed;inset:0;background:#F1F5F9;z-index:2000;overflow-y:auto;padding:2rem 1rem;color:#111827}
+    .wiz-overlay.show{display:block}
+    .wiz-box{background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);max-width:640px;margin:0 auto;padding:2rem}
+    .wiz-steps{display:flex;gap:6px;margin-bottom:1.5rem}
+    .wiz-steps div{flex:1;height:4px;border-radius:2px;background:#E5E7EB;transition:background .25s}
+    .wiz-steps div.done{background:#3B7DD8}
+    .wiz-title{font-size:1.35rem;font-weight:800;color:#1B2A4A;margin-bottom:.3rem}
+    .wiz-sub{font-size:.85rem;color:#6B7280;margin-bottom:1.4rem;line-height:1.5}
+    .wiz-body .field{margin-bottom:1rem}
+    .wiz-body label{display:block;font-size:.75rem;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem}
+    .wiz-body input[type=text],.wiz-body input[type=email],.wiz-body input[type=file],.wiz-body select,.wiz-body textarea{
+      width:100%;padding:.6rem .75rem;border:1px solid #E5E7EB;border-radius:8px;font-size:.9rem;font-family:inherit;background:#fff;color:#111827}
+    .wiz-body input:focus,.wiz-body select:focus,.wiz-body textarea:focus{outline:none;border-color:#3B7DD8}
+    .wiz-hint{font-size:.75rem;color:#6B7280;margin-top:.3rem;line-height:1.45}
+    .wiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:1.75rem;gap:.75rem}
+    .wiz-nav .btn{border:1px solid #E5E7EB;background:#fff;color:#374151}
+    .wiz-nav .btn-primary{background:#3B7DD8;border-color:#3B7DD8;color:#fff}
+    .wiz-preset{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem}
+    .wiz-preset button{flex:1;min-width:150px;padding:.85rem;border:2px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:600;color:#111827;transition:.15s;text-align:left}
+    .wiz-preset button:hover,.wiz-preset button.sel{border-color:#3B7DD8;background:#EFF6FF}
+    .wiz-preset span{display:block;font-size:.72rem;font-weight:400;color:#6B7280;margin-top:.2rem}
+    .chip-box{display:flex;flex-wrap:wrap;gap:.4rem;padding:.6rem;border:1px solid #E5E7EB;border-radius:8px;min-height:52px;background:#F8FAFC}
+    .chip{display:inline-flex;align-items:center;gap:.35rem;background:#DBEAFE;color:#2563EB;border-radius:16px;padding:3px 8px 3px 11px;font-size:.8rem;font-weight:600}
+    .chip button{border:none;background:none;color:#2563EB;cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px;opacity:.6}
+    .chip button:hover{opacity:1;color:#EF4444}
+    .wiz-gen{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+    .wiz-userrow{display:grid;grid-template-columns:1fr 130px 34px;gap:.5rem;margin-bottom:.5rem;align-items:center}
+    .wiz-userrow .btn-icon{color:#EF4444}
+    .wiz-summary{background:#F8FAFC;border-radius:10px;padding:1rem 1.15rem;font-size:.85rem;line-height:1.9;color:#111827}
+    .wiz-summary b{color:#1B2A4A}
+    .wiz-toggle{display:flex;align-items:flex-start;gap:.6rem;padding:.75rem;background:#D1FAE5;border-radius:8px;font-size:.85rem;margin-bottom:1rem;color:#111827}
+    /* Nudge shown after setup when an optional step was skipped */
+    .setup-nudge{position:fixed;bottom:22px;left:22px;z-index:390;background:#1B2A4A;color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:290px}
+    .setup-nudge .nudge-act{display:none;margin-top:.55rem;gap:.4rem}
+    .setup-nudge:hover .nudge-act{display:flex}
+    .setup-nudge button{border:none;border-radius:6px;padding:.3rem .6rem;font-size:.74rem;font-weight:600;cursor:pointer;font-family:inherit}
+    @media (max-width:640px){.setup-nudge{left:12px;right:12px;bottom:76px;max-width:none}.wiz-box{padding:1.25rem}.wiz-gen{grid-template-columns:1fr}}
     .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:550;align-items:center;justify-content:center;padding:15px}
     /* Floating "report a problem" button — z-index sits well under .overlay (550)
        so any open modal already covers it; no extra show/hide logic needed. */
@@ -449,7 +492,7 @@
     .media-preview-hdr button:hover{background:rgba(255,255,255,.28)}
     .media-preview-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#111}
     .media-preview-body img{max-width:100%;max-height:80vh;object-fit:contain}
-    .media-preview-body iframe{width:100%;height:80vh;border:none}
+    .media-preview-body iframe,.media-preview-body embed{width:100%;height:80vh;border:none}
     /* ── RACK PHOTO GALLERY ── */
     .rack-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem}
     .rack-photo-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
@@ -726,10 +769,10 @@
 <!-- ══ TOPBAR ══════════════════════════════════════════════════════════════════ -->
 <div class="topbar">
   <div>
-    <h1>WMS — OX Glass Warehouse</h1>
+    <h1 id="appTitle">Warehouse</h1>
     <div class="author-badge">
       <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      Architected &amp; Engineered by: Jose Castro
+      <span id="poweredByBadge">Acopio</span>
     </div>
     <span id="jsVersionTag" style="font-size:.65rem;color:rgba(255,80,80,.9);font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(255,0,0,.15)">JS NOT LOADED</span>
   </div>
@@ -945,7 +988,7 @@
           <label class="col-pick-item"><input type="checkbox" id="chkGc"> GC / Contract</label>
           <label class="col-pick-item"><input type="checkbox" id="chkProj" checked> Project</label>
           <label class="col-pick-item"><input type="checkbox" id="chkSup"> Supplier</label>
-          <label class="col-pick-item"><input type="checkbox" id="chkResp" checked> Responsible</label>
+          <label class="col-pick-item"><input type="checkbox" id="chkResp" checked> Received By</label>
           <label class="col-pick-item"><input type="checkbox" id="chkComm" checked> Comments</label>
           <label class="col-pick-item"><input type="checkbox" id="chkSrcDest"> Source → Dest</label>
           <label class="col-pick-item"><input type="checkbox" id="chkPm"> PM</label>
@@ -1239,7 +1282,7 @@
         <input type="date" id="em_dateRec">
       </div>
       <div class="field">
-        <label>Responsible</label>
+        <label>Received By</label>
         <input type="text" id="em_responsible">
       </div>
       <div class="field">
@@ -1308,8 +1351,8 @@
 </div>
 
 <div class="system-footer">
-  &copy; 2026 OX Glass Co. Proprietary Warehouse Management System.<br>
-  Built and maintained by <strong>Jose Castro</strong>. Unauthorized distribution or modification is prohibited.
+  <span id="footerCompany"></span><br>
+  Powered by <strong>Acopio</strong> — Warehouse Management System. Built by Jose Castro.
 </div>
 
 <!-- ══ MOVEMENT MODAL ═══════════════════════════════════════════════════════ -->
@@ -1497,7 +1540,7 @@
         <datalist id="projList"></datalist>
       </div>
       <div class="field" id="mRespFieldWrap">
-        <label id="respLabel">Responsible</label>
+        <label id="respLabel">Received By</label>
         <input type="text" id="mResp">
       </div>
       <div class="field" id="mPMField" style="display:none">
@@ -1627,7 +1670,11 @@
   <div class="media-preview-box">
     <div class="media-preview-hdr">
       <span id="mediaPreviewLabel"></span>
-      <button onclick="closeMediaPreview()" title="Close">✕</button>
+      <span style="display:flex;gap:.4rem;flex-shrink:0">
+        <button id="mediaPreviewOpen" onclick="_mediaPreviewOpenTab()" title="Open in a new tab">↗ Open</button>
+        <button id="mediaPreviewDownload" onclick="_mediaPreviewDownload()" title="Download this file">⬇ Download</button>
+        <button onclick="closeMediaPreview()" title="Close">✕</button>
+      </span>
     </div>
     <div class="media-preview-body" id="mediaPreviewBody"></div>
   </div>
@@ -1659,6 +1706,23 @@
     <div style="display:flex;gap:.75rem;margin-top:1.25rem;justify-content:flex-end">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('lockMatOverlay')">Cancel</button>
       <button class="btn btn-danger btn-sm" id="lockMatSubmit" onclick="submitLockMaterial()">🔒 Lock Material</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETUP WIZARD ═════════════════════════════════════════════════════════ -->
+<div class="wiz-overlay" id="wizOverlay">
+  <div class="wiz-box">
+    <div class="wiz-steps" id="wizSteps"></div>
+    <div class="wiz-title" id="wizTitle"></div>
+    <div class="wiz-sub"   id="wizSub"></div>
+    <div class="wiz-body"  id="wizBody"></div>
+    <div class="wiz-nav">
+      <button class="btn btn-ghost btn-sm" id="wizBack" onclick="wizGo(-1)">← Back</button>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button class="btn btn-ghost btn-sm" id="wizSkip" onclick="wizGo(1,true)">Skip for now</button>
+        <button class="btn btn-primary btn-sm" id="wizNext" onclick="wizGo(1)">Continue →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1719,9 +1783,16 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '8.19';
+var APP_VERSION = '9.2';
 var userRole = 'WAREHOUSE';
 var userEmail = '';
+// Paid Gmail-scanner add-on: off unless the backend says this installation
+// bought it. Set from getInitialData; defaults false so a stale/failed load
+// hides the feature rather than showing a button that can only error out.
+var _gmailScanEnabled = false;
+// Company identity, filled from getInitialData on every load (including the
+// unauthenticated paths, so the sign-in screen is branded too).
+var _companyName = '', _companyDomain = '';
 // Signed session token for non-org users (issued by the backend after Google
 // sign-in). Replaces the old spoofable email hint. Company users don't need it —
 // they're detected automatically by Session.getActiveUser() on the backend.
@@ -1852,6 +1923,455 @@ function getBase64(file){
     r.onload = function(){ res(r.result.split(',')[1]); };
     r.onerror = rej;
   });
+}
+
+// ═══ SETUP WIZARD ═══════════════════════════════════════════════════════════
+// Runs once, on a fresh copy, before the app is usable. Only the OWNER of the
+// copy can complete it — the backend enforces that (see getSetupState); this
+// side just renders what it is told.
+var PRODUCT = 'Acopio';
+var _wizStep = 0;
+var _wizSkipped = {};
+// Set the moment setup succeeds, so the reload it kicks off doesn't race the
+// backend and re-open the wizard before the new company name is readable.
+var _wizJustFinished = false;
+var _wiz = {
+  companyName:'', companyDomain:'', adminName:'', adminEmail:'', logo:null,
+  categories:[], locations:[], suppliers:[], projects:[], users:[], enableBackup:true
+};
+
+var CATEGORY_PRESETS = {
+  glass: ['WINDOW','SCREEN','WINDOW_PARTS','SHOWER','MIRROR','STOREFRONT','IGU','FLASHING','HARDWARE'],
+  build: ['LUMBER','DRYWALL','PAINT','PLUMBING','ELECTRICAL','FASTENERS','TOOLS','INSULATION'],
+  blank: []
+};
+
+var WIZ_STEPS = [
+  { key:'company',   title:'Your company',        sub:'This name appears in the app header, on the browser tab and in the emails the system sends.', required:true },
+  { key:'categories',title:'What do you store?',  sub:'Material types. Pick a starting point, then add or remove whatever you like — you can always change these later.', required:false },
+  { key:'locations', title:'Where do you store it?', sub:'Racks, shelves, trucks, yards. This is what the app asks for on every movement, so it matters most.', required:true },
+  { key:'users',     title:'Who works here?',     sub:'Only people on this list can open the system. Everyone else is refused, even inside your company.', required:true },
+  { key:'extras',    title:'Suppliers & projects',sub:'Completely optional. The app will offer to add them as you go, the first time you type one.', required:false },
+  { key:'done',      title:'Ready',               sub:'', required:true }
+];
+
+// A copy made from an installation that already has users loads NORMALLY — the
+// user list came along with the data, so nobody is DENIED and the check that
+// launches the wizard from the denied path never runs. That copy is still
+// unconfigured though: no company name, still branded as whoever it was cloned
+// from. So after a successful load, if there is no company identity yet and the
+// viewer is an admin, offer the wizard here too.
+function _offerSetupIfUnconfigured(data){
+  if (_wizJustFinished) { _wizJustFinished = false; return; }
+  if (data.company && data.company.name) return;   // already configured
+  if (userRole !== 'ADMIN') return;                // only an admin can run it
+  google.script.run
+    .withSuccessHandler(function(setup){
+      if (setup && setup.needsSetup && setup.isOwner) wizStart(setup);
+    })
+    .withFailureHandler(function(){})
+    .getSetupState();
+}
+
+// The copy is unconfigured. Only its owner may set it up (enforced server-side);
+// anyone else gets told who to ask rather than a bare "access denied", which
+// would be technically true but useless to them.
+function _handleNeedsSetup(state){
+  if (state.isOwner) { wizStart(state); return; }
+  var topbar = document.querySelector('.topbar');
+  if (topbar) topbar.style.display = 'none';
+  var c = document.querySelector('.container');
+  if (!c) return;
+  c.innerHTML =
+    '<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:1.5rem">' +
+      '<div style="background:var(--card);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:2.5rem 2rem;max-width:430px;text-align:center">' +
+        '<div style="font-size:2.5rem;margin-bottom:.75rem">🚧</div>' +
+        '<h2 style="font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:.5rem">Not set up yet</h2>' +
+        '<p style="color:var(--muted);font-size:.88rem;line-height:1.6">This warehouse system has not been configured. ' +
+        'The person who created it needs to finish the setup first.</p>' +
+        (state.ownerEmail
+          ? '<p style="color:var(--muted);font-size:.82rem;margin-top:.9rem">Ask <b>' + _he(state.ownerEmail) + '</b> to open this page and complete setup.</p>'
+          : '') +
+      '</div></div>';
+}
+
+function wizStart(state){
+  _wizStep = 0;
+  _wiz.adminEmail = state.ownerEmail || '';
+  document.getElementById('wizOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  wizRender();
+}
+
+function wizGo(dir, skip){
+  if (dir > 0 && !skip && !wizValidate()) return;
+  if (skip) _wizSkipped[WIZ_STEPS[_wizStep].key] = true;
+  else if (dir > 0) delete _wizSkipped[WIZ_STEPS[_wizStep].key];
+  wizCollect();
+  _wizStep = Math.max(0, Math.min(WIZ_STEPS.length - 1, _wizStep + dir));
+  wizRender();
+}
+
+// Reads the current step's inputs into _wiz. Called on every move so going Back
+// and forward again never loses what was typed.
+function wizCollect(){
+  var k = WIZ_STEPS[_wizStep].key, v = function(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; };
+  if (k === 'company'){
+    _wiz.companyName   = v('wizCompany');
+    _wiz.companyDomain = v('wizDomain');
+    _wiz.adminName     = v('wizAdminName');
+    _wiz.adminEmail    = v('wizAdminEmail') || _wiz.adminEmail;
+  } else if (k === 'done'){
+    var t = document.getElementById('wizBackupToggle');
+    if (t) _wiz.enableBackup = t.checked;
+  }
+}
+
+function wizValidate(){
+  var k = WIZ_STEPS[_wizStep].key;
+  if (k === 'company' && !(document.getElementById('wizCompany')||{}).value.trim()){
+    showToast('Enter your company name.','warn'); return false;
+  }
+  if (k === 'locations' && !_wiz.locations.length){
+    showToast('Add at least one location — the app cannot record a movement without one.','warn'); return false;
+  }
+  return true;
+}
+
+function wizRender(){
+  var step = WIZ_STEPS[_wizStep];
+  document.getElementById('wizSteps').innerHTML = WIZ_STEPS.map(function(s,i){
+    return '<div class="' + (i <= _wizStep ? 'done' : '') + '"></div>';
+  }).join('');
+  document.getElementById('wizTitle').textContent = step.title;
+  document.getElementById('wizSub').textContent   = step.sub;
+  document.getElementById('wizBack').style.display = _wizStep === 0 ? 'none' : '';
+  document.getElementById('wizSkip').style.display = step.required ? 'none' : '';
+  var next = document.getElementById('wizNext');
+  next.textContent = (step.key === 'done') ? '✓ Start using ' + PRODUCT : 'Continue →';
+  next.onclick = (step.key === 'done') ? wizFinish : function(){ wizGo(1); };
+
+  var b = document.getElementById('wizBody');
+  if (step.key === 'company'){
+    b.innerHTML =
+      '<div class="field"><label>Company name *</label>' +
+        '<input type="text" id="wizCompany" placeholder="e.g. OX Glass Co." value="'+_escAttr(_wiz.companyName)+'"></div>' +
+      '<div class="field"><label>Your name</label>' +
+        '<input type="text" id="wizAdminName" placeholder="e.g. Jose Castro" value="'+_escAttr(_wiz.adminName)+'"></div>' +
+      '<div class="field"><label>Administrator email</label>' +
+        '<input type="email" id="wizAdminEmail" value="'+_escAttr(_wiz.adminEmail)+'">' +
+        '<div class="wiz-hint">This is you — the account that created this copy. You get full access and receive system alerts.</div></div>' +
+      '<div class="field"><label>Company email domain (optional)</label>' +
+        '<input type="text" id="wizDomain" placeholder="your-company.com" value="'+_escAttr(_wiz.companyDomain)+'">' +
+        '<div class="wiz-hint">Used only for the wording on the sign-in screen. It does <b>not</b> grant anyone access — ' +
+        'people still have to be on your user list, even with a company address.</div></div>' +
+      '<div class="field"><label>Logo (optional)</label>' +
+        '<input type="file" id="wizLogo" accept="image/*" onchange="_wizLogoPick(this)">' +
+        '<div class="wiz-hint">Any size or shape - it is resized automatically. A wide logo with a transparent background looks best.</div>' +
+        '<div id="wizLogoPrev" style="margin-top:.5rem"></div></div>';
+  }
+
+  else if (step.key === 'categories'){
+    b.innerHTML =
+      '<div class="wiz-preset">' +
+        '<button onclick="_wizPreset(\'glass\',this)">🪟 Glass &amp; windows<span>Window, Screen, Mirror, Shower, IGU…</span></button>' +
+        '<button onclick="_wizPreset(\'build\',this)">🏗 Construction<span>Lumber, Drywall, Paint, Electrical…</span></button>' +
+        '<button onclick="_wizPreset(\'blank\',this)">⚪ Start empty<span>I will type my own</span></button>' +
+      '</div>' +
+      '<div class="field"><label>Your categories</label>' +
+        '<div class="chip-box" id="wizCatChips"></div>' +
+        '<input type="text" id="wizCatInput" placeholder="Type a category and press Enter" style="margin-top:.5rem" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();_wizAddChip(\'categories\',this)}"></div>';
+    _wizDrawChips('categories','wizCatChips');
+  }
+
+  else if (step.key === 'locations'){
+    b.innerHTML =
+      '<div class="field"><label>Generate a rack grid</label>' +
+        '<div class="wiz-gen">' +
+          '<div><input type="text" id="wizRows" placeholder="Rows: A-F" value="A-F"></div>' +
+          '<div><input type="text" id="wizLevels" placeholder="Levels: 1-6" value="1-6"></div>' +
+          '<div><input type="text" id="wizSides" placeholder="Sides: A,B,C" value="A,B,C"></div>' +
+        '</div>' +
+        '<button class="btn btn-ghost btn-sm" style="margin-top:.6rem" onclick="_wizGenerate()">Generate</button>' +
+        '<div class="wiz-hint">Produces names like A1A, A1B, A1C, A2A… Skip this and type your own below if your ' +
+        'warehouse is named differently.</div></div>' +
+      '<div class="field"><label>Locations (<span id="wizLocCount">0</span>)</label>' +
+        '<div class="chip-box" id="wizLocChips" style="max-height:190px;overflow-y:auto"></div>' +
+        '<input type="text" id="wizLocInput" placeholder="Type a location and press Enter" style="margin-top:.5rem" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();_wizAddLoc(this)}"></div>' +
+      '<div class="field"><label>Trucks / job sites (optional)</label>' +
+        '<input type="text" id="wizSiteInput" placeholder="e.g. TRUCK 1 — press Enter" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();_wizAddLoc(this,\'SITE\')}">' +
+        '<div class="wiz-hint">These are destinations material leaves to, not storage inside the warehouse.</div></div>';
+    _wizDrawLocs();
+  }
+
+  else if (step.key === 'users'){
+    b.innerHTML =
+      '<div class="wiz-summary" style="margin-bottom:1rem">' +
+        '<b>' + _he(_wiz.adminEmail) + '</b> — Administrator (you)</div>' +
+      '<div id="wizUserRows"></div>' +
+      '<button class="btn btn-ghost btn-sm" onclick="_wizAddUserRow()">+ Add person</button>' +
+      '<div class="wiz-hint" style="margin-top:.75rem"><b>Admin</b> — everything, including settings and users.<br>' +
+      '<b>Warehouse</b> — records movements, uploads photos and documents.<br>' +
+      '<b>View only</b> — can look, cannot change anything.</div>';
+    _wizDrawUsers();
+  }
+
+  else if (step.key === 'extras'){
+    b.innerHTML =
+      '<div class="field"><label>Suppliers</label>' +
+        '<div class="chip-box" id="wizSupChips"></div>' +
+        '<input type="text" id="wizSupInput" placeholder="Type a supplier and press Enter" style="margin-top:.5rem" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();_wizAddChip(\'suppliers\',this)}"></div>' +
+      '<div class="field"><label>Projects / clients</label>' +
+        '<div class="chip-box" id="wizProjChips"></div>' +
+        '<input type="text" id="wizProjInput" placeholder="Type a project and press Enter" style="margin-top:.5rem" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();_wizAddChip(\'projects\',this)}"></div>';
+    _wizDrawChips('suppliers','wizSupChips');
+    _wizDrawChips('projects','wizProjChips');
+  }
+
+  else if (step.key === 'done'){
+    b.innerHTML =
+      '<div class="wiz-toggle"><input type="checkbox" id="wizBackupToggle"' + (_wiz.enableBackup ? ' checked':'') + '>' +
+        '<label for="wizBackupToggle" style="margin:0;text-transform:none;letter-spacing:0;font-size:.85rem;color:#111827;font-weight:600">' +
+        'Back up my data automatically every night<span style="display:block;font-weight:400;color:#6B7280;font-size:.78rem">' +
+        'A dated copy of the whole spreadsheet, kept 30 days in your Drive.</span></label></div>' +
+      '<div class="wiz-summary">' +
+        '🏢 <b>' + _he(_wiz.companyName) + '</b><br>' +
+        '📦 <b>' + _wiz.categories.length + '</b> categories<br>' +
+        '📍 <b>' + _wiz.locations.length + '</b> locations<br>' +
+        '👥 <b>' + (_wiz.users.length + 1) + '</b> people<br>' +
+        '🏭 <b>' + _wiz.suppliers.length + '</b> suppliers · <b>' + _wiz.projects.length + '</b> projects' +
+      '</div>' +
+      '<div class="wiz-hint" style="margin-top:1rem">Already have your inventory in a spreadsheet? After finishing, ' +
+      'go to <b>Settings → Import</b>. Save it as <b>.csv</b> first — an .xlsx file will be rejected.</div>';
+  }
+}
+
+// Takes whatever the customer has — a phone photo of a sign, a 4000px print
+// logo — and normalises it here, rather than asking for exact dimensions that
+// nobody outside a design team knows how to produce. Scaled to fit 320x120
+// (far above the ~28px it renders at, so it stays sharp on high-DPI screens)
+// and re-encoded as PNG to preserve transparency. A 3 MB upload becomes a few
+// KB, which matters because this is stored in Drive and fetched on every load.
+function _wizLogoPick(inp){
+  if (!inp.files || !inp.files[0]) return;
+  var f = inp.files[0];
+  if (f.size > 8 * 1024 * 1024) { showToast('That image is very large - pick one under 8 MB.','warn'); return; }
+  var reader = new FileReader();
+  reader.onload = function(){
+    var img = new Image();
+    img.onload = function(){
+      var MAXW = 320, MAXH = 120;
+      var scale = Math.min(1, MAXW / img.width, MAXH / img.height);
+      var w = Math.max(1, Math.round(img.width * scale));
+      var h = Math.max(1, Math.round(img.height * scale));
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = cv.toDataURL('image/png');
+      _wiz.logo = { fileData: dataUrl.split(',')[1], fileMimeType: 'image/png', fileName: 'logo.png' };
+      document.getElementById('wizLogoPrev').innerHTML =
+        '<img src="' + dataUrl + '" style="max-height:52px;border-radius:6px;background:#F3F4F6;padding:4px">' +
+        '<div class="wiz-hint">Resized to ' + w + 'x' + h + ' automatically - any size or shape works.</div>';
+    };
+    img.onerror = function(){ showToast('That file is not a readable image.','err'); };
+    img.src = reader.result;
+  };
+  reader.onerror = function(){ showToast('Could not read that image.','err'); };
+  reader.readAsDataURL(f);
+}
+
+function _wizPreset(kind, btn){
+  _wiz.categories = CATEGORY_PRESETS[kind].slice();
+  Array.prototype.forEach.call(btn.parentNode.children, function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  _wizDrawChips('categories','wizCatChips');
+}
+
+function _wizAddChip(listName, inp){
+  var v = (inp.value || '').trim().toUpperCase();
+  if (!v) return;
+  if (_wiz[listName].indexOf(v) === -1) _wiz[listName].push(v);
+  inp.value = '';
+  _wizDrawChips(listName, listName === 'categories' ? 'wizCatChips'
+                        : listName === 'suppliers'  ? 'wizSupChips' : 'wizProjChips');
+}
+
+function _wizRemoveChip(listName, i){
+  _wiz[listName].splice(i,1);
+  _wizDrawChips(listName, listName === 'categories' ? 'wizCatChips'
+                        : listName === 'suppliers'  ? 'wizSupChips' : 'wizProjChips');
+}
+
+function _wizDrawChips(listName, boxId){
+  var box = document.getElementById(boxId);
+  if (!box) return;
+  box.innerHTML = _wiz[listName].length
+    ? _wiz[listName].map(function(v,i){
+        return '<span class="chip">'+_he(v)+'<button onclick="_wizRemoveChip(\''+listName+'\','+i+')">×</button></span>';
+      }).join('')
+    : '<span style="color:#6B7280;font-size:.8rem">Nothing yet</span>';
+}
+
+// "A-F" → [A..F];  "1-6" → [1..6];  "A,B,C" → [A,B,C]. Accepts either form for
+// any of the three fields, so a warehouse numbered 1-4 works as well as A-D.
+function _wizExpand(spec){
+  spec = String(spec||'').trim().toUpperCase();
+  if (!spec) return [];
+  if (spec.indexOf(',') !== -1) return spec.split(',').map(function(s){return s.trim();}).filter(Boolean);
+  var m = spec.match(/^([A-Z0-9])\s*-\s*([A-Z0-9])$/);
+  if (!m) return [spec];
+  var a = m[1], z = m[2], out = [];
+  if (/[0-9]/.test(a) && /[0-9]/.test(z)) { for (var n=+a; n<=+z; n++) out.push(String(n)); }
+  else { for (var c=a.charCodeAt(0); c<=z.charCodeAt(0); c++) out.push(String.fromCharCode(c)); }
+  return out;
+}
+
+function _wizGenerate(){
+  var rows = _wizExpand(document.getElementById('wizRows').value);
+  var lvls = _wizExpand(document.getElementById('wizLevels').value);
+  var sides= _wizExpand(document.getElementById('wizSides').value);
+  if (!rows.length || !lvls.length){ showToast('Fill in at least rows and levels.','warn'); return; }
+  if (!sides.length) sides = [''];
+  var made = 0;
+  rows.forEach(function(r){ lvls.forEach(function(l){ sides.forEach(function(s){
+    var name = r + l + s;
+    if (!_wiz.locations.some(function(x){ return x.name === name; })){
+      _wiz.locations.push({ name:name, type:'RACK' }); made++;
+    }
+  }); }); });
+  _wizDrawLocs();
+  showToast(made + ' location(s) generated.','ok');
+}
+
+function _wizAddLoc(inp, type){
+  var v = (inp.value||'').trim().toUpperCase();
+  if (!v) return;
+  if (!_wiz.locations.some(function(x){ return x.name === v; })) _wiz.locations.push({name:v, type:type||'RACK'});
+  inp.value = '';
+  _wizDrawLocs();
+}
+
+function _wizRemoveLoc(i){ _wiz.locations.splice(i,1); _wizDrawLocs(); }
+
+function _wizDrawLocs(){
+  var box = document.getElementById('wizLocChips');
+  if (!box) return;
+  var c = document.getElementById('wizLocCount');
+  if (c) c.textContent = _wiz.locations.length;
+  box.innerHTML = _wiz.locations.length
+    ? _wiz.locations.map(function(l,i){
+        var site = l.type === 'SITE';
+        return '<span class="chip"' + (site ? ' style="background:var(--orange-bg);color:var(--orange)"' : '') + '>' +
+          (site ? '🚚 ' : '') + _he(l.name) + '<button onclick="_wizRemoveLoc('+i+')">×</button></span>';
+      }).join('')
+    : '<span style="color:#6B7280;font-size:.8rem">Nothing yet</span>';
+}
+
+function _wizAddUserRow(){ _wiz.users.push({email:'',name:'',role:'WAREHOUSE'}); _wizDrawUsers(); }
+function _wizRemoveUser(i){ _wizSyncUsers(); _wiz.users.splice(i,1); _wizDrawUsers(); }
+
+function _wizSyncUsers(){
+  _wiz.users.forEach(function(u,i){
+    var e = document.getElementById('wizU'+i), r = document.getElementById('wizR'+i);
+    if (e) u.email = e.value.trim();
+    if (r) u.role  = r.value;
+  });
+}
+
+function _wizDrawUsers(){
+  var box = document.getElementById('wizUserRows');
+  if (!box) return;
+  box.innerHTML = _wiz.users.map(function(u,i){
+    return '<div class="wiz-userrow">' +
+      '<input type="email" id="wizU'+i+'" placeholder="name@company.com" value="'+_escAttr(u.email)+'">' +
+      '<select id="wizR'+i+'">' +
+        '<option value="WAREHOUSE"'+(u.role==='WAREHOUSE'?' selected':'')+'>Warehouse</option>' +
+        '<option value="ADMIN"'+(u.role==='ADMIN'?' selected':'')+'>Admin</option>' +
+        '<option value="VIEWER"'+(u.role==='VIEWER'?' selected':'')+'>View only</option>' +
+      '</select>' +
+      '<button class="btn-icon" onclick="_wizRemoveUser('+i+')" title="Remove">×</button></div>';
+  }).join('');
+}
+
+function wizFinish(){
+  wizCollect();
+  _wizSyncUsers();
+  _wiz.users = _wiz.users.filter(function(u){ return u.email && u.email.indexOf('@') !== -1; });
+  var btn = document.getElementById('wizNext');
+  btn.disabled = true; btn.textContent = 'Setting up…';
+  google.script.run
+    .withSuccessHandler(function(){
+      // NOT location.reload(). The app is served inside Apps Script's sandboxed
+      // googleusercontent.com iframe, and reloading that frame's own URL lands
+      // on a blank page instead of the app — the URL only serves content as a
+      // sub-resource of the parent, not on its own. Re-fetch the data instead,
+      // which is all a reload was for: setup rewrote the config, the user list
+      // and the company identity, and loadDataFromGoogle re-reads all three.
+      document.getElementById('wizOverlay').classList.remove('show');
+      document.body.style.overflow = '';
+      btn.disabled = false; btn.textContent = '✓ Start using ' + PRODUCT;
+      _wizJustFinished = true;
+      loadDataFromGoogle(true);
+      showToast('Setup complete — welcome to ' + PRODUCT + '.', 'ok');
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false; btn.textContent = '✓ Start using ' + PRODUCT;
+      showToast('Setup failed: ' + ((err && err.message) || err), 'err');
+    })
+    .saveSetupWizard(_wiz);
+}
+
+// Gentle reminder for the optional steps that were skipped. Collapsed to one
+// line; hovering reveals the button. Dismissing it stops it for a week rather
+// than forever — an empty supplier list is worth mentioning again eventually.
+function _showSetupNudge(){
+  var missing = [];
+  if (!config.suppliers || !config.suppliers.length) missing.push('suppliers');
+  if (!config.categories || !config.categories.length) missing.push('categories');
+  if (!config.projects || !config.projects.length) missing.push('projects');
+  if (!missing.length || userRole !== 'ADMIN') return;
+  try {
+    var until = Number(localStorage.getItem('acopio_nudge_until') || 0);
+    if (Date.now() < until) return;
+  } catch(e){}
+  var el = document.createElement('div');
+  el.className = 'setup-nudge';
+  el.id = 'setupNudge';
+  el.innerHTML = '⚙️ You haven\'t set up your <b>' + _he(missing.join(', ')) + '</b> yet.' +
+    '<div class="nudge-act">' +
+      '<button style="background:var(--accent);color:#fff" onclick="openSettingsModal();_dismissNudge()">Set up now</button>' +
+      '<button style="background:rgba(255,255,255,.18);color:#fff" onclick="_dismissNudge()">Later</button>' +
+    '</div>';
+  document.body.appendChild(el);
+}
+
+function _dismissNudge(){
+  var el = document.getElementById('setupNudge');
+  if (el) el.remove();
+  try { localStorage.setItem('acopio_nudge_until', String(Date.now() + 7*24*60*60*1000)); } catch(e){}
+}
+
+// Paints the customer's own identity over the app. Called on every load, and
+// again right after setup, so nothing anywhere says "OX Glass" to someone else.
+function applyCompanyBranding(c){
+  if (!c) return;
+  var name = c.name || '';
+  _companyName = name;
+  if (c.domain) _companyDomain = c.domain;
+  if (name){
+    var t = document.getElementById('appTitle');
+    if (t) t.textContent = name;
+    document.title = name + ' — ' + (c.productName || PRODUCT);
+    var f = document.getElementById('footerCompany');
+    if (f) f.textContent = '© ' + new Date().getFullYear() + ' ' + name;
+  }
+  var badge = document.getElementById('poweredByBadge');
+  if (badge) badge.textContent = c.productName || PRODUCT;
 }
 
 // ── Report a Problem (floating button) ──────────────────────────────────────
@@ -2099,14 +2619,22 @@ function renderStats(){
 function buildDocMap() {
   var map = {};
   movements.forEach(function(m) {
-    if (!m.docLinks || m.docLinks.indexOf('http') === -1) return;
+    // NO "does it contain http" test here, deliberately. Until v8.10 documents
+    // were stored as full Drive URLs; since v8.10 they are stored as bare file
+    // IDs (uploads no longer share publicly, so a getUrl() link would be dead
+    // anyway). Those two guards therefore rejected every document saved from
+    // v8.10 onward, and the Dashboard's Documents panel silently reported
+    // "No documents attached" for all of them — while the Movements tab showed
+    // them correctly, because renderDocLinks() resolves through extractDriveId()
+    // and handles both shapes. That mismatch is the whole bug.
+    if (!m.docLinks) return;
     // Show docs from ENTRY movements only (that's where files are uploaded)
     if (m.moveType !== 'ENTRY') return;
     var key = nt(m.category) + '|||' + nt(m.name);
     if (!map[key]) map[key] = [];
     m.docLinks.split('\n').forEach(function(line) {
       line = line.trim();
-      if (!line || line.indexOf('http') === -1) return;
+      if (!line) return;
       var docName = 'Document';
       var url     = line;
       if (line.indexOf('||') !== -1) {
@@ -2414,22 +2942,87 @@ function extractDriveId(url){
 // frame ("google.com refused to connect"). Going through google.script.run
 // sidesteps that: no second network request to script.google.com happens at
 // all, so there is nothing for Google's sandboxing to interfere with.
-var _fileDataCache = {};   // fileId -> {mimeType, base64} | 'error'
+var _fileDataCache = {};   // fileId -> {mimeType, base64}   (successes only)
+
+// ── Throttled fetching — this is what fixes "too many scripts running" ───────
+//
+// Every thumbnail on screen resolves through here, and each resolution is one
+// google.script.run call, i.e. one server execution. Rendering used to fire all
+// of them at once: the Movements table paints 75 rows per page, each row's Doc
+// column can hold several attachments, and expanding a stock row adds its photos
+// and documents on top. A busy page therefore opened dozens of executions in the
+// same instant.
+//
+// Apps Script caps simultaneous executions per USER — and because this web app
+// runs as USER_DEPLOYING, every visitor's calls are charged to the deploying
+// account's single quota. Two browser tabs were enough to trip it, which is why
+// the failure looked unrelated to how many people were online. It also explains
+// why it only appeared once the app started serving files privately: before
+// that, thumbnails were plain <img src> and cost no executions at all.
+//
+// Two limits below, and the pair matters:
+//   • at most MAX_INFLIGHT calls open at any moment, the rest queued;
+//   • one call per file ID — repeat requests for a file already being fetched
+//     wait on that same request instead of starting another. The same document
+//     commonly appears in several rows, so without this the queue would happily
+//     fetch identical bytes many times over.
+var _privQueue     = [];   // [{id, done}] waiting for a slot
+var _privInflight  = {};   // fileId -> [done, …] callbacks awaiting one open call
+var _privActive    = 0;
+var _PRIV_MAX_INFLIGHT = 3;
+
+// EVERY exit from _fetchPrivateFile goes through here, so a callback is never
+// invoked before the caller has had a chance to put its <img> in the DOM.
+// _privImgTag() registers its callback and only afterwards RETURNS the <img>
+// HTML for the caller to insert — so a callback that runs synchronously does
+// getElementById() on an element that does not exist yet, gives up, and the
+// image stays blank forever. Deferring by a tick costs nothing and makes the
+// ordering impossible to get wrong.
+function _privLater(cb, arg){ setTimeout(function(){ cb(arg); }, 0); }
+
+function _privPump(){
+  while (_privActive < _PRIV_MAX_INFLIGHT && _privQueue.length){
+    var job = _privQueue.shift();
+    if (_fileDataCache[job.id]) { _privDeliver(job.id); continue; }  // arrived while queued
+    _privActive++;
+    (function(id){
+      google.script.run
+        .withSuccessHandler(function(res){
+          if (res) _fileDataCache[id] = res;
+          _privActive--; _privDeliver(id); _privPump();
+        })
+        .withFailureHandler(function(){
+          // Deliberately NOT cached as a permanent failure. One transient error
+          // — a hiccup, a momentary execution-quota trip — used to mark the file
+          // dead for the rest of the session, so a thumbnail that failed once
+          // stayed broken until a full page reload even though the file was
+          // fine. A later render simply tries again; the queue above is what
+          // keeps those retries from piling up.
+          _privActive--; _privDeliver(id); _privPump();
+        })
+        .getPrivateFileData(id, _sessionToken || null);
+    })(job.id);
+  }
+}
+
+function _privDeliver(id){
+  var cached = _fileDataCache[id];
+  var url = cached ? 'data:' + cached.mimeType + ';base64,' + cached.base64 : null;
+  var waiting = _privInflight[id] || [];
+  delete _privInflight[id];
+  waiting.forEach(function(cb){ _privLater(cb, url); });
+}
 
 function _fetchPrivateFile(rawUrlOrId, done){
   var id = extractDriveId(rawUrlOrId);
-  if (!id) { done(null); return; }
+  if (!id) { _privLater(done, null); return; }
   var cached = _fileDataCache[id];
-  if (cached === 'error') { done(null); return; }
-  if (cached) { done('data:' + cached.mimeType + ';base64,' + cached.base64); return; }
-  google.script.run
-    .withSuccessHandler(function(res){
-      if (!res) { _fileDataCache[id] = 'error'; done(null); return; }
-      _fileDataCache[id] = res;
-      done('data:' + res.mimeType + ';base64,' + res.base64);
-    })
-    .withFailureHandler(function(){ _fileDataCache[id] = 'error'; done(null); })
-    .getPrivateFileData(id, _sessionToken || null);
+  if (cached) { _privLater(done, 'data:' + cached.mimeType + ';base64,' + cached.base64); return; }
+
+  if (_privInflight[id]) { _privInflight[id].push(done); return; }  // ride along
+  _privInflight[id] = [done];
+  _privQueue.push({ id: id });
+  _privPump();
 }
 
 // Drop-in replacement for a plain <img src="..."> when the source is a private
@@ -2521,7 +3114,7 @@ function renderMovements(){
     (v.gc      ? '<th>GC</th>'       : '')+
     (v.project ? '<th>Project</th>'  : '')+
     (v.supplier? '<th>Supplier</th>' : '')+
-    (v.resp    ? '<th>Responsible</th>':'')+
+    (v.resp    ? '<th>Received By</th>':'')+
     (v.comment ? '<th>Comments</th>' : '')+
     (v.pm      ? '<th>PM</th>'       : '')+
     (v.sysDate ? '<th>Sys Date</th>' : '')+
@@ -3276,7 +3869,7 @@ function updateNotifyPreview(){
 
   var msg = 'Hi ' + recipName + ',\n\n' +
     'The following materials for ' + project + ' were received today and are now stored in our warehouse:' +
-    matLines + '\n\nLet us know if you need anything.\n\nOX Glass Co. — Warehouse Team';
+    matLines + '\n\nLet us know if you need anything.\n\n' + (_companyName || 'Warehouse') + ' — Warehouse Team';
   document.getElementById('mNotifyMsg').value = msg;
 }
 
@@ -5432,7 +6025,7 @@ function _csvCell(v){
 }
 
 function exportMovementsCSV(){
-  var headers = ['MoveType','Date','Category','Name','Project','Qty','Unit','Source','Destination','Responsible','Comments','User'];
+  var headers = ['MoveType','Date','Category','Name','Project','Qty','Unit','Source','Destination','Received By','Comments','User'];
   var srcMovs = _oldHistoryLoaded ? oldMovements.concat(movements) : movements;
   var rows = srcMovs.slice().reverse().map(function(m){
     return [nt(m.moveType),m.dateRec||m.timestamp,nt(m.category),displayName(m),m.project||'',
@@ -5450,7 +6043,7 @@ function exportProjectCSV(){
   var proj = document.getElementById('projectSelector').value;
   if (!proj){ alert('Select a project first'); return; }
   var pm = movements.filter(function(m){ return (m.project||'') === proj; });
-  var headers = ['MoveType','Date','Category','Name','Qty','Unit','Source','Destination','Responsible','Comments'];
+  var headers = ['MoveType','Date','Category','Name','Qty','Unit','Source','Destination','Received By','Comments'];
   var rows = pm.map(function(m){
     return [nt(m.moveType),m.dateRec||m.timestamp,nt(m.category),displayName(m),m.qty,m.unit||'',
             m.sourceLoc||'',m.destLoc||'',m.responsible||'',(m.comments||'').replace(/\n/g,' ')]
@@ -5699,36 +6292,122 @@ function _renderRackDrawerPhoto(){
 // type up front, so try the result as an <img> first; if that fails (a PDF
 // won't render in an <img> tag), fall back to an <iframe> — a data: URL with
 // the real PDF mime type renders fine in the browser's native PDF viewer.
+// Preview state, kept so the header's Open/Download buttons act on whatever is
+// currently shown. The blob URL must be released on close or every preview
+// leaks its file until the tab is closed.
+var _mediaPreviewBlobUrl = null;
+var _mediaPreviewName    = '';
+
+// base64 → Blob. PDFs cannot be previewed straight from the data: URL that
+// _fetchPrivateFile hands back: Chrome refuses to navigate a frame to a data:
+// URL, so <iframe src="data:application/pdf;…"> renders nothing at all. This is
+// why images opened fine and PDFs never did — an <img> is not a navigation, a
+// frame is. blob: URLs are exempt from that rule, so we rebuild the bytes as a
+// Blob and point the viewer at that instead.
+function _dataUrlToBlob(dataUrl){
+  var comma = dataUrl.indexOf(',');
+  var meta  = dataUrl.substring(5, comma);            // e.g. "application/pdf;base64"
+  var mime  = meta.split(';')[0] || 'application/octet-stream';
+  var bin   = atob(dataUrl.substring(comma + 1));
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 function openMediaPreview(url, label){
   document.getElementById('mediaPreviewLabel').textContent = label || '';
   var body = document.getElementById('mediaPreviewBody');
+  body.style.flexDirection = '';        // reset — the PDF branch sets it to column
   body.innerHTML = '<p style="color:#fff;padding:2rem">Loading…</p>';
   document.getElementById('mediaPreviewOverlay').classList.add('show');
+  // Freeze the page behind the preview. Without this the wheel scrolls the
+  // Movements table underneath, so closing the preview leaves the user somewhere
+  // other than where they opened it from.
+  document.body.style.overflow = 'hidden';
+  _releaseMediaPreviewBlob();
+  _mediaPreviewName = label || 'document';
+
   _fetchPrivateFile(url, function(dataUrl){
     if (!dataUrl) {
       body.innerHTML = '<p style="color:#fff;padding:2rem">Could not load this file.</p>';
       return;
     }
+    var blob = _dataUrlToBlob(dataUrl);
+    _mediaPreviewBlobUrl = URL.createObjectURL(blob);
     body.innerHTML = '';
-    var img = document.createElement('img');
-    img.alt = label || '';
-    img.onerror = function () {
-      var iframe = document.createElement('iframe');
-      iframe.src   = dataUrl;
-      iframe.allow = 'autoplay';
-      body.innerHTML = '';
-      body.appendChild(iframe);
-    };
-    img.src = dataUrl;
-    body.appendChild(img);
+
+    if (blob.type.indexOf('image/') === 0) {
+      var img = document.createElement('img');
+      img.alt = label || '';
+      img.src = _mediaPreviewBlobUrl;
+      body.appendChild(img);
+      return;
+    }
+
+    if (blob.type === 'application/pdf') {
+      // <embed> renders as a black rectangle here. The whole app runs inside the
+      // sandboxed googleusercontent.com iframe Apps Script serves HtmlService
+      // pages in, and Chrome's built-in PDF viewer is a plugin — plugins do not
+      // get instantiated in that sandbox. The blob itself is fine: ↗ Open shows
+      // the same URL correctly, because a top-level tab is not sandboxed.
+      //
+      // <iframe> is a different mechanism and does render in some browsers, so
+      // it's worth attempting — but we cannot detect from script whether it
+      // actually painted (no error fires either way). So the hint below is
+      // always shown rather than only on failure: better a redundant line of
+      // text than a user staring at a black box with no idea what to do.
+      body.style.flexDirection = 'column';
+      var hint = document.createElement('div');
+      hint.style.cssText = 'flex-shrink:0;width:100%;background:#1f2937;color:#e5e7eb;' +
+        'font-size:.78rem;padding:.5rem .9rem;text-align:center';
+      hint.innerHTML = 'PDF not showing below? Google\'s viewer is blocked inside this ' +
+        'window — use <strong>↗ Open</strong> above to see it full size.';
+      body.appendChild(hint);
+
+      var frame = document.createElement('iframe');
+      frame.src = _mediaPreviewBlobUrl;
+      frame.style.cssText = 'width:100%;flex:1;min-height:0;border:none;background:#fff';
+      body.appendChild(frame);
+      return;
+    }
+
+    // Anything else (.json, .docx, .zip…) has no reliable inline viewer. Say so
+    // and point at the header buttons, rather than showing an empty black box.
+    body.innerHTML =
+      '<div style="color:#fff;padding:2.5rem;text-align:center">' +
+        '<div style="font-size:2.5rem;margin-bottom:.5rem">📄</div>' +
+        '<p style="margin-bottom:.35rem">' + _he(label || 'This file') + '</p>' +
+        '<p style="font-size:.8rem;opacity:.7">No inline preview for this file type — ' +
+        'use ↗ Open or ⬇ Download above.</p>' +
+      '</div>';
   });
+}
+
+function _mediaPreviewOpenTab(){
+  if (_mediaPreviewBlobUrl) window.open(_mediaPreviewBlobUrl, '_blank');
+}
+
+function _mediaPreviewDownload(){
+  if (!_mediaPreviewBlobUrl) return;
+  var a = document.createElement('a');
+  a.href = _mediaPreviewBlobUrl;
+  a.download = _mediaPreviewName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function _releaseMediaPreviewBlob(){
+  if (_mediaPreviewBlobUrl) { URL.revokeObjectURL(_mediaPreviewBlobUrl); _mediaPreviewBlobUrl = null; }
 }
 
 function closeMediaPreview(){
   var ov = document.getElementById('mediaPreviewOverlay');
   if (!ov.classList.contains('show')) return;
   ov.classList.remove('show');
-  document.getElementById('mediaPreviewBody').innerHTML = ''; // stop any iframe playback/loading
+  document.getElementById('mediaPreviewBody').innerHTML = ''; // stop any frame loading
+  document.body.style.overflow = '';
+  _releaseMediaPreviewBlob();
 }
 
 function _triggerRackPhotoUpload(rack){
@@ -6641,14 +7320,14 @@ function _showGoogleSignIn(clientId, redirectUri) {
     '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg)">' +
     '<div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center">' +
       '<div style="font-size:3rem;margin-bottom:.75rem">🔒</div>' +
-      '<h2 style="font-size:1.25rem;font-weight:700;color:#1a1a2e;margin-bottom:.4rem">OX Glass WMS</h2>' +
+      '<h2 style="font-size:1.25rem;font-weight:700;color:#1a1a2e;margin-bottom:.4rem">' + _he(_companyName || 'Warehouse') + '</h2>' +
       '<p style="color:#6B7280;font-size:.86rem;margin-bottom:1.5rem;line-height:1.5">Sign in with your Google account to continue.</p>' +
       (configured
         ? '<button id="googleSignInBtn" onclick="_startGoogleLogin()" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:.6rem;padding:.75rem 1rem;background:#fff;color:#1f2937;border:1px solid #DADCE0;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.06)" onmouseover="this.style.background=\'#F8FAFC\'" onmouseout="this.style.background=\'#fff\'">' +
             '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.6 2.4 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.2l7.9 6.1C12.2 13.3 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.4c-.3 2.1-1.6 5.2-4.6 7.3l7.1 5.5c4.2-3.9 6.7-9.6 6.7-16.5z"/><path fill="#FBBC05" d="M10.4 28.3c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.1C.9 16.5 0 20.1 0 23.8s.9 7.3 2.5 10.6l7.9-6.1z"/><path fill="#34A853" d="M24 47.5c6.1 0 11.3-2 15-5.5l-7.1-5.5c-2 1.4-4.6 2.3-7.9 2.3-6.4 0-11.8-3.8-13.6-9.8l-7.9 6.1C6.4 42.1 14.6 47.5 24 47.5z"/></svg>' +
             'Sign in with Google</button>' +
           '<p id="signInStatus" style="color:#6B7280;font-size:.78rem;margin-top:1rem;min-height:1.1em"></p>' +
-          '<p style="color:#9CA3AF;font-size:.72rem;margin-top:.5rem">@ox-glass.com staff sign in automatically, without this step.</p>'
+          (_companyDomain ? '<p style="color:#9CA3AF;font-size:.72rem;margin-top:.5rem">@' + _he(_companyDomain) + ' staff sign in automatically, without this step.</p>' : '')
         : '<p style="color:#EF4444;font-size:.85rem">Sign-in is not configured. The OAuth Client ID is missing on the server. Contact your administrator.</p>'
       ) +
     '</div></div>';
@@ -6749,7 +7428,7 @@ function _showAccessDeniedScreen(status, email) {
       '</p>' +
 
       '<div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #E5E7EB">' +
-        '<p style="font-size:.7rem;color:#9CA3AF">OX Glass Co. — Warehouse Management System v3</p>' +
+        '<p style="font-size:.7rem;color:#9CA3AF">' + _he(_companyName || 'Warehouse') + ' — powered by Acopio</p>' +
       '</div>' +
     '</div>' +
     '</div>';
@@ -6787,14 +7466,26 @@ function loadDataFromGoogle(skipCache){
   google.script.run
     .withSuccessHandler(function(data){
       try {
+        applyCompanyBranding(data.company);
         // ── Access denied / not authenticated ──────────────────────────────
-        if (data.accessStatus === 'DENIED') {
-          _showAccessDeniedScreen('DENIED', data.userEmail || '');
-          return;
-        }
-        if (data.accessStatus === 'NO_SESSION') {
-          // Non-org user not signed in → show the Google sign-in screen.
-          _showGoogleSignIn(data.oauthClientId, data.oauthRedirectUri);
+        // On a brand-new copy nobody is registered yet, so the backend answers
+        // DENIED to everyone — including the owner. Check for "not set up yet"
+        // BEFORE treating that as a refusal, or the owner is locked out of the
+        // system they just created.
+        if (data.accessStatus === 'DENIED' || data.accessStatus === 'NO_SESSION') {
+          var deniedEmail = data.userEmail || '';
+          var wasNoSession = data.accessStatus === 'NO_SESSION';
+          google.script.run
+            .withSuccessHandler(function(setup){
+              if (setup && setup.needsSetup) { _handleNeedsSetup(setup); return; }
+              if (wasNoSession) _showGoogleSignIn(data.oauthClientId, data.oauthRedirectUri);
+              else              _showAccessDeniedScreen('DENIED', deniedEmail);
+            })
+            .withFailureHandler(function(){
+              if (wasNoSession) _showGoogleSignIn(data.oauthClientId, data.oauthRedirectUri);
+              else              _showAccessDeniedScreen('DENIED', deniedEmail);
+            })
+            .getSetupState();
           return;
         }
         // ── Normal load ─────────────────────────────────────────────────────
@@ -6817,6 +7508,8 @@ function loadDataFromGoogle(skipCache){
         }
         try { _restoreTab();              } catch(e){ console.error('_restoreTab:', e); }
         try { checkMorningPopup();        } catch(e){ console.error('checkMorningPopup:', e); }
+        try { _offerSetupIfUnconfigured(data); } catch(e){ console.error('_offerSetupIfUnconfigured:', e); }
+        try { _showSetupNudge();          } catch(e){ console.error('_showSetupNudge:', e); }
       } catch(outerErr) {
         setConnStatus('offline');
         var sr2 = document.getElementById('statsRow');
@@ -6869,6 +7562,7 @@ function _applyData(data) {
   monitoredMaterials = data.monitoredMaterials || null;
   rackPhotos         = data.rackPhotos         || {};
   materialLocks      = data.materialLocks      || [];
+  _gmailScanEnabled  = data.gmailScanEnabled === true;
   _rebuildLocksIndex();
   if (data.users && data.users.length) _usersData = data.users;
 }
@@ -7086,8 +7780,11 @@ function applyRoleUI(){
   // Admin-only: Incoming button + Monitor settings gear
   var addInc = document.getElementById('btnAddIncoming');
   if (addInc) addInc.style.display = isAdmin ? '' : 'none';
+  // Gmail scanner is a paid add-on: admin-only AND only when the installation
+  // has it enabled (see isGmailScanEnabled() in Code.gs). Hiding it when it's
+  // off keeps a button that can only fail out of the customer's face.
   var scanGmailBtn = document.getElementById('btnScanGmail');
-  if (scanGmailBtn) scanGmailBtn.style.display = isAdmin ? '' : 'none';
+  if (scanGmailBtn) scanGmailBtn.style.display = (isAdmin && _gmailScanEnabled) ? '' : 'none';
   var gear = document.getElementById('btnMonitorSettings');
   if (gear) gear.style.display = isAdmin ? '' : 'none';
   var gearToolbar = document.getElementById('btnMonitorSettingsToolbar');
@@ -7572,13 +8269,35 @@ function saveGmailDraft(idx) {
     .processMovement('addIncoming', _h(item));
 }
 
-// Heartbeat every 90 s — keeps this user visible, refreshes list
+// Heartbeat — keeps this user visible in the presence list, refreshes it.
+//
+// Every google.script.run call is a server execution, and Google caps how many
+// may run at once per account; past that cap everything fails with "too many
+// scripts running simultaneously". A background tab firing this forever spends
+// that budget for nothing: no one is looking at the presence list, and the user
+// is not meaningfully "present". Several tabs left open across a few devices —
+// normal in a warehouse — is enough to sit near the ceiling all day, which is
+// what surfaced that error during ordinary use.
+//
+// So: skip the tick while the tab is hidden, and send one immediately on return
+// so presence is correct the moment someone actually looks. Interval widened
+// 90s → 150s, still well inside the 5-minute window that decides who counts as
+// active.
 setInterval(function(){
+  if (document.hidden) return;
   google.script.run
     .withSuccessHandler(renderActiveUsers)
     .withFailureHandler(function(){})
     .heartbeat(_sessionToken || null);
-}, 90000);
+}, 150000);
+
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden) return;
+  google.script.run
+    .withSuccessHandler(renderActiveUsers)
+    .withFailureHandler(function(){})
+    .heartbeat(_sessionToken || null);
+});
 
 // ── Version tag — set by JS so we can confirm script is running ───────────────
 (function(){
