@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.15';
+var APP_VERSION = '9.18';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -435,6 +435,12 @@ function resolveOwnFile_(fileId, token, callerName) {
     throw new Error('Not authenticated.');
   }
 
+  // Highest ceiling of the lot: one page of the Movements table can legitimately
+  // ask for dozens of thumbnails, and expanding stock rows adds more. The
+  // frontend already caps itself at 3 concurrent and caches per file — this is
+  // the backstop for a client that ignores both.
+  requireQuota_('file', auth.email, 600, 300);
+
   var file;
   try {
     file = DriveApp.getFileById(fileId);
@@ -614,9 +620,46 @@ function handleOAuthCallback_(code, state) {
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+// ─── RATE LIMITING ───────────────────────────────────────────────────────────
+// The web app is published as "Anyone with a Google account", so the URL alone
+// is enough to reach these endpoints — authentication decides what you get
+// back, not whether the script runs. That means anyone with the link can make
+// the owner's account burn Apps Script execution quota, and quota is per-owner
+// and shared by every real user: exhausting it takes the warehouse offline for
+// everybody. That is the failure this guards against, not data theft.
+//
+// CacheService, not Properties: these counters are throwaway, and Properties
+// has a hard quota of its own that a flood would then consume too.
+//
+// Limits are deliberately generous — several times what heavy normal use
+// looks like — because locking out a real warehouse mid-shift is far worse
+// than letting an abuser through a little longer.
+function throttle_(bucket, id, limit, windowSec) {
+  var key = 'rl_' + bucket + '_' + Utilities.base64EncodeWebSafe(String(id || 'anon')).substring(0, 40);
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(key);
+  var n = raw ? (parseInt(raw, 10) || 0) : 0;
+  if (n >= limit) return false;
+  // Not atomic — Apps Script has no atomic increment, and two calls landing in
+  // the same instant can both read the same n. That undercounts slightly under
+  // a burst, which is acceptable: this is a flood ceiling, not a precise meter.
+  cache.put(key, String(n + 1), windowSec);
+  return true;
+}
+
+function requireQuota_(bucket, id, limit, windowSec) {
+  if (!throttle_(bucket, id, limit, windowSec)) {
+    throw new Error('Too many requests — please wait a moment and try again.');
+  }
+}
+
 // Main window polls this until the popup callback has stored the verified email.
 // Returns a signed session token the browser will send on every later call.
 function pollLogin(state) {
+  // Keyed by the state value the caller supplied: this runs BEFORE any identity
+  // exists, so there is nothing else to key on. A tight limit here also blunts
+  // guessing at other people's login states.
+  requireQuota_('poll', state, 120, 300);
   var cache = CacheService.getScriptCache();
   var email = cache.get('login_' + state);
   if (!email) return { ready: false };
@@ -860,6 +903,11 @@ function getLegacyMaterialId(cat, name, proj) {
 function getInitialData(sessionToken) {
   try {
     var auth = setVerifiedAuth_(getUserRole(sessionToken));
+
+    // Applied only to identified callers: an anonymous visitor gets the small
+    // public sign-in payload below, and throttling by a key everyone shares
+    // ('anon') would let one abuser lock the sign-in screen for all of them.
+    if (auth.email) requireQuota_('init', auth.email, 180, 300);
 
     // Not authenticated — return public user list so frontend can show identity picker
     if (auth.role === 'NO_SESSION') {
@@ -1238,6 +1286,10 @@ function processMovement(action, data) {
   if (auth.role === 'NO_SESSION') throw new Error('Not authenticated. Please sign in with your Google account.');
   if (auth.role === 'DENIED')     throw new Error('Access denied. Your account (' + auth.email + ') is not registered in this system. Contact your administrator to request access.');
   if (auth.role === 'VIEWER')     throw new Error('Read-only access — you can view data but cannot record movements. Contact an admin.');
+
+  // 240/minute per user. A busy operator saving movements, editing config and
+  // running searches lands nowhere near this; a runaway loop or a script does.
+  requireQuota_('pm', auth.email, 240, 60);
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
@@ -3387,18 +3439,137 @@ function updateMinStockBulk(data, auth) {
 // the exact same locked, stock-validated, write-verified engine a normal ENTRY
 // goes through, so an imported row can never be less trustworthy than one
 // typed in by hand.
+// Excel → CSV, via Drive's own converter.
+//
+// Apps Script cannot read .xlsx bytes directly — there is no XLSX parser in the
+// runtime, and hand-rolling one (it's a ZIP of XML parts) is a lot of code to
+// maintain for something Drive already does correctly. So: upload the file
+// asking Drive to convert it to a Google Sheet, export that Sheet as CSV, and
+// bin the temporary file.
+//
+// Deliberately NOT SpreadsheetApp.openById() on the converted file, which would
+// be the obvious way to read it: this app declares spreadsheets.currentonly,
+// which grants access to its OWN spreadsheet and nothing else, so opening the
+// temp file would fail on scope. Exporting through the Drive API needs only the
+// drive scope the app already has — no new permission on the consent screen.
+//
+// Returns EVERY tab: [{name, text}]. The first version of this exported
+// text/csv, which silently gives back only the first sheet — so a workbook
+// with the inventory on tab 3 imported as whatever happened to be on tab 1,
+// with nothing to tell the user why. Exporting format=zip yields one CSV per
+// tab, which Utilities.unzip can open, so the caller can pick the right one.
+function excelToSheets_(base64Data, fileName) {
+  var token    = ScriptApp.getOAuthToken();
+  var bytes    = Utilities.base64Decode(base64Data);
+  var boundary = '----acopioImport' + Date.now();
+  var metadata = { name: 'Acopio import (temporary) — ' + fileName,
+                   mimeType: 'application/vnd.google-apps.spreadsheet' };
+
+  var head = '--' + boundary + '\r\n' +
+             'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+             JSON.stringify(metadata) + '\r\n' +
+             '--' + boundary + '\r\n' +
+             'Content-Type: application/octet-stream\r\n\r\n';
+  var tail = '\r\n--' + boundary + '--';
+  var payload = Utilities.newBlob(head).getBytes()
+                  .concat(bytes)
+                  .concat(Utilities.newBlob(tail).getBytes());
+
+  var up = UrlFetchApp.fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
+      method: 'post',
+      contentType: 'multipart/related; boundary=' + boundary,
+      payload: payload,
+      headers: { Authorization: 'Bearer ' + token },
+      muteHttpExceptions: true
+    });
+  if (up.getResponseCode() !== 200) {
+    throw new Error('Could not read that Excel file. If it is password-protected or an old .xls, ' +
+      'open it in Excel and use File → Save As → CSV, then upload that instead.');
+  }
+
+  var tempId = JSON.parse(up.getContentText()).id;
+  try {
+    var auth = { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true };
+
+    // One CSV per tab, zipped. Each entry is named "<workbook> - <tab>.csv".
+    var zip = UrlFetchApp.fetch(
+      'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(tempId) + '/export?format=zip', auth);
+    if (zip.getResponseCode() === 200) {
+      try {
+        var parts = Utilities.unzip(zip.getBlob().setContentType('application/zip'));
+        var sheets = parts.filter(function (b) { return /\.csv$/i.test(b.getName() || ''); })
+          .map(function (b) {
+            var n = String(b.getName() || '').replace(/\.csv$/i, '');
+            var dash = n.indexOf(' - ');            // strip the workbook-name prefix
+            return { name: dash !== -1 ? n.substring(dash + 3) : n, text: b.getDataAsString() };
+          });
+        if (sheets.length) return sheets;
+      } catch (e) {
+        // Not a zip after all (a single-tab workbook can come back as plain
+        // CSV) — fall through to the single-sheet path rather than failing.
+      }
+    }
+
+    var exp = UrlFetchApp.fetch(
+      'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(tempId) + '/export?mimeType=text/csv', auth);
+    if (exp.getResponseCode() !== 200) {
+      throw new Error('Could not read the contents of that Excel file.');
+    }
+    return [{ name: 'Sheet1', text: exp.getContentText() }];
+  } finally {
+    // Always cleaned up, including when the export above threw — otherwise a
+    // failed import would quietly litter the owner's Drive with temp copies.
+    try { DriveApp.getFileById(tempId).setTrashed(true); } catch (e) {}
+  }
+}
+
+// Picks which tab to import from a multi-tab workbook: the one the caller asked
+// for, else the first whose header row actually carries the required columns.
+// Without that second rule a workbook whose first tab is a cover sheet or a
+// summary would import as "0 valid rows" and look broken.
+function chooseImportSheet_(sheets, wanted) {
+  if (wanted) {
+    for (var i = 0; i < sheets.length; i++) if (sheets[i].name === wanted) return sheets[i];
+  }
+  for (var j = 0; j < sheets.length; j++) {
+    var head;
+    try { head = Utilities.parseCsv(String(sheets[j].text || '').replace(/^﻿/, ''))[0] || []; }
+    catch (e) { continue; }
+    var lower = head.map(function (h) { return String(h || '').trim().toLowerCase(); });
+    var hasAll = IMPORT_REQUIRED_HEADERS.every(function (h) { return lower.indexOf(h) !== -1; });
+    if (hasAll) return sheets[j];
+  }
+  return sheets[0];
+}
+
 var IMPORT_REQUIRED_HEADERS = ['category', 'name', 'qty'];
 var IMPORT_ALL_HEADERS      = ['category', 'name', 'qty', 'unit', 'location', 'project', 'supplier', 'po', 'comments'];
 
 function parseImportFile(data) {
   requireAuth_('ADMIN');
   var fileName = String(data.fileName || '');
-  if (!/\.csv$/i.test(fileName)) {
-    throw new Error('Please upload a .csv file. If this is an Excel file, use File → Save As → CSV in Excel or Google Sheets first, then upload that file. (Direct .xlsx import is on the roadmap.)');
+  var isExcel  = /\.xlsx?$/i.test(fileName);
+  if (!isExcel && !/\.csv$/i.test(fileName)) {
+    throw new Error('Please upload a .csv or .xlsx file.');
   }
 
-  var bytes = Utilities.base64Decode(data.fileData);
-  var text  = Utilities.newBlob(bytes, 'text/csv').getDataAsString();
+  var text;
+  var sheetNames = [];   // tabs found in an Excel workbook (empty for a .csv)
+  var usedSheet  = '';
+  if (isExcel) {
+    // Excel files are converted to CSV by Drive and then run through the exact
+    // same parser below — one code path for reading rows, so an .xlsx import
+    // can't drift away from the .csv one that is already well tested.
+    var sheets = excelToSheets_(data.fileData, fileName);
+    sheetNames = sheets.map(function (s) { return s.name; });
+    var chosen = chooseImportSheet_(sheets, String(data.sheetName || '').trim());
+    usedSheet  = chosen.name;
+    text       = chosen.text;
+  } else {
+    var bytes = Utilities.base64Decode(data.fileData);
+    text = Utilities.newBlob(bytes, 'text/csv').getDataAsString();
+  }
 
   // Strip a UTF-8 byte-order-mark. Excel's "CSV UTF-8 (Comma delimited)" export
   // adds one at the very start of the file; left in place it silently glues
@@ -3440,8 +3611,15 @@ function parseImportFile(data) {
 
   var missing = IMPORT_REQUIRED_HEADERS.filter(function (h) { return col[h] === -1; });
   if (missing.length) {
-    throw new Error('Missing required column header(s): ' + missing.join(', ') +
-      '. Download the template from this screen to see the exact format expected.');
+    throw new Error('Missing required column header(s) on ' +
+      (usedSheet ? 'sheet "' + usedSheet + '"' : 'this file') + ': ' + missing.join(', ') + '.' +
+      // Naming the other tabs matters: otherwise a workbook whose data sits on
+      // a later tab just reads as "your file is wrong", with no hint that the
+      // right data is in the same file one tab over.
+      (sheetNames.length > 1
+        ? ' This workbook also has: ' + sheetNames.filter(function (n) { return n !== usedSheet; }).join(', ') +
+          ' — pick the right one from the Sheet list on this screen.'
+        : ' Download the template from this screen to see the exact format expected.'));
   }
 
   var parsed = [];
@@ -3480,6 +3658,8 @@ function parseImportFile(data) {
     validRows:    validCount,
     invalidRows:  parsed.length - validCount,
     rawLineCount: rawLineCount,
+    sheetNames:   sheetNames,            // tabs found (Excel only) — lets the UI offer a picker
+    usedSheet:    usedSheet,
     rows:         parsed.slice(0, 500)   // a preview, not a data dump
   };
 }
@@ -3643,6 +3823,10 @@ function reportIssue(data) {
   if (auth.role === 'NO_SESSION' || auth.role === 'DENIED') {
     throw new Error('Not authenticated. Please sign in and use the app from its own page.');
   }
+  // Tighter than the rest: every report writes to Drive and sends mail, so a
+  // flood here costs far more per call than a normal RPC.
+  requireQuota_('issue', auth.email, 10, 600);
+
   var message = String((data && data.message) || '').trim();
   if (!message) throw new Error('Please describe what happened.');
   if (message.length > 4000) message = message.substring(0, 4000);
@@ -4116,6 +4300,12 @@ function heartbeat(sessionToken) {
   // getUserRole() returns NO_SESSION and would register a ghost empty user.
   var auth = getUserRole(sessionToken);
   if (!auth || auth.role === 'DENIED' || auth.role === 'NO_SESSION' || !auth.email) return [];
+
+  // Returns empty instead of throwing: presence is decoration, and a thrown
+  // error here would pop a failure toast in a perfectly healthy session. Each
+  // call rewrites the sessions property, so it is worth capping — the client
+  // polls about once a minute, making 60/5min ~12x normal.
+  if (!throttle_('hb', auth.email, 60, 300)) return [];
 
   var props    = PropertiesService.getScriptProperties();
   var raw      = props.getProperty('WMS_SESSIONS');
