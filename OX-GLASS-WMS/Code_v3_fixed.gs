@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.30';
+var APP_VERSION = '9.40';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -297,6 +297,8 @@ function saveSetupWizard(data) {
   // any stock, on a copy that already has movements) so the first load reads a
   // valid, if empty, set of derived sheets instead of failing.
   try { refreshDerivedSheets_(ss); } catch (e) {}
+
+  removeStartHereSheet_(ss);   // setup done — the welcome sheet has served its purpose
 
   p.setProperty('SETUP_COMPLETE', 'true');
   auditLog_(ss, 'SETUP_COMPLETED', actor, companyName, '', '');
@@ -1001,6 +1003,8 @@ function getInitialData(sessionToken) {
     return {
       serverVersion:      APP_VERSION,
       company:            publicCompany_(),
+      systemActivity:     (function(){ try { return getSystemActivity(8); } catch (e) { return []; } })(),
+      columnPrefs:        columnPrefs_(),
       movements:          movements,
       stock:              stock,
       config:             config,
@@ -1506,6 +1510,7 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'mergeConfigValues') return mergeConfigValues(data, auth);
   if (action === 'saveLocationLayout') return saveLocationLayout(data, auth);
   if (action === 'mergeLocations')     return mergeLocations(data, auth);
+  if (action === 'saveColumnPrefs')    return saveColumnPrefs(data, auth);
   // ── Material management (ADMIN only) ──────────────────────────────────────
   if (action === 'listMaterials')  return listMaterials(auth);
   if (action === 'manageMaterial') return manageMaterial(data, auth);
@@ -3770,6 +3775,53 @@ function auditLog_(ss, action, user, details, oldVal, newVal) {
   sheet.appendRow([new Date(), action, user, sheetSafe_(details), sheetSafe_(oldVal), sheetSafe_(newVal)]);
 }
 
+// ─── WHAT THE SYSTEM DID ON ITS OWN ──────────────────────────────────────────
+// The backup at 2am and the archive job at 3am already ran and already wrote to
+// AUDIT_LOG — but nothing ever showed it, so from the app they were invisible.
+// Silent background work is indistinguishable from background work that stopped
+// happening, and "is this thing actually backing up?" is the first question
+// anyone asks about a spreadsheet holding their inventory.
+//
+// Read off AUDIT_LOG rather than a new log of its own: those rows are already
+// written, already trimmed with the rest of the sheet, and already carry the
+// timestamp. Only the automatic actors count — anything a person did is their
+// own action and belongs in the audit trail, not in a "the system is working"
+// notice.
+var SYSTEM_ACTORS = { 'system': 1, 'system@scheduled-trigger': 1 };
+
+var SYSTEM_EVENT_LABELS = {
+  BACKUP_CREATED:    'Backup created',
+  ARCHIVE_RECONCILE: 'Old movements archived',
+  STOCK_REBUILD:     'Stock totals rebuilt'
+};
+
+function getSystemActivity(limit) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEETS.AUDIT);
+  if (!sheet) return [];
+  var last = sheet.getLastRow();
+  if (last < 2) return [];
+
+  // Only the tail is read. The audit sheet grows without bound and a full
+  // getDataRange() here would be paid on every single app load.
+  var span  = Math.min(400, last - 1);
+  var rows  = sheet.getRange(last - span + 1, 1, span, 6).getValues();
+  var out   = [];
+  for (var i = rows.length - 1; i >= 0 && out.length < (limit || 8); i--) {
+    var actor = String(rows[i][2] || '').toLowerCase().trim();
+    if (!SYSTEM_ACTORS[actor]) continue;
+    var action = String(rows[i][1] || '');
+    out.push({
+      at:     rows[i][0] ? new Date(rows[i][0]).toISOString() : '',
+      action: action,
+      label:  SYSTEM_EVENT_LABELS[action] || action.replace(/_/g, ' ').toLowerCase(),
+      detail: String(rows[i][3] || ''),
+      extra:  [rows[i][4], rows[i][5]].filter(function (v) { return String(v || '').trim(); }).join(' · ')
+    });
+  }
+  return out;
+}
+
 // ─── ERROR LOG ────────────────────────────────────────────────────────────────
 // Structured error log: one row per error, backend or frontend, with a stable
 // severity, the action being attempted, and a correlation ID so a user can
@@ -4097,20 +4149,74 @@ function onOpen() {
     .addSubMenu(advanced)
     .addToUi();
 
-  // Fresh copy: open the wizard automatically instead of waiting for the owner
-  // to find the menu item. Every OTHER viewer (or the owner's own second tab
-  // after they already dismissed it once) also runs onOpen(), so this must
-  // never throw — inline, non-throwing owner check rather than
-  // requireOwnerContext_(), which is written to throw on purpose everywhere
-  // else it's used.
+  // A fresh copy cannot be made to open the wizard by itself, and it took a lot
+  // of "it never opens" to work out why: onOpen is a SIMPLE trigger. Simple
+  // triggers run without authorization and are barred from any service that
+  // needs it — which covers both Session.getActiveUser() (used here to check
+  // the opener was the owner) and showModalDialog. On a copy nobody has
+  // authorized yet, every one of those throws, and the try/catch that kept
+  // onOpen from breaking also made the failure invisible.
+  //
+  // So: no Session call, no silent dependency on a dialog. A toast needs no
+  // authorization and always shows. The real signal is the START HERE sheet the
+  // template ships with, which is simply visible the moment the file opens.
   if (!cs.setupComplete) {
-    var eff = '', act = '';
-    try { eff = Session.getEffectiveUser().getEmail(); } catch (e) {}
-    try { act = Session.getActiveUser().getEmail();    } catch (e) {}
-    if (eff && eff === act) {
-      try { showSetupWizardDialog(); } catch (e) {}
-    }
+    try {
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        'Open the "🏭 ' + PRODUCT_NAME + '" menu above and choose "Set Up ' + PRODUCT_NAME + '".',
+        '👋 Not set up yet', 30);
+    } catch (e) {}
+    // Still attempted: on a copy that HAS been authorized this sometimes works,
+    // and costs nothing when it does not.
+    try { showSetupWizardDialog(); } catch (e) {}
   }
+}
+
+// The one instruction that reaches a customer with no authorization, no menu
+// knowledge and no email from us: a sheet, in front of them, when the file
+// opens. Created by the template tool and removed by the wizard once setup is
+// done, so a working system is not left carrying a welcome mat.
+var START_HERE_SHEET = '👉 START HERE';
+
+function createStartHereSheet_(ss) {
+  var sh = ss.getSheetByName(START_HERE_SHEET);
+  if (sh) ss.deleteSheet(sh);
+  sh = ss.insertSheet(START_HERE_SHEET, 0);
+
+  var lines = [
+    ['Welcome — your warehouse system is ready to set up.'],
+    [''],
+    ['1.  Look at the menu bar at the top of this window.'],
+    ['2.  Click  🏭 ' + PRODUCT_NAME + '  (it sits to the right of "Help").'],
+    ['3.  Choose  "🚀 Set Up ' + PRODUCT_NAME + ' (start here)".'],
+    [''],
+    ['That opens a short setup — your company, what you store, where you store'],
+    ['it, and who works here. About 10 minutes, once.'],
+    [''],
+    ['Google will ask you to authorize the system the first time. It will warn'],
+    ['that the app is not verified — that is expected: this copy belongs to YOU,'],
+    ['and the "developer" it names is your own account. Click Advanced, then'],
+    ['"Go to ..." to continue.'],
+    [''],
+    ['Do not type anything into the other tabs at the bottom — the app fills'],
+    ['those in for you.'],
+    [''],
+    ['This sheet disappears by itself once setup is finished.']
+  ];
+  sh.getRange(1, 1, lines.length, 1).setValues(lines);
+  sh.getRange(1, 1).setFontSize(16).setFontWeight('bold');
+  sh.getRange(3, 1, 3, 1).setFontWeight('bold');
+  sh.setColumnWidth(1, 640);
+  sh.setHiddenGridlines(true);
+  ss.setActiveSheet(sh);
+  return sh;
+}
+
+function removeStartHereSheet_(ss) {
+  try {
+    var sh = ss.getSheetByName(START_HERE_SHEET);
+    if (sh && ss.getSheets().length > 1) ss.deleteSheet(sh);
+  } catch (e) {}
 }
 
 // Opens the setup wizard as a dialog OVER the spreadsheet — no web app
@@ -4389,7 +4495,8 @@ var TEMPLATE_WIPE_PROPS = [
   'FOLDER_PREFIX_HISTORY', 'SETUP_COMPLETE', 'WEB_APP_URL', 'SESSION_SECRET',
   'WMS_SESSIONS', 'WMS_MONITORED_MATERIALS', 'GMAIL_SCAN_ENABLED',
   'ERROR_ALERTS_ENABLED', 'GEMINI_API_KEY',
-  'OAUTH_CLIENT_ID', 'OAUTH_CLIENT_SECRET', 'OAUTH_REDIRECT_URI'
+  'OAUTH_CLIENT_ID', 'OAUTH_CLIENT_SECRET', 'OAUTH_REDIRECT_URI',
+  'COLUMN_PREFS'
 ];
 
 function menuPrepareMasterTemplate() {
@@ -4454,6 +4561,7 @@ function menuPrepareMasterTemplate() {
   } catch (e) {}
 
   try { ss.rename(PRODUCT_NAME + ' — Warehouse Template'); } catch (e) {}
+  try { createStartHereSheet_(ss); } catch (e) {}
 
   ui.alert('✓ Template prepared',
     'Cleared: ' + cleared.join(', ') + '\n' +
@@ -4855,6 +4963,52 @@ function mergeLocations(data, auth) {
   refreshDerivedSheets_(ss);
   auditLog_(ss, 'MERGE_LOCATIONS', auth.email, from.join(' + ') + ' → ' + into, String(rowsChanged) + ' cells', '');
   return { status: 'success', rowsChanged: rowsChanged, into: into };
+}
+
+// ─── COLUMN LABELS AND VISIBILITY ────────────────────────────────────────────
+// Every business names these things differently — one calls a shelf a rack, the
+// next calls it a bay; "At Site" means delivered to one customer and used on a
+// job to another. Hardcoding our words into their screen makes the product feel
+// like it was built for somebody else.
+//
+// Stored as one JSON blob in Script Properties rather than as CONFIG columns:
+// it is a handful of settings, not a catalog, and CONFIG's columns are already
+// crowded. Being a Script Property also means it does not survive into a
+// customer's copy of the template, which is right — these are one
+// installation's words.
+function columnPrefs_() {
+  var raw = PropertiesService.getScriptProperties().getProperty('COLUMN_PREFS');
+  if (!raw) return { labels: {}, hidden: [] };
+  try {
+    var o = JSON.parse(raw);
+    return { labels: o.labels || {}, hidden: o.hidden || [] };
+  } catch (e) {
+    return { labels: {}, hidden: [] };
+  }
+}
+
+function saveColumnPrefs(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var labels = {}, hidden = [];
+
+  // Only trimmed, non-empty overrides are kept. A blank box means "use the
+  // default name", which must not be stored as an empty header.
+  var inLabels = (data && data.labels) || {};
+  Object.keys(inLabels).forEach(function (k) {
+    var v = String(inLabels[k] || '').trim();
+    if (v) labels[String(k).substring(0, 40)] = v.substring(0, 40);
+  });
+
+  ((data && data.hidden) || []).forEach(function (k) {
+    k = String(k || '').trim();
+    if (k) hidden.push(k.substring(0, 40));
+  });
+
+  PropertiesService.getScriptProperties()
+    .setProperty('COLUMN_PREFS', JSON.stringify({ labels: labels, hidden: hidden }));
+  auditLog_(SpreadsheetApp.getActiveSpreadsheet(), 'UPDATE_CONFIG', auth.email,
+    'columns', Object.keys(labels).length + ' renamed', hidden.length + ' hidden');
+  return { status: 'success' };
 }
 
 // Writes the Locations column and its Type column back in one go, in the exact
