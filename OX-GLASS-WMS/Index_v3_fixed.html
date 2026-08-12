@@ -688,7 +688,13 @@
        the rotated corners and the count badge to sit OUTSIDE the top card. */
     .cfg-deck{position:fixed;right:22px;bottom:86px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(300px,calc(100vw - 44px));padding:14px 12px 0 14px}
     .cfg-deck:empty{display:none}
-    .cfg-card{position:relative;background:var(--navy);color:#fff;border-radius:10px;padding:.55rem .7rem;font-size:.76rem;box-shadow:0 6px 20px rgba(0,0,0,.25);width:250px;max-width:100%;height:88px;flex-shrink:0;transition:margin .22s ease,transform .22s ease,opacity .22s ease;cursor:default}
+    /* Closing is deliberately slower than opening — a pile snapping shut the
+       instant the pointer leaves reads as the app swatting you away. */
+    .cfg-card{position:relative;background:var(--navy);color:#fff;border-radius:10px;padding:.55rem .7rem;font-size:.76rem;box-shadow:0 6px 20px rgba(0,0,0,.25);width:250px;max-width:100%;height:88px;flex-shrink:0;transition:margin .5s ease,transform .5s ease,opacity .45s ease;cursor:default}
+    .cfg-deck:hover .cfg-card,.cfg-deck.open .cfg-card{transition:margin .22s ease,transform .22s ease,opacity .2s ease}
+    /* Resting state is nearly see-through so the deck never competes with the
+       app behind it; hovering brings it back to full strength. */
+    .cfg-deck.dim:not(:hover):not(.open) .cfg-card{opacity:.25}
     .cfg-card + .cfg-card{margin-top:.45rem}
     /* Piled: each card pulled fully up under the next, offset a few px so the
        edges show. Rotation alternates for a hand-stacked look. */
@@ -729,6 +735,58 @@
     .cfg-card-add:disabled{opacity:.6;cursor:default}
     .cfg-card-skip{background:rgba(255,255,255,.14);color:#dbe4f5}
     @media (max-width:640px){.cfg-deck{right:16px;bottom:72px;max-width:calc(100vw - 32px)}.cfg-card{width:230px}}
+    /* Manual merge picker */
+    .cfg-pick{margin-right:.5rem;flex-shrink:0;cursor:pointer}
+    .cfg-pickbar{display:none;gap:.5rem;align-items:center;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:8px;padding:.5rem .7rem;margin-bottom:.75rem}
+    .cfg-pickbar.show{display:flex}
+    .cfg-pick-count{font-size:.78rem;font-weight:700}
+    .cfg-pickbar select{font-size:.8rem;padding:.25rem .4rem;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);max-width:220px}
+    /* Locations grouped by type, drag to reorder */
+    .loc-toolbar{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.75rem}
+    .loc-plus-wrap{position:relative;flex-shrink:0}
+    .loc-plus{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:#fff;font-size:1.2rem;line-height:1;cursor:pointer;font-family:inherit}
+    .loc-plus:hover{filter:brightness(1.1)}
+    .loc-plus-menu{display:none;position:absolute;right:0;top:100%;padding-top:4px;z-index:30;min-width:170px}
+    /* Opened on hover of the whole wrapper, and kept open while the pointer is
+       on the menu itself - hovering the button alone would close it the moment
+       the pointer travelled down toward a choice. */
+    .loc-plus-wrap:hover .loc-plus-menu,.loc-plus-menu:hover{display:block}
+    .loc-plus-menu button{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:.8rem;font-family:inherit;padding:.5rem .7rem;cursor:pointer}
+    .loc-plus-menu button:first-child{border-radius:8px 8px 0 0}
+    .loc-plus-menu button:last-child{border-radius:0 0 8px 8px;border-top:none}
+    .loc-plus-menu button:hover{background:var(--bg)}
+    .loc-group-default .loc-group-hdr{background:#DBEAFE}
+    [data-theme="dark"] .loc-group-default .loc-group-hdr{background:#1E3A5F}
+    .loc-groups{display:flex;flex-direction:column;gap:.75rem}
+    .loc-group{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card)}
+    .loc-group-hdr{display:flex;align-items:center;gap:.5rem;padding:.45rem .7rem;background:var(--bg);border-bottom:1px solid var(--border)}
+    .loc-group-name{font-size:.78rem;font-weight:800;color:var(--text);letter-spacing:.03em}
+    .loc-group-count{font-size:.68rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0 .45rem}
+    .loc-group-hdr .cfg-btn{margin-left:auto}
+    .loc-list{list-style:none;margin:0;padding:.4rem;min-height:44px;display:flex;flex-wrap:wrap;gap:.35rem}
+    .loc-list.drop-target{background:rgba(59,125,216,.10);outline:2px dashed var(--accent);outline-offset:-4px}
+    .loc-item{display:flex;align-items:center;gap:.35rem;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:.3rem .55rem;font-size:.78rem;color:var(--text);cursor:grab}
+    .loc-item.dragging{opacity:.4}
+    .loc-grip{color:var(--muted);font-size:.85rem;line-height:1}
+    .loc-empty{color:var(--muted);font-size:.75rem;padding:.35rem .5rem;font-style:italic}
+    .loc-group-archived{opacity:.85}
+    .loc-group-archived .loc-group-hdr{background:var(--bg)}
+    .loc-group-archived .loc-item{background:transparent;border-style:dashed;color:var(--muted)}
+    .loc-arch-note{font-size:.66rem;color:var(--muted);margin-left:.4rem}
+    .loc-arch-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 0 0 .2rem;line-height:1}
+    .loc-arch-btn:hover{color:var(--accent)}
+    .loc-pick{margin-right:.15rem;cursor:pointer}
+    .loc-savebar{display:none;gap:.5rem;align-items:center;flex-wrap:wrap;position:sticky;bottom:0;background:var(--navy);color:#fff;border-radius:8px;padding:.55rem .75rem;margin-top:.75rem;font-size:.8rem}
+    .loc-savebar.show{display:flex}
+    /* Possible-duplicate groups in Settings → Projects / Suppliers */
+    .sim-box{background:var(--yellow-bg,#FEF9C3);border:1px solid #FDE68A;border-radius:10px;padding:.75rem .85rem;margin-bottom:1rem}
+    [data-theme="dark"] .sim-box{background:#3B2F0B;border-color:#6B5B16}
+    .sim-hdr{font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.25rem}
+    .sim-sub{font-size:.74rem;color:var(--muted);margin-bottom:.6rem;line-height:1.45}
+    .sim-group{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.55rem .65rem;margin-bottom:.5rem}
+    .sim-group:last-child{margin-bottom:0}
+    .sim-opt{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--text);padding:.15rem 0;cursor:pointer}
+    .sim-acts{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
     .cfg-new-hint{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-top:.3rem;font-size:.72rem;color:var(--muted)}
     .cfg-new-add{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:.22rem .5rem;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit}
     .cfg-new-add:hover{filter:brightness(1.1)}
@@ -1894,7 +1952,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '9.22';
+var APP_VERSION = '9.30';
 var userRole = 'WAREHOUSE';
 var userEmail = '';
 // Paid Gmail-scanner add-on: off unless the backend says this installation
@@ -5249,6 +5307,20 @@ function _loadSettings() {
   google.script.run
     .withSuccessHandler(function(d) {
       _settingsData = d;
+      // Sorted once, here, rather than per render: the edit/rename handlers
+      // address entries by their INDEX in this array, so sorting a display copy
+      // would have them act on the wrong row. Sorting the source keeps the two
+      // in step. localeCompare so accented names land where a person expects.
+      // Locations are deliberately absent: their order is arranged by hand on
+      // the Locations tab and stored in CONFIG, so sorting here would throw
+      // that away on every load. That tab offers "Sort A–Z" per group instead.
+      ['categories', 'projects', 'suppliers'].forEach(function(k){
+        if (Array.isArray(_settingsData[k])) {
+          _settingsData[k].sort(function(a, b){
+            return String(a).localeCompare(String(b), undefined, { sensitivity: 'base', numeric: true });
+          });
+        }
+      });
       _renderSettingsTab(_settingsTab);
     })
     .withFailureHandler(function(e) { _settingMsg('Error: '+(e.message||e), 'error'); })
@@ -5509,12 +5581,21 @@ function _renderSettingsTab(tab) {
   if (tab === 'system')      { _renderSystemTab(); return; }
   if (tab === 'pmdirectory') { _renderPmDirectoryTab(); return; }
   if (tab === 'import')      { _renderImportTab(); return; }
+  if (tab === 'locations')   { _renderLocationsTab(); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
 
+  var mergeable = (tab === 'projects' || tab === 'suppliers');
+
   var rows = items.map(function(v, i) {
     return '<li class="cfg-item" data-idx="'+i+'" data-val="'+_he(v)+'">' +
+      // Manual pairing for the duplicates the detector deliberately won't
+      // guess at — abbreviations like "CLIFTONBUILDING H" vs
+      // "CLIFTONPLACEBLDNGH". Catching those automatically would need matching
+      // loose enough to also group genuinely different jobs, and a wrong merge
+      // rewrites history, so the judgement stays with a person.
+      (mergeable ? '<input type="checkbox" class="cfg-pick" data-val="'+_he(v)+'" title="Select to merge">' : '') +
       '<span class="cfg-item-name" id="cfgName-'+tab+'-'+i+'">'+v+'</span>' +
       '<div id="cfgEdit-'+tab+'-'+i+'" style="display:none;flex:1;display:none;gap:.35rem;align-items:center">' +
         '<input class="cfg-item-input" id="cfgInp-'+tab+'-'+i+'" value="'+_he(v)+'">' +
@@ -5527,12 +5608,641 @@ function _renderSettingsTab(tab) {
   }).join('');
 
   content.innerHTML =
-    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Manage '+label.toLowerCase()+'s. Renaming a category updates all existing movements automatically.</p>' +
+    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Manage '+label.toLowerCase()+'s. Renaming a category updates all existing movements automatically.' +
+      (mergeable ? ' Tick two or more to merge them by hand.' : '') + '</p>' +
+    (mergeable ? _renderSimilarGroups(tab, items, label) : '') +
+    (mergeable ? '<div class="cfg-pickbar" id="cfgPickBar"></div>' : '') +
     '<ul class="cfg-list">'+rows+'</ul>' +
     '<div class="cfg-add-row">' +
       '<input type="text" id="cfgNewVal" placeholder="New '+label+' name…" onkeydown="if(event.key===\'Enter\')_cfgAdd(\''+tab+'\')">' +
       '<button class="btn btn-primary btn-sm" onclick="_cfgAdd(\''+tab+'\')">+ Add</button>' +
     '</div>';
+  if (mergeable) { _wireSimilarGroups(tab); _wireManualMerge(tab, label); }
+}
+
+// ── Locations, grouped by type ───────────────────────────────────────────────
+// A vertical rack, a whole warehouse room, an office and a rolling cart are not
+// the same kind of place, and they were all in one flat list. Types are free
+// text so a business names its own groups; grouping is presentation only —
+// nothing branches on the type and every location still counts toward stock
+// exactly as before.
+//
+// Order is meaningful here and is stored as the row order in CONFIG, so this
+// tab is NOT alphabetised at load the way the other catalogs are. "Sort A–Z"
+// per group is offered instead, since a suggested order is useful but should
+// not overwrite one somebody arranged on purpose.
+var _locLayout = [];        // [{name, type}] in display order
+var _locDragFrom = null;
+var _locExtraGroups = [];   // groups created on screen but still empty
+// Every location belongs to a group; this is the one it belongs to when nobody
+// has said otherwise. It always exists, always sits first, and cannot be
+// renamed or deleted — deleting any other group empties into it, so a location
+// can never end up with nowhere to be.
+var LOC_DEFAULT_GROUP = 'ALL LOCATIONS';
+// Archiving instead of deleting: every movement that ever went into or out of a
+// location names it, so removing it would leave that history pointing at
+// nothing. An archived location keeps all its history and simply stops being
+// offered when recording new movements. Stored as a reserved group name, which
+// needs no schema change and makes restoring it a drag back out.
+var LOC_ARCHIVED_GROUP = 'ARCHIVED';
+
+function _locTypesInOrder(){
+  var seen = {}, out = [LOC_DEFAULT_GROUP];
+  seen[LOC_DEFAULT_GROUP] = 1;
+  seen[LOC_ARCHIVED_GROUP] = 1;          // pinned to the end below, never inline
+  _locLayout.forEach(function(l){
+    var t = l.type || LOC_DEFAULT_GROUP;
+    if (!seen[t]) { seen[t] = 1; out.push(t); }
+  });
+  _locExtraGroups.forEach(function(t){ if (!seen[t]) { seen[t] = 1; out.push(t); } });
+  out.push(LOC_ARCHIVED_GROUP);
+  return out;
+}
+
+function _renderLocationsTab(){
+  var content = document.getElementById('settingsTabContent');
+  var names = _settingsData.locations || [];
+  var types = _settingsData.locationTypes || {};
+  _locLayout = names.map(function(n){ return { name: n, type: (types[n] || LOC_DEFAULT_GROUP) }; });
+  _locExtraGroups = [];
+
+  content.innerHTML =
+    '<div class="loc-toolbar">' +
+      '<p style="font-size:.8rem;color:var(--muted);margin:0;flex:1">' +
+        'Drag a location into a group to file it there. Grouping is for organising only — every location still counts toward stock, ' +
+        'and the Warehouse Map shows these same groups.' +
+        '<br><b>Dragging needs a mouse</b> — on a phone this list is read-only for now.' +
+      '</p>' +
+      '<div class="loc-plus-wrap">' +
+        '<button class="loc-plus" id="locPlusBtn" title="Add">+</button>' +
+        '<div class="loc-plus-menu">' +
+          '<button onclick="_locShowNew(\'location\')">📍 Create location</button>' +
+          '<button onclick="_locShowNew(\'group\')">🗂 Create group</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="locNewRow" class="cfg-add-row" style="display:none">' +
+      '<input type="text" id="locNewVal" placeholder="Name…" onkeydown="if(event.key===\'Enter\')_locCreate()">' +
+      '<button class="btn btn-primary btn-sm" onclick="_locCreate()">Create</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'locNewRow\').style.display=\'none\'">Cancel</button>' +
+    '</div>' +
+    '<div id="locMergeBar" class="cfg-pickbar"></div>' +
+    '<div class="loc-groups" id="locGroups"></div>' +
+    '<div id="locSaveBar" class="loc-savebar"></div>';
+  _redrawLocGroups();
+}
+
+function _renderLocGroup(type){
+  var items = _locLayout.filter(function(l){ return (l.type || LOC_DEFAULT_GROUP) === type; });
+  var isDefault  = (type === LOC_DEFAULT_GROUP);
+  var isArchived = (type === LOC_ARCHIVED_GROUP);
+  var fixed = isDefault || isArchived;   // neither can be renamed or removed
+  if (isArchived && !items.length) return '';   // no empty archive box in the way
+
+  return '<div class="loc-group' + (isDefault ? ' loc-group-default' : '') +
+      (isArchived ? ' loc-group-archived' : '') + '" data-type="' + _he(type) + '">' +
+    '<div class="loc-group-hdr">' +
+      '<span class="loc-group-name">' + (isArchived ? '🗄 ' : '') + _he(type) + '</span>' +
+      '<span class="loc-group-count">' + items.length + '</span>' +
+      (isArchived
+        ? '<span class="loc-arch-note">Kept for history — not offered on new movements. Drag out to restore.</span>'
+        : '<button class="cfg-btn" title="Sort this group A–Z" onclick="_locSortGroup(\'' + _he(type) + '\')">A–Z</button>') +
+      (fixed ? '' :
+        '<button class="cfg-btn" title="Rename group" onclick="_locRenameGroup(\'' + _he(type) + '\')">✏️</button>' +
+        '<button class="cfg-btn cfg-btn-danger" title="Delete group" onclick="_locDeleteGroup(\'' + _he(type) + '\')">🗑</button>') +
+    '</div>' +
+    '<ul class="loc-list" data-type="' + _he(type) + '">' +
+      (items.length
+        ? items.map(function(l){
+            return '<li class="loc-item" draggable="true" data-name="' + _he(l.name) + '">' +
+              '<input type="checkbox" class="loc-pick" data-name="' + _he(l.name) + '" title="Select to merge">' +
+              '<span class="loc-grip">⠿</span><span>' + _he(l.name) + '</span>' +
+              '<button class="loc-arch-btn" title="' + (isArchived ? 'Restore' : 'Archive') + '" ' +
+                'onclick="_locToggleArchive(\'' + _he(l.name) + '\')">' + (isArchived ? '↩' : '🗄') + '</button>' +
+            '</li>';
+          }).join('')
+        : '<li class="loc-empty">' + (isDefault ? 'Nothing unfiled' : 'Drop a location here') + '</li>') +
+    '</ul></div>';
+}
+
+// Archive / restore is a group move, so it goes through the same save as
+// everything else on this screen.
+function _locToggleArchive(name){
+  var entry = null;
+  _locLayout.forEach(function(l){ if (l.name === name) entry = l; });
+  if (!entry) return;
+  entry.type = (entry.type === LOC_ARCHIVED_GROUP) ? LOC_DEFAULT_GROUP : LOC_ARCHIVED_GROUP;
+  _redrawLocGroups();
+  _locMarkDirty();
+}
+
+var _locNewKind = 'location';
+function _locShowNew(kind){
+  _locNewKind = kind;
+  var row = document.getElementById('locNewRow');
+  var inp = document.getElementById('locNewVal');
+  if (!row || !inp) return;
+  row.style.display = 'flex';
+  inp.placeholder = (kind === 'group') ? 'Group name (e.g. CARTS)' : 'Location name (e.g. A1A)';
+  inp.value = '';
+  inp.focus();
+}
+
+function _locCreate(){
+  var inp = document.getElementById('locNewVal');
+  var v = (inp ? inp.value : '').trim().toUpperCase();
+  if (!v) { if (inp) inp.focus(); return; }
+
+  if (_locNewKind === 'group'){
+    if (v === LOC_ARCHIVED_GROUP) { showToast('That name is reserved for archived locations.', 'warn'); return; }
+    if (_locTypesInOrder().indexOf(v) !== -1) { showToast('That group already exists.', 'warn'); return; }
+    // A group with no members has nothing to store — CONFIG keeps a type per
+    // LOCATION, not a list of groups — so it lives on screen until something
+    // lands in it.
+    _locExtraGroups.push(v);
+  } else {
+    if (_locLayout.some(function(l){ return l.name.toUpperCase() === v; })) {
+      showToast('That location already exists.', 'warn'); return;
+    }
+    // New locations always start unfiled, then get dragged where they belong.
+    _locLayout.push({ name: v, type: LOC_DEFAULT_GROUP });
+    _locMarkDirty();
+  }
+  document.getElementById('locNewRow').style.display = 'none';
+  _redrawLocGroups();
+}
+
+function _locRenameGroup(type){
+  var next = prompt('Rename group "' + type + '" to:', type);
+  if (next === null) return;
+  next = String(next).trim().toUpperCase();
+  if (!next || next === type) return;
+  if (next === LOC_DEFAULT_GROUP || next === LOC_ARCHIVED_GROUP) { showToast('That name is reserved.', 'warn'); return; }
+  if (_locTypesInOrder().indexOf(next) !== -1) { showToast('That group already exists.', 'warn'); return; }
+  _locLayout.forEach(function(l){ if ((l.type || LOC_DEFAULT_GROUP) === type) l.type = next; });
+  _locExtraGroups = _locExtraGroups.map(function(t){ return t === type ? next : t; });
+  _redrawLocGroups();
+  _locMarkDirty();
+}
+
+function _locDeleteGroup(type){
+  var members = _locLayout.filter(function(l){ return (l.type || LOC_DEFAULT_GROUP) === type; });
+  _showConfirm({
+    icon: '🗂', title: 'Delete group "' + type + '"?',
+    message: members.length
+      ? members.length + ' location(s) will move back to ' + LOC_DEFAULT_GROUP + '. No location is deleted.'
+      : 'This group is empty.',
+    confirmText: 'Delete group',
+    danger: true,
+    onConfirm: function(){
+      // Only the grouping goes — the locations themselves are never touched,
+      // because a location is referenced by movement history and deleting one
+      // is a different decision entirely.
+      _locLayout.forEach(function(l){ if ((l.type || LOC_DEFAULT_GROUP) === type) l.type = LOC_DEFAULT_GROUP; });
+      _locExtraGroups = _locExtraGroups.filter(function(t){ return t !== type; });
+      _redrawLocGroups();
+      _locMarkDirty();
+    }
+  });
+}
+
+function _locSortGroup(type){
+  var rest = _locLayout.filter(function(l){ return (l.type || LOC_DEFAULT_GROUP) !== type; });
+  var mine = _locLayout.filter(function(l){ return (l.type || LOC_DEFAULT_GROUP) === type; })
+    .sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { sensitivity:'base', numeric:true }); });
+  // Rebuilt in group order so the other groups keep their positions.
+  var order = _locTypesInOrder(), out = [];
+  order.forEach(function(t){
+    (t === type ? mine : rest.filter(function(l){ return (l.type || LOC_DEFAULT_GROUP) === t; }))
+      .forEach(function(l){ out.push(l); });
+  });
+  _locLayout = out;
+  _redrawLocGroups();
+  _locMarkDirty();
+}
+
+function _redrawLocGroups(){
+  var box = document.getElementById('locGroups');
+  if (!box) return;
+  box.innerHTML = _locTypesInOrder().map(_renderLocGroup).join('');
+  _wireLocDnD();
+  _wireLocMerge();
+}
+
+// Merging locations, for the case archiving doesn't cover: the same shelf
+// entered under two spellings. Rewrites both the source and destination columns
+// of every movement, so nothing is left pointing at the name that goes away.
+function _wireLocMerge(){
+  var bar = document.getElementById('locMergeBar');
+  if (!bar) return;
+
+  function picked(){
+    return Array.prototype.map.call(document.querySelectorAll('.loc-pick:checked'),
+      function(cb){ return cb.getAttribute('data-name'); });
+  }
+
+  function draw(){
+    var sel = picked();
+    if (sel.length < 2){ bar.innerHTML = ''; bar.classList.remove('show'); return; }
+    bar.classList.add('show');
+    bar.innerHTML =
+      '<span class="cfg-pick-count">' + sel.length + ' selected — keep which one?</span>' +
+      '<select id="locMergeKeep">' +
+        sel.map(function(v){ return '<option value="' + _he(v) + '">' + _he(v) + '</option>'; }).join('') +
+      '</select>' +
+      '<button class="btn btn-primary btn-sm" id="locMergeBtn">Merge</button>' +
+      '<button class="btn btn-ghost btn-sm" id="locMergeClear">Clear</button>';
+
+    document.getElementById('locMergeClear').addEventListener('click', function(){
+      document.querySelectorAll('.loc-pick:checked').forEach(function(cb){ cb.checked = false; });
+      draw();
+    });
+
+    document.getElementById('locMergeBtn').addEventListener('click', function(){
+      var into = document.getElementById('locMergeKeep').value;
+      var from = sel.filter(function(v){ return v !== into; });
+      var btn  = document.getElementById('locMergeBtn');
+      _showConfirm({
+        icon: '🔀', title: 'Merge into "' + into + '"?',
+        message: from.join('\n') + '\n\nwill become "' + into + '" on every movement, both as a ' +
+                 'source and as a destination. This rewrites history and cannot be undone automatically.',
+        confirmText: 'Merge',
+        onConfirm: function(){
+          btn.disabled = true; btn.textContent = 'Merging…';
+          google.script.run
+            .withSuccessHandler(function(res){
+              showToast('Merged ✓ — ' + res.rowsChanged + ' entr(ies) updated.', 'ok', 5000);
+              var gone = {};
+              from.forEach(function(v){ gone[v.toUpperCase()] = 1; });
+              _locLayout = _locLayout.filter(function(l){ return !gone[l.name.toUpperCase()]; });
+              movements.forEach(function(m){
+                if (m.sourceLoc && gone[String(m.sourceLoc).toUpperCase()]) m.sourceLoc = into;
+                if (m.destLoc   && gone[String(m.destLoc).toUpperCase()])   m.destLoc   = into;
+              });
+              config.locations = (config.locations || []).filter(function(l){ return !gone[String(l.name).toUpperCase()]; });
+              bar.innerHTML = ''; bar.classList.remove('show');
+              _redrawLocGroups();
+              refreshDropdowns();
+            })
+            .withFailureHandler(function(e){
+              btn.disabled = false; btn.textContent = 'Merge';
+              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
+            })
+            .processMovement('mergeLocations', _h({ from: from, into: into }));
+        }
+      });
+    });
+  }
+
+  document.querySelectorAll('.loc-pick').forEach(function(cb){ cb.addEventListener('change', draw); });
+}
+
+function _wireLocDnD(){
+  document.querySelectorAll('.loc-item').forEach(function(li){
+    li.addEventListener('dragstart', function(e){
+      _locDragFrom = li.getAttribute('data-name');
+      li.classList.add('dragging');
+      try { e.dataTransfer.setData('text/plain', _locDragFrom); e.dataTransfer.effectAllowed = 'move'; } catch (x) {}
+    });
+    li.addEventListener('dragend', function(){ li.classList.remove('dragging'); });
+  });
+
+  document.querySelectorAll('.loc-list').forEach(function(ul){
+    ul.addEventListener('dragover', function(e){
+      e.preventDefault();
+      ul.classList.add('drop-target');
+    });
+    ul.addEventListener('dragleave', function(){ ul.classList.remove('drop-target'); });
+    ul.addEventListener('drop', function(e){
+      e.preventDefault();
+      ul.classList.remove('drop-target');
+      if (!_locDragFrom) return;
+      var newType = ul.getAttribute('data-type');
+
+      // Where in the list it landed, so dropping between two items keeps the
+      // position the pointer showed rather than always appending.
+      var after = null;
+      var overItem = e.target.closest ? e.target.closest('.loc-item') : null;
+      if (overItem) after = overItem.getAttribute('data-name');
+
+      var moving = null;
+      _locLayout = _locLayout.filter(function(l){
+        if (l.name === _locDragFrom) { moving = l; return false; }
+        return true;
+      });
+      if (!moving) { _locDragFrom = null; return; }
+      moving.type = newType;
+
+      if (after){
+        var idx = -1;
+        for (var i = 0; i < _locLayout.length; i++) if (_locLayout[i].name === after) { idx = i; break; }
+        if (idx === -1) _locLayout.push(moving); else _locLayout.splice(idx, 0, moving);
+      } else {
+        // Dropped on empty space: put it at the end of that group.
+        var lastIdx = -1;
+        for (var j = 0; j < _locLayout.length; j++) if ((_locLayout[j].type || LOC_DEFAULT_GROUP) === newType) lastIdx = j;
+        if (lastIdx === -1) _locLayout.push(moving); else _locLayout.splice(lastIdx + 1, 0, moving);
+      }
+      _locDragFrom = null;
+      _redrawLocGroups();
+      _locMarkDirty();
+    });
+  });
+}
+
+// Saved on an explicit click, not on every drop: reordering is fiddly, and
+// writing the whole column after each nudge would be both slow and impossible
+// to back out of mid-arrangement.
+function _locMarkDirty(){
+  var bar = document.getElementById('locSaveBar');
+  if (!bar || bar.dataset.dirty === '1') return;
+  bar.dataset.dirty = '1';
+  bar.innerHTML =
+    '<span>Layout changed — not saved yet.</span>' +
+    '<button class="btn btn-primary btn-sm" id="locSaveBtn">Save layout</button>' +
+    '<button class="btn btn-ghost btn-sm" onclick="_loadSettings()">Discard</button>';
+  bar.classList.add('show');
+  document.getElementById('locSaveBtn').addEventListener('click', function(){
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    google.script.run
+      .withSuccessHandler(function(){
+        showToast('Location layout saved ✓', 'ok');
+        bar.classList.remove('show'); bar.innerHTML = ''; bar.dataset.dirty = '0';
+        // Local mirror so other screens see the new types without a full reload.
+        _settingsData.locations     = _locLayout.map(function(l){ return l.name; });
+        _settingsData.locationTypes = {};
+        _locLayout.forEach(function(l){ _settingsData.locationTypes[l.name] = l.type; });
+        config.locations = _locLayout.map(function(l){ return { name: l.name, type: l.type }; });
+        refreshDropdowns();
+      })
+      .withFailureHandler(function(e){
+        btn.disabled = false; btn.textContent = 'Save layout';
+        showToast('Could not save: ' + (e.message || e), 'err', 6000);
+      })
+      .processMovement('saveLocationLayout', _h({ locations: _locLayout }));
+  });
+}
+
+// ── Manual merge ─────────────────────────────────────────────────────────────
+function _wireManualMerge(tab, label){
+  var bar = document.getElementById('cfgPickBar');
+  if (!bar) return;
+
+  function selected(){
+    return Array.prototype.map.call(
+      document.querySelectorAll('.cfg-pick:checked'),
+      function(cb){ return cb.getAttribute('data-val'); });
+  }
+
+  function draw(){
+    var sel = selected();
+    if (sel.length < 2){ bar.innerHTML = ''; bar.classList.remove('show'); return; }
+    bar.classList.add('show');
+    bar.innerHTML =
+      '<span class="cfg-pick-count">' + sel.length + ' selected — keep which name?</span>' +
+      '<select id="cfgPickKeep">' +
+        sel.map(function(v){ return '<option value="' + _he(v) + '">' + _he(v) + '</option>'; }).join('') +
+      '</select>' +
+      '<button class="btn btn-primary btn-sm" id="cfgPickMerge">Merge</button>' +
+      '<button class="btn btn-ghost btn-sm" id="cfgPickClear">Clear</button>';
+
+    document.getElementById('cfgPickClear').addEventListener('click', function(){
+      document.querySelectorAll('.cfg-pick:checked').forEach(function(cb){ cb.checked = false; });
+      draw();
+    });
+
+    document.getElementById('cfgPickMerge').addEventListener('click', function(){
+      var into = document.getElementById('cfgPickKeep').value;
+      var from = sel.filter(function(v){ return v !== into; });
+      var btn  = document.getElementById('cfgPickMerge');
+      _showConfirm({
+        icon: '🔀', title: 'Merge into "' + into + '"?',
+        message: from.join('\n') + '\n\nwill become "' + into + '" on every movement. ' +
+                 'This rewrites history and cannot be undone automatically.',
+        confirmText: 'Merge',
+        onConfirm: function(){
+          btn.disabled = true; btn.textContent = 'Merging…';
+          google.script.run
+            .withSuccessHandler(function(res){
+              showToast('Merged ✓ — ' + res.rowsChanged + ' movement(s) updated.', 'ok', 5000);
+              _applyMergeLocally(tab, from, into);
+              bar.innerHTML = ''; bar.classList.remove('show');
+            })
+            .withFailureHandler(function(e){
+              btn.disabled = false; btn.textContent = 'Merge';
+              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
+            })
+            .processMovement('mergeConfigValues', _h({ type: tab, from: from, into: into }));
+        }
+      });
+    });
+  }
+
+  document.querySelectorAll('.cfg-pick').forEach(function(cb){
+    cb.addEventListener('change', draw);
+  });
+}
+
+// ── Near-duplicate detection ─────────────────────────────────────────────────
+// The same job gets typed a dozen ways over months — "PAT BME2", "PAT BME 2",
+// "BME2 TRACIE DOOR_MAIN" — and each spelling then counts as its own project in
+// every report, so one job's real totals sit split across entries nobody
+// realises are the same thing. This groups the look-alikes and offers to fold
+// them into one, rewriting the movement rows so history reads as one project.
+//
+// Suggestions only — never automatic. Two projects CAN legitimately look almost
+// identical ("LGI DE 042" and "LGI DE 043" are different houses), so a human
+// confirms every merge and picks which spelling survives.
+function _cfgNorm(s){
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Token-overlap similarity, with a guard: entries whose DIGITS differ are never
+// called similar. Numbers in these names are almost always the thing that makes
+// them distinct — unit 104 vs unit 106 — so ignoring them would suggest merging
+// two genuinely separate jobs, which is the one mistake here that destroys data.
+function _cfgSimilar(a, b){
+  var na = _cfgNorm(a), nb = _cfgNorm(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+
+  var da = (na.match(/\d+/g) || []).join(','), db = (nb.match(/\d+/g) || []).join(',');
+  if (da !== db) return false;
+
+  // Spacing is the commonest way one name gets typed two ways — "CNT WESTLAKE"
+  // vs "CNT WEST LAKE GLASS" — and token comparison never sees it, because
+  // WESTLAKE shares no token at all with WEST or LAKE.
+  var ca = na.replace(/ /g, ''), cb = nb.replace(/ /g, '');
+  if (ca === cb) return true;
+
+  // One name being the other plus a trailing word. The extra part must be at
+  // least 3 characters, and that threshold is doing real work: it is what keeps
+  // "CLOUDVEIL" and "CLOUDVEIL A" apart, along with every other A/B/C/D
+  // building suffix — those are genuinely different places and must never be
+  // offered as duplicates.
+  var shortStr = ca.length < cb.length ? ca : cb;
+  var longStr  = ca.length < cb.length ? cb : ca;
+  if (longStr.indexOf(shortStr) === 0 && (longStr.length - shortStr.length) >= 3) return true;
+
+  var ta = na.split(' ').filter(Boolean), tb = nb.split(' ').filter(Boolean);
+  var setB = {}; tb.forEach(function(t){ setB[t] = 1; });
+  var shared = ta.filter(function(t){ return setB[t]; }).length;
+  var ratio = shared / Math.max(ta.length, tb.length);
+  return ratio >= 0.6;
+}
+
+// "Not duplicates" has to be remembered. Removing the group from the DOM alone
+// meant it was rebuilt from the same list the next time the tab was drawn, so a
+// group the admin had already ruled on came straight back — and would have kept
+// coming back forever.
+var _SIM_DISMISS_KEY = 'acopio_sim_dismissed';
+function _simGroupKey(tab, group){
+  return tab + '|' + group.map(_cfgNorm).sort().join('~');
+}
+function _loadSimDismissed(){
+  try { return JSON.parse(localStorage.getItem(_SIM_DISMISS_KEY) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+function _dismissSimGroup(tab, group){
+  var d = _loadSimDismissed();
+  d[_simGroupKey(tab, group)] = 1;
+  try { localStorage.setItem(_SIM_DISMISS_KEY, JSON.stringify(d)); } catch (e) {}
+}
+
+var _similarGroups = [];
+function _renderSimilarGroups(tab, items, label){
+  _similarGroups = [];
+  var dismissed = _loadSimDismissed();
+  var used = {};
+  items.forEach(function(a, i){
+    if (used[i]) return;
+    var group = [a];
+    items.forEach(function(b, j){
+      if (j <= i || used[j]) return;
+      if (_cfgSimilar(a, b)) { group.push(b); used[j] = 1; }
+    });
+    if (group.length > 1 && !dismissed[_simGroupKey(tab, group)]) {
+      used[i] = 1; _similarGroups.push(group);
+    }
+  });
+  if (!_similarGroups.length) return '';
+
+  return '<div class="sim-box" id="simBox" data-label="' + _he(label.toLowerCase()) + '">' +
+    '<div class="sim-hdr" id="simHdr">🔍 ' + _similarGroups.length + ' possible duplicate ' +
+      label.toLowerCase() + (_similarGroups.length === 1 ? '' : 's') + ' found</div>' +
+    '<p class="sim-sub">These look like the same ' + label.toLowerCase() +
+      ' spelled differently. Merging rewrites every movement so history reads as one. ' +
+      'Check each group first — similar names are not always the same thing.</p>' +
+    _similarGroups.map(function(g, gi){
+      return '<div class="sim-group" data-g="' + gi + '">' +
+        g.map(function(v, vi){
+          return '<label class="sim-opt">' +
+            '<input type="radio" name="simKeep' + gi + '" value="' + _he(v) + '"' + (vi === 0 ? ' checked' : '') + '>' +
+            '<span>' + _he(v) + '</span></label>';
+        }).join('') +
+        '<div class="sim-acts">' +
+          '<button class="btn btn-primary btn-sm" data-sim-merge="' + gi + '">Merge into selected</button>' +
+          '<button class="btn btn-ghost btn-sm" data-sim-skip="' + gi + '">Not duplicates</button>' +
+        '</div></div>';
+    }).join('') +
+  '</div>';
+}
+
+// The heading counted what was rendered and then never changed, so after
+// merging or dismissing a group it still claimed "2 possible duplicates found"
+// over an empty box — only a tab switch corrected it. Recounted from the DOM
+// after every removal, and the whole box goes when the last one does.
+function _refreshSimHeader(){
+  var box = document.getElementById('simBox');
+  if (!box) return;
+  var left = box.querySelectorAll('.sim-group').length;
+  if (!left) { box.remove(); return; }
+  var hdr = document.getElementById('simHdr');
+  var label = box.getAttribute('data-label') || 'item';
+  if (hdr) hdr.textContent = '🔍 ' + left + ' possible duplicate ' + label + (left === 1 ? '' : 's') + ' found';
+}
+
+function _wireSimilarGroups(tab){
+  document.querySelectorAll('[data-sim-merge]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var gi = parseInt(btn.getAttribute('data-sim-merge'), 10);
+      var group = _similarGroups[gi]; if (!group) return;
+      var picked = document.querySelector('input[name="simKeep' + gi + '"]:checked');
+      var into = picked ? picked.value : group[0];
+      var from = group.filter(function(v){ return v !== into; });
+      _showConfirm({
+        icon: '🔀', title: 'Merge into "' + into + '"?',
+        message: from.join('\n') + '\n\nwill become "' + into + '" on every movement. ' +
+                 'This rewrites history and cannot be undone automatically.',
+        confirmText: 'Merge',
+        onConfirm: function(){
+          btn.disabled = true; btn.textContent = 'Merging…';
+          google.script.run
+            .withSuccessHandler(function(res){
+              showToast('Merged ✓ — ' + res.rowsChanged + ' movement(s) updated.', 'ok', 5000);
+              // Deliberately NOT _loadSettings() + loadDataFromGoogle(): both
+              // re-read and repaint everything, which took seconds and made
+              // working through a list of duplicates painful. The server has
+              // already done the real work; the browser only has to mirror it,
+              // which is exact and instant.
+              _applyMergeLocally(tab, from, into);
+              var g = btn.closest('.sim-group');
+              if (g) g.remove();
+              _refreshSimHeader();
+            })
+            .withFailureHandler(function(e){
+              btn.disabled = false; btn.textContent = 'Merge into selected';
+              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
+            })
+            .processMovement('mergeConfigValues', _h({ type: tab, from: from, into: into }));
+        }
+      });
+    });
+  });
+  document.querySelectorAll('[data-sim-skip]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var gi = parseInt(btn.getAttribute('data-sim-skip'), 10);
+      var group = _similarGroups[gi];
+      if (group) _dismissSimGroup(tab, group);   // remembered, so it stays gone
+      var g = btn.closest('.sim-group');
+      if (g) g.remove();
+      _refreshSimHeader();
+    });
+  });
+}
+
+// Mirrors server-side merge in the data the page already holds, so nothing has
+// to be re-fetched. Everything here is a rename the backend just performed.
+function _applyMergeLocally(tab, from, into){
+  var gone = {};
+  from.forEach(function(v){ gone[String(v).toUpperCase()] = 1; });
+
+  function fold(list){
+    if (!list) return list;
+    var out = list.filter(function(v){ return !gone[String(v).toUpperCase()]; });
+    if (!out.some(function(v){ return String(v).toUpperCase() === into.toUpperCase(); })) out.push(into);
+    return out.sort();
+  }
+
+  if (_settingsData) _settingsData[tab] = fold(_settingsData[tab]);
+  if (tab === 'projects')  config.projects  = fold(config.projects);
+  if (tab === 'suppliers') config.suppliers = fold(config.suppliers);
+
+  // The loaded movement rows carry the old spelling until they are re-fetched;
+  // renaming them here keeps Movements, the dashboard and the suggestion deck
+  // consistent with what the sheet now says.
+  var field = (tab === 'projects') ? 'project' : 'supplier';
+  movements.forEach(function(m){
+    if (m[field] && gone[String(m[field]).toUpperCase()]) m[field] = into;
+  });
+
+  // Drop the merged-away names from the list below without redrawing it.
+  document.querySelectorAll('.cfg-item').forEach(function(li){
+    if (gone[String(li.getAttribute('data-val') || '').toUpperCase()]) li.remove();
+  });
+
+  refreshDropdowns();
 }
 
 var _errorLogData = [];
@@ -6463,8 +7173,8 @@ function _maybeOfferCfgAdd(input){
   if (userRole !== 'ADMIN') return;
 
   var val = (input.value || '').trim();
-  if (!val) return;
-  if (_cfgKnownValues(type)[val.toUpperCase()]) return;   // already known — nothing to offer
+  if (!val) { _clearTypedCfgValue(input); return; }
+  if (_cfgKnownValues(type)[val.toUpperCase()]) { _clearTypedCfgValue(input); return; }
 
   var label = type === 'suppliers' ? 'supplier' : 'project';
   var hint = document.createElement('div');
@@ -6476,6 +7186,47 @@ function _maybeOfferCfgAdd(input){
     _cfgAddInline(type, val, hint);
   });
   input.insertAdjacentElement('afterend', hint);
+
+  // Surface it in the deck straight away rather than waiting for the movement
+  // to be saved. Typed values are held separately from the ones derived from
+  // saved rows (see _typedCfgAdds) so that changing your mind can retract them.
+  _noteTypedCfgValue(input, type, val);
+}
+
+// ── Values typed but not yet saved ───────────────────────────────────────────
+// The deck is built from saved movements, which is what makes it survive a
+// reload — but waiting for a save meant the suggestion only showed up after the
+// fact. These fill that gap: added the moment an unknown value is typed, and
+// retracted if that same field is then changed to something else, so picking an
+// existing project after typing a new one doesn't leave a card behind for a
+// value that was never used.
+var _typedCfgAdds = [];      // [{type, value}] pending, this session only
+var _typedByField = {};      // field id -> the key it last contributed
+
+function _noteTypedCfgValue(input, type, val){
+  var fieldId = input.id || (input.id = 'cfgfld-' + Math.random().toString(36).slice(2));
+  var key = _cfgKey(type, val);
+  var prev = _typedByField[fieldId];
+  if (prev === key) return;
+
+  if (prev) _typedCfgAdds = _typedCfgAdds.filter(function(t){ return _cfgKey(t.type, t.value) !== prev; });
+  _typedByField[fieldId] = key;
+  if (!_typedCfgAdds.some(function(t){ return _cfgKey(t.type, t.value) === key; })){
+    _typedCfgAdds.push({ type: type, value: val });
+  }
+  _recomputeCfgDeck();
+}
+
+// Called when a field settles on a value that IS already registered — the card
+// it previously contributed has to go, or the deck keeps offering a value the
+// user visibly abandoned.
+function _clearTypedCfgValue(input){
+  var fieldId = input.id;
+  if (!fieldId || !_typedByField[fieldId]) return;
+  var prev = _typedByField[fieldId];
+  delete _typedByField[fieldId];
+  _typedCfgAdds = _typedCfgAdds.filter(function(t){ return _cfgKey(t.type, t.value) !== prev; });
+  _recomputeCfgDeck();
 }
 
 // ── Floating deck of unregistered suppliers/projects ─────────────────────────
@@ -6515,6 +7266,17 @@ function _recomputeCfgDeck(){
   var dismissed = _loadDismissed();
   var seen = {};
   var found = [];
+
+  // Typed-but-unsaved first: they are the most recent thing that happened, and
+  // the whole point of tracking them is immediate feedback.
+  _typedCfgAdds.forEach(function(t){
+    var key = _cfgKey(t.type, t.value);
+    if (seen[key] || dismissed[key]) return;
+    if (_cfgKnownValues(t.type)[String(t.value).toUpperCase()]) return;
+    seen[key] = 1;
+    found.push({ type: t.type, value: t.value });
+  });
+
   // Newest first, so what someone is working on right now surfaces ahead of
   // whatever is oldest in the loaded window.
   for (var i = movements.length - 1; i >= 0; i--){
@@ -6578,14 +7340,67 @@ function _renderCfgDeck(){
       '<div class="cfg-card-acts">' +
         '<button type="button" class="cfg-card-add" data-act="add" data-key="' + k + '">+ Add to list</button>' +
         '<button type="button" class="cfg-card-skip" data-act="skip" data-key="' + k + '">Not now</button>' +
+        (isTop && total > 1
+          ? '<button type="button" class="cfg-card-skip" data-act="addall" title="Register all ' + total + '">All ' + total + '</button>'
+          : '') +
       '</div></div>';
   }).join('');
 
   deck.querySelectorAll('button[data-act]').forEach(function(btn){
     btn.addEventListener('click', function(e){
       e.stopPropagation();   // don't toggle the deck's own open/closed state
+      if (btn.getAttribute('data-act') === 'addall') { _cfgAddAll(); return; }
       _cfgCardAction(btn.getAttribute('data-act'), btn.getAttribute('data-key'), btn);
     });
+  });
+
+  // Full strength ONLY for a genuinely new suggestion — or while the pointer is
+  // on the deck. Every render used to flash it solid, so any background refresh
+  // (a save elsewhere, a data reload, an edit in the Sheet) lit up the corner
+  // for no reason the user could connect to anything they had done.
+  var isNew = false;
+  _pendingCfgAdds.forEach(function(p){
+    var k = _cfgKey(p.type, p.value);
+    if (!_cfgSeenKeys[k]) { _cfgSeenKeys[k] = 1; isNew = true; }
+  });
+
+  if (deck.matches(':hover') || deck.classList.contains('open')) _cfgWake();
+  else if (isNew) { deck.classList.remove('dim'); _cfgScheduleDim(_CFG_SOLID_MS); }
+  else deck.classList.add('dim');   // a re-render on its own never wakes it
+}
+
+// Registering a backlog of legacy values one card at a time meant dozens of
+// clicks and dozens of separate calls — enough to trip the per-minute rate
+// limit and turn a routine cleanup into "Too many requests". This walks the
+// list sequentially, one call at a time, so it stays well inside the limit and
+// reports once at the end instead of toasting on every value.
+var _cfgAddAllRunning = false;
+function _cfgAddAll(){
+  if (_cfgAddAllRunning) return;
+  var queue = _pendingCfgAdds.slice();
+  if (!queue.length) return;
+  _showConfirm({
+    icon: '➕', title: 'Add all ' + queue.length + ' to your lists?',
+    message: 'Every supplier and project below will be registered. Nothing in your movement history changes.',
+    confirmText: 'Add all',
+    onConfirm: function(){
+      _cfgAddAllRunning = true;
+      var ok = 0, failed = 0;
+      (function next(){
+        if (!queue.length){
+          _cfgAddAllRunning = false;
+          showToast('Added ' + ok + ' to your lists' + (failed ? ' · ' + failed + ' failed' : '') + ' ✓',
+            failed ? 'warn' : 'ok', 6000);
+          _recomputeCfgDeck();
+          return;
+        }
+        var p = queue.shift();
+        _cfgAddValue(p.type, p.value, function(good){
+          if (good) ok++; else failed++;
+          setTimeout(next, 120);   // paced, not hammered
+        });
+      })();
+    }
   });
 }
 
@@ -6599,6 +7414,9 @@ function _cfgCardAction(act, key, btn){
 
   if (act === 'skip'){
     _dismissCfgAdd(p.type, p.value);
+    // Also drop it from the typed set, or the next keystroke in that field
+    // would re-add what was just waved off.
+    _typedCfgAdds = _typedCfgAdds.filter(function(t){ return _cfgKey(t.type, t.value) !== key; });
     // Recompute rather than just splice: with only a handful rendered, the next
     // unregistered value has to take the freed slot. Splicing alone emptied the
     // deck after a few dismissals and nothing returned until a page reload.
@@ -6652,6 +7470,37 @@ function _syncCfgBell(total){
     });
   });
 }
+
+// ── Deck fade timing ─────────────────────────────────────────────────────────
+// A new card arrives at full strength and stays readable for a few seconds
+// (long enough to notice without having to chase it), then fades back to a
+// whisper so it stops competing with the app. Hovering restores it instantly;
+// leaving waits a beat before fading again, so brushing past the deck on the
+// way somewhere else doesn't make it vanish mid-glance.
+var _CFG_SOLID_MS = 3500;   // how long a genuinely new suggestion stays solid
+var _CFG_REDIM_MS = 2000;   // pause after the pointer leaves before fading
+var _cfgDimTimer = null;
+var _cfgSeenKeys = {};      // keys already shown, so a re-render isn't "new"
+
+function _cfgScheduleDim(delay){
+  clearTimeout(_cfgDimTimer);
+  var deck = document.getElementById('cfgDeck');
+  if (!deck) return;
+  _cfgDimTimer = setTimeout(function(){ deck.classList.add('dim'); }, delay);
+}
+
+function _cfgWake(){
+  clearTimeout(_cfgDimTimer);
+  var deck = document.getElementById('cfgDeck');
+  if (deck) deck.classList.remove('dim');
+}
+
+(function _wireCfgDeckFade(){
+  var deck = document.getElementById('cfgDeck');
+  if (!deck) return;
+  deck.addEventListener('mouseenter', _cfgWake);
+  deck.addEventListener('mouseleave', function(){ _cfgScheduleDim(_CFG_REDIM_MS); });
+})();
 
 function toggleCfgBell(e){
   if (e) e.stopPropagation();
@@ -6734,7 +7583,11 @@ function refreshDropdowns(){
 
   var rd1 = document.getElementById('rackList'); rd1.innerHTML = '';
   var rd2 = document.getElementById('rackListDest'); rd2.innerHTML = '';
-  var rackNames = config.locations.map(function(l){ return l.name; });
+  // Archived locations keep all their history but stop being offered for NEW
+  // movements — that is the whole point of archiving rather than deleting.
+  var rackNames = config.locations
+    .filter(function(l){ return String(l.type || '').toUpperCase() !== 'ARCHIVED'; })
+    .map(function(l){ return l.name; });
   var rackSet   = Array.from(new Set(
     rackNames.concat(
       movements.map(function(m){ return m.sourceLoc; }).filter(Boolean),
@@ -6921,41 +7774,71 @@ function renderWarehouseMap(){
     '</div>';
   }
 
-  // Split into racks (grouped by letter → row) and special areas (by section)
-  var rackGroups = {};   // letter → { rowNum → [classified cells] }
-  var special    = { WAREHOUSES:[], BAYS:[], CARTS:[], OFFICE:[], OTHER:[] };
+  // Sections come from the groups the user built in Settings -> Locations,
+  // in the order they arranged them, instead of the app guessing from the name.
+  // Guessing produced sections nobody chose ("BAYS", "OTHER") and could not
+  // know that "IGU CART" belongs with the carts while "PM OFFICE" does not.
+  // Inside a section the existing layout logic is unchanged: rack-shaped names
+  // still fall into letter columns and numbered rows, everything else lands in
+  // a plain grid below them.
+  var groupOf = {}, groupOrder = [], seenGroup = {};
+  (config.locations || []).forEach(function(l){
+    var g = String(l.type || '').trim().toUpperCase() || 'ALL LOCATIONS';
+    groupOf[String(l.name || '').toUpperCase().trim()] = g;
+    if (!seenGroup[g]) { seenGroup[g] = 1; groupOrder.push(g); }
+  });
+  // Locations seen in stock but absent from CONFIG still have to appear.
+  var UNGROUPED = 'ALL LOCATIONS';
+  locs.forEach(function(n){ if (!groupOf[n]) groupOf[n] = UNGROUPED; });
+  if (!seenGroup[UNGROUPED] && locs.some(function(n){ return groupOf[n] === UNGROUPED; })) {
+    groupOrder.unshift(UNGROUPED);
+  }
+
+  var buckets = {};
   locs.forEach(function(n){
-    var c = _classifyLocation(n);
-    if (c.type === 'rack'){
-      (rackGroups[c.letter] = rackGroups[c.letter] || {});
-      (rackGroups[c.letter][c.row] = rackGroups[c.letter][c.row] || []).push(c);
-    } else {
-      (special[c.section] || special.OTHER).push(c);
-    }
+    var g = groupOf[n] || UNGROUPED;
+    (buckets[g] = buckets[g] || []).push(n);
   });
 
-  var html = '';
-
-  // Rack aisles (A, B, C…) rendered as side-by-side columns
-  var lettersHtml = Object.keys(rackGroups).sort(_letterSort).map(function(L){
-    var rowsHtml = Object.keys(rackGroups[L]).map(Number).sort(function(a,b){ return a-b; }).map(function(rn){
-      var rowCells = rackGroups[L][rn].sort(function(a,b){ return a.col < b.col ? -1 : 1; });
-      return '<div class="map-rack-row" style="grid-template-columns:repeat(' + rowCells.length + ',minmax(0,1fr))">' +
-        rowCells.map(function(c){ return cell(c.name); }).join('') + '</div>';
-    }).join('');
-    return '<div class="map-letter-col"><div class="map-letter-hdr">' + L + '</div>' + rowsHtml + '</div>';
-  }).join('');
-  html += '<div class="map-letters">' + lettersHtml + '</div>';
-
-  // Special areas, in fixed order with friendly titles
-  [['WAREHOUSES','Warehouses'], ['BAYS','Bays'], ['CARTS','Carts'], ['OFFICE','Office'], ['OTHER','Other Areas']]
-    .forEach(function(sec){
-      var arr = special[sec[0]];
-      if (!arr || !arr.length) return;
-      arr.sort(function(a,b){ return a.name < b.name ? -1 : 1; });
-      html += '<div class="map-section-hdr">'+sec[1]+'</div>';
-      html += '<div class="map-special-grid">' + arr.map(function(c){ return cell(c.name); }).join('') + '</div>';
+  function sectionBody(names){
+    var rackGroups = {}, loose = [];
+    names.forEach(function(n){
+      var c = _classifyLocation(n);
+      if (c.type === 'rack'){
+        (rackGroups[c.letter] = rackGroups[c.letter] || {});
+        (rackGroups[c.letter][c.row] = rackGroups[c.letter][c.row] || []).push(c);
+      } else {
+        loose.push(c);
+      }
     });
+
+    var out = '';
+    var letters = Object.keys(rackGroups).sort(_letterSort);
+    if (letters.length){
+      out += '<div class="map-letters">' + letters.map(function(L){
+        var rowsHtml = Object.keys(rackGroups[L]).map(Number).sort(function(a,b){ return a-b; }).map(function(rn){
+          var rowCells = rackGroups[L][rn].sort(function(a,b){ return a.col < b.col ? -1 : 1; });
+          return '<div class="map-rack-row" style="grid-template-columns:repeat(' + rowCells.length + ',minmax(0,1fr))">' +
+            rowCells.map(function(c){ return cell(c.name); }).join('') + '</div>';
+        }).join('');
+        return '<div class="map-letter-col"><div class="map-letter-hdr">' + L + '</div>' + rowsHtml + '</div>';
+      }).join('') + '</div>';
+    }
+    if (loose.length){
+      loose.sort(function(a,b){ return a.name < b.name ? -1 : 1; });
+      out += '<div class="map-special-grid">' + loose.map(function(c){ return cell(c.name); }).join('') + '</div>';
+    }
+    return out;
+  }
+
+  var html = '';
+  groupOrder.forEach(function(g){
+    var names = buckets[g];
+    if (!names || !names.length) return;
+    // A single unnamed bucket needs no heading; several groups do.
+    if (groupOrder.length > 1 || g !== UNGROUPED) html += '<div class="map-section-hdr">' + _he(g) + '</div>';
+    html += sectionBody(names);
+  });
 
   container.innerHTML = '<div class="wh-map">' + html + '</div>';
 }

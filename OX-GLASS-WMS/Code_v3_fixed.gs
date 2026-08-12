@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.22';
+var APP_VERSION = '9.30';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -1503,6 +1503,9 @@ function processMovementInner_(ss, action, data, auth) {
   // ── Settings / Config management (ADMIN only) ─────────────────────────────
   if (action === 'getSettings')    return getSettings(auth);
   if (action === 'updateConfig')   return updateConfig(data, auth);
+  if (action === 'mergeConfigValues') return mergeConfigValues(data, auth);
+  if (action === 'saveLocationLayout') return saveLocationLayout(data, auth);
+  if (action === 'mergeLocations')     return mergeLocations(data, auth);
   // ── Material management (ADMIN only) ──────────────────────────────────────
   if (action === 'listMaterials')  return listMaterials(auth);
   if (action === 'manageMaterial') return manageMaterial(data, auth);
@@ -3793,10 +3796,40 @@ var _KNOWN_VALIDATION_PREFIXES = [
   'A reason is required', 'Rack is required', 'Cannot reserve',
   'Reservation not found', 'Lock not found', 'WASTE movements require'
 ];
+// Messages that are the app CORRECTLY refusing something, rather than the app
+// breaking. Matched anywhere in the text, not just as a prefix, because many of
+// them lead with the offending value — 'projects "KUNA 104/106" already
+// exists.' is the clearest case, and it was being filed as a system ERROR.
+//
+// That mattered a lot more once ERROR started emailing the admin: registering a
+// batch of already-known projects filed ~60 ERROR rows and set off the alert
+// mail, for an app doing exactly what it should. Alerts that cry wolf get
+// ignored, which costs the real ones their value.
+var VALIDATION_MESSAGE_PATTERNS = [
+  /already exists/i,
+  /too many requests/i,
+  /reorganized/i,
+  /does not look like/i,
+  /cannot be attached/i,
+  /too large|maximum file size|supera el tama/i,
+  /value required/i,
+  /missing required column/i,
+  /no data rows found/i,
+  /appears to be empty/i,
+  /please upload/i,
+  /do not have access/i,
+  /not found in/i,
+  /no documents provided/i,
+  /required\.?$/i
+];
+
 function classifyErrorSeverity_(msg) {
   msg = String(msg || '');
   for (var i = 0; i < _KNOWN_VALIDATION_PREFIXES.length; i++) {
     if (msg.indexOf(_KNOWN_VALIDATION_PREFIXES[i]) === 0) return 'WARN';
+  }
+  for (var j = 0; j < VALIDATION_MESSAGE_PATTERNS.length; j++) {
+    if (VALIDATION_MESSAGE_PATTERNS[j].test(msg)) return 'WARN';
   }
   return 'ERROR';
 }
@@ -3828,6 +3861,82 @@ function logError_(ss, severity, source, action, userEmail, message, context, re
   } catch (e) {
     Logger.log('logError_ failed: ' + e.message);
   }
+  // Separate try: a failure to notify must never swallow the log write above,
+  // and vice versa.
+  try {
+    if (String(severity || '').toUpperCase() === 'ERROR') {
+      notifyAdminOfError_(action, userEmail, message, requestId);
+    }
+  } catch (e2) {
+    Logger.log('notifyAdminOfError_ failed: ' + e2.message);
+  }
+}
+
+// Emails the admin when something breaks badly enough to be logged as ERROR.
+//
+// ERROR_LOG has always recorded these, but it is a sheet nobody opens until
+// they already suspect a problem — so a nightly backup that silently stopped
+// working, or stock totals that quietly failed to rebuild, could go unnoticed
+// for weeks. The whole point of this product is that the numbers can be
+// trusted, so the admin has to be told when they might not be.
+//
+// Throttled hard, by design: an error that fires on every save would otherwise
+// mail the admin hundreds of times in an afternoon and get the alerts filtered
+// out as noise — which is worse than not sending them. One message per distinct
+// action per hour, and a daily ceiling so a storm can never turn into a mailbox
+// full of near-identical warnings.
+var ERROR_MAIL_PER_ACTION_SEC = 3600;
+var ERROR_MAIL_DAILY_CAP      = 12;
+
+function notifyAdminOfError_(action, userEmail, message, requestId) {
+  var p = PropertiesService.getScriptProperties();
+  if (p.getProperty('ERROR_ALERTS_ENABLED') === 'false') return;   // opt-out
+
+  var to = adminNotifyEmail_();
+  if (!to) return;
+
+  var cache = CacheService.getScriptCache();
+  var actKey = 'errmail_' + Utilities.base64EncodeWebSafe(String(action || 'general')).substring(0, 60);
+  if (cache.get(actKey)) return;                       // already mailed for this action recently
+
+  var today   = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'UTC', 'yyyy-MM-dd');
+  var capKey  = 'errmailcount_' + today;
+  var sentRaw = cache.get(capKey);
+  var sent    = sentRaw ? (parseInt(sentRaw, 10) || 0) : 0;
+  if (sent >= ERROR_MAIL_DAILY_CAP) return;
+
+  cache.put(actKey, '1', ERROR_MAIL_PER_ACTION_SEC);
+  cache.put(capKey, String(sent + 1), 86400);
+
+  var cs = companySettings_();
+  var who = cs.name || PRODUCT_NAME;
+  var url = '';
+  try { url = String(p.getProperty('WEB_APP_URL') || ScriptApp.getService().getUrl() || ''); } catch (e) {}
+
+  MailApp.sendEmail({
+    to: to,
+    subject: '⚠️ ' + who + ' — system error in ' + (action || 'the app'),
+    htmlBody:
+      '<div style="font-family:Arial,sans-serif;font-size:14px;color:#111">' +
+      '<p>An error was recorded in <b>' + escHtml_(who) + '</b>.</p>' +
+      '<table cellpadding="6" style="border-collapse:collapse;font-size:13px">' +
+        '<tr><td style="color:#666">Where</td><td><b>' + escHtml_(action || '—') + '</b></td></tr>' +
+        '<tr><td style="color:#666">Message</td><td>' + escHtml_(String(message || '').substring(0, 400)) + '</td></tr>' +
+        '<tr><td style="color:#666">User</td><td>' + escHtml_(userEmail || '—') + '</td></tr>' +
+        '<tr><td style="color:#666">When</td><td>' + new Date().toLocaleString() + '</td></tr>' +
+        '<tr><td style="color:#666">Ref</td><td>' + escHtml_(requestId || '—') + '</td></tr>' +
+      '</table>' +
+      '<p style="font-size:12px;color:#666">Full history: <b>Settings → System → Error Log</b>' +
+        (url ? ' — <a href="' + escHtml_(url) + '">open ' + escHtml_(who) + '</a>' : '') + '</p>' +
+      '<p style="font-size:12px;color:#666">Repeats of this same error are suppressed for an hour so this ' +
+        'stays useful. To turn these off: Apps Script → Project Settings → Script Properties → ' +
+        'ERROR_ALERTS_ENABLED = false</p></div>'
+  });
+}
+
+function escHtml_(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ADMIN only. Returns the most recent error log entries, newest first.
@@ -3972,7 +4081,10 @@ function onOpen() {
   var advanced = SpreadsheetApp.getUi().createMenu('🔧 Advanced')
     .addItem('🔒 Revoke Public Sharing on Existing Files (run once)', 'menuRevokePublicSharing')
     .addItem('🧹 Normalize Status Column (run once)', 'menuNormalizeStatus')
-    .addItem('Push Update Live (owner, standard Cloud project only)', 'menuActivateWebApp');
+    .addItem('Push Update Live (owner, standard Cloud project only)', 'menuActivateWebApp')
+    .addSeparator()
+    .addItem('🔎 Check if this copy is a clean template', 'menuVerifyMasterTemplate')
+    .addItem('💣 Erase everything — make this a blank template', 'menuPrepareMasterTemplate');
 
   SpreadsheetApp.getUi()
     .createMenu('🏭 ' + PRODUCT_NAME)
@@ -4250,6 +4362,159 @@ function menuRevokePublicSharing() {
   ui.alert(msg);
 }
 
+// ═══ MASTER TEMPLATE ═════════════════════════════════════════════════════════
+// Customers get their copy by copying one master spreadsheet, and a copy brings
+// the SHEET DATA with it — movements, the user list, everything. (Script
+// Properties do not copy, which is why company identity resets but the rows do
+// not.) So a master built from a working installation would hand every customer
+// OX Glass's own inventory, and put OX Glass's email in their USERS_V3 as an
+// admin of THEIR system. This wipes it properly instead of leaving that to a
+// checklist and a good memory.
+//
+// Every sheet the app ever writes to is listed here explicitly rather than
+// "clear everything that isn't CONFIG": a sheet added later and forgotten would
+// otherwise ship full of real data, and silence is exactly the wrong failure
+// for this.
+var TEMPLATE_DATA_SHEETS = [
+  'MASTER_ARCHIVE_V3', 'LIVE_STOCK', 'SITE_STOCK', 'WASTED_STOCK', 'RESERVATIONS',
+  'AUDIT_LOG', 'ERROR_LOG', 'ARCHIVE_HISTORY', 'USERS_V3', 'INCOMING_V3',
+  'RACK_PHOTOS', 'PM_DIRECTORY', 'MATERIAL_LOCKS'
+];
+
+// Properties that carry one installation's identity or secrets. SESSION_SECRET
+// is included deliberately: sharing it across copies would mean a session token
+// minted on one customer's system verifies on another's.
+var TEMPLATE_WIPE_PROPS = [
+  'COMPANY_NAME', 'COMPANY_DOMAIN', 'COMPANY_LOGO_ID', 'FOLDER_PREFIX',
+  'FOLDER_PREFIX_HISTORY', 'SETUP_COMPLETE', 'WEB_APP_URL', 'SESSION_SECRET',
+  'WMS_SESSIONS', 'WMS_MONITORED_MATERIALS', 'GMAIL_SCAN_ENABLED',
+  'ERROR_ALERTS_ENABLED', 'GEMINI_API_KEY',
+  'OAUTH_CLIENT_ID', 'OAUTH_CLIENT_SECRET', 'OAUTH_REDIRECT_URI'
+];
+
+function menuPrepareMasterTemplate() {
+  var ui = SpreadsheetApp.getUi();   // throws outside the Sheets UI — the real gate
+  requireOwnerContext_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // The file NAME is in the prompt on purpose. The one catastrophic mistake
+  // here is running this on the live system instead of the copy, and the only
+  // thing that reliably prevents it is showing which file is about to be wiped.
+  var resp = ui.prompt(
+    '💣 Erase everything in this file?',
+    'This will PERMANENTLY delete all data in:\n\n' +
+    '   ' + ss.getName() + '\n\n' +
+    'Movements, stock, users, suppliers, projects, locations, photos, logs and\n' +
+    'company settings — all of it. It cannot be undone.\n\n' +
+    'Only do this on a COPY you are turning into the blank template customers\n' +
+    'will copy. Never on the system you actually use.\n\n' +
+    'Type  ERASE  to confirm:',
+    ui.ButtonSet.OK_CANCEL);
+
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+  if (String(resp.getResponseText() || '').trim().toUpperCase() !== 'ERASE') {
+    ui.alert('Cancelled — nothing was changed.');
+    return;
+  }
+
+  var cleared = [], missing = [];
+  TEMPLATE_DATA_SHEETS.forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    if (!sh) { missing.push(name); return; }
+    var last = sh.getLastRow();
+    // Row 1 is the header and stays — the app expects the columns to exist.
+    if (last > 1) sh.getRange(2, 1, last - 1, sh.getMaxColumns()).clearContent();
+    cleared.push(name + (last > 1 ? ' (' + (last - 1) + ')' : ' (0)'));
+  });
+
+  // CONFIG holds the catalogs AND the legacy user list — wiped column by column
+  // so the header row and the sheet's shape survive.
+  var cfg = ss.getSheetByName('CONFIG');
+  if (cfg && cfg.getLastRow() > 1) {
+    cfg.getRange(2, 1, cfg.getLastRow() - 1, cfg.getMaxColumns()).clearContent();
+  }
+
+  var props = PropertiesService.getScriptProperties();
+  var all = props.getProperties();
+  var wiped = 0;
+  Object.keys(all).forEach(function (k) {
+    // Named properties, plus every cached Drive folder ID — those point at
+    // folders in the OWNER's Drive that a customer cannot reach, and a stale
+    // one would send their uploads at a folder that isn't theirs.
+    if (TEMPLATE_WIPE_PROPS.indexOf(k) !== -1 || k.indexOf('FOLDER_') === 0) {
+      props.deleteProperty(k); wiped++;
+    }
+  });
+
+  // Triggers belong to whoever installed them; a template must not ship with
+  // the previous owner's backup schedule attached.
+  var triggersRemoved = 0;
+  try {
+    ScriptApp.getProjectTriggers().forEach(function (t) { ScriptApp.deleteTrigger(t); triggersRemoved++; });
+  } catch (e) {}
+
+  try { ss.rename(PRODUCT_NAME + ' — Warehouse Template'); } catch (e) {}
+
+  ui.alert('✓ Template prepared',
+    'Cleared: ' + cleared.join(', ') + '\n' +
+    (missing.length ? 'Not present (fine): ' + missing.join(', ') + '\n' : '') +
+    'CONFIG catalogs cleared.\n' +
+    wiped + ' script propert(ies) removed.\n' +
+    triggersRemoved + ' trigger(s) removed.\n\n' +
+    'Now run "Check if this copy is a clean template" to confirm, then share the\n' +
+    'file with a /copy link.',
+    ui.ButtonSet.OK);
+}
+
+// Reads the file back and reports anything a customer must not receive. Written
+// as a separate check on purpose: "the wipe said it worked" and "the file is
+// actually clean" are different claims, and only the second one matters.
+function menuVerifyMasterTemplate() {
+  var ui = SpreadsheetApp.getUi();
+  requireOwnerContext_();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var problems = [];
+
+  TEMPLATE_DATA_SHEETS.forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    if (!sh) return;
+    var rows = sh.getLastRow() - 1;
+    if (rows > 0) problems.push(name + ' still has ' + rows + ' row(s)');
+  });
+
+  var cfg = ss.getSheetByName('CONFIG');
+  if (cfg && cfg.getLastRow() > 1) {
+    var vals = cfg.getRange(2, 1, cfg.getLastRow() - 1, cfg.getMaxColumns()).getValues();
+    var filled = 0;
+    vals.forEach(function (r) { r.forEach(function (c) { if (String(c || '').trim()) filled++; }); });
+    if (filled) problems.push('CONFIG still has ' + filled + ' filled cell(s)');
+  }
+
+  var props = PropertiesService.getScriptProperties().getProperties();
+  Object.keys(props).forEach(function (k) {
+    if (TEMPLATE_WIPE_PROPS.indexOf(k) !== -1 || k.indexOf('FOLDER_') === 0) {
+      problems.push('Script property still set: ' + k);
+    }
+  });
+
+  try {
+    var t = ScriptApp.getProjectTriggers();
+    if (t.length) problems.push(t.length + ' trigger(s) still installed');
+  } catch (e) {}
+
+  ui.alert(problems.length ? '⚠️ Not clean yet' : '✓ Clean template',
+    problems.length
+      ? 'A customer copying this file would receive:\n\n• ' + problems.join('\n• ') +
+        '\n\nRun "Erase everything" first.'
+      : 'Nothing personal left in this file.\n\n' +
+        'Remaining steps, which code cannot do:\n' +
+        '1. Apps Script editor → rename the project (top-left) to your product name.\n' +
+        '2. Share the file as "Anyone with the link — Viewer".\n' +
+        '3. Give customers the URL with /edit replaced by /copy.\n' +
+        '4. Copy it yourself once and run the wizard, to see exactly what they see.',
+    ui.ButtonSet.OK);
+}
+
 // STATUS is fully derived from MoveType — it holds no information of its own.
 // Only five pairings are valid:
 //     ENTRY / RETURN / TRANSFER  →  In Stock
@@ -4515,14 +4780,191 @@ function getSettings(auth) {
     projects:   c.projects,
     suppliers:  c.suppliers,
     locations:  c.locations.map(function(l){ return l.name; }),
+    // Kept alongside the flat name list rather than replacing it: rename and
+    // delete address locations by name, and the Locations tab needs the type to
+    // group them. Order of `locations` is the order stored in CONFIG, which is
+    // what the drag-to-reorder screen writes back.
+    locationTypes: (function(){
+      var m = {};
+      c.locations.forEach(function(l){ m[l.name] = l.type || 'RACK'; });
+      return m;
+    })(),
     archiveCutoffMonths: c.archiveCutoffMonths
   };
+}
+
+// Folds one or more locations into another, everywhere they appear.
+//
+// A location cannot simply be deleted: every movement that ever went into or
+// out of it names it, so removing the row would leave that history pointing at
+// something that no longer exists. Two safe outcomes exist instead — archive
+// (stop offering it, keep the history readable) and merge, which is this. Use
+// it when a place was renamed or two spellings turned out to be one shelf.
+//
+// Rewrites BOTH location columns: a movement records where stock came FROM and
+// where it went TO, and a location can appear in either.
+//
+// data = { from: ['A1A','A1 A'], into: 'A1A' }
+function mergeLocations(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var into = String(data.into || '').trim();
+  if (!into) throw new Error('Pick the location to keep.');
+  var from = (data.from || []).map(function (v) { return String(v || '').trim(); })
+                              .filter(function (v) { return v && v.toUpperCase() !== into.toUpperCase(); });
+  if (!from.length) throw new Error('Pick at least one other location to merge in.');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var wanted = {};
+  from.forEach(function (v) { wanted[v.toUpperCase()] = true; });
+
+  var rowsChanged = 0;
+  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
+  if (archive && archive.getLastRow() > 1) {
+    var n = archive.getLastRow() - 1;
+    [AC.SRC_LOC, AC.DEST_LOC].forEach(function (col) {
+      var range = archive.getRange(2, col + 1, n, 1);
+      var vals  = range.getValues();
+      var hit = 0;
+      for (var i = 0; i < vals.length; i++) {
+        var cur = String(vals[i][0] || '').trim();
+        if (cur && wanted[cur.toUpperCase()]) { vals[i][0] = sheetSafe_(into); hit++; }
+      }
+      if (hit) { range.setValues(vals); rowsChanged += hit; }
+    });
+  }
+
+  // Drop the merged-away names from CONFIG, keeping each surviving location
+  // with the group it was already filed under.
+  var cfg = ss.getSheetByName(SHEETS.CONFIG);
+  if (cfg) {
+    var rows = cfg.getDataRange().getValues();
+    var names = [], types = [], sawInto = false;
+    for (var r = 1; r < rows.length; r++) {
+      var nm = String(rows[r][3] || '').trim();
+      if (!nm) continue;
+      if (wanted[nm.toUpperCase()]) continue;
+      if (nm.toUpperCase() === into.toUpperCase()) sawInto = true;
+      names.push(nm);
+      types.push(String(rows[r][4] || 'RACK').trim().toUpperCase() || 'RACK');
+    }
+    if (!sawInto) { names.push(into); types.push('RACK'); }
+    writeConfigColumn_(cfg, 3, names);
+    writeConfigColumn_(cfg, 4, types);
+  }
+
+  refreshDerivedSheets_(ss);
+  auditLog_(ss, 'MERGE_LOCATIONS', auth.email, from.join(' + ') + ' → ' + into, String(rowsChanged) + ' cells', '');
+  return { status: 'success', rowsChanged: rowsChanged, into: into };
+}
+
+// Writes the Locations column and its Type column back in one go, in the exact
+// order given. Order carries meaning here — it is what the drag-to-reorder
+// screen produces — so both columns are rewritten together rather than patched
+// cell by cell, which is also what compacts the gaps that `delete` leaves
+// behind (it blanks a cell in place rather than closing the row up).
+//
+// Types are free text: a business with carts, offices and a showroom should be
+// able to name those groups itself instead of picking from a list we guessed.
+// Nothing downstream branches on the value — grouping is presentation only, and
+// every location still counts toward stock exactly as before.
+function saveLocationLayout(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var list = data && data.locations;
+  if (!Array.isArray(list)) throw new Error('No locations provided.');
+
+  var names = [], types = [], seen = {};
+  for (var i = 0; i < list.length; i++) {
+    var n = String((list[i] && list[i].name) || '').trim();
+    if (!n) continue;
+    var key = n.toUpperCase();
+    if (seen[key]) continue;                       // never write the same location twice
+    seen[key] = 1;
+    names.push(n);
+    types.push(String((list[i] && list[i].type) || 'RACK').trim().toUpperCase() || 'RACK');
+  }
+  if (!names.length) throw new Error('At least one location is required.');
+
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var cfg = ss.getSheetByName(SHEETS.CONFIG);
+  if (!cfg) throw new Error('CONFIG sheet not found.');
+
+  writeConfigColumn_(cfg, 3, names);
+  writeConfigColumn_(cfg, 4, types);
+
+  auditLog_(ss, 'UPDATE_CONFIG', auth.email, 'locations', 'reorder', names.length + ' location(s)');
+  return { status: 'success', count: names.length };
 }
 
 // data.type  : 'categories' | 'projects' | 'suppliers' | 'locations'
 // data.op    : 'add' | 'rename' | 'delete'
 // data.value : current value (required for rename/delete)
 // data.newValue : replacement value (required for rename)
+// Folds several spellings of the same project (or supplier) into one.
+//
+// The same job gets typed a dozen ways over months — "PAT BME2", "PAT BME 2",
+// "BME2 TRACIE DOOR_MAIN" — and each variant then counts as its own project in
+// every report, so a job's real totals are split across entries nobody realises
+// are the same thing. Renaming in CONFIG alone would not fix that: the archive
+// rows keep the old text, so this rewrites the movement rows too.
+//
+// data = { type: 'projects'|'suppliers', from: ['A','B'], into: 'C' }
+function mergeConfigValues(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var type = String(data.type || '');
+  if (type !== 'projects' && type !== 'suppliers') throw new Error('Unknown merge type: ' + type);
+
+  var into = String(data.into || '').trim();
+  if (!into) throw new Error('Pick the name to keep.');
+  var from = (data.from || []).map(function (v) { return String(v || '').trim(); })
+                              .filter(function (v) { return v && v.toUpperCase() !== into.toUpperCase(); });
+  if (!from.length) throw new Error('Pick at least one other name to merge in.');
+
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var col = (type === 'projects') ? AC.PROJECT : AC.SUPPLIER;
+
+  var wanted = {};
+  from.forEach(function (v) { wanted[v.toUpperCase()] = true; });
+
+  // 1. Rewrite the archive so history reads as one project.
+  var rowsChanged = 0;
+  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
+  if (archive && archive.getLastRow() > 1) {
+    var range  = archive.getRange(2, col + 1, archive.getLastRow() - 1, 1);
+    var values = range.getValues();
+    for (var i = 0; i < values.length; i++) {
+      var cur = String(values[i][0] || '').trim();
+      if (cur && wanted[cur.toUpperCase()]) { values[i][0] = sheetSafe_(into); rowsChanged++; }
+    }
+    if (rowsChanged) range.setValues(values);
+  }
+
+  // 2. Drop the merged-away spellings from CONFIG, and make sure the survivor
+  //    is actually on the list — it may only ever have existed as free text.
+  var cfg = ss.getSheetByName(SHEETS.CONFIG);
+  var removed = 0;
+  if (cfg) {
+    var cfgCol  = (type === 'projects') ? 0 : 2;
+    var cfgVals = cfg.getDataRange().getValues();
+    var keep = [], sawInto = false;
+    for (var r = 1; r < cfgVals.length; r++) {
+      var v = String(cfgVals[r][cfgCol] || '').trim();
+      if (!v) continue;
+      if (wanted[v.toUpperCase()]) { removed++; continue; }
+      if (v.toUpperCase() === into.toUpperCase()) sawInto = true;
+      keep.push(v);
+    }
+    if (!sawInto) keep.push(into);
+    keep.sort();
+    writeConfigColumn_(cfg, cfgCol, keep);
+  }
+
+  refreshDerivedSheets_(ss);
+  auditLog_(ss, 'MERGE_CONFIG', auth.email,
+    type + ': ' + from.join(' + ') + ' → ' + into, String(rowsChanged) + ' rows', '');
+
+  return { status: 'success', rowsChanged: rowsChanged, removed: removed, into: into };
+}
+
 function updateConfig(data, auth) {
   auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
   var ss  = SpreadsheetApp.getActiveSpreadsheet();
