@@ -9,6 +9,13 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     *{margin:0;padding:0;box-sizing:border-box}
+    /* The page-level scrollbar is hidden — it ran the full height of the window
+       beside the table's own bar, two bars a few pixels apart meaning different
+       things. Scrolling is untouched: wheel, trackpad, touch and keyboard all
+       work. The bars INSIDE panels stay, because there they are the only cue
+       that a table or a list continues past the fold. */
+    html{scrollbar-width:none}
+    html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}
     :root{
       --navy:#1B2A4A;--steel:#2C3E6B;--accent:#3B7DD8;--accent2:#2563EB;
       --bg:#F0F2F5;--card:#FFFFFF;--text:#1a1a2e;--muted:#6B7280;
@@ -16,22 +23,48 @@
       --yellow:#D97706;--yellow-bg:#FEF3C7;--orange:#EA580C;--orange-bg:#FED7AA;
       --purple:#7C3AED;--purple-bg:#EDE9FE;
       --border:#E5E7EB;--shadow:0 1px 3px rgba(0,0,0,.08);--radius:10px;
+      /* See-through version of --card, for the resting card in each corner
+         deck. A real translucent BACKGROUND rather than opacity on the
+         element: opacity fades the whole subtree, which is what made the
+         count badge and the ✕ unreadable. */
+      --card-ghost:rgba(255,255,255,.52);--navy-ghost:rgba(27,42,74,.55);
     }
     body{font-family:'Inter','DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;transition:background .25s,color .25s}
     button{font-family:inherit;cursor:pointer}
     input,select,textarea{font-family:inherit;font-size:.9rem}
     /* ── TOPBAR ── */
-    .topbar{background:var(--navy);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--accent);flex-wrap:wrap;gap:10px}
+    /* Two rows, at every width. The topbar used to be one flex line that WRAPPED
+       when it ran out of room, so the tab bar jumped up beside the company name
+       on a wide window and dropped below it on a narrower one — and the whole
+       page shifted as it went. Now the tabs have a line of their own that they
+       never leave; they just move toward the middle as the window grows. */
+    .topbar{background:var(--navy);padding:.7rem 1.5rem .6rem;display:flex;flex-direction:column;gap:.55rem;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--accent)}
+    .topbar-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    /* Row two is the tabs and the account cluster TOGETHER, so the circle is
+       always beside the tabs rather than stranded on the line above them. The
+       tab bar is the thing that gives way: its buttons narrow with the window
+       (clamp, below) so the circle and the bell keep their place. */
+    /* nowrap is the whole point: with wrap, the cluster fell onto its own line
+       the moment the tabs got tight, which is exactly what it was moved here to
+       stop doing. The tabs absorb the squeeze instead — their own buttons wrap
+       inside the bar. */
+    .topbar-row2{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:nowrap}
+    .topbar-tools{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .tools-primary{display:flex;align-items:center;gap:9px}
+    /* The Acopio badge with the running version tucked under it — present
+       enough to read when someone asks "what version are you on?", quiet
+       enough not to be part of the branding. */
+    .brand-mark{display:flex;flex-direction:column;align-items:center;gap:2px}
+    .ver-tag{font-size:.55rem;font-weight:700;letter-spacing:.05em;line-height:1;color:rgba(255,255,255,.4)}
+    .ver-bad{color:#fff;background:rgba(255,0,0,.55);border-radius:4px;padding:2px 6px;font-size:.62rem}
     .topbar h1{color:#fff;font-size:1.1rem;font-weight:700}
     .topbar-brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .app-logo{height:30px;max-width:150px;object-fit:contain;border-radius:4px;flex-shrink:0}
-    .topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .nav{display:flex;gap:2px;background:var(--steel);padding:3px;border-radius:8px;flex-wrap:wrap}
-    .nav button{background:none;border:none;color:rgba(255,255,255,.6);padding:.45rem 1rem;border-radius:6px;font-size:.8rem;font-weight:600;transition:.2s}
+    .nav{display:flex;gap:2px;background:var(--steel);padding:3px;border-radius:8px;flex-wrap:wrap;flex-shrink:1;min-width:0;max-width:100%}
+    .nav button{background:none;border:none;color:rgba(255,255,255,.6);padding:.45rem clamp(.4rem,1.5vw,1rem);border-radius:6px;font-size:clamp(.68rem,1.2vw,.8rem);font-weight:600;transition:.2s;white-space:nowrap}
     .nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
     .nav button.active{background:var(--accent);color:#fff}
     .author-badge{background:rgba(0,0,0,.2);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.7rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
-    .user-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:.72rem;color:rgba(255,255,255,.75)}
     /* ── LAYOUT ── */
     .container{max-width:1400px;margin:0 auto;padding:1.25rem;flex-grow:1;width:100%}
     .section{display:none}.section.active{display:block}
@@ -189,16 +222,20 @@
     .wiz-progress-label{font-size:.78rem;color:#6B7280;margin-top:.45rem;text-align:center}
     /* Nudge shown after setup when an optional step was skipped */
     .setup-nudge{position:fixed;bottom:22px;left:22px;z-index:390;background:#1B2A4A;color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:290px}
+    /* Coming back is not the same as arriving. A reminder that pops into place
+       reads as an alarm; this one walks in from off the left edge, invisible,
+       and colours up as it travels to where it was sitting. Slow on purpose. */
+    @keyframes nudge-return{
+      0%{opacity:0;transform:translateX(calc(-100% - 46px))}
+      55%{opacity:.5}
+      100%{opacity:1;transform:translateX(0)}
+    }
+    .setup-nudge.returning{animation:nudge-return 1.15s cubic-bezier(.22,.61,.36,1) both}
     .setup-nudge .nudge-act{display:none;margin-top:.55rem;gap:.4rem}
     .setup-nudge:hover .nudge-act{display:flex}
     .setup-nudge button{border:none;border-radius:6px;padding:.3rem .6rem;font-size:.74rem;font-weight:600;cursor:pointer;font-family:inherit}
     @media (max-width:640px){.setup-nudge{left:12px;right:12px;bottom:76px;max-width:none}.wiz-box{padding:1.25rem}.wiz-gen{grid-template-columns:1fr}}
     .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:550;align-items:center;justify-content:center;padding:15px}
-    /* Floating "report a problem" button — z-index sits well under .overlay (550)
-       so any open modal already covers it; no extra show/hide logic needed. */
-    .report-issue-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;border-radius:50%;background:var(--navy);color:#fff;border:none;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);z-index:400;display:flex;align-items:center;justify-content:center;transition:.15s}
-    .report-issue-fab:hover{background:var(--accent);transform:scale(1.06)}
-    @media (max-width:640px){.report-issue-fab{bottom:16px;right:16px;width:46px;height:46px;font-size:1.2rem}}
     .ri-photo-thumb{position:relative;width:52px;height:52px;flex-shrink:0}
     .ri-photo-thumb img{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block}
     .ri-photo-thumb button{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;line-height:1;padding:0}
@@ -381,6 +418,12 @@
     .cconfirm-footer button{flex:1;max-width:160px;padding:.55rem 1rem;border-radius:8px;font-size:.9rem;font-weight:600;border:none;cursor:pointer;transition:.15s}
     .cconfirm-footer button:hover{filter:brightness(.9)}
     .cconfirm-cancel{background:var(--border);color:var(--text)}
+    .cprompt-input{width:100%;margin-top:.9rem;padding:.55rem .7rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.92rem;font-family:inherit;text-align:center}
+    .cprompt-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+    .cprompt-list{margin-top:.7rem;max-height:170px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center}
+    .cprompt-chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:.22rem .7rem;font-size:.75rem;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit}
+    .cprompt-chip:hover{border-color:var(--accent);color:var(--accent)}
+    .cprompt-err{margin-top:.5rem;font-size:.76rem;color:var(--red);font-weight:600;min-height:1.1em}
     /* ── MULTI-EXIT MATERIAL LINES ── */
     .exit-mat-line{background:#FFF5F5;border:1px solid #FECACA;border-radius:8px;padding:.75rem;margin-bottom:.65rem;position:relative}
     .exit-mat-line-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
@@ -442,17 +485,51 @@
     .conn-btn.loading{background:#9CA3AF}
     .conn-btn.offline{background:#EF4444;animation:pulse-offline 1s ease-in-out infinite}
     /* ── PRESENCE DROPDOWN ── */
-    .presence-wrap{position:relative}
-    .presence-chip{cursor:pointer;user-select:none;transition:.15s}
-    .presence-chip:hover,.presence-chip.open{background:rgba(255,255,255,.2)!important}
-    .presence-dropdown{display:none;position:absolute;right:0;top:calc(100% + 10px);background:var(--card);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);border:1px solid var(--border);min-width:250px;z-index:600;overflow:hidden}
-    .presence-dropdown.open{display:block}
+    /* ── Account menu ────────────────────────────────────────────────────────
+       The name, the email, the role, who else is online, and every action that
+       is about the app rather than about the warehouse — all behind one circle
+       in the corner, the way an account menu works everywhere else. The topbar
+       used to carry the email, a role tag, a "view only" tag, a switch-account
+       link and a bug button side by side, which is a lot of furniture to read
+       past before getting to the inventory. */
+    .acct-wrap{position:relative}
+    .acct-btn{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:var(--accent);color:#fff;font-size:.76rem;font-weight:800;letter-spacing:.02em;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:box-shadow .15s,transform .15s;font-family:inherit}
+    .acct-btn:hover{transform:scale(1.05)}
+    .acct-btn.open{box-shadow:0 0 0 4px rgba(255,255,255,.16)}
+    .acct-menu{display:none;position:absolute;right:0;top:calc(100% + 12px);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.26);width:320px;max-width:calc(100vw - 24px);z-index:600;overflow:hidden;animation:acct-in .16s ease}
+    .acct-menu.open{display:block}
+    @keyframes acct-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    .acct-head{padding:1.15rem 1rem .9rem;text-align:center;border-bottom:1px solid var(--border)}
+    .acct-avatar{width:62px;height:62px;border-radius:50%;margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:800;color:#fff;background:var(--accent)}
+    .acct-name{font-size:.96rem;font-weight:700;color:var(--text);line-height:1.3}
+    .acct-email{font-size:.76rem;color:var(--muted);margin-top:.15rem;word-break:break-all}
+    .acct-tags{margin-top:.55rem;display:flex;gap:.35rem;justify-content:center;flex-wrap:wrap}
+    .acct-tag{font-size:.64rem;font-weight:800;border-radius:10px;padding:2px 10px;letter-spacing:.04em}
+    .acct-section{padding:.65rem 0 .35rem;border-bottom:1px solid var(--border);max-height:186px;overflow-y:auto}
+    .acct-section-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:0 1rem .4rem}
+    .acct-actions{padding:.4rem}
+    .acct-item{width:100%;display:flex;align-items:center;gap:.6rem;background:none;border:none;border-radius:10px;padding:.55rem .7rem;font-size:.85rem;font-weight:600;font-family:inherit;color:var(--text);cursor:pointer;text-align:left;transition:.12s}
+    .acct-item:hover{background:var(--bg)}
+    .acct-foot{padding:.55rem 1rem .7rem;text-align:center;font-size:.67rem;color:var(--muted);border-top:1px solid var(--border)}
+    .acct-legal{margin-top:.25rem;display:flex;gap:.35rem;justify-content:center;align-items:center}
+    .acct-legal a{color:var(--muted);text-decoration:none;font-weight:600}
+    .acct-legal a:hover{color:var(--accent);text-decoration:underline}
+    /* Legal text, shown in the app rather than linked out: a customer running
+       this inside their own Google account has nowhere to be sent, and a policy
+       nobody can reach is the same as no policy. */
+    .lg-body{font-size:.84rem;line-height:1.6;color:var(--text);padding-bottom:1rem}
+    .lg-body h3{font-size:.92rem;font-weight:700;margin:1.15rem 0 .4rem;color:var(--text)}
+    .lg-body p{margin:.5rem 0}
+    .lg-body ul{margin:.5rem 0 .5rem 1.1rem}
+    .lg-body li{margin:.25rem 0}
+    .lg-body hr{border:none;border-top:1px solid var(--border);margin:1rem 0}
+    .lg-body a{color:var(--accent);word-break:break-word}
+    .lg-table{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:.78rem}
+    .lg-table th,.lg-table td{border:1px solid var(--border);padding:.4rem .55rem;text-align:left;vertical-align:top}
+    .lg-table th{background:var(--bg);font-weight:700}
     @media(max-width:640px){
-      .presence-dropdown{position:fixed;left:50%;right:auto;top:50%;transform:translate(-50%,-50%);width:calc(100vw - 2rem);max-width:360px;max-height:80vh;overflow-y:auto;border-radius:14px}
+      .acct-menu{position:fixed;left:50%;right:auto;top:50%;transform:translate(-50%,-50%);width:calc(100vw - 2rem);max-width:360px;max-height:84vh;overflow-y:auto;animation:none}
     }
-    .presence-hdr{background:var(--navy);color:#fff;padding:.55rem 1rem;font-size:.75rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-    .presence-hdr button{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:.9rem;line-height:1;padding:2px 4px}
-    .presence-hdr button:hover{color:#fff}
     .presence-user{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.78rem;border-bottom:1px solid var(--border)}
     .presence-user:last-child{border-bottom:none}
     .presence-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -534,7 +611,10 @@
     .modal.settings-modal{max-width:min(920px,92vw);width:100%;height:min(82vh,700px);padding:0;display:flex;flex-direction:column;overflow:hidden}
     .settings-modal .mhdr{border-radius:14px 14px 0 0;margin:0}
     .settings-body{display:flex;flex:1;min-height:0}
-    .settings-sidebar{width:210px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);padding:.85rem .6rem;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+    /* A quarter of the dialog, not a fixed 210px. On a narrow window that
+       fixed width was eating half the screen and the settings themselves were
+       reading through a slot. */
+    .settings-sidebar{width:25%;min-width:132px;max-width:230px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);padding:.85rem .5rem;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
     .settings-sidebar-label{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:.9rem .6rem .3rem}
     .settings-sidebar-label:first-child{padding-top:.2rem}
     /* display:flex so a tab's list/table can flex:1 to fill the fixed modal
@@ -603,6 +683,10 @@
     .day-empty{color:var(--muted);font-size:.78rem;font-style:italic}
     .inc-status-pending{background:#FEF3C7;color:#92400E;border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
     .inc-status-arrived{background:var(--green-bg);color:var(--green);border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
+    .inc-group-row td{background:var(--bg);padding:.45rem .75rem;border-top:2px solid var(--border)}
+    .inc-group-lbl{font-size:.76rem;font-weight:800;color:var(--text);letter-spacing:.01em}
+    .inc-group-count{font-size:.68rem;font-weight:800;background:var(--border);color:var(--muted);border-radius:10px;padding:1px 8px;margin-left:.45rem}
+    .inc-group-note{font-size:.7rem;color:var(--muted);margin-left:.6rem;font-weight:400}
     .inc-status-cancelled{background:#F3F4F6;color:#6B7280;border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700;text-decoration:line-through}
     /* ── MORNING POPUP ── */
     .morning-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -683,63 +767,74 @@
        the pile is a real hand of cards, not a 300-card staircase — as one is
        dealt with, the next flows in. Padding on the container leaves room for
        the rotated corners and the count badge to sit OUTSIDE the top card. */
-    .corner-decks{position:fixed;right:22px;bottom:86px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-    .cfg-deck{display:flex;flex-direction:column;align-items:flex-end;max-width:min(300px,calc(100vw - 44px));padding:14px 12px 0 14px}
-    /* Notifications: same pile behaviour as the suggestion deck, but bigger and
-       with nothing to decide — just an ✕ where the count badge sits. They are
-       reports of things already done, not questions. */
-    .sys-deck{display:flex;flex-direction:column;align-items:flex-end;max-width:min(320px,calc(100vw - 44px));padding:14px 12px 0 14px}
-    .sys-deck:empty{display:none}
-    .sys-card{position:relative;background:var(--card);color:var(--text);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:.6rem .75rem;font-size:.78rem;box-shadow:0 6px 20px rgba(0,0,0,.22);width:270px;max-width:100%;height:96px;flex-shrink:0;transition:margin .5s ease,transform .5s ease,background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease;overflow:hidden}
-    .sys-deck:hover .sys-card,.sys-deck.open .sys-card{transition:margin .22s ease,transform .22s ease,background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
-    .sys-deck.dim:not(:hover):not(.open) .sys-card{background:var(--bg);border-left-color:var(--border);box-shadow:0 2px 6px rgba(0,0,0,.06)}
-    .sys-deck.dim:not(:hover):not(.open) .sys-card .sys-card-title{color:var(--muted)}
-    .sys-card + .sys-card{margin-top:.45rem}
-    .sys-deck:not(:hover):not(.open) .sys-card{margin-top:-90px;transform:rotate(-2.4deg)}
-    .sys-deck:not(:hover):not(.open) .sys-card:nth-child(even){transform:rotate(1.8deg) translateX(-4px)}
-    .sys-deck:not(:hover):not(.open) .sys-card:nth-child(3n){transform:rotate(-3.4deg) translateX(3px)}
-    .sys-deck:not(:hover):not(.open) .sys-card:first-child{margin-top:0}
-    .sys-deck:not(:hover):not(.open) .sys-card:last-child{transform:rotate(0deg)}
-    .sys-deck:not(:hover):not(.open) .sys-card:not(:last-child){pointer-events:none}
-    .sys-card-x{position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:12px;background:var(--navy);color:#fff;border:2px solid var(--card);font-size:.78rem;font-weight:800;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
-    .sys-card-x:hover{background:var(--red)}
-    .sys-card-title{font-weight:800;color:var(--text);display:flex;align-items:center;gap:.35rem}
-    .sys-card-when{color:var(--muted);font-size:.72rem;margin-top:.15rem}
-    .sys-card-detail{color:var(--muted);font-size:.71rem;margin-top:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .cfg-deck:empty{display:none}
+    /* ── The corner deck ─────────────────────────────────────────────────────
+       ONE pile, holding both kinds of card. They used to be two stacks in the
+       same corner, which read as two floating boxes and took twice the room for
+       no reason — the two things ARE different (one reports what already
+       happened, one asks a question), but that difference belongs on the card,
+       not in the layout. It shows on the card: a notification is dismissed with
+       the ✕ in its corner, a suggestion with Add to list / Not now.
+
+       Cards are a FIXED height so collapsing can be pure margin+transform —
+       those animate, height does not, and a staircase of mismatched heights
+       would not read as a deck. Newest is last in the DOM so it paints on top
+       without fighting z-index. Padding on the container leaves room for the
+       rotated corners and the badge to sit OUTSIDE the top card. */
+    .deck{position:fixed;right:22px;bottom:22px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(350px,calc(100vw - 44px));padding:16px 12px 0 14px}
+    .deck:empty{display:none}
+    .deck-card{position:relative;width:300px;max-width:100%;height:110px;flex-shrink:0;border-radius:11px;padding:.7rem .85rem;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.22);transition:margin .5s ease,transform .5s ease,background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease}
+    .deck-card + .deck-card{margin-top:.45rem}
     /* Closing is deliberately slower than opening — a pile snapping shut the
        instant the pointer leaves reads as the app swatting you away. */
-    .cfg-card{position:relative;background:var(--navy);color:#fff;border:1px solid transparent;border-radius:10px;padding:.55rem .7rem;font-size:.76rem;box-shadow:0 6px 20px rgba(0,0,0,.25);width:250px;max-width:100%;height:88px;flex-shrink:0;transition:margin .5s ease,transform .5s ease,background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease;cursor:default}
-    .cfg-deck:hover .cfg-card,.cfg-deck.open .cfg-card{transition:margin .22s ease,transform .22s ease,background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
-    /* Resting state fades by MUTING the colours, not by turning the cards
-       transparent. Transparency was the wrong tool for a pile: each card let
-       the one behind it show through, the opacities stacked, and the whole
-       thing read as a smudge with other cards' text bleeding through the front
-       one. Opaque-but-quiet keeps every card readable and lets the count badge
-       stay at full strength, which per-card opacity could never do. */
-    .cfg-deck.dim:not(:hover):not(.open) .cfg-card{background:var(--card);color:var(--muted);border-color:var(--border);box-shadow:0 2px 6px rgba(0,0,0,.08)}
-    .cfg-deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-lbl,
-    .cfg-deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-val{color:var(--muted)}
-    .cfg-deck.dim:not(:hover):not(.open) .cfg-card-acts{opacity:0}
-    .cfg-card + .cfg-card{margin-top:.45rem}
-    /* Piled: each card pulled fully up under the next, offset a few px so the
-       edges show. Rotation alternates for a hand-stacked look. */
-    .cfg-deck:not(:hover):not(.open) .cfg-card{margin-top:-82px;transform:rotate(-2.4deg)}
-    .cfg-deck:not(:hover):not(.open) .cfg-card:nth-child(even){transform:rotate(1.8deg) translateX(-4px)}
-    .cfg-deck:not(:hover):not(.open) .cfg-card:nth-child(3n){transform:rotate(-3.4deg) translateX(3px)}
-    .cfg-deck:not(:hover):not(.open) .cfg-card:first-child{margin-top:0}
-    /* The visible one sits square on top of the pile. */
-    .cfg-deck:not(:hover):not(.open) .cfg-card:last-child{transform:rotate(0deg)}
-    /* Only the top card takes clicks while piled — the rest are decoration
-       until the deck is fanned out. */
-    .cfg-deck:not(:hover):not(.open) .cfg-card:not(:last-child){pointer-events:none}
-    /* Badge lives on the top card but must not be clipped by it, so no
-       overflow:hidden anywhere on the card — the value ellipsizes instead. */
-    .cfg-count{position:absolute;top:-9px;right:-9px;min-width:24px;height:24px;border-radius:12px;background:var(--accent);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 6px;border:2px solid var(--card);box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
-    .cfg-deck:hover .cfg-count,.cfg-deck.open .cfg-count{display:none}
-    /* Deliberately NOT muted with the cards: the count is the one thing on a
-       resting pile that has to stay readable at a glance. */
-    .cfg-deck.dim .cfg-count{background:var(--accent);color:#fff}
+    .deck:hover .deck-card,.deck.open .deck-card{transition:margin .22s ease,transform .22s ease,background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
+    /* Piled: every card pulled up under the next, offset a few px, rotation
+       alternating for a hand-stacked look. */
+    .deck:not(:hover):not(.open) .deck-card{margin-top:-104px;transform:rotate(-2.4deg)}
+    .deck:not(:hover):not(.open) .deck-card:nth-child(even){transform:rotate(1.8deg) translateX(-4px)}
+    .deck:not(:hover):not(.open) .deck-card:nth-child(3n){transform:rotate(-3.4deg) translateX(3px)}
+    .deck:not(:hover):not(.open) .deck-card:first-child{margin-top:0}
+    /* At rest ONE card is on screen and you can see the app through it. Two
+       earlier attempts are the reason it works this way: per-card opacity
+       stacked into a smudge with the cards behind bleeding through, and muting
+       the colours instead made a solid slab covering the page. Both at once is
+       the answer — the ones behind are hidden outright so nothing can stack,
+       and the front one gets a translucent BACKGROUND rather than a faded
+       element, which is what keeps its badge and its ✕ crisp on top of it. */
+    .deck:not(:hover):not(.open) .deck-card:not(:last-child){visibility:hidden;pointer-events:none}
+    .deck:not(:hover):not(.open) .deck-card:last-child{transform:rotate(0deg) scale(.88);transform-origin:bottom right}
+
+    /* A suggestion: dark card, asks a question, answered with its buttons. */
+    .cfg-card{background:var(--navy);color:#fff;border:1px solid transparent}
+    .deck.dim:not(:hover):not(.open) .cfg-card{background:var(--navy-ghost);color:rgba(255,255,255,.72);border-color:rgba(255,255,255,.12);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+    .deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-lbl,
+    .deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-val{color:rgba(255,255,255,.72)}
+    .deck.dim:not(:hover):not(.open) .cfg-card-acts{opacity:0}
+    .cfg-card-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;color:#a1b0cb;font-weight:700}
+    .cfg-card-val{font-weight:700;margin:.15rem 0 .45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cfg-card-acts{display:flex;gap:.4rem;align-items:center}
+    .cfg-card-acts button{border:none;border-radius:6px;padding:.28rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
+    .cfg-card-add{background:var(--accent);color:#fff}
+    .cfg-card-add:disabled{opacity:.6;cursor:default}
+    .cfg-card-skip{background:rgba(255,255,255,.14);color:#dbe4f5}
+
+    /* A notification: light card, reports a fact, dismissed with its ✕. */
+    .sys-card{background:var(--card);color:var(--text);border:1px solid var(--border);border-left:4px solid var(--green)}
+    .deck.dim:not(:hover):not(.open) .sys-card{background:var(--card-ghost);border-color:rgba(0,0,0,.06);border-left-color:var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .deck.dim:not(:hover):not(.open) .sys-card .sys-card-title{color:var(--muted)}
+    .deck.dim:not(:hover):not(.open) .sys-card-when,
+    .deck.dim:not(:hover):not(.open) .sys-card-detail{opacity:.6}
+    .sys-card-title{font-weight:800;color:var(--text);display:flex;align-items:center;gap:.35rem}
+    .sys-card-when{color:var(--muted);font-size:.72rem;margin-top:.15rem}
+    .sys-card-detail{color:var(--muted);font-size:.71rem;margin-top:.3rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35}
+
+    /* The two corner controls. Neither is ever translucent with the card under
+       it: the one thing you can act on while the pile is at rest has to stay
+       legible, which is exactly what per-element opacity could never deliver. */
+    .sys-card-x{position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:12px;background:var(--navy);color:#fff;border:2px solid var(--card);font-size:.78rem;font-weight:800;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
+    .sys-card-x:hover{background:var(--red)}
+    .cfg-count{position:absolute;top:-9px;left:-9px;min-width:24px;height:24px;border-radius:12px;background:var(--accent);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 6px;border:2px solid var(--card);box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
+    .deck:hover .cfg-count,.deck.open .cfg-count{display:none}
+    .deck.dim .cfg-count,.deck.dim .sys-card-x{opacity:1}
 
     /* ── Phone/tablet: bell in the topbar instead of the hover deck ── */
     .cfg-bell{display:none;position:relative;background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;width:38px;height:34px;font-size:1rem;cursor:pointer;align-items:center;justify-content:center}
@@ -752,27 +847,58 @@
     .cfg-bell-row:last-child{border-bottom:none}
     .cfg-bell-row .cfg-card-lbl{color:var(--muted)}
     .cfg-bell-row .cfg-card-val{color:var(--text)}
+    /* Below this width the pile is hidden and the bell takes over — the deck
+       is a hover interaction, and touch has no hover. The bell has always shown
+       both kinds together, which is what the pile does now too. */
     @media (max-width:900px){
-      .cfg-deck{display:none!important}
+      .deck{display:none!important}
       .cfg-bell{display:inline-flex}
     }
-    .cfg-card-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;color:#a1b0cb;font-weight:700}
-    .cfg-card-val{font-weight:700;margin:.15rem 0 .45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .cfg-card-acts{display:flex;gap:.4rem;align-items:center}
-    .cfg-card-acts button{border:none;border-radius:6px;padding:.28rem .6rem;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit}
-    .cfg-card-add{background:var(--accent);color:#fff}
-    .cfg-card-add:disabled{opacity:.6;cursor:default}
-    .cfg-card-skip{background:rgba(255,255,255,.14);color:#dbe4f5}
-    @media (max-width:640px){.cfg-deck{right:16px;bottom:72px;max-width:calc(100vw - 32px)}.cfg-card{width:230px}}
+    @media (max-width:640px){.deck{right:16px;max-width:calc(100vw - 32px)}.deck-card{width:250px}}
     /* Manual merge picker */
     .app-splash{position:fixed;inset:0;z-index:2000;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;transition:opacity .45s ease;padding:1.5rem}
     .app-splash.gone{opacity:0;pointer-events:none}
-    .splash-mark{display:flex;align-items:center;gap:.6rem;font-size:1.7rem;font-weight:800;letter-spacing:.02em}
+    .splash-mark{display:flex;align-items:center;gap:.6rem;font-size:1.7rem;font-weight:800;letter-spacing:.02em;text-align:center}
+    .splash-logo{max-width:min(350px,72vw);max-height:120px;object-fit:contain}
+    /* Deliberately quiet: the customer's name is the headline, ours is a
+       credit line under the bar. */
+    .splash-by{font-size:.68rem;color:#8fa0bd;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:.4rem}
+    .splash-by b{color:#fff;font-weight:800;letter-spacing:.02em;text-transform:none;font-size:1.05rem}
     .splash-bar{width:min(260px,70vw);height:5px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden}
     .splash-fill{height:100%;width:8%;background:#fff;border-radius:3px;transition:width .5s ease}
     .splash-note{font-size:.8rem;color:#a1b0cb;text-align:center;min-height:1.2em}
     .submit-hint{flex:1;min-width:160px;font-size:.75rem;color:var(--orange);font-weight:600;text-align:left}
     .btn:disabled{opacity:.5;cursor:not-allowed}
+    /* Settings → Company */
+    .co-form{max-width:460px}
+    .co-label{display:block;font-size:.78rem;font-weight:700;color:var(--text);margin:1rem 0 .3rem}
+    .co-form .co-label:first-child{margin-top:0}
+    .co-opt{font-weight:400;color:var(--muted)}
+    .co-input{width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:.86rem;font-family:inherit}
+    .co-input:focus{outline:none;border-color:var(--accent)}
+    .co-hint{font-size:.73rem;color:var(--muted);margin:.35rem 0 0;line-height:1.45}
+    .co-logo-box{display:inline-flex;align-items:center;justify-content:center;min-width:150px;min-height:64px;padding:.5rem .75rem;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
+    .co-logo-box img{max-height:52px;max-width:240px;object-fit:contain}
+    .co-logo-empty{color:var(--muted);font-size:.78rem}
+    .co-logo-acts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+    .co-save{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--border)}
+    /* One edit mode and one delete mode per screen. Rows carry no controls
+       until a mode is switched on, so a list reads as a list and deleting is
+       something you have to mean. */
+    .row-mode-bar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:0 0 .7rem}
+    .rm-btn{display:inline-flex;align-items:center;gap:.3rem;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:.3rem .7rem;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s}
+    .rm-btn:hover{border-color:var(--accent)}
+    .rm-btn.on{background:var(--navy);border-color:var(--navy);color:#fff}
+    .rm-btn.rm-del:hover{border-color:var(--red)}
+    .rm-btn.rm-del.on{background:var(--red);border-color:var(--red);color:#fff}
+    .rm-hint{font-size:.74rem;color:var(--muted)}
+    .row-mode-bar.is-del .rm-hint{color:var(--red);font-weight:600}
+    /* Only ever ADDS display:none — when the mode is on the rule stops matching
+       and each control keeps whatever display it had. */
+    [data-rowscope]:not(.mode-edit) [data-rowact="edit"],
+    [data-rowscope]:not(.mode-del)  [data-rowact="del"]{display:none!important}
+    /* Delete mode is worth noticing from across the room. */
+    [data-rowscope].mode-del{outline:1px solid var(--red);outline-offset:4px;border-radius:6px}
     .col-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.15rem 0 .6rem}
     .col-edit-help{font-size:.74rem;color:var(--muted)}
     th.col-edit{cursor:grab;white-space:nowrap}
@@ -796,6 +922,15 @@
       padding:.4rem .55rem;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.28);white-space:normal;width:max-content;max-width:190px;
       opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:60}
     .tip:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+    /* A table heading that carries a tooltip must still stick.
+       .tip sets position:relative to anchor its bubble, and a class beats the
+       `thead th` rule that makes headings sticky whatever the order — so every
+       column with a tooltip quietly stopped sticking and scrolled away with the
+       rows, leaving a see-through gap in the header bar. Re-asserting sticky at
+       higher specificity fixes it without costing the tooltip anything: sticky
+       is a positioned value, so it anchors the bubble just as well as relative
+       did. */
+    thead th.tip{position:sticky;top:0}
     .cfg-pick{margin-right:.5rem;flex-shrink:0;cursor:pointer}
     .cfg-pickbar{display:none;gap:.5rem;align-items:center;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:8px;padding:.5rem .7rem;margin-bottom:.75rem}
     .cfg-pickbar.show{display:flex}
@@ -881,6 +1016,7 @@
     [data-theme="dark"]{
       --bg:#0F172A;--card:#1E293B;--text:#E2E8F0;--muted:#94A3B8;
       --border:#334155;--shadow:0 1px 4px rgba(0,0,0,.4);
+      --card-ghost:rgba(30,41,59,.55);--navy-ghost:rgba(15,23,42,.6);
       --navy:#0F172A;--steel:#1E293B;--accent:#3B82F6;--accent2:#60A5FA;
       --green:#22C55E;--green-bg:rgba(34,197,94,.12);
       --red:#EF4444;--red-bg:rgba(239,68,68,.12);
@@ -924,8 +1060,6 @@
     [data-theme="dark"] .ai-review-panel{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3)}
     [data-theme="dark"] .ai-field-row input,[data-theme="dark"] .ai-field-row select{background:#0F172A;color:var(--text)}
     /* Dark mode toggle button */
-    .dark-toggle{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);border-radius:7px;padding:4px 10px;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;line-height:1.5}
-    .dark-toggle:hover{background:rgba(255,255,255,.2)}
     /* ── TOAST NOTIFICATIONS ── */
     #toastContainer{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:.5rem;pointer-events:none}
     .toast{background:var(--card);border-radius:10px;padding:.75rem 1.25rem;font-size:.84rem;font-weight:500;display:flex;align-items:flex-start;gap:.55rem;box-shadow:0 8px 32px rgba(0,0,0,.25);border-top:4px solid #94A3B8;min-width:300px;max-width:520px;pointer-events:all;animation:toastIn .25s ease;color:var(--text)}
@@ -962,11 +1096,28 @@
     @media(prefers-reduced-motion:reduce){
       *{animation-duration:.01ms!important;transition-duration:.01ms!important}
     }
+    /* ── Small phones: these two boxes cover the app ─────────────────────────
+       On a narrow phone the setup message and the notification panel each ran
+       the full width of the screen and sat squat across it, hiding whatever was
+       underneath. Half the width leaves the app readable beside them, and the
+       text simply wraps to roughly twice the height rather than being shrunk —
+       nothing here changes the font size. Phone only; from tablet up they are
+       already the right shape. */
+    /* Stacked from here down, not only on a phone: the moment the tabs need
+       two rows there is height beside them going spare and no width to spare,
+       so the account circle goes on top and the bell under it. */
+    @media (max-width:720px){
+      .topbar-tools{flex-direction:column;gap:8px;align-items:center}
+      .nav{flex:1 1 auto}
+    }
+    @media (max-width:520px){
+      .setup-nudge{left:12px;right:auto;width:calc(50vw - 18px);max-width:none}
+      .cfg-bell-panel{left:auto;right:12px;width:calc(50vw - 18px);max-width:none}
+    }
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
-      .topbar{flex-direction:column;align-items:flex-start}
-      .nav{width:100%;flex-wrap:wrap}
-      .nav button{flex-grow:1;text-align:center;padding:.6rem;min-height:40px}
+      .topbar{padding:.7rem 1rem .6rem}
+      .nav button{flex-grow:1;text-align:center;min-height:38px}
       .toolbar{flex-direction:column;align-items:stretch;width:100%}
       .toolbar input,.toolbar select,.toolbar button{width:100%}
       .form-grid{grid-template-columns:1fr}
@@ -987,78 +1138,133 @@
      table, which reads as a broken app for the ten-plus seconds Apps Script can
      take to answer. Lifted when the connection indicator turns green — that is
      the app's own "finished" signal — and on every failure path too, so it can
-     never strand the page behind it. -->
+     never strand the page behind it.
+
+     The name on it is the CUSTOMER's, not ours — this is their system, and the
+     loading screen is the first thing their crew sees every morning. Ours is
+     the credit line underneath. Their logo and name only exist on the server,
+     which is precisely what the splash is waiting for, so they are remembered
+     in this browser from the previous load and painted immediately. The very
+     first load anyone ever does still shows the Acopio mark alone. -->
 <div id="appSplash" class="app-splash">
-  <div class="splash-mark">
+  <div class="splash-mark" id="splashMark">
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-    <span>Acopio</span>
+    <span id="splashName">Acopio</span>
   </div>
+  <img id="splashLogo" class="splash-logo" alt="" style="display:none">
   <div class="splash-bar"><div class="splash-fill" id="splashFill"></div></div>
   <div class="splash-note" id="splashNote">Connecting to your spreadsheet…</div>
+  <div class="splash-by" id="splashBy" style="display:none">
+    powered by
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    <b>Acopio</b>
+  </div>
 </div>
+<script>
+// Runs before anything else on the page, so the customer's name is on the
+// splash from the first paint rather than swapping in a moment later.
+(function(){
+  var name = null, logo = null;
+  try {
+    name = localStorage.getItem('acopio_brand_name');
+    logo = localStorage.getItem('acopio_brand_logo');
+  } catch (e) {}
+  if (!name && !logo) return;                      // first ever load: Acopio alone
+  var by = document.getElementById('splashBy');
+  if (by) by.style.display = '';
+  if (logo){
+    var img = document.getElementById('splashLogo');
+    var mark = document.getElementById('splashMark');
+    if (img){ img.src = logo; img.alt = name || ''; img.style.display = ''; }
+    if (mark) mark.style.display = 'none';
+    return;
+  }
+  // No logo uploaded — the company name in place of ours, without our glyph.
+  var mk = document.getElementById('splashMark');
+  var sv = mk && mk.querySelector('svg');
+  if (sv) sv.style.display = 'none';
+  var sp = document.getElementById('splashName');
+  if (sp) sp.textContent = name;
+})();
+</script>
 
 <!-- ══ TOPBAR ══════════════════════════════════════════════════════════════════ -->
 <div class="topbar">
+ <div class="topbar-row1">
   <div class="topbar-brand">
     <img id="appLogo" class="app-logo" alt="" style="display:none">
     <h1 id="appTitle">Warehouse</h1>
-    <div class="author-badge">
-      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      <span id="poweredByBadge">Acopio</span>
+    <div class="brand-mark">
+      <div class="author-badge">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span id="poweredByBadge">Acopio</span>
+      </div>
+      <!-- Starts loud on purpose: if the script never runs, this is the only
+           thing on the page that says so. The moment it does run it is
+           restyled to the quiet version tucked under the badge. -->
+      <span id="jsVersionTag" class="ver-tag ver-bad">JS NOT LOADED</span>
     </div>
-    <span id="jsVersionTag" style="font-size:.65rem;color:rgba(255,80,80,.9);font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(255,0,0,.15)">JS NOT LOADED</span>
   </div>
-  <div class="topbar-right">
-    <div class="nav">
-      <button id="btn-dashboard" class="active">Stock Dashboard</button>
-      <button id="btn-movements">Movements &amp; History</button>
-      <button id="btn-projects">Project View</button>
-      <button id="btn-warehouse">Warehouse Map</button>
-      <button id="btn-incoming">📦 Incoming</button>
-    </div>
-
+  </div>
+ <div class="topbar-row2">
+  <div class="nav">
+   <button id="btn-dashboard" class="active">Stock Dashboard</button>
+   <button id="btn-movements">Movements &amp; History</button>
+   <button id="btn-projects">Project View</button>
+   <button id="btn-warehouse">Warehouse Map</button>
+   <button id="btn-incoming">📦 Incoming</button>
+  </div>
+  <div class="topbar-tools">
+   <div class="tools-primary">
     <!-- Connection indicator -->
     <button id="connBtn" class="conn-btn loading" title="Connecting…" onclick="loadDataFromGoogle()"></button>
 
-    <!-- User chip + active-users dropdown -->
-    <div class="presence-wrap" id="presenceWrap">
-      <div class="user-chip presence-chip" id="userChip" onclick="togglePresence(event)">
-        <span class="spin-hg">⏳</span> Loading…
-      </div>
-      <div class="presence-dropdown" id="presenceDropdown">
-        <div class="presence-hdr">
-          <span>👥 Active Users</span>
-          <button onclick="togglePresence(event)">✕</button>
+    <!-- Account menu. One circle in the corner; everything about you and
+         everything you can do to the app itself lives behind it, instead of
+         being scattered across the topbar. -->
+    <div class="acct-wrap" id="acctWrap">
+      <button class="acct-btn" id="acctBtn" onclick="toggleAccountMenu(event)" title="Your account">
+        <span id="acctInitials">·</span>
+      </button>
+      <div class="acct-menu" id="acctMenu">
+        <div class="acct-head">
+          <div class="acct-avatar" id="acctAvatar">·</div>
+          <div class="acct-name"  id="acctName">Loading…</div>
+          <div class="acct-email" id="acctEmail"></div>
+          <div class="acct-tags"  id="acctTags"></div>
         </div>
-        <div id="activeUsersList"><p class="presence-empty">Loading…</p></div>
-        <!-- Admin actions inside the dropdown -->
-        <div id="presenceAdminActions" style="display:none;border-top:1px solid var(--border);padding:.5rem">
-          <button id="btnUsersMgmt" onclick="togglePresence(event);openUsersModal()"
-            style="width:100%;background:none;border:1px solid var(--border);border-radius:7px;
-                   padding:.4rem .75rem;font-size:.78rem;font-weight:600;cursor:pointer;
-                   color:var(--text);text-align:left;margin-bottom:.35rem;transition:.15s"
-            onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
-            onmouseout="this.style.background='none';this.style.color='var(--text)'"
-            title="Manage system users">👥 Manage Users</button>
-          <button id="btnSettings" onclick="togglePresence(event);openSettingsModal()"
-            style="width:100%;background:none;border:1px solid var(--border);border-radius:7px;
-                   padding:.4rem .75rem;font-size:.78rem;font-weight:600;cursor:pointer;
-                   color:var(--text);text-align:left;transition:.15s"
-            onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
-            onmouseout="this.style.background='none';this.style.color='var(--text)'"
-            title="App settings">⚙️ App Settings</button>
+        <div class="acct-section" id="acctPresence">
+          <div class="acct-section-lbl">Active users</div>
+          <div id="activeUsersList"><p class="presence-empty">Loading…</p></div>
+        </div>
+        <div class="acct-actions">
+          <button class="acct-item" id="btnSettings"  onclick="closeAccountMenu();openSettingsModal()" style="display:none">⚙️ <span>App Settings</span></button>
+          <button class="acct-item" id="btnUsersMgmt" onclick="closeAccountMenu();openUsersModal()"    style="display:none">👥 <span>Manage Users</span></button>
+          <button class="acct-item" id="btnReportIssue" onclick="closeAccountMenu();openReportIssueModal()">🐞 <span>Report a problem</span></button>
+          <button class="acct-item" id="btnDarkMode" onclick="toggleDarkMode()"><span id="darkIcon">🌙</span> <span id="darkLabel">Dark mode</span></button>
+          <button class="acct-item" id="acctSwitch" onclick="_signOut()" style="display:none">⇄ <span>Switch account</span></button>
+        </div>
+        <div class="acct-foot">
+          <div id="acctFoot"></div>
+          <div class="acct-legal">
+            <a href="#" onclick="openLegal('privacy');return false">Privacy Policy</a>
+            <span>·</span>
+            <a href="#" onclick="openLegal('terms');return false">Terms of Service</a>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Unregistered suppliers/projects — phone/tablet entry point. The corner
-         deck relies on hover, which touch devices do not have, so on small
-         screens the deck is hidden and this opens the same list as a panel. -->
-    <button class="cfg-bell" id="cfgBellBtn" onclick="toggleCfgBell(event)" title="Unregistered suppliers / projects">
-      🔔<span class="cfg-bell-count" id="cfgBellCount">0</span>
-    </button>
-    <!-- Dark mode toggle -->
-    <button class="dark-toggle" id="btnDarkMode" onclick="toggleDarkMode()" title="Toggle dark / light mode">🌙</button>
+   </div>
+   <!-- Unregistered suppliers/projects — phone/tablet entry point. The corner
+        deck relies on hover, which touch devices do not have, so on small
+        screens the deck is hidden and this opens the same list as a panel.
+        On a narrow phone it drops below the account circle rather than
+        squeezing the tabs any further. -->
+   <button class="cfg-bell" id="cfgBellBtn" onclick="toggleCfgBell(event)" title="Unregistered suppliers / projects">
+     🔔<span class="cfg-bell-count" id="cfgBellCount">0</span>
+   </button>
   </div>
+ </div>
 </div>
 
 <div class="cfg-bell-panel" id="cfgBellPanel">
@@ -1067,6 +1273,22 @@
     <button onclick="toggleCfgBell(event)" title="Close">✕</button>
   </div>
   <div id="cfgBellList"></div>
+</div>
+
+<!-- ══ LEGAL ═════════════════════════════════════════════════════════════════
+     The text is carried in the page rather than linked to a website. Every
+     customer runs their own copy inside their own Google account, so there is
+     no shared address to send them to, and a policy nobody can open is the
+     same as not having one. Source of truth is legal/*.md in the repo — change
+     it there and re-generate. -->
+<div class="overlay" id="legalOverlay">
+  <div class="modal modal-md">
+    <div class="mhdr">
+      <h3 id="legalTitle">Privacy Policy</h3>
+      <button class="modal-x" onclick="closeModal('legalOverlay')" title="Close">✕</button>
+    </div>
+    <div class="lg-body" id="legalBody"></div>
+  </div>
 </div>
 
 <!-- ══ TOAST CONTAINER ═══════════════════════════════════════════════════════ -->
@@ -1109,7 +1331,8 @@
     </div>
 
     <!-- Users table -->
-    <div class="table-wrapper" style="max-height:45vh">
+    <div id="rowModeSlot_usr"></div>
+    <div class="table-wrapper" style="max-height:45vh" data-rowscope="usr">
       <table class="users-table">
         <thead><tr>
           <th>Email</th><th>Name</th><th>Role</th>
@@ -1217,8 +1440,9 @@
         </span>
         <button class="btn btn-primary btn-sm" id="btnColDone_mov" style="display:none" onclick="finishColEdit('mov')">Done</button>
         <button class="btn btn-ghost btn-sm" id="btnColReset_mov" style="display:none" onclick="resetColEdit('mov')">Reset</button>
+        <span id="rowModeSlot_mov"></span>
       </div>
-      <div class="table-wrapper" id="tableContainer"></div>
+      <div class="table-wrapper" id="tableContainer" data-rowscope="mov"></div>
     </div>
   </div>
 
@@ -1329,8 +1553,25 @@
     <div id="incAiStatus" style="display:none;margin-bottom:.5rem;font-size:.78rem;padding:.4rem .6rem;border-radius:6px;background:var(--purple-bg);color:var(--purple)"></div>
     <div class="form-grid">
       <div class="field">
-        <label>Estimated Arrival Date *</label>
+        <label>When is it arriving?</label>
+        <select id="incDateMode" onchange="_incSyncDateMode()">
+          <option value="exact">On a known date</option>
+          <option value="window">Sometime between two dates</option>
+          <option value="about">Around a date / a rough idea</option>
+          <option value="unknown">Not known yet</option>
+        </select>
+      </div>
+      <div class="field" id="incDateField">
+        <label id="incDateLabel">Estimated arrival date *</label>
         <input type="date" id="incDate">
+      </div>
+      <div class="field" id="incDateEndField" style="display:none">
+        <label>…and this date</label>
+        <input type="date" id="incDateEnd">
+      </div>
+      <div class="field" id="incDateNoteField" style="display:none">
+        <label id="incDateNoteLabel">What were you told?</label>
+        <input type="text" id="incDateNote" maxlength="60" placeholder="e.g. next week, in about 2 weeks, waiting on the factory">
       </div>
       <div class="field">
         <label>Status</label>
@@ -1467,6 +1708,28 @@
     <div class="cconfirm-footer">
       <button class="cconfirm-cancel" id="confirmCancelBtn" onclick="_confirmCancel()">Cancel</button>
       <button class="btn-primary btn" id="confirmOkBtn" onclick="_confirmOk()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ASK-FOR-A-VALUE DIALOG ═════════════════════════════════════════════════
+     The browser's own prompt() is a black bar bolted to the top of the window
+     that announces the googleusercontent.com address it came from. It looks
+     like a security warning, not like this app. Same shell as the confirm
+     dialog above, so every question the app asks looks the same. -->
+<div class="cconfirm-overlay" id="promptOverlay">
+  <div class="cconfirm-dialog">
+    <div class="cconfirm-icon-row" id="promptIcon">✏️</div>
+    <div class="cconfirm-body">
+      <h3 id="promptTitle">Rename</h3>
+      <p id="promptMessage"></p>
+      <input type="text" class="cprompt-input" id="promptInput" autocomplete="off">
+      <div class="cprompt-list" id="promptChoices"></div>
+      <div class="cprompt-err" id="promptErr"></div>
+    </div>
+    <div class="cconfirm-footer">
+      <button class="cconfirm-cancel" onclick="_promptCancel()">Cancel</button>
+      <button class="btn btn-primary" id="promptOkBtn" onclick="_promptOk()">Save</button>
     </div>
   </div>
 </div>
@@ -1848,6 +2111,8 @@
     </div>
     <div class="settings-body">
       <nav class="settings-sidebar" aria-label="Settings sections">
+        <div class="settings-sidebar-label">Company</div>
+        <button class="settings-tab"        data-tab="company"     onclick="switchSettingsTab('company')">🏷 <span>Name &amp; Logo</span></button>
         <div class="settings-sidebar-label">Catalog</div>
         <button class="settings-tab active" data-tab="categories"  onclick="switchSettingsTab('categories')">📦 <span>Categories</span></button>
         <button class="settings-tab"        data-tab="projects"    onclick="switchSettingsTab('projects')">📁 <span>Projects</span></button>
@@ -1956,12 +2221,10 @@
   </div>
 </div>
 
-<!-- Floating "report a problem" button — available from every screen -->
-<div class="corner-decks">
-  <div class="sys-deck" id="sysDeck" onclick="this.classList.toggle('open')"></div>
-  <div class="cfg-deck" id="cfgDeck" onclick="this.classList.toggle('open')"></div>
-</div>
-<button id="reportIssueFab" class="report-issue-fab" onclick="openReportIssueModal()" title="Report a problem">🐞</button>
+<!-- One pile for both kinds of card. Tapping toggles .open — touch has no
+     hover, and without that anything behind the front card would be
+     unreachable on a tablet. -->
+<div class="deck" id="cornerDeck" onclick="this.classList.toggle('open')"></div>
 
 <div class="overlay" id="reportIssueOverlay">
   <div class="modal modal-sm">
@@ -2007,9 +2270,10 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '9.41';
+var APP_VERSION = '9.55';
 var userRole = 'WAREHOUSE';
 var userEmail = '';
+var _lastUserName = '';    // display name on file, so the account menu can be repainted without it
 // Paid Gmail-scanner add-on: off unless the backend says this installation
 // bought it. Set from getInitialData; defaults false so a stale/failed load
 // hides the feature rather than showing a button that can only error out.
@@ -2191,62 +2455,106 @@ function _refreshCatHelpers(){
   });
 }
 
+// Which form is on screen is decided by which SECTION is visible, not by which
+// container happens to hold rows: the move overlay is one modal reused by every
+// movement type, and switching type hides a section without emptying it. Going
+// by rows alone let a leftover ENTRY line answer for an EXIT form.
+function _moveSectionVisible(id){
+  var el = document.getElementById(id);
+  return !!(el && el.style.display !== 'none');
+}
+
 function _moveFormProblem(){
   if (!(config.categories && config.categories.length)) return 'Add at least one category first';
 
-  var lines = document.querySelectorAll('#multiMatContainer .mat-line');
+  var lines = _moveSectionVisible('multiMatSection')
+    ? document.querySelectorAll('#multiMatContainer .mat-line') : [];
+  // Mirrors submitMultiEntry(): EVERY card needs a name and a positive
+  // quantity, and it stops at the first one that doesn't. A category is not
+  // required there, so it is not required here either.
   if (lines.length){
-    var anyComplete = false, missing = '';
-    lines.forEach(function(line){
-      var n    = line.id.replace('mat-line-', '');
-      var name = ((document.getElementById('mat-name-' + n) || {}).value || '').trim();
-      var cat  = ((document.getElementById('mat-cat-'  + n) || {}).value || '').trim();
-      var qty  = 0;
-      var lc = document.getElementById('mat-locs-' + n);
+    var entryProblem = '';
+    lines.forEach(function(line, i){
+      if (entryProblem) return;
+      var n     = line.id.replace('mat-line-', '');
+      var label = 'Material ' + (i + 1);
+      var name  = ((document.getElementById('mat-name-' + n) || {}).value || '').trim();
+      if (!name){ entryProblem = label + ' needs a name'; return; }
+      var qty = 0;
+      var lc  = document.getElementById('mat-locs-' + n);
       if (lc) lc.querySelectorAll('.loc-row').forEach(function(row){
-        var q = parseInt((row.querySelector('.loc-qty') || {}).value, 10) || 0;
-        var loc = ((row.querySelector('.loc-rack') || {}).value || '').trim();
-        if (q > 0 && loc) qty += q;
+        qty += Math.max(0, parseInt((row.querySelector('.loc-qty') || {}).value, 10) || 0);
       });
-      if (name && cat && qty > 0) anyComplete = true;
-      else if (!missing) {
-        missing = !name ? 'Material ' + n + ' needs a name'
-                : !cat  ? 'Material ' + n + ' needs a category'
-                : 'Material ' + n + ' needs a location and quantity';
-      }
+      if (qty <= 0) entryProblem = label + ' needs a location and quantity';
     });
-    if (!anyComplete) return missing || 'Fill in a material to save';
-    return '';
+    return entryProblem;
   }
 
-  // Multi-EXIT: rows are .exit-mat-line with id exit-mat-N, and each carries its
-  // own list of location rows holding the quantities.
-  var exitLines = document.querySelectorAll('#multiExitContainer .exit-mat-line');
+  // Multi-EXIT: rows are .exit-mat-line with id exit-mat-N, and each carries a
+  // list of .exit-loc-row location rows holding the quantities.
+  //
+  // Every check below mirrors exactly what submitMultiExit() refuses to send —
+  // and it refuses on the FIRST bad material, so every card has to be complete,
+  // not just one of them. A validator that disagrees with the save is worse
+  // than none: it either blocks a good form or lets a bad one through to a
+  // toast.
+  var exitLines = _moveSectionVisible('multiExitSection')
+    ? document.querySelectorAll('#multiExitContainer .exit-mat-line') : [];
   if (exitLines.length){
-    var okExit = false, exitMissing = '';
-    exitLines.forEach(function(line){
-      var n    = line.id.replace('exit-mat-', '');
-      var name = ((document.getElementById('exit-name-' + n) || {}).value || '').trim();
-      var qty  = 0;
-      var lc = document.getElementById('exit-locs-' + n);
-      if (lc) lc.querySelectorAll('.exit-qty').forEach(function(inp){
-        qty += Math.max(0, parseInt(inp.value, 10) || 0);
+    var sameDest   = !!(document.getElementById('mExitSameDestChk') || {}).checked;
+    var sharedDest = ((document.getElementById('mExitDest') || {}).value || '').trim();
+    var exitProblem = '';
+    exitLines.forEach(function(line, i){
+      if (exitProblem) return;
+      var label = 'Material ' + (i + 1);
+      var name = ((line.querySelector('input[id^="exit-name-"]') || {}).value || '').trim();
+      if (!name){ exitProblem = label + ' needs a name'; return; }
+      // .el-qty, not .exit-qty — that second class belongs to the older
+      // single-material EXIT form further down. Looking for the wrong one here
+      // meant the quantity always read as zero, so Save stayed dead however
+      // much was typed in.
+      var qty = 0;
+      line.querySelectorAll('.exit-loc-row').forEach(function(row){
+        qty += Math.max(0, parseInt((row.querySelector('.el-qty') || {}).value, 10) || 0);
       });
-      if (name && qty > 0) okExit = true;
-      else if (!exitMissing) exitMissing = !name ? 'Pick a material to take out' : 'Enter how many to take out';
+      if (qty <= 0){ exitProblem = label + ' needs how many to take out'; return; }
+      if (!sameDest){
+        var d = ((line.querySelector('input[id^="exit-dest-"]') || {}).value || '').trim();
+        if (!d) exitProblem = label + ' needs a destination';
+      }
     });
-    if (!okExit) return exitMissing || 'Fill in a material to save';
-    return '';
+    if (!exitProblem && sameDest && !sharedDest) exitProblem = 'Enter the destination';
+    return exitProblem;
   }
 
   // Single-material EXIT uses its own rows container.
-  var exitRows = document.querySelectorAll('#exitRowsContainer .exit-qty');
+  var exitRows = _moveSectionVisible('exitLocsSection')
+    ? document.querySelectorAll('#exitRowsContainer .exit-qty') : [];
   if (exitRows.length){
     var nmEx = ((document.getElementById('mName') || {}).value || '').trim();
     if (!nmEx) return 'Enter the material name';
     var tot = 0;
     exitRows.forEach(function(inp){ tot += Math.max(0, parseInt(inp.value, 10) || 0); });
     if (tot <= 0) return 'Enter how many to take out';
+    return '';
+  }
+
+  // TRANSFER: a name, plus at least one row that has a source rack, a
+  // destination rack and a quantity. Its own Qty box is HIDDEN for this type
+  // and the real total is added up from the rows at submit — so falling
+  // through to the single-material check below, which insists on that hidden
+  // box, would leave Save dead no matter what was filled in.
+  if (_moveSectionVisible('multiTransferSection')){
+    var trName = ((document.getElementById('mName') || {}).value || '').trim();
+    if (!trName) return 'Enter the material name';
+    var pairs = 0;
+    document.querySelectorAll('#transferRowsContainer .transfer-row').forEach(function(row){
+      var src = ((row.querySelector('.tr-rack') || {}).value || '').trim();
+      var dst = ((row.querySelector('.tr-dest') || {}).value || '').trim();
+      var q   = Math.max(0, parseInt((row.querySelector('.tr-qty') || {}).value, 10) || 0);
+      if (src && dst && q > 0) pairs++;
+    });
+    if (!pairs) return 'Add a source rack, a destination rack and a quantity';
     return '';
   }
 
@@ -2276,6 +2584,95 @@ function _updateMoveSubmitState(){
 // form is open — binding per field would miss every row created later.
 document.addEventListener('input',  function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) _updateMoveSubmitState(); });
 document.addEventListener('change', function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) _updateMoveSubmitState(); });
+// Clicks too, deferred by a tick so the handler has already run: adding or
+// removing a material or location row, and "Auto-fill Racks" writing
+// quantities in code, all change whether the form is complete without anyone
+// typing a character.
+document.addEventListener('click', function(e){
+  if (e.target.closest && e.target.closest('#moveOverlay')) setTimeout(_updateMoveSubmitState, 0);
+});
+
+// ── One edit mode and one delete mode per screen ─────────────────────────────
+// Every list used to carry a pencil and a bin on every single row. On a screen
+// with forty locations that is eighty buttons competing with the data, and the
+// bin sits one slip of the finger away from the row above it.
+//
+// Instead each screen has two toggles at the top. Nothing is editable until
+// "Edit" is on; nothing can be deleted until "Delete" is on; and the two are
+// mutually exclusive, so the screen is only ever in one state and it says which
+// one. Turning both off is the resting state — a list you can read.
+//
+// Same two buttons, same place, same behaviour in every window: the value is in
+// not having to learn each screen separately.
+var ROW_MODES = {
+  cfg: { edit: 'Rename', del: 'Delete',
+         editHint: 'Click the pencil on a row to rename it.',
+         delHint:  'Click the bin on a row to delete it.' },
+  pm:  { edit: null, del: 'Delete',
+         delHint:  'Click the bin on a contact to remove it.' },
+  mat: { edit: 'Edit', del: null,
+         editHint: 'Rename a material, move it to another category, or merge it into another.' },
+  loc: { edit: 'Rename', del: 'Remove',
+         editHint: 'Click the pencil on a group to rename it.',
+         delHint:  'Bin deletes a group (its locations move to ALL LOCATIONS). The box archives a single location.' },
+  mov: { edit: 'Edit', del: 'Delete',
+         editHint: 'Click the pencil on a row to correct that record.',
+         delHint:  'Click the bin on a row to delete that record permanently.',
+         refresh: function(){ renderMovements(); } },   // its actions column comes and goes with the mode
+  usr: { edit: 'Edit', del: 'Deactivate',
+         editHint: 'Click the pencil on a person to change their name or role.',
+         delHint:  'Click 🚫 to stop someone signing in. Their history is kept.' }
+};
+
+var _rowModes = {};    // scope -> '' | 'edit' | 'del'
+
+function _rowModeBarHtml(scope){
+  var d = ROW_MODES[scope];
+  if (!d) return '';
+  var m = _rowModes[scope] || '';
+  return '<div class="row-mode-bar' + (m === 'del' ? ' is-del' : '') + '" id="rmb-' + scope + '">' +
+    (d.edit ? '<button type="button" class="rm-btn rm-edit' + (m === 'edit' ? ' on' : '') + '" ' +
+              'onclick="setRowMode(\'' + scope + '\',\'edit\')">✏️ ' + _he(d.edit) + '</button>' : '') +
+    (d.del  ? '<button type="button" class="rm-btn rm-del' + (m === 'del' ? ' on' : '') + '" ' +
+              'onclick="setRowMode(\'' + scope + '\',\'del\')">🗑 ' + _he(d.del) + '</button>' : '') +
+    '<span class="rm-hint">' + _he(_rowModeHint(scope)) + '</span>' +
+  '</div>';
+}
+
+function _rowModeHint(scope){
+  var d = ROW_MODES[scope] || {};
+  var m = _rowModes[scope] || '';
+  return m === 'edit' ? (d.editHint || '') : m === 'del' ? (d.delHint || '') : '';
+}
+
+// Clicking the mode you are already in turns it off — the same button both
+// enters and leaves, so there is never a third button to find.
+function setRowMode(scope, mode){
+  _rowModes[scope] = (_rowModes[scope] === mode) ? '' : mode;
+  _applyRowMode(scope);
+  var d = ROW_MODES[scope];
+  if (d && d.refresh) d.refresh();
+}
+
+function _applyRowMode(scope){
+  var m = _rowModes[scope] || '';
+  document.querySelectorAll('[data-rowscope="' + scope + '"]').forEach(function(el){
+    el.classList.toggle('mode-edit', m === 'edit');
+    el.classList.toggle('mode-del',  m === 'del');
+  });
+  var bar = document.getElementById('rmb-' + scope);
+  if (!bar) return;
+  bar.classList.toggle('is-del', m === 'del');
+  var e = bar.querySelector('.rm-edit'), d = bar.querySelector('.rm-del');
+  if (e) e.classList.toggle('on', m === 'edit');
+  if (d) d.classList.toggle('on', m === 'del');
+  var hint = bar.querySelector('.rm-hint');
+  if (hint) hint.textContent = _rowModeHint(scope);
+}
+
+// Called right after a screen paints its rows, so a mode left on survives the
+// repaint that follows a rename or a delete.
+function _mountRowMode(scope){ _applyRowMode(scope); }
 
 // ── Column labels and visibility ─────────────────────────────────────────────
 // The words on a warehouse screen belong to the warehouse. One business calls a
@@ -2360,7 +2757,9 @@ var COL_TABLES = {
     defaultHidden: ['rawLoc','gc','supplier','pm','sysDate'],
     head: 'movHeadRow',
     lead: function(){ return ''; },
-    tail: function(){ return userRole === 'ADMIN' ? '<th></th>' : ''; },  // edit / delete
+    // The actions column comes and goes with the row mode, so a table nobody
+    // is editing has no empty column hanging off the end of it.
+    tail: function(){ return (userRole === 'ADMIN' && _rowModes.mov) ? '<th></th>' : ''; },
     refresh: function(){ renderMovements(); }                             // rebuilds its own header
   }
 };
@@ -2866,9 +3265,10 @@ function wizRender(){
 // (far above the ~28px it renders at, so it stays sharp on high-DPI screens)
 // and re-encoded as PNG to preserve transparency. A 3 MB upload becomes a few
 // KB, which matters because this is stored in Drive and fetched on every load.
-function _wizLogoPick(inp){
-  if (!inp.files || !inp.files[0]) return;
-  var f = inp.files[0];
+// Shared by the wizard and by Settings → Company, so a logo uploaded either way
+// is prepared identically. cb receives { dataUrl, fileData, w, h }.
+function _resizeLogoFile(f, cb){
+  if (!f) return;
   if (f.size > 8 * 1024 * 1024) { showToast('That image is very large - pick one under 8 MB.','warn'); return; }
   var reader = new FileReader();
   reader.onload = function(){
@@ -2882,16 +3282,23 @@ function _wizLogoPick(inp){
       cv.width = w; cv.height = h;
       cv.getContext('2d').drawImage(img, 0, 0, w, h);
       var dataUrl = cv.toDataURL('image/png');
-      _wiz.logo = { fileData: dataUrl.split(',')[1], fileMimeType: 'image/png', fileName: 'logo.png' };
-      document.getElementById('wizLogoPrev').innerHTML =
-        '<img src="' + dataUrl + '" style="max-height:52px;border-radius:6px;background:#F3F4F6;padding:4px">' +
-        '<div class="wiz-hint">Resized to ' + w + 'x' + h + ' automatically - any size or shape works.</div>';
+      cb({ dataUrl: dataUrl, fileData: dataUrl.split(',')[1], w: w, h: h });
     };
     img.onerror = function(){ showToast('That file is not a readable image.','err'); };
     img.src = reader.result;
   };
   reader.onerror = function(){ showToast('Could not read that image.','err'); };
   reader.readAsDataURL(f);
+}
+
+function _wizLogoPick(inp){
+  if (!inp.files || !inp.files[0]) return;
+  _resizeLogoFile(inp.files[0], function(r){
+    _wiz.logo = { fileData: r.fileData, fileMimeType: 'image/png', fileName: 'logo.png' };
+    document.getElementById('wizLogoPrev').innerHTML =
+      '<img src="' + r.dataUrl + '" style="max-height:52px;border-radius:6px;background:#F3F4F6;padding:4px">' +
+      '<div class="wiz-hint">Resized to ' + r.w + 'x' + r.h + ' automatically - any size or shape works.</div>';
+  });
 }
 
 function _wizPreset(kind, btn){
@@ -3067,34 +3474,100 @@ function wizFinish(){
     .saveSetupWizard(_wiz);
 }
 
-// Gentle reminder for the optional steps that were skipped. Collapsed to one
-// line; hovering reveals the button. Dismissing it stops it for a week rather
-// than forever — an empty supplier list is worth mentioning again eventually.
-function _showSetupNudge(){
+// ── The "you haven't set up your…" reminder ─────────────────────────────────
+// Two buttons that used to do the same thing. Clicking "Set up now", opening
+// Settings, touching nothing and closing it silenced the reminder for a week —
+// exactly what "Later" does — which is not what the person said. Only "Later"
+// buys a week now. "Set up now" gets out of the way and then checks: if
+// something was added it stops asking, and if nothing was, it comes back.
+//
+// It comes back more quietly each time and then gives up: 20 minutes, an hour,
+// four hours, and after that a week like any dismissal. A reminder that returns
+// forever on the same terms stops being a reminder and becomes something people
+// learn to ignore.
+var _NUDGE_UNTIL_KEY = 'acopio_nudge_until';
+var _NUDGE_STEP_KEY  = 'acopio_nudge_step';
+var _NUDGE_RETURNS   = [20*60*1000, 60*60*1000, 4*60*60*1000];
+var _NUDGE_WEEK      = 7*24*60*60*1000;
+var _nudgeWatch = null;    // what was missing when "Set up now" was clicked
+var _nudgeTimer = null;
+
+function _nudgeMissing(){
   var missing = [];
-  if (!config.suppliers || !config.suppliers.length) missing.push('suppliers');
+  if (!config.suppliers  || !config.suppliers.length)  missing.push('suppliers');
   if (!config.categories || !config.categories.length) missing.push('categories');
-  if (!config.projects || !config.projects.length) missing.push('projects');
-  if (!missing.length || userRole !== 'ADMIN') return;
+  if (!config.projects   || !config.projects.length)   missing.push('projects');
+  return missing;
+}
+
+function _nudgeStep(){
+  try { return parseInt(localStorage.getItem(_NUDGE_STEP_KEY) || '0', 10) || 0; } catch (e) { return 0; }
+}
+function _nudgeQuietFor(ms, step){
   try {
-    var until = Number(localStorage.getItem('acopio_nudge_until') || 0);
-    if (Date.now() < until) return;
-  } catch(e){}
+    localStorage.setItem(_NUDGE_UNTIL_KEY, String(Date.now() + ms));
+    if (step === null) localStorage.removeItem(_NUDGE_STEP_KEY);
+    else localStorage.setItem(_NUDGE_STEP_KEY, String(step));
+  } catch (e) {}
+}
+
+function _showSetupNudge(returning){
+  if (userRole !== 'ADMIN') return;
+  var missing = _nudgeMissing();
+  if (!missing.length) return;
+  var existing = document.getElementById('setupNudge');
+  if (existing) existing.remove();
+  // A scheduled return has already waited out its own delay — the stored
+  // "quiet until" is what protects a page reload, not this call.
+  if (!returning){
+    try {
+      var until = Number(localStorage.getItem(_NUDGE_UNTIL_KEY) || 0);
+      if (Date.now() < until) return;
+    } catch (e) {}
+  }
   var el = document.createElement('div');
-  el.className = 'setup-nudge';
+  el.className = 'setup-nudge' + (returning ? ' returning' : '');
   el.id = 'setupNudge';
   el.innerHTML = '⚙️ You haven\'t set up your <b>' + _he(missing.join(', ')) + '</b> yet.' +
     '<div class="nudge-act">' +
-      '<button style="background:var(--accent);color:#fff" onclick="openSettingsModal();_dismissNudge()">Set up now</button>' +
+      '<button style="background:var(--accent);color:#fff" onclick="_nudgeSetUpNow()">Set up now</button>' +
       '<button style="background:rgba(255,255,255,.18);color:#fff" onclick="_dismissNudge()">Later</button>' +
     '</div>';
   document.body.appendChild(el);
 }
 
+// Out of the way, but NOT dismissed — whether this counted as dealing with it
+// is decided when Settings closes.
+function _nudgeSetUpNow(){
+  _nudgeWatch = _nudgeMissing().length;
+  var el = document.getElementById('setupNudge');
+  if (el) el.remove();
+  openSettingsModal();
+}
+
+function _nudgeSettingsClosed(){
+  if (_nudgeWatch === null) return;      // Settings was opened some other way
+  var before = _nudgeWatch;
+  _nudgeWatch = null;
+  var now = _nudgeMissing().length;
+
+  if (!now){ _nudgeQuietFor(0, null); return; }            // nothing left to ask about
+  if (now < before){ _nudgeQuietFor(24*60*60*1000, null); return; }   // progress — leave them alone for a day
+
+  var step = _nudgeStep();
+  if (step >= _NUDGE_RETURNS.length){ _nudgeQuietFor(_NUDGE_WEEK, null); return; }   // asked enough
+  var delay = _NUDGE_RETURNS[step];
+  _nudgeQuietFor(delay, step + 1);       // also covers a page reload inside the window
+  clearTimeout(_nudgeTimer);
+  _nudgeTimer = setTimeout(function(){ _showSetupNudge(true); }, delay);
+}
+
 function _dismissNudge(){
   var el = document.getElementById('setupNudge');
   if (el) el.remove();
-  try { localStorage.setItem('acopio_nudge_until', String(Date.now() + 7*24*60*60*1000)); } catch(e){}
+  clearTimeout(_nudgeTimer);
+  _nudgeWatch = null;
+  _nudgeQuietFor(_NUDGE_WEEK, null);     // "Later" is the one that buys a week
 }
 
 // Paints the customer's own identity over the app. Called on every load, and
@@ -3114,6 +3587,13 @@ function applyCompanyBranding(c){
   var badge = document.getElementById('poweredByBadge');
   if (badge) badge.textContent = c.productName || PRODUCT;
 
+  // Remembered for the NEXT load's splash screen, which paints long before the
+  // server has answered and so has nothing else to go on. See the splash markup.
+  try {
+    if (name) localStorage.setItem('acopio_brand_name', name);
+    else localStorage.removeItem('acopio_brand_name');
+  } catch (e) {}
+
   // The logo was being uploaded, stored and even sent to the browser as
   // c.logoId — and then nothing ever rendered it, which is why setting one in
   // the wizard appeared to do nothing at all. It's a private Drive file inside
@@ -3127,10 +3607,17 @@ function applyCompanyBranding(c){
       logo.src = dataUrl;
       logo.alt = name || '';
       logo.style.display = '';
+      // Kept for the next load's splash. Anything big enough to be worth
+      // worrying about is left out: a logo that does not fit is simply not
+      // remembered, and the splash falls back to the company name.
+      try {
+        if (dataUrl.length < 400000) localStorage.setItem('acopio_brand_logo', dataUrl);
+      } catch (e) {}
     }, 'full');                            // full file: a logo is already tiny, and the
                                            // thumbnail would drop its transparency
   } else if (logo && !c.logoId){
     logo.style.display = 'none';
+    try { localStorage.removeItem('acopio_brand_logo'); } catch (e) {}   // a removed logo must not linger on the splash
   }
 }
 
@@ -3272,6 +3759,7 @@ function _activeTab() {
 }
 
 function showTab(tab, btnId){
+  _clearRowModes();     // Edit / Delete never survive leaving the screen they were armed on
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(tab).classList.add('active');
   document.querySelectorAll('.nav button').forEach(function(b){ b.classList.remove('active'); });
@@ -3956,14 +4444,14 @@ function renderMovements(){
       return cells[k] || '';
     }).join('');
 
-    var adminCell = isAdmin
-      ? '<td><div style="display:flex;align-items:center;gap:2px">'+(m.archived?'<span style="font-size:.68rem;color:var(--muted)" title="Archived movement — read only">📜</span>':'<button class="btn-icon" title="Edit record" onclick="openEditMovModal('+m.rowIdx+')" style="color:var(--accent)">✏️</button><button class="btn-icon" title="Delete record" onclick="deleteMovementRow('+m.rowIdx+')" style="color:var(--red);opacity:.7">🗑</button>')+'</div></td>'
+    var adminCell = (isAdmin && _rowModes.mov)
+      ? '<td><div style="display:flex;align-items:center;gap:2px">'+(m.archived?'<span style="font-size:.68rem;color:var(--muted)" title="Archived movement — read only">📜</span>':'<button class="btn-icon" data-rowact="edit" title="Edit record" onclick="openEditMovModal('+m.rowIdx+')" style="color:var(--accent)">✏️</button><button class="btn-icon" data-rowact="del" title="Delete record" onclick="deleteMovementRow('+m.rowIdx+')" style="color:var(--red);opacity:.7">🗑</button>')+'</div></td>'
       : '';
 
     return '<tr class="'+rowClass(m.moveType)+'">' + body + adminCell + '</tr>';
   }).join('');
 
-  var span = _visibleColCount('mov') + (isAdmin ? 1 : 0);
+  var span = _visibleColCount('mov') + ((isAdmin && _rowModes.mov) ? 1 : 0);
 
   // An empty result used to replace the whole table, header included — which
   // took the column editor off screen with it. The message is a row now, so the
@@ -3989,6 +4477,12 @@ function renderMovements(){
   // The header is rebuilt with the table, so its drag/hide/rename handlers have
   // to be attached again each time.
   if (_colEdit.mov) _wireColEdit('mov');
+
+  // Admins get the Edit / Delete toggles beside the column button. Mounted once
+  // and then left alone — re-rendering the table must not reset the mode.
+  var rmSlot = document.getElementById('rowModeSlot_mov');
+  if (rmSlot && isAdmin && !rmSlot.firstChild) rmSlot.innerHTML = _rowModeBarHtml('mov');
+  _mountRowMode('mov');
 
   tc.querySelectorAll('[data-row]').forEach(function(btn){
     btn.addEventListener('click', function(){ openAttachModal(parseInt(btn.dataset.row), btn.dataset.po); });
@@ -5148,7 +5642,7 @@ function _checkIncomingSuggest(n, inputEl){
   var incMatches = (incoming || []).filter(function(item){
     return (item.status || '').toLowerCase() !== 'received' &&
            item.name && item.name.toLowerCase().indexOf(typed) !== -1 &&
-           item.estDate >= today;  // today or future
+           (!item.estDate || item.estDate >= today);   // today, later, or not yet dated
   }).slice(0, 6);
 
   if (!stockMatches.length && !incMatches.length) { box.style.display = 'none'; return; }
@@ -5821,6 +6315,7 @@ var _settingsTab  = 'categories';
 var _matListAll   = [];   // full material list for Materials tab
 
 function openSettingsModal() {
+  _clearRowModes();
   document.getElementById('settingsMsgBar').style.display = 'none';
   document.getElementById('settingsOverlay').classList.add('show');
   _loadSettings();
@@ -5910,6 +6405,116 @@ function _rebuildStockNow() {
       showToast('⚠ Error: ' + (e.message||e), 'err', 6000);
     })
     .processMovement('adminAction', _h({ action: 'reconcile' }));
+}
+
+// ── Company: name, domain and logo ──────────────────────────────────────────
+// All three used to be settable only inside the setup wizard, so a company
+// whose logo arrived a month after going live had to walk back through the
+// whole wizard to add it. They are settings now.
+var _coLogo = null;          // picked, not saved yet: { dataUrl, fileData, w, h }
+var _coLogoRemove = false;
+
+// The header's logo is already an <img> holding the real image, so the preview
+// costs nothing. On a page that hasn't fetched it yet, the copy the splash
+// screen remembers does just as well.
+function _coCurrentLogoUrl(){
+  var el = document.getElementById('appLogo');
+  if (el && el.src && el.style.display !== 'none') return el.src;
+  try { return localStorage.getItem('acopio_brand_logo') || ''; } catch (e) { return ''; }
+}
+
+function _coLogoBoxHtml(){
+  var url = _coLogo ? _coLogo.dataUrl : (_coLogoRemove ? '' : _coCurrentLogoUrl());
+  if (!url){
+    return '<div class="co-logo-box co-logo-empty">' +
+      (_coLogoRemove ? 'Logo will be removed when you save.' : 'No logo yet') + '</div>';
+  }
+  return '<div class="co-logo-box"><img src="' + _escAttr(url) + '" alt=""></div>' +
+    (_coLogo ? '<div class="co-hint">New image, ' + _coLogo.w + '×' + _coLogo.h +
+               ' — click Save changes to apply it.</div>' : '');
+}
+
+function _renderCompanyTab(){
+  var c = (_settingsData && _settingsData.company) || {};
+  document.getElementById('settingsTabContent').innerHTML =
+    '<div class="co-form">' +
+      '<label class="co-label" for="coName">Company name</label>' +
+      '<input type="text" id="coName" class="co-input" maxlength="60" value="' + _escAttr(c.name || '') + '">' +
+      '<p class="co-hint">Shown in the header, on the browser tab, on the loading screen, and as the sender name on every email this system sends.</p>' +
+
+      '<label class="co-label" for="coDomain">Email domain <span class="co-opt">(optional)</span></label>' +
+      '<input type="text" id="coDomain" class="co-input" maxlength="60" placeholder="yourcompany.com" value="' + _escAttr(c.domain || '') + '">' +
+      '<p class="co-hint">People with an email at this domain are recognised as staff. Everyone still has to be on the user list to get in — this only saves them the extra sign-in step. Leave it blank if your team uses personal Gmail accounts.</p>' +
+
+      '<label class="co-label">Logo</label>' +
+      '<div id="coLogoWrap">' + _coLogoBoxHtml() + '</div>' +
+      '<div class="co-logo-acts">' +
+        '<input type="file" id="coLogoFile" accept="image/*" style="display:none" onchange="_coLogoPick(this)">' +
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById(\'coLogoFile\').click()">' +
+          (_coCurrentLogoUrl() && !_coLogoRemove ? 'Replace image' : 'Choose image') + '</button>' +
+        ((_coCurrentLogoUrl() && !_coLogoRemove) || _coLogo
+          ? '<button type="button" class="btn btn-ghost btn-sm" onclick="_coClearLogo()">Remove</button>' : '') +
+        (_coLogoRemove || _coLogo
+          ? '<button type="button" class="btn btn-ghost btn-sm" onclick="_coUndoLogo()">Undo</button>' : '') +
+      '</div>' +
+      '<p class="co-hint">Any size or shape works — it is resized automatically. Appears beside the company name in the header and on the loading screen.</p>' +
+
+      '<div class="co-save"><button type="button" class="btn btn-primary" id="coSave" onclick="_saveCompanyProfile()">Save changes</button></div>' +
+    '</div>';
+}
+
+function _coLogoPick(inp){
+  if (!inp.files || !inp.files[0]) return;
+  _resizeLogoFile(inp.files[0], function(r){
+    _coLogo = r;
+    _coLogoRemove = false;
+    _renderCompanyTab();
+  });
+  inp.value = '';    // so picking the same file twice still fires onchange
+}
+
+function _coClearLogo(){ _coLogo = null; _coLogoRemove = true;  _renderCompanyTab(); }
+function _coUndoLogo(){  _coLogo = null; _coLogoRemove = false; _renderCompanyTab(); }
+
+function _saveCompanyProfile(){
+  var name   = (document.getElementById('coName').value   || '').trim();
+  var domain = (document.getElementById('coDomain').value || '').trim();
+  if (!name){ _settingMsg('Company name is required.', 'error'); return; }
+
+  var payload = { name: name, domain: domain };
+  var picked = _coLogo;
+  if (_coLogoRemove) payload.removeLogo = true;
+  else if (picked) payload.logo = { fileData: picked.fileData, fileMimeType: 'image/png', fileName: 'logo.png' };
+
+  var btn = document.getElementById('coSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  google.script.run
+    .withSuccessHandler(function(res){
+      var c = (res && res.company) || {};
+      if (_settingsData) _settingsData.company = c;
+      // We already hold the image in the browser, so paint it straight into the
+      // header rather than making applyCompanyBranding fetch back the file we
+      // just uploaded.
+      if (picked && c.logoId){
+        var el = document.getElementById('appLogo');
+        if (el){
+          el.dataset.loadedId = c.logoId;
+          el.src = picked.dataUrl; el.alt = name; el.style.display = '';
+        }
+        try {
+          if (picked.dataUrl.length < 400000) localStorage.setItem('acopio_brand_logo', picked.dataUrl);
+        } catch (e) {}
+      }
+      applyCompanyBranding(c);
+      _coLogo = null; _coLogoRemove = false;
+      _renderCompanyTab();
+      showToast('Company details saved ✓', 'ok');
+    })
+    .withFailureHandler(function(e){
+      btn.disabled = false; btn.textContent = 'Save changes';
+      _settingMsg('Could not save: ' + (e.message || e), 'error');
+    })
+    .processMovement('saveCompanyProfile', _h(payload));
 }
 
 function _renderSystemTab() {
@@ -6111,9 +6716,25 @@ function _commitImport(){
 }
 
 function switchSettingsTab(tab) {
+  // Edit and Delete belong to the screen they were switched on in. Carrying
+  // them across meant you could leave Delete armed on four tabs at once and
+  // come back to a screen already primed to remove things.
+  _clearRowModes();
   _settingsTab = tab;
   document.querySelectorAll('.settings-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
   _renderSettingsTab(tab);
+}
+
+// Every scope off, and every bar that is currently on screen repainted to say
+// so. Called on any move between screens.
+function _clearRowModes(){
+  Object.keys(ROW_MODES).forEach(function(scope){
+    if (!_rowModes[scope]) return;
+    _rowModes[scope] = '';
+    _applyRowMode(scope);
+    var d = ROW_MODES[scope];
+    if (d && d.refresh) d.refresh();
+  });
 }
 
 function _renderSettingsTab(tab) {
@@ -6124,6 +6745,7 @@ function _renderSettingsTab(tab) {
   if (tab === 'pmdirectory') { _renderPmDirectoryTab(); return; }
   if (tab === 'import')      { _renderImportTab(); return; }
   if (tab === 'locations')   { _renderLocationsTab(); return; }
+  if (tab === 'company')     { _renderCompanyTab(); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
@@ -6144,8 +6766,8 @@ function _renderSettingsTab(tab) {
         '<button class="cfg-btn" onclick="_cfgSaveRename(\''+tab+'\','+i+')">✓</button>' +
         '<button class="cfg-btn" onclick="_cfgCancelEdit(\''+tab+'\','+i+')">✗</button>' +
       '</div>' +
-      '<button class="cfg-btn" onclick="_cfgStartEdit(\''+tab+'\','+i+')">✏️</button>' +
-      '<button class="cfg-btn cfg-btn-danger" data-action="cfg-delete" data-tab="'+tab+'" data-val="'+_he(v)+'">🗑</button>' +
+      '<button class="cfg-btn" data-rowact="edit" onclick="_cfgStartEdit(\''+tab+'\','+i+')">✏️</button>' +
+      '<button class="cfg-btn cfg-btn-danger" data-rowact="del" data-action="cfg-delete" data-tab="'+tab+'" data-val="'+_he(v)+'">🗑</button>' +
     '</li>';
   }).join('');
 
@@ -6154,12 +6776,14 @@ function _renderSettingsTab(tab) {
       (mergeable ? ' Tick two or more to merge them by hand.' : '') + '</p>' +
     (mergeable ? _renderSimilarGroups(tab, items, label) : '') +
     (mergeable ? '<div class="cfg-pickbar" id="cfgPickBar"></div>' : '') +
-    '<ul class="cfg-list">'+rows+'</ul>' +
+    _rowModeBarHtml('cfg') +
+    '<ul class="cfg-list" data-rowscope="cfg">'+rows+'</ul>' +
     '<div class="cfg-add-row">' +
       '<input type="text" id="cfgNewVal" placeholder="New '+label+' name…" onkeydown="if(event.key===\'Enter\')_cfgAdd(\''+tab+'\')">' +
       '<button class="btn btn-primary btn-sm" onclick="_cfgAdd(\''+tab+'\')">+ Add</button>' +
     '</div>';
   if (mergeable) { _wireSimilarGroups(tab); _wireManualMerge(tab, label); }
+  _mountRowMode('cfg');
 }
 
 // ── Locations, grouped by type ───────────────────────────────────────────────
@@ -6229,7 +6853,8 @@ function _renderLocationsTab(){
       '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'locNewRow\').style.display=\'none\'">Cancel</button>' +
     '</div>' +
     '<div id="locMergeBar" class="cfg-pickbar"></div>' +
-    '<div class="loc-groups" id="locGroups"></div>' +
+    _rowModeBarHtml('loc') +
+    '<div class="loc-groups" id="locGroups" data-rowscope="loc"></div>' +
     '<div id="locSaveBar" class="loc-savebar"></div>';
   _redrawLocGroups();
 }
@@ -6250,8 +6875,8 @@ function _renderLocGroup(type){
         ? '<span class="loc-arch-note">Kept for history — not offered on new movements. Drag out to restore.</span>'
         : '<button class="cfg-btn" title="Sort this group A–Z" onclick="_locSortGroup(\'' + _he(type) + '\')">A–Z</button>') +
       (fixed ? '' :
-        '<button class="cfg-btn" title="Rename group" onclick="_locRenameGroup(\'' + _he(type) + '\')">✏️</button>' +
-        '<button class="cfg-btn cfg-btn-danger" title="Delete group" onclick="_locDeleteGroup(\'' + _he(type) + '\')">🗑</button>') +
+        '<button class="cfg-btn" data-rowact="edit" title="Rename group" onclick="_locRenameGroup(\'' + _he(type) + '\')">✏️</button>' +
+        '<button class="cfg-btn cfg-btn-danger" data-rowact="del" title="Delete group" onclick="_locDeleteGroup(\'' + _he(type) + '\')">🗑</button>') +
     '</div>' +
     '<ul class="loc-list" data-type="' + _he(type) + '">' +
       (items.length
@@ -6259,7 +6884,7 @@ function _renderLocGroup(type){
             return '<li class="loc-item" draggable="true" data-name="' + _he(l.name) + '">' +
               '<input type="checkbox" class="loc-pick" data-name="' + _he(l.name) + '" title="Select to merge">' +
               '<span class="loc-grip">⠿</span><span>' + _he(l.name) + '</span>' +
-              '<button class="loc-arch-btn" title="' + (isArchived ? 'Restore' : 'Archive') + '" ' +
+              '<button class="loc-arch-btn" data-rowact="del" title="' + (isArchived ? 'Restore' : 'Archive') + '" ' +
                 'onclick="_locToggleArchive(\'' + _he(l.name) + '\')">' + (isArchived ? '↩' : '🗄') + '</button>' +
             '</li>';
           }).join('')
@@ -6315,16 +6940,20 @@ function _locCreate(){
 }
 
 function _locRenameGroup(type){
-  var next = prompt('Rename group "' + type + '" to:', type);
-  if (next === null) return;
-  next = String(next).trim().toUpperCase();
-  if (!next || next === type) return;
-  if (next === LOC_DEFAULT_GROUP || next === LOC_ARCHIVED_GROUP) { showToast('That name is reserved.', 'warn'); return; }
-  if (_locTypesInOrder().indexOf(next) !== -1) { showToast('That group already exists.', 'warn'); return; }
-  _locLayout.forEach(function(l){ if ((l.type || LOC_DEFAULT_GROUP) === type) l.type = next; });
-  _locExtraGroups = _locExtraGroups.map(function(t){ return t === type ? next : t; });
-  _redrawLocGroups();
-  _locMarkDirty();
+  _showPrompt({
+    icon: '🗂', title: 'Rename group', message: 'Currently "' + type + '".',
+    value: type, confirmText: 'Rename',
+    onOk: function(next){
+      next = String(next).trim().toUpperCase();
+      if (!next || next === type) return;                      // nothing to do — just close
+      if (next === LOC_DEFAULT_GROUP || next === LOC_ARCHIVED_GROUP) return 'That name is reserved.';
+      if (_locTypesInOrder().indexOf(next) !== -1) return 'A group called ' + next + ' already exists.';
+      _locLayout.forEach(function(l){ if ((l.type || LOC_DEFAULT_GROUP) === type) l.type = next; });
+      _locExtraGroups = _locExtraGroups.map(function(t){ return t === type ? next : t; });
+      _redrawLocGroups();
+      _locMarkDirty();
+    }
+  });
 }
 
 function _locDeleteGroup(type){
@@ -6369,6 +6998,7 @@ function _redrawLocGroups(){
   box.innerHTML = _locTypesInOrder().map(_renderLocGroup).join('');
   _wireLocDnD();
   _wireLocMerge();
+  _mountRowMode('loc');
 }
 
 // Merging locations, for the case archiving doesn't cover: the same shelf
@@ -6858,18 +7488,20 @@ function _drawPmDirectory() {
   var rows = _pmDirectoryData.map(function(p) {
     return '<li class="cfg-item">' +
       '<span class="cfg-item-name" style="flex:1"><strong>'+_he(p.name)+'</strong> <span style="color:var(--muted);font-size:.78rem">'+_he(p.email)+'</span></span>' +
-      '<button class="cfg-btn cfg-btn-danger" data-action="pm-dir-delete" data-val="'+_he(p.name)+'">🗑</button>' +
+      '<button class="cfg-btn cfg-btn-danger" data-rowact="del" data-action="pm-dir-delete" data-val="'+_he(p.name)+'">🗑</button>' +
     '</li>';
   }).join('');
 
   content.innerHTML =
     '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">General address book — employees, suppliers, PMs, anyone you email regularly. One special behavior: if a name here matches what\'s typed in the PM field on ENTRY, materials for that batch auto-send ONE grouped email to that address (not one per material). Everyone else here is just a saved contact — use them with the "Send notification email" option when saving a movement.</p>' +
-    '<ul class="cfg-list">'+(rows || '<li style="padding:.5rem;color:var(--muted);font-size:.82rem">No contacts registered yet.</li>')+'</ul>' +
+    _rowModeBarHtml('pm') +
+    '<ul class="cfg-list" data-rowscope="pm">'+(rows || '<li style="padding:.5rem;color:var(--muted);font-size:.82rem">No contacts registered yet.</li>')+'</ul>' +
     '<div class="cfg-add-row" style="flex-wrap:wrap">' +
       '<input type="text" id="pmDirNewName" placeholder="Name…" style="flex:1;min-width:120px">' +
       '<input type="email" id="pmDirNewEmail" placeholder="Email…" style="flex:1;min-width:160px">' +
       '<button class="btn btn-primary btn-sm" onclick="_pmDirAdd()">+ Add</button>' +
     '</div>';
+  _mountRowMode('pm');
 }
 
 function _pmDirAdd() {
@@ -7022,7 +7654,8 @@ function _renderMaterialsTab() {
       '<input type="text" id="matSearchInp" placeholder="Search material name…" oninput="_filterMatList()">' +
       '<button class="btn btn-ghost btn-sm" onclick="_loadMatList()">↺ Refresh</button>' +
     '</div>' +
-    '<div class="mat-list" id="matListContainer"><p style="color:var(--muted);font-size:.82rem">Loading…</p></div>';
+    _rowModeBarHtml('mat') +
+    '<div class="mat-list" id="matListContainer" data-rowscope="mat"><p style="color:var(--muted);font-size:.82rem">Loading…</p></div>';
   // Already prefetched in _loadSettings() (fired the moment the modal opened) —
   // render immediately instead of re-fetching and flashing "Loading…" again.
   if (_matListAll) { _filterMatList(); } else { _loadMatList(); }
@@ -7054,30 +7687,59 @@ function _filterMatList() {
       '<span class="mat-item-cat">'+catBadge(m.category)+'</span>' +
       '<span class="mat-item-name">'+_he(m.name)+'</span>' +
       '<span style="color:var(--muted);font-size:.7rem">'+m.count+' rows</span>' +
-      '<button class="cfg-btn" data-action="mat-action" data-op="rename">✏️ Rename</button>' +
-      '<button class="cfg-btn" data-action="mat-action" data-op="changeCategory">↕ Category</button>' +
-      '<button class="cfg-btn" data-action="mat-action" data-op="merge">🔗 Merge</button>' +
+      '<button class="cfg-btn" data-rowact="edit" data-action="mat-action" data-op="rename">✏️ Rename</button>' +
+      '<button class="cfg-btn" data-rowact="edit" data-action="mat-action" data-op="changeCategory">↕ Category</button>' +
+      '<button class="cfg-btn" data-rowact="edit" data-action="mat-action" data-op="merge">🔗 Merge</button>' +
     '</div>';
   }).join('') + (filtered.length > 80 ? '<p style="font-size:.75rem;color:var(--muted);padding:.5rem">Showing first 80. Type to filter.</p>' : '');
+  _mountRowMode('mat');
 }
 
 function _matAction(op, name, cat) {
   if (op === 'rename') {
-    var nv = prompt('Rename "' + name + '" to:', name);
-    if (!nv || nv.trim() === name) return;
-    _matCall({ op: 'rename', name: name, category: cat, newName: nv.trim() });
+    _showPrompt({
+      icon: '✏️', title: 'Rename material', message: 'Every movement recorded under this name changes with it.',
+      value: name, confirmText: 'Rename',
+      onOk: function(nv){
+        if (!nv || nv === name) return;
+        _matCall({ op: 'rename', name: name, category: cat, newName: nv });
+      }
+    });
 
   } else if (op === 'changeCategory') {
-    var cats = (config.categories && config.categories.length) ? config.categories : _DEFAULT_CATS;
-    var cur  = cats.indexOf(cat);
-    var nv   = prompt('Move "' + name + '" to category:\n\n' + cats.join('\n') + '\n\nType the category name exactly:', cat);
-    if (!nv || nv.trim().toUpperCase() === cat) return;
-    _matCall({ op: 'changeCategory', name: name, category: cat, newCategory: nv.trim().toUpperCase() });
+    var cats = (config.categories || []);
+    if (!cats.length){ showToast('Add categories in Settings first.', 'warn'); return; }
+    // The categories are offered as chips — typing one exactly, from memory,
+    // was never a reasonable thing to ask.
+    _showPrompt({
+      icon: '↕', title: 'Move to another category',
+      message: '"' + name + '" is in ' + cat + '. Pick where it belongs.',
+      value: cat, choices: cats, confirmText: 'Move',
+      onOk: function(nv){
+        nv = String(nv).trim().toUpperCase();
+        if (!nv || nv === cat) return;
+        if (cats.map(function(c){ return String(c).toUpperCase(); }).indexOf(nv) === -1)
+          return 'There is no category called ' + nv + '.';
+        _matCall({ op: 'changeCategory', name: name, category: cat, newCategory: nv });
+      }
+    });
 
   } else if (op === 'merge') {
-    var nv = prompt('Merge "' + name + '" INTO which existing material?\n(Type the exact target name — all rows of "' + name + '" will be renamed to the target)', '');
-    if (!nv || !nv.trim()) return;
-    var nvTrimmed = nv.trim();
+    _showPrompt({
+      icon: '🔗', title: 'Merge into another material',
+      message: 'Every row of "' + name + '" is renamed to the material you pick.',
+      placeholder: 'Exact name of the material to keep', confirmText: 'Continue',
+      choices: (_matListAll || []).filter(function(m){ return m.name !== name; })
+                                  .slice(0, 40).map(function(m){ return m.name; }),
+      onOk: function(nv){
+        if (!nv) return 'Type or pick the material to merge into.';
+        _matMergeConfirm(name, cat, nv);
+      }
+    });
+  }
+}
+
+function _matMergeConfirm(name, cat, nvTrimmed){
     _showConfirm({
       icon:'🔀', danger: true,
       title: 'Merge Materials?',
@@ -7085,19 +7747,54 @@ function _matAction(op, name, cat) {
       confirmText: 'Merge',
       onConfirm: function(){ _matCall({ op: 'merge', name: name, category: cat, targetName: nvTrimmed }); }
     });
-  }
 }
 
+// Renaming, re-filing or merging a material rewrites rows all over the
+// archive, so the totals genuinely have to come back from the server. What
+// does NOT have to happen is the app blinking: the list on screen and the
+// movements already loaded are patched immediately, and the server refresh
+// runs underneath without the loading state.
 function _matCall(payload) {
-  _settingMsg('Working…', 'info');
   google.script.run
     .withSuccessHandler(function(res) {
-      _settingMsg('Done ✓ (' + (res.updated || res.merged || 1) + ' rows updated)', 'ok');
-      _loadMatList();
-      loadDataFromGoogle(true);  // skipCache — refresh movements + stock
+      _applyMatChangeLocally(payload);
+      showToast('Done ✓ — ' + (res.updated || res.merged || 1) + ' row(s) updated.', 'ok');
+      loadDataFromGoogle(true, true);   // skipCache, quiet
     })
     .withFailureHandler(function(e){ _settingMsg('Error: '+(e.message||e), 'error'); })
     .processMovement('manageMaterial', _h(payload));
+}
+
+function _applyMatChangeLocally(p){
+  var was = String(p.name || '').toUpperCase();
+  var wasCat = String(p.category || '').toUpperCase();
+  var list = _matListAll || [];
+
+  function sameRow(m){
+    return String(m.name).toUpperCase() === was &&
+           String(m.category || '').toUpperCase() === wasCat;
+  }
+
+  if (p.op === 'rename'){
+    list.forEach(function(m){ if (sameRow(m)) m.name = p.newName; });
+    movements.forEach(function(m){ if (sameRow(m)) m.name = p.newName; });
+
+  } else if (p.op === 'changeCategory'){
+    list.forEach(function(m){ if (sameRow(m)) m.category = p.newCategory; });
+    movements.forEach(function(m){ if (sameRow(m)) m.category = p.newCategory; });
+
+  } else if (p.op === 'merge'){
+    var target = String(p.targetName || '').toUpperCase();
+    var moved  = 0;
+    list.forEach(function(m){ if (sameRow(m)) moved = m.count || 0; });
+    _matListAll = list.filter(function(m){ return !sameRow(m); });
+    _matListAll.forEach(function(m){
+      if (String(m.name).toUpperCase() === target) m.count = (m.count || 0) + moved;
+    });
+    movements.forEach(function(m){ if (sameRow(m)) m.name = p.targetName; });
+  }
+
+  _filterMatList();     // just this list, in place — no round trip to redraw it
 }
 
 // ── Shared settings helpers ───────────────────────────────────────────────────
@@ -7214,6 +7911,8 @@ function closeModal(id){
   // point of the "Add categories" shortcut). Coming back, the form has to see
   // whatever was just created, and its Save button has to be re-judged.
   if (id === 'settingsOverlay'){
+    try { _clearRowModes(); } catch (e) {}
+    try { _nudgeSettingsClosed(); } catch (e) {}
     try { refreshCategoryDropdowns(); refreshDropdowns(); } catch (e) {}
     try { _refreshCatHelpers(); } catch (e) {}
     setTimeout(_updateMoveSubmitState, 0);
@@ -7909,8 +8608,51 @@ function _unqueueCfgAdd(type, value){
 // and the badge reports the true total, so a long tail of legacy values costs
 // no screen space until someone opens the deck.
 
+// ── One pile, two kinds of card ──────────────────────────────────────────────
+// Each kind still decides what its own card says and what its buttons do; what
+// they share is the pile. Both build their HTML into these, and _paintDeck puts
+// the whole thing on screen in one write — which it has to be, because setting
+// innerHTML a second time would throw away the handlers wired after the first.
+var _cfgDeckHtml = '', _sysDeckHtml = '', _cfgDeckTotal = 0, _sysDeckTotal = 0;
+
+function _paintDeck(){
+  var deck = document.getElementById('cornerDeck');
+  if (!deck) return;
+  // Notifications sit deeper in the pile than suggestions: one reports
+  // something already done, the other is waiting on an answer, and the thing
+  // waiting on you belongs on top.
+  deck.innerHTML = _sysDeckHtml + _cfgDeckHtml;
+  if (!deck.innerHTML){ deck.classList.remove('open'); return; }
+
+  // The badge counts the WHOLE pile, including the cards held back from the
+  // DOM, and rides on whichever card is actually on top.
+  var total = _cfgDeckTotal + _sysDeckTotal;
+  var top = deck.lastElementChild;
+  if (top && total > 1){
+    var badge = document.createElement('span');
+    badge.className = 'cfg-count';
+    badge.title = total + ' waiting';
+    badge.textContent = total;
+    top.appendChild(badge);
+  }
+
+  deck.querySelectorAll('[data-sys-x]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      _dismissSysCard(btn.getAttribute('data-sys-x'));
+    });
+  });
+  deck.querySelectorAll('button[data-act]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();   // don't toggle the deck's own open/closed state
+      if (btn.getAttribute('data-act') === 'addall') { _cfgAddAll(); return; }
+      _cfgCardAction(btn.getAttribute('data-act'), btn.getAttribute('data-key'), btn);
+    });
+  });
+}
+
 function _renderCfgDeck(){
-  var deck = document.getElementById('cfgDeck');
+  var deck = document.getElementById('cornerDeck');
   if (!deck) return;
   // Drop anything that got registered by other means (Settings, the inline
   // prompt, another tab) before painting.
@@ -7919,8 +8661,9 @@ function _renderCfgDeck(){
   });
 
   var total = _pendingCfgAdds.length;
-  _syncCfgBell(total);
-  if (!total){ deck.innerHTML = ''; deck.classList.remove('open'); return; }
+  _cfgDeckTotal = total;
+  _syncCfgBell();
+  if (!total){ _cfgDeckHtml = ''; _paintDeck(); return; }
 
   // Only a handful are ever in the DOM. Rendering all of them produced a
   // staircase reaching off the top of the screen and a fan nobody could use;
@@ -7929,13 +8672,14 @@ function _renderCfgDeck(){
 
   // hand is newest-first; painted in reverse so the newest lands LAST in the
   // DOM and therefore on top of the pile.
-  deck.innerHTML = hand.slice().reverse().map(function(p, revIdx){
+  // The count badge is no longer emitted here — the pile holds both kinds of
+  // card now, so the total and the card it rides on are decided by _paintDeck.
+  _cfgDeckHtml = hand.slice().reverse().map(function(p, revIdx){
     var isTop = revIdx === hand.length - 1;
     // Keyed by type|value, never by array position: indices shift the moment a
     // card is removed, which had later clicks acting on the wrong entry.
     var k = _he(_cfgKey(p.type, p.value));
-    return '<div class="cfg-card" data-key="' + k + '">' +
-      (isTop && total > 1 ? '<span class="cfg-count" title="' + total + ' unregistered">' + total + '</span>' : '') +
+    return '<div class="deck-card cfg-card" data-key="' + k + '">' +
       '<div class="cfg-card-lbl">New ' + (p.type === 'suppliers' ? 'supplier' : 'project') + '</div>' +
       '<div class="cfg-card-val" title="' + _he(p.value) + '">' + _he(p.value) + '</div>' +
       '<div class="cfg-card-acts">' +
@@ -7946,14 +8690,7 @@ function _renderCfgDeck(){
           : '') +
       '</div></div>';
   }).join('');
-
-  deck.querySelectorAll('button[data-act]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();   // don't toggle the deck's own open/closed state
-      if (btn.getAttribute('data-act') === 'addall') { _cfgAddAll(); return; }
-      _cfgCardAction(btn.getAttribute('data-act'), btn.getAttribute('data-key'), btn);
-    });
-  });
+  _paintDeck();
 
   // Full strength ONLY for a genuinely new suggestion — or while the pointer is
   // on the deck. Every render used to flash it solid, so any background refresh
@@ -8039,10 +8776,14 @@ function _cfgCardAction(act, key, btn){
 }
 
 // ── Phone/tablet panel ───────────────────────────────────────────────────────
-function _syncCfgBell(total){
+// The touch equivalent of the pile, and it carries the same two kinds of card
+// for the same reason: below the breakpoint the deck is hidden (it is a hover
+// interaction) and this is the only way to reach any of it.
+function _syncCfgBell(){
   var btn = document.getElementById('cfgBellBtn');
   var cnt = document.getElementById('cfgBellCount');
   if (!btn || !cnt) return;
+  var total = _pendingCfgAdds.length + _sysCards.length;
   cnt.textContent = total;
   btn.style.visibility = total ? '' : 'hidden';
   if (!total){
@@ -8052,9 +8793,20 @@ function _syncCfgBell(total){
   }
   var list = document.getElementById('cfgBellList');
   if (!list) return;
+
   // The panel lists ALL of them — it scrolls, so there is no reason to ration
   // them the way the pile does.
-  list.innerHTML = _pendingCfgAdds.map(function(p){
+  var sysRows = _sysCards.map(function(c){
+    return '<div class="cfg-bell-row">' +
+      '<div class="cfg-card-lbl">' + _he(_fmtWhen(c.at)) + '</div>' +
+      '<div class="cfg-card-val" title="' + _he(c.label) + '">✓ ' + _he(c.label) + '</div>' +
+      (c.detail ? '<div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">' + _he(c.detail) + '</div>' : '') +
+      '<div class="cfg-card-acts">' +
+        '<button type="button" class="cfg-card-skip" data-sys-x="' + _he(c.id) + '">✕ Dismiss</button>' +
+      '</div></div>';
+  }).join('');
+
+  var cfgRows = _pendingCfgAdds.map(function(p){
     var k = _he(_cfgKey(p.type, p.value));
     return '<div class="cfg-bell-row">' +
       '<div class="cfg-card-lbl">New ' + (p.type === 'suppliers' ? 'supplier' : 'project') + '</div>' +
@@ -8064,10 +8816,18 @@ function _syncCfgBell(total){
         '<button type="button" class="cfg-card-skip" data-act="skip" data-key="' + k + '">Not now</button>' +
       '</div></div>';
   }).join('');
+
+  list.innerHTML = cfgRows + sysRows;    // questions first, reports after
   list.querySelectorAll('button[data-act]').forEach(function(b){
     b.addEventListener('click', function(e){
       e.stopPropagation();
       _cfgCardAction(b.getAttribute('data-act'), b.getAttribute('data-key'), b);
+    });
+  });
+  list.querySelectorAll('button[data-sys-x]').forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      _dismissSysCard(b.getAttribute('data-sys-x'));
     });
   });
 }
@@ -8085,19 +8845,19 @@ var _cfgSeenKeys = {};      // keys already shown, so a re-render isn't "new"
 
 function _cfgScheduleDim(delay){
   clearTimeout(_cfgDimTimer);
-  var deck = document.getElementById('cfgDeck');
+  var deck = document.getElementById('cornerDeck');
   if (!deck) return;
   _cfgDimTimer = setTimeout(function(){ deck.classList.add('dim'); }, delay);
 }
 
 function _cfgWake(){
   clearTimeout(_cfgDimTimer);
-  var deck = document.getElementById('cfgDeck');
+  var deck = document.getElementById('cornerDeck');
   if (deck) deck.classList.remove('dim');
 }
 
 (function _wireCfgDeckFade(){
-  var deck = document.getElementById('cfgDeck');
+  var deck = document.getElementById('cornerDeck');
   if (!deck) return;
   deck.addEventListener('mouseenter', _cfgWake);
   deck.addEventListener('mouseleave', function(){ _cfgScheduleDim(_CFG_REDIM_MS); });
@@ -9013,7 +9773,8 @@ function renderIncomingWeekGrid() {
   incoming.forEach(function(item) {
     if (sf && item.status !== sf) return;
     for (var d = 0; d < days.length; d++) {
-      if (days[d].date === item.estDate) { days[d].items.push(item); break; }
+      // No break: an item spanning several days belongs on each of them.
+      if (_incOnDay(item, days[d].date)) days[d].items.push(item);
     }
   });
 
@@ -9048,18 +9809,70 @@ function renderIncomingTable() {
     return;
   }
   var isAdmin = userRole === 'ADMIN';
+  var todayKey = _isoDate(new Date());
+
+  // Grouped by what you need to DO about each one, and each group ordered the
+  // way that group is read. The list used to be one run sorted oldest-date
+  // first, so it opened on deliveries that arrived months ago and you had to
+  // scroll past the whole year to find what is coming.
+  var GROUPS = [
+    { key:'overdue',  label:'⚠ Overdue',           note:'Committed to a date that has passed and still not marked as arrived.' },
+    { key:'expected', label:'📅 Expected',          note:'Soonest first.' },
+    { key:'nodate',   label:'❔ No date yet',       note:'Waiting on the supplier to say when.' },
+    { key:'arrived',  label:'✓ Arrived',            note:'Most recent first.' },
+    { key:'cancelled',label:'✕ Cancelled',          note:'' }
+  ];
+  var buckets = { overdue:[], expected:[], nodate:[], arrived:[], cancelled:[] };
+  filtered.forEach(function(item){
+    var st = String(item.status || 'Pending').toLowerCase();
+    if (st === 'cancelled')                     buckets.cancelled.push(item);
+    else if (st === 'arrived' || st === 'received') buckets.arrived.push(item);
+    else if (_incIsOverdue(item, todayKey))     buckets.overdue.push(item);
+    else if (!item.estDate)                     buckets.nodate.push(item);
+    else                                        buckets.expected.push(item);
+  });
+  // Soonest first for anything still coming — that is the next thing to plan
+  // around. Newest first for anything already settled — nobody scrolls a
+  // history to reach the oldest row.
+  var asc  = function(a,b){ return (a.estDate||'') < (b.estDate||'') ? -1 : 1; };
+  var desc = function(a,b){ return (a.estDate||'') > (b.estDate||'') ? -1 : 1; };
+  buckets.overdue.sort(asc);       // longest overdue at the top
+  buckets.expected.sort(asc);
+  buckets.arrived.sort(desc);
+  buckets.cancelled.sort(desc);
+
   var html = '<table><thead><tr>' +
     '<th>Est. Date</th><th>Status</th><th>Category</th><th>Name</th>' +
     '<th>Qty</th><th>Unit</th><th>Doc</th><th>Notes / Comments</th>' +
     (isAdmin ? '<th></th>' : '') +
     '</tr></thead><tbody>';
-  html += filtered.map(function(item){
-    var today = _isoDate(new Date());
-    var isOverdue = item.status === 'Pending' && item.estDate < today;
+
+  var colCount = 8 + (isAdmin ? 1 : 0);
+  html += GROUPS.map(function(g){
+    var rows = buckets[g.key];
+    if (!rows.length) return '';
+    return '<tr class="inc-group-row"><td colspan="' + colCount + '">' +
+        '<span class="inc-group-lbl">' + g.label + '</span>' +
+        '<span class="inc-group-count">' + rows.length + '</span>' +
+        (g.note ? '<span class="inc-group-note">' + g.note + '</span>' : '') +
+      '</td></tr>' + rows.map(_incRowHtml).join('');
+  }).join('');
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// One row of the incoming table. Pulled out of renderIncomingTable so the
+// grouped sections can each emit their own rows without duplicating it.
+function _incRowHtml(item){
+  var isAdmin = userRole === 'ADMIN';
+  var today = _isoDate(new Date());
+  var isOverdue = _incIsOverdue(item, today);
     var statusBadge = '<span class="inc-status-' + (item.status||'pending').toLowerCase() + '">' + (item.status||'Pending') + '</span>';
     if (isOverdue) statusBadge += ' <span class="badge badge-red" style="font-size:.65rem">overdue</span>';
+    var soft = (item.dateMode && item.dateMode !== 'exact');
     return '<tr>' +
-      '<td style="white-space:nowrap;font-weight:600' + (isOverdue?';color:var(--red)':'') + '">' + (item.estDate||'—') + '</td>' +
+      '<td style="white-space:nowrap;font-weight:600' + (isOverdue?';color:var(--red)':'') +
+        (soft?';color:var(--muted);font-weight:500':'') + '">' + _he(_incDateLabel(item)) + '</td>' +
       '<td>' + statusBadge + '</td>' +
       '<td>' + catBadge(item.category) + '</td>' +
       '<td><strong>' + _he(item.name) + '</strong></td>' +
@@ -9074,9 +9887,6 @@ function renderIncomingTable() {
       '<td style="font-size:.78rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + _he(item.notes||'') + '">' + _he(item.notes||'—') + '</td>' +
       (isAdmin ? '<td><button class="btn-icon" data-action="edit-incoming" data-id="' + _he(item.id) + '">✏️</button></td>' : '') +
     '</tr>';
-  }).join('');
-  html += '</tbody></table>';
-  container.innerHTML = html;
 }
 
 function openIncomingModal(id) {
@@ -9087,7 +9897,11 @@ function openIncomingModal(id) {
   if (isEdit) {
     var item = incoming.find(function(i){ return i.id === id; });
     if (!item) { alert('Item not found'); return; }
+    document.getElementById('incDateMode').value = item.dateMode || 'exact';
     document.getElementById('incDate').value     = item.estDate || '';
+    document.getElementById('incDateEnd').value  = item.estDateEnd || '';
+    document.getElementById('incDateNote').value = item.dateNote || '';
+    _incSyncDateMode();
     document.getElementById('incStatus').value   = item.status  || 'Pending';
     document.getElementById('incCategory').value = item.category|| '';
     document.getElementById('incName').value     = item.name    || '';
@@ -9099,7 +9913,11 @@ function openIncomingModal(id) {
     document.getElementById('incNotes').value    = item.notes   || '';
   } else {
     // Defaults for new
+    document.getElementById('incDateMode').value = 'exact';
     document.getElementById('incDate').value     = _isoDate(new Date());
+    document.getElementById('incDateEnd').value  = '';
+    document.getElementById('incDateNote').value = '';
+    _incSyncDateMode();
     document.getElementById('incStatus').value   = 'Pending';
     document.getElementById('incCategory').value = '';
     document.getElementById('incName').value     = '';
@@ -9126,11 +9944,65 @@ function openIncomingModal(id) {
   document.getElementById('incomingOverlay').classList.add('show');
 }
 
+// Shows only the fields the chosen mode actually uses, and says what each one
+// means in that mode — an end date on a single-day delivery is noise, and a
+// date input on "not known yet" is a trap that invites a made-up answer.
+function _incSyncDateMode(){
+  var mode = (document.getElementById('incDateMode') || {}).value || 'exact';
+  var show = function(id, on){ var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; };
+  show('incDateField',     mode !== 'unknown');
+  show('incDateEndField',  mode === 'window');
+  show('incDateNoteField', mode === 'about' || mode === 'unknown');
+  var lbl = document.getElementById('incDateLabel');
+  if (lbl) lbl.textContent = mode === 'window' ? 'Any time between this date…'
+                           : mode === 'about'  ? 'Roughly around'
+                           : 'Estimated arrival date *';
+  var nlbl = document.getElementById('incDateNoteLabel');
+  if (nlbl) nlbl.textContent = mode === 'unknown' ? 'Why not? (optional)' : 'What were you told? (optional)';
+}
+
+// One line that reads correctly whatever the mode, used by the table, the
+// weekly view and the morning popup — so none of them has to know the rules.
+function _incDateLabel(item){
+  var mode = item.dateMode || 'exact';
+  if (mode === 'unknown') return item.dateNote ? 'No date — ' + item.dateNote : 'No date yet';
+  if (mode === 'window' && item.estDateEnd) return item.estDate + ' → ' + item.estDateEnd;
+  if (mode === 'about')  return '≈ ' + (item.estDate || '') + (item.dateNote ? ' (' + item.dateNote + ')' : '');
+  return item.estDate || '—';
+}
+
+// Only a date somebody actually committed to counts as late. "Around the 5th"
+// and "no idea" cannot be overdue, and flagging them red would train people to
+// ignore the colour.
+// A window covers every day it spans; an approximate date covers the day it
+// points at; an unknown date covers none. Every view that lays items out on a
+// calendar asks this, so none of them has to know the rules.
+function _incOnDay(item, ymd){
+  var mode = item.dateMode || 'exact';
+  if (mode === 'unknown' || !item.estDate) return false;
+  if (mode === 'window' && item.estDateEnd) return ymd >= item.estDate && ymd <= item.estDateEnd;
+  return item.estDate === ymd;
+}
+
+function _incIsOverdue(item, today){
+  return item.status === 'Pending' && (item.dateMode || 'exact') === 'exact' &&
+         item.estDate && item.estDate < today;
+}
+
 function saveIncomingItem() {
-  var id      = document.getElementById('incId').value;
-  var estDate = document.getElementById('incDate').value;
-  var name    = (document.getElementById('incName').value || '').trim();
-  if (!estDate){ alert('Select the estimated arrival date.'); return; }
+  var id       = document.getElementById('incId').value;
+  var dateMode = document.getElementById('incDateMode').value || 'exact';
+  var estDate  = document.getElementById('incDate').value;
+  var estEnd   = document.getElementById('incDateEnd').value;
+  var dateNote = (document.getElementById('incDateNote').value || '').trim();
+  var name     = (document.getElementById('incName').value || '').trim();
+  if (dateMode !== 'unknown' && !estDate){
+    showToast('Pick a date, or choose "Not known yet".', 'warn'); return;
+  }
+  if (dateMode === 'window'){
+    if (!estEnd){ showToast('Pick the end of the window too.', 'warn'); return; }
+    if (estEnd < estDate){ showToast('The second date is before the first one.', 'warn'); return; }
+  }
 
   var fileInput = document.getElementById('incFile');
   var hasFile   = fileInput && fileInput.files && fileInput.files.length;
@@ -9138,8 +10010,11 @@ function saveIncomingItem() {
   if (!name && !hasFile){ alert('Enter a description of what is arriving, or attach a PDF/photo.'); return; }
 
   var payload = {
-    id:       id || undefined,
-    estDate:  estDate,
+    id:         id || undefined,
+    estDate:    estDate,
+    dateMode:   dateMode,
+    estDateEnd: estEnd,
+    dateNote:   dateNote,
     status:   document.getElementById('incStatus').value,
     category: document.getElementById('incCategory').value,
     name:     name || '📎 See attached',
@@ -9240,7 +10115,7 @@ function checkMorningPopup() {
 
   // Only show if there are pending deliveries today (status ≠ 'Received')
   var todayPending = incoming.filter(function(item) {
-    return item.estDate === todayStr &&
+    return _incOnDay(item, todayStr) &&
            (item.status || '').toLowerCase() !== 'received';
   });
 
@@ -9252,10 +10127,14 @@ function checkMorningPopup() {
   endOfWeek.setDate(today.getDate() + (6 - dayOfWeek));
   var endStr = _isoDate(endOfWeek);
 
+  // A window counts if any part of it falls in what is left of the week, not
+  // only if it starts there.
   var thisWeek = incoming.filter(function(item) {
-    return (item.status || '').toLowerCase() !== 'received' &&
-           item.estDate >= todayStr &&
-           item.estDate <= endStr;
+    if ((item.status || '').toLowerCase() === 'received') return false;
+    if (!item.estDate) return false;                       // no date — not part of a week's plan
+    var from = item.estDate;
+    var to   = (item.dateMode === 'window' && item.estDateEnd) ? item.estDateEnd : item.estDate;
+    return to >= todayStr && from <= endStr;
   });
 
   _popupShownThisLoad = true; // mark as shown — won't fire again until next F5 / new tab
@@ -9263,8 +10142,8 @@ function checkMorningPopup() {
 }
 
 function showMorningPopup(items, todayStr) {
-  var todayItems = items.filter(function(i){ return i.estDate === todayStr; });
-  var restItems  = items.filter(function(i){ return i.estDate !== todayStr; });
+  var todayItems = items.filter(function(i){ return _incOnDay(i, todayStr); });
+  var restItems  = items.filter(function(i){ return !_incOnDay(i, todayStr); });
 
   function itemRow(item) {
     return '<div class="morning-item">' +
@@ -9274,7 +10153,7 @@ function showMorningPopup(items, todayStr) {
           '<span class="morning-item-name">' + item.qty + ' ' + _he(item.unit) + ' — ' + _he(item.name) + '</span>' +
         '</div>' +
         '<div class="morning-item-meta">' +
-          (item.estDate !== todayStr ? _he(item.estDate) + (item.notes ? ' · ' : '') : '') +
+          (!_incOnDay(item, todayStr) ? _he(_incDateLabel(item)) + (item.notes ? ' · ' : '') : '') +
           (item.notes ? _he(item.notes) : '') +
         '</div>' +
       '</div>' +
@@ -9480,6 +10359,9 @@ function _roleBadge(role) {
 }
 
 function _renderUsersTable() {
+  var slot = document.getElementById('rowModeSlot_usr');
+  if (slot && !slot.firstChild) slot.innerHTML = _rowModeBarHtml('usr');
+  _mountRowMode('usr');
   var tbody = document.getElementById('usersTableBody');
   if (!_usersData.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">No users registered yet.</td></tr>';
@@ -9496,9 +10378,9 @@ function _renderUsersTable() {
       '<td><span class="badge ' + (u.active ? 'badge-green' : 'badge-gray') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
       '<td style="white-space:nowrap">' +
         (!isSelf
-          ? '<button class="btn-icon" data-action="edit-user" data-email="' + _he(u.email) + '" title="Edit">✏️</button> ' +
+          ? '<button class="btn-icon" data-rowact="edit" data-action="edit-user" data-email="' + _he(u.email) + '" title="Edit">✏️</button> ' +
             (u.active
-              ? '<button class="btn-icon" data-action="deact-user" data-email="' + _he(u.email) + '" title="Deactivate">🚫</button>'
+              ? '<button class="btn-icon" data-rowact="del" data-action="deact-user" data-email="' + _he(u.email) + '" title="Deactivate">🚫</button>'
               : '<span style="color:var(--muted);font-size:.72rem">inactive</span>')
           : '<span style="color:var(--muted);font-size:.72rem">—</span>') +
       '</td>' +
@@ -9555,8 +10437,16 @@ function saveUser() {
     .withSuccessHandler(function() {
       btn.textContent = 'Save User'; btn.disabled = false;
       _userFormMsg(_editingUser ? 'User updated.' : 'User added successfully.', 'ok');
+      // The row is patched in place rather than the whole list being fetched
+      // again: the browser already knows exactly what changed, and re-reading
+      // the sheet to learn it puts a "Loading…" flash over a list of four names.
+      var found = null;
+      _usersData.forEach(function(u){ if (u.email === email) found = u; });
+      if (found){ found.name = name; found.role = role; found.active = true; }
+      else _usersData.push({ email: email, name: name, role: role, active: true,
+                             addedBy: userEmail, addedAt: _isoDate(new Date()) });
       resetUserForm();
-      _loadUsersTable();
+      _renderUsersTable();
     })
     .withFailureHandler(function(err) {
       btn.textContent = 'Save User'; btn.disabled = false;
@@ -9573,7 +10463,11 @@ function deactivateUser(email) {
     confirmText: 'Deactivate',
     onConfirm: function(){
       google.script.run
-        .withSuccessHandler(function() { _loadUsersTable(); })
+        .withSuccessHandler(function() {
+          _usersData.forEach(function(u){ if (u.email === email) u.active = false; });
+          _renderUsersTable();
+          showToast(email + ' can no longer sign in.', 'ok');
+        })
         .withFailureHandler(function(err) { showToast(err.message || err, 'err', 5000); })
         .processMovement('removeUser', _h({ email: email }));
     }
@@ -9728,9 +10622,13 @@ function _showAccessDeniedScreen(status, email) {
 }
 
 // ── Load Data from Backend ────────────────────────────────────────────────────
-function loadDataFromGoogle(skipCache){
+// quiet=true refreshes the data underneath without the loading dot, the
+// skeleton or the "connecting…" line. Used after an edit that has already been
+// applied on screen, where the round trip is only there to true up the totals
+// the server derives.
+function loadDataFromGoogle(skipCache, quiet){
   lastLoadTime = null;
-  setConnStatus('loading');
+  if (!quiet) setConnStatus('loading');
 
   // ── Show cached data instantly while fresh data loads in background ──────
   // skipCache=true is passed after a save/delete so user sees loading state
@@ -9740,14 +10638,13 @@ function loadDataFromGoogle(skipCache){
     _applyData(cached);
     userRole  = cached.userRole  || userRole;
     userEmail = cached.userEmail || userEmail;
-    var cachedDisplay = cached.userName ? cached.userName + ' · ' + userRole : userEmail + ' · ' + userRole;
-    document.getElementById('userChip').textContent = cachedDisplay + ' ⟳';
+    _setAccountIdentity(cached.userName, userEmail, userRole, true);   // stale: fresh data still on the way
     applyRoleUI();
     refreshCategoryDropdowns();
     refreshDropdowns();
     refreshProjectDropdown();
     renderAll();
-  } else {
+  } else if (!quiet) {
     setLoading(true);
     // Show explicit loading message so user knows app is connecting (can take 10-20s)
     var sr = document.getElementById('statsRow');
@@ -9789,8 +10686,7 @@ function loadDataFromGoogle(skipCache){
         lastLoadTime = Date.now();
         setConnStatus('online');
         _checkVersionMatch(data.serverVersion);
-        var displayName = data.userName ? data.userName + ' · ' + userRole : userEmail + ' · ' + userRole;
-        document.getElementById('userChip').textContent = displayName;
+        _setAccountIdentity(data.userName, userEmail, userRole, false);
         if (data.activeUsers) renderActiveUsers(data.activeUsers);
         applyRoleUI();
         try { refreshCategoryDropdowns(); } catch(e){ console.error('refreshCategoryDropdowns:', e); }
@@ -9904,7 +10800,6 @@ var _toastIdSeq = 0;
 // app ten times a day doesn't repeat the same 2am backup notice — and so a
 // notice is never missed either, which is what a plain "latest event" banner
 // would do to anyone who skipped a day.
-var _SYSACT_KEY = 'acopio_sysact_seen';
 
 function _fmtWhen(iso){
   if (!iso) return '';
@@ -9935,80 +10830,54 @@ function _dismissSysCard(id){
   _renderSysDeck();
 }
 
+// A notification stays until somebody presses its ✕. It used to carry a
+// "seen" watermark that advanced on every load, so each card appeared exactly
+// once — on the first load after the thing happened — and then vanished
+// whether or not it had been read, let alone dismissed. Jose saw one backup
+// notice, once, and never again. The watermark is gone; the only thing that
+// removes a card is the ✕, which is what the ✕ is for.
+//
+// It cannot pile up without bound, and that ceiling is the one honest limit
+// here: the server returns the most recent 30 system events, so an undismissed
+// notice DOES eventually fall off — once 30 newer ones exist. At roughly one
+// backup a day that is a month of ignoring it, which is long enough to mean
+// nobody was ever going to read it.
 function _announceSystemActivity(){
-  if (!systemActivity || !systemActivity.length) { _sysCards = []; _renderSysDeck(); return; }
-
-  var seen = 0;
-  try { seen = parseInt(localStorage.getItem(_SYSACT_KEY) || '0', 10) || 0; } catch (e) {}
-
-  var newest = 0;
-  systemActivity.forEach(function(a){
-    var t = a.at ? new Date(a.at).getTime() : 0;
-    if (t > newest) newest = t;
-  });
-
-  // First run on an installation with months of history: record where we are
-  // and show nothing, rather than opening with a pile of notices about things
-  // nobody was waiting on.
-  if (!seen) {
-    try { localStorage.setItem(_SYSACT_KEY, String(newest)); } catch (e) {}
-    _sysCards = []; _renderSysDeck();
-    return;
-  }
-
   var dismissed = _loadSysDismissed();
-  _sysCards = systemActivity.filter(function(a){
-    var t = a.at ? new Date(a.at).getTime() : 0;
-    if (!t || t <= seen) return false;
-    return !dismissed[a.at + '|' + a.action];
+  _sysCards = (systemActivity || []).filter(function(a){
+    return a.at && !dismissed[a.at + '|' + a.action];
   }).map(function(a){
     return { id: a.at + '|' + a.action, label: a.label, at: a.at, detail: a.detail, extra: a.extra };
   });
-
-  // The "seen" mark only moves once the cards have been built from it —
-  // otherwise a reload before dismissing would silently drop them.
-  try { localStorage.setItem(_SYSACT_KEY, String(newest)); } catch (e) {}
   _renderSysDeck();
 }
 
 function _renderSysDeck(){
-  var deck = document.getElementById('sysDeck');
+  var deck = document.getElementById('cornerDeck');
   if (!deck) return;
-  if (!_sysCards.length){ deck.innerHTML = ''; deck.classList.remove('open'); return; }
+  _sysDeckTotal = _sysCards.length;
+  _syncCfgBell();
+  if (!_sysCards.length){ _sysDeckHtml = ''; _paintDeck(); return; }
 
-  // Newest painted last so it sits on top of the pile, same as the other deck.
-  deck.innerHTML = _sysCards.slice(0, 5).reverse().map(function(c){
-    return '<div class="sys-card">' +
+  // Newest painted last so it sits nearest the top of the pile.
+  _sysDeckHtml = _sysCards.slice(0, 5).reverse().map(function(c){
+    return '<div class="deck-card sys-card">' +
       '<button class="sys-card-x" data-sys-x="' + _he(c.id) + '" title="Dismiss">✕</button>' +
       '<div class="sys-card-title">✓ ' + _he(c.label) + '</div>' +
       '<div class="sys-card-when">' + _he(_fmtWhen(c.at)) + '</div>' +
       (c.detail ? '<div class="sys-card-detail">' + _he(c.detail) + (c.extra ? ' · ' + _he(c.extra) : '') + '</div>' : '') +
     '</div>';
   }).join('');
+  _paintDeck();
 
-  deck.querySelectorAll('[data-sys-x]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      _dismissSysCard(btn.getAttribute('data-sys-x'));
-    });
-  });
-
-  // Same fade rules as the suggestion deck: solid on arrival, then out of the
-  // way; hovering brings it back.
-  if (deck.matches(':hover') || deck.classList.contains('open')) { clearTimeout(_sysDimTimer); deck.classList.remove('dim'); }
-  else { deck.classList.remove('dim'); clearTimeout(_sysDimTimer); _sysDimTimer = setTimeout(function(){ deck.classList.add('dim'); }, _CFG_SOLID_MS); }
+  // Solid on arrival, then out of the way; hovering brings it back. One pile,
+  // one timer — the two decks used to run their own and could disagree about
+  // whether the corner was resting.
+  if (deck.matches(':hover') || deck.classList.contains('open')) _cfgWake();
+  else { deck.classList.remove('dim'); _cfgScheduleDim(_CFG_SOLID_MS); }
 }
 
-var _sysDimTimer = null;
-(function _wireSysDeckFade(){
-  var deck = document.getElementById('sysDeck');
-  if (!deck) return;
-  deck.addEventListener('mouseenter', function(){ clearTimeout(_sysDimTimer); deck.classList.remove('dim'); });
-  deck.addEventListener('mouseleave', function(){
-    clearTimeout(_sysDimTimer);
-    _sysDimTimer = setTimeout(function(){ deck.classList.add('dim'); }, _CFG_REDIM_MS);
-  });
-})();
+
 
 function showToast(msg, type, duration) {
   type     = type     || 'ok';
@@ -10035,11 +10904,20 @@ function dismissToast(id) {
 }
 
 // ── Dark Mode ─────────────────────────────────────────────────────────────────
+// The row reads as the action it performs — in dark mode it offers the light
+// one — because it is a one-click toggle, not a setting with a value to report.
+function _setDarkUI(isDark){
+  var i = document.getElementById('darkIcon');
+  var l = document.getElementById('darkLabel');
+  if (i) i.textContent = isDark ? '☀️' : '🌙';
+  if (l) l.textContent = isDark ? 'Light mode' : 'Dark mode';
+}
+
 function toggleDarkMode() {
   var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   var next   = isDark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  document.getElementById('btnDarkMode').textContent = isDark ? '🌙' : '☀️';
+  _setDarkUI(!isDark);
   try { localStorage.setItem('oxwms_theme', next); } catch(e) {}
 }
 (function initTheme() {
@@ -10050,8 +10928,7 @@ function toggleDarkMode() {
   }
   if (saved === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    var btn = document.getElementById('btnDarkMode');
-    if (btn) btn.textContent = '☀️';
+    _setDarkUI(true);
   }
 })();
 
@@ -10218,35 +11095,20 @@ function applyRoleUI(){
   if (gear) gear.style.display = isAdmin ? '' : 'none';
   var gearToolbar = document.getElementById('btnMonitorSettingsToolbar');
   if (gearToolbar) gearToolbar.style.display = isAdmin ? '' : 'none';
-  // Admin actions panel inside presence dropdown (Users + Settings)
-  var adminPanel = document.getElementById('presenceAdminActions');
-  if (adminPanel) adminPanel.style.display = isAdmin ? '' : 'none';
-  // Show a "View Only" tag next to the user chip when in VIEWER mode
-  var tag = document.getElementById('viewerTag');
-  if (!tag && isViewer){
-    tag = document.createElement('span');
-    tag.id = 'viewerTag';
-    tag.textContent = '👁 View Only';
-    tag.style.cssText = 'font-size:.68rem;background:#FEF3C7;color:#92400E;border-radius:10px;padding:2px 10px;font-weight:700;margin-left:4px';
-    var chip = document.getElementById('userChip');
-    if (chip) chip.after(tag);
-  }
-  if (tag) tag.style.display = isViewer ? 'inline' : 'none';
+  // Admin-only entries in the account menu. The VIEWER tag and the
+  // switch-account link used to be extra furniture bolted onto the topbar next
+  // to the email; both are rows in the menu now.
+  var mu = document.getElementById('btnUsersMgmt');
+  if (mu) mu.style.display = isAdmin ? '' : 'none';
+  var st = document.getElementById('btnSettings');
+  if (st) st.style.display = isAdmin ? '' : 'none';
 
-  // Show "Sign out" link only for non-org users who signed in with Google.
-  var switchTag = document.getElementById('switchUserTag');
-  if (_sessionToken) {
-    if (!switchTag) {
-      switchTag = document.createElement('span');
-      switchTag.id = 'switchUserTag';
-      switchTag.innerHTML = '<button onclick="_signOut()" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:.68rem;cursor:pointer;padding:2px 6px;border-radius:4px;font-family:inherit" title="Switch account">⇄ Switch</button>';
-      var chip = document.getElementById('userChip');
-      if (chip) chip.after(switchTag);
-    }
-    switchTag.style.display = 'inline';
-  } else if (switchTag) {
-    switchTag.style.display = 'none';
-  }
+  // Only people who signed in with Google (rather than being recognised by
+  // their company domain) have another account to switch to.
+  var sw = document.getElementById('acctSwitch');
+  if (sw) sw.style.display = _sessionToken ? '' : 'none';
+
+  _setAccountIdentity(_lastUserName, userEmail, userRole, false);
 }
 
 // ── Connection status ─────────────────────────────────────────────────────────
@@ -10277,15 +11139,161 @@ setInterval(function(){
   if (ageSec > 300) setConnStatus('stale');
 }, 60000);
 
-// ── Active users presence ─────────────────────────────────────────────────────
-function togglePresence(e){
+// ── Privacy Policy / Terms of Service ────────────────────────────────────────
+var LEGAL_DOCS = {
+  privacy: { title: 'Privacy Policy',   html: `<p><strong>Last updated:</strong> 6 August 2026</p>
+<p>Acopio is warehouse-management software provided by Jose Castro ("we", "us"). This policy explains what happens to data when you use it.</p>
+<p>Read the first section before anything else — it is the part that makes the rest of this document short.</p>
+<hr>
+<h3>1. Where your data lives — and who holds it</h3>
+<p><strong>Acopio does not host your data. We never receive a copy of it.</strong></p>
+<p>Acopio runs entirely inside <strong>your own Google account</strong>. When you install it, a Google Sheet and a Google Apps Script project are created <strong>in your Google Drive</strong>, owned by you. Every inventory record, photo, document and user list the software creates is written to that spreadsheet and that Drive folder — both yours.</p>
+<p>There is no Acopio server. There is no Acopio database. We operate no infrastructure that your business data passes through or is stored on.</p>
+<p>Practically, this means:</p>
+<ul>
+<li>We cannot read your inventory, your suppliers, your prices or your documents.</li>
+<li>We cannot lose your data in a breach of our systems, because it is not on our systems.</li>
+<li>If you stop paying us, your data does not go anywhere. It stays in your Drive and your spreadsheet keeps working.</li>
+<li>A subpoena served on us produces nothing about your business, because we hold nothing.</li>
+</ul>
+<p>Your data is governed by <strong>your</strong> agreement with Google (Google Workspace Terms or the Google Terms of Service, as applicable to your account).</p>
+<h3>2. What the software accesses, and why</h3>
+<p>When you first install Acopio, Google asks you to authorise it. Each permission exists for a specific feature:</p>
+<table class="lg-table"><tr><th>Permission</th><th>Why it is needed</th></tr>
+<tr><td>See, edit and delete your Google Drive files</td><td>Store the photos and documents you attach to movements, and create nightly backup copies of your spreadsheet.</td></tr>
+<tr><td>View and manage the spreadsheet this app is installed in</td><td>The spreadsheet is the application's database.</td></tr>
+<tr><td>Send email as you</td><td>Delivery notifications to your project managers, and system alerts to your administrator. <strong>It cannot read your email.</strong></td></tr>
+<tr><td>Create and edit Google Docs</td><td>Assemble multiple photos into a single PDF document.</td></tr>
+<tr><td>Connect to an external service</td><td>Version checks and, if you enable it, the optional AI document-reading add-on.</td></tr>
+<tr><td>Run when you are not present</td><td>The nightly automatic backup.</td></tr>
+<tr><td>See your primary email address and basic profile</td><td>Identify who is signed in, so the app knows which permissions to apply.</td></tr>
+</table>
+<p>Two notes on scope:</p>
+<ul>
+<li><strong>Full Gmail access is NOT part of the base product.</strong> It is required only by the optional paid Gmail delivery-scanner add-on. If you have not bought that add-on, Acopio never requests it and cannot read your mail.</li>
+<li>Every permission above is granted by you, to software running in your own account. None of it grants us access.</li>
+</ul>
+<h3>3. What we collect</h3>
+<p><strong>In normal operation: nothing.</strong></p>
+<p>Two features send data to us, and only when you choose to use them:</p>
+<ul>
+<li><strong>"Report a problem" (the 🐞 button).</strong> When you submit a report, the message you typed, any screenshots you attach, your email address and your app version are emailed to your own administrator. If you send it on to us for support, we receive whatever you chose to include. Do not attach screenshots containing information you would rather we did not see.</li>
+<li><strong>Support you initiate.</strong> If you email us for help and include a file, a screenshot or spreadsheet access, we see what you send us. We use it to resolve your issue and nothing else, and we do not retain copies afterwards.</li>
+</ul>
+<p>We do not use analytics, tracking pixels, advertising identifiers or session recording. We do not sell, rent or share data — we have none to sell.</p>
+<h3>4. The optional AI add-on</h3>
+<p>If you enable the document-reading feature, the contents of the documents you choose to scan are sent to <strong>Google's Gemini API</strong> for processing, using an API key that <strong>you</strong> supply from your own Google account. The request goes from your Google account to Google. It does not pass through us.</p>
+<p>This feature is off unless you turn it on.</p>
+<h3>5. Sub-processors</h3>
+<p>We use none for your business data, because we do not process it.</p>
+<p>Google is not our sub-processor — Google is <strong>your</strong> provider, under your own agreement with them.</p>
+<h3>6. Retention and deletion</h3>
+<p>You control retention entirely:</p>
+<ul>
+<li>Inventory records live in your spreadsheet until you delete them.</li>
+<li>Attached photos and documents live in your Drive until you delete them.</li>
+<li>Nightly backups are deleted automatically after 30 days.</li>
+</ul>
+<p><strong>To delete everything:</strong> delete the spreadsheet and the app's Drive folder. That is complete deletion — there is no second copy anywhere for us to purge, and no request to us is required.</p>
+<p>To revoke the software's access at any time, without deleting anything, go to <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+<h3>7. Your rights (GDPR, CCPA and similar)</h3>
+<p>Because your data never leaves your Google account, <strong>you are the data controller</strong> for it and we are not a processor of it. Access, correction, export and deletion are all things you perform directly, in your own spreadsheet, without asking us.</p>
+<p>For the limited personal data we hold as a business — your name, billing email and support correspondence — write to the address below and we will act on your request within 30 days.</p>
+<h3>8. Children</h3>
+<p>Acopio is business software and is not directed at anyone under 16.</p>
+<h3>9. Security</h3>
+<p>The software is built to keep your data inside your account: uploaded files are private to your Drive by default and are never shared publicly; access is restricted to the user list you configure; and the code is written to resist common web vulnerabilities. Security fixes are shipped as software updates for you to install.</p>
+<p>That said, the security of your Google account — passwords, two-factor authentication, who you grant access to — is yours to manage, and no software we write can compensate for a compromised account.</p>
+<h3>10. Changes</h3>
+<p>Material changes to this policy will be communicated to active customers by email before they take effect. The date at the top always reflects the current version.</p>
+<h3>11. Contact</h3>
+<p>Jose Castro — joseisrael5101@gmail.com</p>` },
+  terms:   { title: 'Terms of Service', html: `<p><strong>Last updated:</strong> 6 August 2026</p>
+<p>These terms govern your use of Acopio, warehouse-management software provided by Jose Castro ("we", "us"). By installing or using it, you agree to them. If you are agreeing on behalf of a company, you confirm you are authorised to do so.</p>
+<hr>
+<h3>1. What you are buying</h3>
+<p>A licence to install and run one copy of Acopio inside your own Google account, for your own business, plus updates and support for as long as your licence is active.</p>
+<p><strong>You are not buying a hosted service.</strong> Acopio runs in your Google account, on your data, under your control. We do not operate a server your business depends on — which is why there is no uptime commitment below, and why there also is no one who can take your data away from you.</p>
+<h3>2. What you need to provide</h3>
+<ul>
+<li>A Google account (personal Gmail or Google Workspace).</li>
+<li>Sufficient Google Drive storage for your documents and backups.</li>
+<li>Compliance with Google's own terms for that account.</li>
+</ul>
+<p>Google may change its products, quotas or pricing at any time. Those changes are between you and Google, and are outside our control. See §7.</p>
+<h3>3. Your data</h3>
+<p>Your data is yours. We do not host it, receive it or claim any rights over it. See the Privacy Policy for detail.</p>
+<p>If you stop paying, <strong>your data keeps working</strong>. The spreadsheet is yours, the records are yours, the documents in your Drive are yours. What lapses is your right to updates and support, not your access to your own information. We cannot and will not disable your installation remotely.</p>
+<h3>4. What you may not do</h3>
+<ul>
+<li>Resell, sublicense, or distribute the software to third parties.</li>
+<li>Remove or obscure the "Powered by Acopio" attribution.</li>
+<li>Install one licence across multiple unrelated companies.</li>
+<li>Reverse engineer the software to build a competing product.</li>
+</ul>
+<p>Reading, understanding and modifying the code for your own internal use is permitted — it runs in your account and you can see all of it. Modified copies are unsupported, and §6 applies with particular force to them.</p>
+<h3>5. Support and updates</h3>
+<p>While your licence is active:</p>
+<ul>
+<li>Bug fixes and security updates, delivered as files for you to install.</li>
+<li>Support by email during business hours, on a best-effort basis.</li>
+</ul>
+<p><strong>Installing updates is your responsibility.</strong> Because the software lives in your account, we cannot push a fix to you — including a security fix. We will tell you an update matters; applying it is your call and your action.</p>
+<p>We do not commit to any specific new feature, or to any timeline for one, unless we have agreed it with you in writing.</p>
+<h3>6. Warranty disclaimer and limitation of liability</h3>
+<p><strong>Read this section. It is the one that matters most if something goes wrong.</strong></p>
+<p>The software is provided <strong>"as is"</strong>, without warranty of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement.</p>
+<p><strong>We are not responsible for the accuracy of your inventory.</strong> Acopio records what your staff enter. It cannot know whether the count was right, whether a delivery was miscounted, or whether someone recorded a movement that never happened. Inventory accuracy is an operational responsibility, not a software guarantee.</p>
+<p>To the maximum extent permitted by law, we are not liable for:</p>
+<ul>
+<li>lost profits, lost revenue, lost business or lost data;</li>
+<li>decisions made on the basis of information shown by the software;</li>
+<li>stock discrepancies, shortages, overstock or mis-shipments;</li>
+<li>any failure, change, quota, outage or discontinuation of Google's services;</li>
+<li>data loss caused by deletion, misconfiguration or account compromise on your side.</li>
+</ul>
+<p>Our total liability, for any and all claims, is capped at <strong>the amount you paid us in the twelve months preceding the claim</strong>.</p>
+<p>Some jurisdictions do not allow certain exclusions; in those places these limits apply to the fullest extent the law allows.</p>
+<h3>7. Dependence on Google</h3>
+<p>Acopio is built on Google Workspace and Google Apps Script. Google's platform carries limits that are theirs, not ours — including a daily cap on outgoing email (100/day on personal accounts, 1,500/day on Workspace), execution time limits, and a maximum spreadsheet size.</p>
+<p>We will tell you about the limits we know of and design around them where we can. We cannot remove them, and we are not liable if Google changes them, enforces them, or discontinues a service we rely on.</p>
+<h3>8. Backups</h3>
+<p>Acopio can make a copy of your spreadsheet nightly into your own Drive, kept 30 days. It is enabled during setup and we strongly recommend leaving it on.</p>
+<p><strong>It is a convenience, not a guarantee.</strong> It protects against ordinary mistakes — a bad edit, a deleted row. It does not protect against your Google account being deleted, suspended or compromised, because the backups live in that same account. If your data is critical, keep an independent copy outside Google. Verifying that your backups exist and work is your responsibility.</p>
+<h3>9. Payment and cancellation</h3>
+<p>Fees, billing period and any add-on pricing are as agreed in writing when you purchase. Cancel any time; cancellation ends future billing and ends support and updates at the end of the paid period. Fees already paid are not refundable except where required by law.</p>
+<h3>10. Termination</h3>
+<p>We may terminate your licence if you materially breach these terms and do not fix it within 30 days of written notice. On termination your right to support and updates ends. <strong>Your installation and your data are unaffected</strong> — we have no mechanism to remove them, and would not use one if we had it.</p>
+<h3>11. Changes to these terms</h3>
+<p>We may update these terms. Material changes will be emailed to active customers at least 30 days before they take effect. Continuing to use the software after that means you accept them.</p>
+<h3>12. Governing law</h3>
+<p>The laws of the State of Utah, United States, without regard to conflict-of-law rules. Disputes go to the state or federal courts located in Utah.</p>
+<h3>13. Contact</h3>
+<p>Jose Castro — joseisrael5101@gmail.com</p>` }
+};
+
+function openLegal(which){
+  var doc = LEGAL_DOCS[which];
+  if (!doc) return;
+  closeAccountMenu();
+  document.getElementById('legalTitle').textContent = doc.title;
+  document.getElementById('legalBody').innerHTML = doc.html;
+  var ov = document.getElementById('legalOverlay');
+  var modal = ov.querySelector('.modal');
+  if (modal) modal.scrollTop = 0;      // the modal is the scroller, not the body div
+  ov.classList.add('show');
+}
+
+// ── Account menu ─────────────────────────────────────────────────────────────
+function toggleAccountMenu(e){
   if (e) e.stopPropagation();
-  var dd   = document.getElementById('presenceDropdown');
-  var chip = document.getElementById('userChip');
-  var open = dd.classList.toggle('open');
-  chip.classList.toggle('open', open);
+  var menu = document.getElementById('acctMenu');
+  var btn  = document.getElementById('acctBtn');
+  if (!menu) return;
+  var open = menu.classList.toggle('open');
+  if (btn) btn.classList.toggle('open', open);
   if (open){
-    // Refresh list on open
+    // Who else is online is only worth asking about while the menu is open.
     google.script.run
       .withSuccessHandler(renderActiveUsers)
       .withFailureHandler(function(){})
@@ -10293,14 +11301,85 @@ function togglePresence(e){
   }
 }
 
-// Close presence when clicking anywhere outside
+function closeAccountMenu(){
+  var menu = document.getElementById('acctMenu');
+  var btn  = document.getElementById('acctBtn');
+  if (menu) menu.classList.remove('open');
+  if (btn)  btn.classList.remove('open');
+}
+
+// Kept because older buttons still call it by this name.
+function togglePresence(e){ toggleAccountMenu(e); }
+
 document.addEventListener('click', function(e){
-  var wrap = document.getElementById('presenceWrap');
-  if (wrap && !wrap.contains(e.target)){
-    document.getElementById('presenceDropdown').classList.remove('open');
-    document.getElementById('userChip').classList.remove('open');
-  }
+  var wrap = document.getElementById('acctWrap');
+  if (wrap && !wrap.contains(e.target)) closeAccountMenu();
 });
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeAccountMenu();
+});
+
+// Initials rather than a photo: Apps Script never sees the Google profile
+// picture, and a warehouse account often has no name on file at all, so the
+// email's first letter is the honest fallback.
+function _initialsFor(name, email){
+  var n = String(name || '').trim();
+  if (n){
+    var parts = n.split(/\s+/).filter(Boolean);
+    return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].substring(0, 2)).toUpperCase();
+  }
+  return String(email || '?').trim().substring(0, 2).toUpperCase();
+}
+
+// A stable colour per person, derived from their email — so the circle in the
+// corner looks like THEIR circle, and two people at one terminal can tell at a
+// glance who is signed in.
+var _ACCT_COLORS = ['#2563EB','#7C3AED','#DB2777','#DC2626','#EA580C','#CA8A04','#16A34A','#0891B2','#4F46E5','#BE185D'];
+function _avatarColor(email){
+  var s = String(email || ''), h = 0;
+  for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
+  return _ACCT_COLORS[h % _ACCT_COLORS.length];
+}
+
+var _ROLE_TAG_STYLE = {
+  ADMIN:     'background:#DBEAFE;color:#1D4ED8',
+  WAREHOUSE: 'background:#D1FAE5;color:#047857',
+  VIEWER:    'background:#FEF3C7;color:#92400E'
+};
+
+// Fills the circle and everything behind it. Called from the cached paint and
+// again when the real data lands, so the corner is never blank.
+function _setAccountIdentity(name, email, role, stale){
+  if (name && String(name).trim()) _lastUserName = name;
+  else name = _lastUserName;
+  var initials = _initialsFor(name, email);
+  var color    = _avatarColor(email);
+
+  var btn = document.getElementById('acctBtn');
+  var ini = document.getElementById('acctInitials');
+  if (ini) ini.textContent = initials;
+  if (btn) btn.style.background = color;
+
+  var av = document.getElementById('acctAvatar');
+  if (av){ av.textContent = initials; av.style.background = color; }
+
+  var nm = document.getElementById('acctName');
+  if (nm) nm.textContent = (name && String(name).trim()) ? name : (email || '');
+  var em = document.getElementById('acctEmail');
+  if (em) em.textContent = (name && String(name).trim()) ? (email || '') : '';
+
+  var tags = document.getElementById('acctTags');
+  if (tags){
+    var html = '';
+    if (role) html += '<span class="acct-tag" style="' + (_ROLE_TAG_STYLE[role] || _ROLE_TAG_STYLE.VIEWER) + '">' + _he(role) + '</span>';
+    if (role === 'VIEWER') html += '<span class="acct-tag" style="background:#FEF3C7;color:#92400E">👁 VIEW ONLY</span>';
+    if (stale) html += '<span class="acct-tag" style="background:var(--border);color:var(--muted)">REFRESHING…</span>';
+    tags.innerHTML = html;
+  }
+
+  var foot = document.getElementById('acctFoot');
+  if (foot) foot.textContent = (_companyName ? _companyName + ' · ' : '') + PRODUCT + ' v' + APP_VERSION;
+}
 
 function renderActiveUsers(users){
   var list = document.getElementById('activeUsersList');
@@ -10347,6 +11426,64 @@ function _confirmCancel() {
   _confirmCb = null;
   document.getElementById('confirmOverlay').classList.remove('show');
 }
+
+// ── Ask for a value, in the app's own dialog ─────────────────────────────────
+// opts: { icon, title, message, value, placeholder, confirmText, danger,
+//         choices:[…], onOk(value) }  — return a string from onOk to show it as
+// an error and keep the dialog open.
+var _promptCb = null;
+function _showPrompt(opts){
+  opts = opts || {};
+  _promptCb = opts.onOk || null;
+  document.getElementById('promptIcon').textContent    = opts.icon || '✏️';
+  document.getElementById('promptTitle').textContent   = opts.title || '';
+  var msg = document.getElementById('promptMessage');
+  msg.textContent = opts.message || '';
+  msg.style.display = opts.message ? '' : 'none';
+  var inp = document.getElementById('promptInput');
+  inp.value = opts.value || '';
+  inp.placeholder = opts.placeholder || '';
+  document.getElementById('promptErr').textContent = '';
+  var ok = document.getElementById('promptOkBtn');
+  ok.textContent = opts.confirmText || 'Save';
+  ok.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
+
+  // Anything the answer is likely to be, offered as one click instead of a
+  // sentence asking the person to type it exactly.
+  var box = document.getElementById('promptChoices');
+  var choices = opts.choices || [];
+  box.innerHTML = choices.map(function(c){
+    return '<button type="button" class="cprompt-chip">' + _he(c) + '</button>';
+  }).join('');
+  box.style.display = choices.length ? '' : 'none';
+  box.querySelectorAll('.cprompt-chip').forEach(function(b){
+    b.addEventListener('click', function(){ inp.value = b.textContent; inp.focus(); });
+  });
+
+  document.getElementById('promptOverlay').classList.add('show');
+  setTimeout(function(){ inp.focus(); inp.select(); }, 40);
+}
+
+function _promptOk(){
+  if (!_promptCb) { _promptCancel(); return; }
+  var v = (document.getElementById('promptInput').value || '').trim();
+  var err = _promptCb(v);
+  if (err){ document.getElementById('promptErr').textContent = err; return; }   // stay open
+  _promptCb = null;
+  document.getElementById('promptOverlay').classList.remove('show');
+}
+
+function _promptCancel(){
+  _promptCb = null;
+  document.getElementById('promptOverlay').classList.remove('show');
+}
+
+document.addEventListener('keydown', function(e){
+  var ov = document.getElementById('promptOverlay');
+  if (!ov || !ov.classList.contains('show')) return;
+  if (e.key === 'Enter'){ e.preventDefault(); _promptOk(); }
+  else if (e.key === 'Escape'){ e.preventDefault(); _promptCancel(); }
+});
 
 // ── Edit Movement ─────────────────────────────────────────────────────────────
 var _editMovRowIdx = 0;
@@ -10732,7 +11869,9 @@ document.addEventListener('visibilitychange', function(){
 // ── Version tag — set by JS so we can confirm script is running ───────────────
 (function(){
   var t = document.getElementById('jsVersionTag');
-  if (t) t.textContent = 'JS v' + APP_VERSION + ' ✓';
+  if (!t) return;
+  t.textContent = 'v' + APP_VERSION;
+  t.className = 'ver-tag';       // the alarm styling was only for "never ran"
 })();
 
 // Start

@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.41';
+var APP_VERSION = '9.55';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -1003,7 +1003,7 @@ function getInitialData(sessionToken) {
     return {
       serverVersion:      APP_VERSION,
       company:            publicCompany_(),
-      systemActivity:     (function(){ try { return getSystemActivity(8); } catch (e) { return []; } })(),
+      systemActivity:     (function(){ try { return getSystemActivity(30); } catch (e) { return []; } })(),
       columnPrefs:        columnPrefs_(),
       movements:          movements,
       stock:              stock,
@@ -1511,6 +1511,7 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'saveLocationLayout') return saveLocationLayout(data, auth);
   if (action === 'mergeLocations')     return mergeLocations(data, auth);
   if (action === 'saveColumnPrefs')    return saveColumnPrefs(data, auth);
+  if (action === 'saveCompanyProfile') return saveCompanyProfile(data, auth);
   // ── Material management (ADMIN only) ──────────────────────────────────────
   if (action === 'listMaterials')  return listMaterials(auth);
   if (action === 'manageMaterial') return manageMaterial(data, auth);
@@ -2406,10 +2407,20 @@ function refreshDerivedSheets_(ss) {
       // i+1; for history rows, i has to be re-based off where the history
       // segment starts in the concatenated `data` array, then +2 to account for
       // history's own header row (which was sliced out of `data` above).
+      // What was repaired is recorded alongside the repair. "1 row had a
+      // stale MatID" tells an owner nothing they can act on or verify; the
+      // material, the amount, the rack and the two IDs let them go and look.
       matIdFixes.push({
         rowNum: isHistoryRow ? (i - archiveData.length + 2) : (i + 1),
         isHistory: isHistoryRow,
-        correctMatId: key
+        correctMatId: key,
+        wasMatId: String(row[AC.MAT_ID] || '(blank)'),
+        what:  (m.category ? m.category + ' — ' : '') + (m.name || '(no name)'),
+        qty:   m.qty,
+        unit:  m.unit || '',
+        where: m.destLoc || m.sourceLoc || '',
+        when:  m.dateRec || '',
+        kind:  m.moveType || ''
       });
     }
 
@@ -2464,7 +2475,10 @@ function refreshDerivedSheets_(ss) {
     var historyFixes = matIdFixes.filter(function(f){ return f.isHistory; });
     archiveFixes.forEach(function(f){ archive.getRange(f.rowNum, AC.MAT_ID + 1).setValue(f.correctMatId); });
     historyFixes.forEach(function(f){ history.getRange(f.rowNum, AC.MAT_ID + 1).setValue(f.correctMatId); });
-    auditLog_(ss, 'AUTO_REPAIR_MATID', 'system', matIdFixes.length + ' row(s) had a stale MatID, corrected automatically', '', '');
+    auditLog_(ss, 'AUTO_REPAIR_MATID', 'system',
+      describeMatIdFixes_(matIdFixes),
+      'was ' + matIdFixes[0].wasMatId + (matIdFixes.length > 1 ? ' (and ' + (matIdFixes.length - 1) + ' more)' : ''),
+      'now ' + matIdFixes[0].correctMatId);
   }
 
   var now = new Date();
@@ -3792,9 +3806,31 @@ var SYSTEM_ACTORS = { 'system': 1, 'system@scheduled-trigger': 1 };
 var SYSTEM_EVENT_LABELS = {
   BACKUP_CREATED:    'Backup created',
   ARCHIVE_RECONCILE: 'Old movements archived',
-  STOCK_REBUILD:     'Stock totals rebuilt'
+  STOCK_REBUILD:     'Stock totals rebuilt',
+  AUTO_REPAIR_MATID: 'Movements re-linked to the right material'
 };
 
+// Plain English for the notification card and the System tab. Names the
+// movements that were re-linked — up to three, then a count — so the owner can
+// check the rows themselves instead of taking the word "corrected" on trust.
+function describeMatIdFixes_(fixes) {
+  var named = fixes.slice(0, 3).map(function (f) {
+    return (f.kind ? f.kind + ' ' : '') + f.what +
+           (f.qty ? ' ×' + f.qty + (f.unit ? ' ' + f.unit : '') : '') +
+           (f.where ? ' @ ' + f.where : '') +
+           (f.when ? ' (' + f.when + ')' : '');
+  }).join(' · ');
+  var more = fixes.length > 3 ? ' …and ' + (fixes.length - 3) + ' more' : '';
+  return fixes.length + ' movement' + (fixes.length === 1 ? '' : 's') +
+         ' were filed under an out-of-date material ID and have been re-linked, ' +
+         'so their stock counts against the right material: ' + named + more;
+}
+
+// limit is how many undismissed notices the app can hold at once. Anything
+// older than that genuinely does fall away — see the note in
+// _announceSystemActivity on the client. Kept generous rather than tight: a
+// notice that disappears before it is read is the bug this whole feature was
+// meant to fix.
 function getSystemActivity(limit) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEETS.AUDIT);
@@ -3803,8 +3839,11 @@ function getSystemActivity(limit) {
   if (last < 2) return [];
 
   // Only the tail is read. The audit sheet grows without bound and a full
-  // getDataRange() here would be paid on every single app load.
-  var span  = Math.min(400, last - 1);
+  // getDataRange() here would be paid on every single app load. The tail has to
+  // be long enough that ordinary traffic — every movement saved, every config
+  // change — cannot push the system's own entries out of range before anyone
+  // has seen them.
+  var span  = Math.min(1500, last - 1);
   var rows  = sheet.getRange(last - span + 1, 1, span, 6).getValues();
   var out   = [];
   for (var i = rows.length - 1; i >= 0 && out.length < (limit || 8); i--) {
@@ -4897,7 +4936,8 @@ function getSettings(auth) {
       c.locations.forEach(function(l){ m[l.name] = l.type || 'RACK'; });
       return m;
     })(),
-    archiveCutoffMonths: c.archiveCutoffMonths
+    archiveCutoffMonths: c.archiveCutoffMonths,
+    company: publicCompany_()      // the Company tab edits these
   };
 }
 
@@ -5009,6 +5049,62 @@ function saveColumnPrefs(data, auth) {
   auditLog_(SpreadsheetApp.getActiveSpreadsheet(), 'UPDATE_CONFIG', auth.email,
     'columns', Object.keys(labels).length + ' renamed', hidden.length + ' hidden');
   return { status: 'success' };
+}
+
+// ─── COMPANY NAME, DOMAIN AND LOGO ───────────────────────────────────────────
+// These were only ever settable in the setup wizard, which meant a company that
+// got its logo made a month after going live had no way to add it short of
+// walking back through the whole wizard. They are settings, not a one-time
+// ceremony, so they are editable like any other.
+//
+// data = { name, domain, logo:{fileData, fileMimeType}|null, removeLogo:bool }
+function saveCompanyProfile(data, auth) {
+  auth = requireAuth_('ADMIN');
+  data = data || {};
+  var p = PropertiesService.getScriptProperties();
+
+  var name = String(data.name || '').trim();
+  if (!name) throw new Error('Company name is required.');
+  var before = companySettings_();
+  p.setProperty('COMPANY_NAME', name);
+
+  // Leading @ is what people type; the rest of the app compares bare domains.
+  p.setProperty('COMPANY_DOMAIN', String(data.domain || '').trim().replace(/^@/, '').toLowerCase());
+
+  // FOLDER_PREFIX is deliberately NOT recomputed from the new name. Every
+  // document and photo ever attached lives in a folder named after the prefix,
+  // and DOC_LINKS rows point into it — renaming the company must not orphan
+  // them. Same rule the wizard follows on a re-run.
+
+  if (data.removeLogo) {
+    trashFileQuietly_(before.logoId);
+    p.deleteProperty('COMPANY_LOGO_ID');
+  } else if (data.logo && data.logo.fileData) {
+    var bytes = Utilities.base64Decode(data.logo.fileData);
+    var blob  = Utilities.newBlob(bytes, data.logo.fileMimeType || 'image/png', 'logo');
+    var file  = getOrCreateFolder_(docsFolderName_()).createFile(blob);
+    p.setProperty('COMPANY_LOGO_ID', file.getId());
+    trashFileQuietly_(before.logoId);   // only after the new one is safely stored
+  }
+
+  // The spreadsheet file's own name follows the company, the same way the
+  // wizard sets it — otherwise Drive keeps showing the old company forever.
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var wanted = name + ' — ' + PRODUCT_NAME;
+    if (ss.getName() !== wanted) ss.rename(wanted);
+    auditLog_(ss, 'UPDATE_CONFIG', auth.email, 'company', before.name || '(none)', name);
+  } catch (e) {}
+
+  return { status: 'success', company: publicCompany_() };
+}
+
+// An old logo that cannot be trashed (already deleted by hand, or owned by
+// somebody else after a transfer) is not a reason to fail the save — the new
+// one is already in place by then.
+function trashFileQuietly_(fileId) {
+  if (!fileId) return;
+  try { DriveApp.getFileById(fileId).setTrashed(true); } catch (e) {}
 }
 
 // Writes the Locations column and its Type column back in one go, in the exact
@@ -5301,19 +5397,43 @@ function manageMaterial(data, auth) {
 //  A=0:ID  B=1:EstDate  C=2:Category  D=3:Name  E=4:Qty  F=5:Unit
 //  G=6:Supplier  H=7:PO  I=8:Notes  J=9:Status  K=10:AddedBy  L=11:AddedAt
 //  M=12:PM (Project Manager)  N=13:Doc Link (attached PDF/photo URL)
+//  O=14:Date Mode  P=15:Est. Date End  Q=16:Date Note
+//
+// Not every delivery has a date. A supplier says "next week", or "between the
+// 5th and the 10th", or nothing at all, and forcing that into a single date
+// column means somebody invents one — and an invented date is worse than no
+// date, because a week later nobody can tell which is which.
+//
+// Date Mode is one of:
+//   exact   — Est. Date is the day it arrives (the original behaviour)
+//   window  — it arrives somewhere between Est. Date and Est. Date End
+//   about   — around Est. Date, give or take; Date Note holds what was said
+//   unknown — no date at all; Date Note may say why
+// Est. Date still carries the anchor for every mode except unknown, so sorting,
+// the weekly view and the overdue check keep working without knowing about any
+// of this.
+var INCOMING_DATE_MODES = { exact:1, window:1, about:1, unknown:1 };
+
+function incomingDateMode_(v) {
+  v = String(v || '').toLowerCase().trim();
+  return INCOMING_DATE_MODES[v] ? v : 'exact';
+}
 
 function ensureIncomingSheet_(ss) {
   var sheet = ss.getSheetByName('INCOMING_V3');
   if (!sheet) {
     sheet = ss.insertSheet('INCOMING_V3');
-    sheet.appendRow(['ID','Est. Date','Category','Name','Qty','Unit','Supplier','PO','Notes','Status','Added By','Added At','PM','Doc Link']);
+    sheet.appendRow(['ID','Est. Date','Category','Name','Qty','Unit','Supplier','PO','Notes','Status','Added By','Added At','PM','Doc Link','Date Mode','Est. Date End','Date Note']);
     sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, 14).setFontWeight('bold');
+    sheet.getRange(1, 1, 1, 17).setFontWeight('bold');
   } else {
-    // Migrate older sheets: add PM (M) and Doc Link (N) headers if missing
+    // Migrate older sheets one column at a time. Existing rows have a blank
+    // Date Mode, which reads as 'exact' — which is what they were.
     var lastCol = sheet.getLastColumn();
-    if (lastCol < 13) sheet.getRange(1, 13).setValue('PM').setFontWeight('bold');
-    if (lastCol < 14) sheet.getRange(1, 14).setValue('Doc Link').setFontWeight('bold');
+    var headers = ['PM','Doc Link','Date Mode','Est. Date End','Date Note'];
+    for (var c = 13; c <= 17; c++) {
+      if (lastCol < c) sheet.getRange(1, c).setValue(headers[c - 13]).setFontWeight('bold');
+    }
   }
   return sheet;
 }
@@ -5336,12 +5456,7 @@ function getIncoming(sessionToken) {
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     if (!row[0]) continue;
-    var estDate = '';
-    if (row[1] instanceof Date) {
-      estDate = Utilities.formatDate(row[1], Session.getScriptTimeZone(), 'yyyy-MM-dd');
-    } else if (row[1]) {
-      estDate = String(row[1]).substring(0, 10);
-    }
+    var estDate = incomingCellDate_(row[1]);
     results.push({
       id:       String(row[0]),
       estDate:  estDate,
@@ -5356,13 +5471,33 @@ function getIncoming(sessionToken) {
       addedBy:  String(row[10] || ''),
       addedAt:  String(row[11] || ''),
       pm:       String(row[12] || ''),
-      docLink:  String(row[13] || '')
+      docLink:  String(row[13] || ''),
+      dateMode:   incomingDateMode_(row[14]),
+      estDateEnd: incomingCellDate_(row[15]),
+      dateNote:   String(row[16] || '')
     });
   }
-  // Return sorted nearest-first
+  // Nearest first, and anything with no date at all last rather than first —
+  // an empty string sorts before every real date, so "we don't know yet" used
+  // to jump the queue ahead of tomorrow's delivery.
   return results.sort(function(a, b) {
-    return (a.estDate || '') < (b.estDate || '') ? -1 : 1;
+    var ka = a.estDate || '9999-12-31';
+    var kb = b.estDate || '9999-12-31';
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
   });
+}
+
+// Sheets hands back a Date for a date-formatted cell and a string for anything
+// else; both have to come out as YYYY-MM-DD.
+function incomingCellDate_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return v ? String(v).substring(0, 10) : '';
+}
+
+// Noon rather than midnight, so converting the string to a Date cannot land on
+// the previous day in a timezone west of the script's.
+function incomingDateCell_(ymd) {
+  return ymd ? new Date(String(ymd) + 'T12:00:00') : '';
 }
 
 function addIncoming(data) {
@@ -5371,8 +5506,9 @@ function addIncoming(data) {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ensureIncomingSheet_(ss);
   var id    = 'INC-' + new Date().getTime();
-  // Add noon UTC to avoid timezone shift when GAS converts string→Date
-  var estDate = data.estDate ? new Date(data.estDate + 'T12:00:00') : '';
+  var mode    = incomingDateMode_(data.dateMode);
+  var estDate = incomingDateCell_(mode === 'unknown' ? '' : data.estDate);
+  var estEnd  = incomingDateCell_(mode === 'window'  ? data.estDateEnd : '');
   var docLink = uploadIncomingDoc_(data.docFile, data.name, data.po);
   sheet.appendRow([
     id,
@@ -5388,7 +5524,10 @@ function addIncoming(data) {
     auth.email,
     new Date(),
     sheetSafe_(String(data.pm       || '')),
-    docLink
+    docLink,
+    mode,
+    estEnd,
+    sheetSafe_(String(data.dateNote || ''))
   ]);
   return { status: 'success', id: id, docLink: docLink };
 }
@@ -5412,12 +5551,15 @@ function updateIncoming(data) {
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]) === String(data.id)) {
-      var estDate = data.estDate ? new Date(data.estDate + 'T12:00:00') : values[i][1];
+      var mode    = incomingDateMode_(data.dateMode);
+      var estDate = mode === 'unknown' ? ''
+                  : (data.estDate ? incomingDateCell_(data.estDate) : values[i][1]);
+      var estEnd  = incomingDateCell_(mode === 'window' ? data.estDateEnd : '');
       // New file replaces the old link; otherwise keep whatever was there (col N, idx 13)
       var docLink = data.docFile && data.docFile.fileData
         ? uploadIncomingDoc_(data.docFile, data.name, data.po)
         : (values[i][13] || '');
-      sheet.getRange(i + 1, 1, 1, 14).setValues([[
+      sheet.getRange(i + 1, 1, 1, 17).setValues([[
         data.id,
         estDate,
         sheetSafe_(String(data.category || '').toUpperCase().trim()),
@@ -5431,7 +5573,10 @@ function updateIncoming(data) {
         values[i][10],          // preserve addedBy
         values[i][11],          // preserve addedAt
         sheetSafe_(String(data.pm || '')),  // PM — Project Manager
-        docLink
+        docLink,
+        mode,
+        estEnd,
+        sheetSafe_(String(data.dateNote || ''))
       ]]);
       return { status: 'success', docLink: docLink };
     }
