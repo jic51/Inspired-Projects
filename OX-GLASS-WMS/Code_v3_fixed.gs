@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.59';
+var APP_VERSION = '9.62';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -88,6 +88,92 @@ function companySettings_() {
 function publicCompany_() {
   var cs = companySettings_();
   return { name: cs.name, domain: cs.domain, logoId: cs.logoId, productName: PRODUCT_NAME };
+}
+
+// ─── UNA SOLA CARPETA MAESTRA ────────────────────────────────────────────────
+// Las tres carpetas de la app nacían sueltas en la raíz del Drive del dueño, y
+// la hoja quedaba en un cuarto sitio. Con dos o tres instalaciones de prueba
+// eso ya es un Drive imposible de ordenar — y el día que un cliente pide
+// soporte, hay que buscar en un Drive que no es el nuestro.
+//
+// Los NOMBRES no cambian, solo la ubicación. Es deliberado: el chequeo de
+// seguridad de los adjuntos compara por nombre, y renombrar la carpeta de
+// documentos es exactamente lo que dejó archivos huérfanos una vez. Mover es
+// seguro — Drive identifica por ID, no por dónde está.
+//
+//   Acopio_<Empresa>/                       ← maestra
+//   ├── <Empresa> — Acopio                  ← la hoja
+//   ├── Acopio_<Empresa>_Docs/
+//   ├── Acopio_<Empresa>_Backups/
+//   └── Acopio_<Empresa>_Feedback/
+function masterFolderName_() { return companySettings_().folderPrefix; }
+
+function getMasterFolder_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('FOLDER_MASTER');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }   // borrada o movida a papelera
+  var f = DriveApp.createFolder(masterFolderName_());
+  try { props.setProperty('FOLDER_MASTER', f.getId()); } catch (e) {}
+  return f;
+}
+
+// Ordenar es una comodidad, nunca una razón para que falle una subida: si Drive
+// se niega a mover algo, el archivo ya está guardado y eso es lo que importa.
+function ensureUnderMaster_(item) {
+  try {
+    var master = getMasterFolder_();
+    if (item.getId() === master.getId()) return;
+    var parents = item.getParents();
+    while (parents.hasNext()) if (parents.next().getId() === master.getId()) return;
+    item.moveTo(master);
+  } catch (e) {
+    Logger.log('ensureUnderMaster_: ' + e.message);
+  }
+}
+
+// Recoge lo que ya existe suelto y lo mete en la maestra. Para instalaciones
+// anteriores a esto, y como reparación si alguien mueve algo de sitio.
+function organizeDriveFolders_() {
+  var moved = [];
+  var master = getMasterFolder_();
+
+  [docsFolderName_(), backupFolderName_(), feedbackFolderName_()].forEach(function (name) {
+    var key = 'FOLDER_' + name.replace(/\W/g, '_');
+    var id  = PropertiesService.getScriptProperties().getProperty(key);
+    if (!id) return;                       // nunca se creó: nada que mover
+    try {
+      var f = DriveApp.getFolderById(id);
+      var already = false;
+      var ps = f.getParents();
+      while (ps.hasNext()) if (ps.next().getId() === master.getId()) already = true;
+      if (!already) { f.moveTo(master); moved.push(f.getName()); }
+    } catch (e) { Logger.log('organizeDriveFolders_ ' + name + ': ' + e.message); }
+  });
+
+  // La hoja también. Es el archivo que el cliente abre a diario, así que vivir
+  // fuera de su propia carpeta es justo lo que hace difícil encontrarla.
+  try {
+    var ss   = SpreadsheetApp.getActiveSpreadsheet();
+    var file = DriveApp.getFileById(ss.getId());
+    var inMaster = false;
+    var fps = file.getParents();
+    while (fps.hasNext()) if (fps.next().getId() === master.getId()) inMaster = true;
+    if (!inMaster) { file.moveTo(master); moved.push(file.getName()); }
+  } catch (e) { Logger.log('organizeDriveFolders_ sheet: ' + e.message); }
+
+  PropertiesService.getScriptProperties().setProperty('DRIVE_ORGANIZED', 'true');
+  return { master: master.getName(), moved: moved };
+}
+
+function menuOrganizeDrive() {
+  var ui = SpreadsheetApp.getUi();
+  var r = organizeDriveFolders_();
+  ui.alert('📁 ' + PRODUCT_NAME + ' — Drive',
+    r.moved.length
+      ? 'Everything now lives in one folder:\n\n' + r.master + '\n\nMoved:\n  • ' + r.moved.join('\n  • ') +
+        '\n\nNothing was renamed and nothing was lost — only the location changed.'
+      : 'Already tidy. Everything is in ' + r.master + '.',
+    ui.ButtonSet.OK);
 }
 
 function docsFolderName_()     { return companySettings_().folderPrefix + '_Docs'; }
@@ -292,6 +378,10 @@ function saveSetupWizard(data) {
   });
 
   if (data.enableBackup) { try { ensureBackupTrigger_(); } catch (e) {} }
+
+  // Con el nombre de la empresa ya definido, la carpeta maestra puede nacer con
+  // el nombre correcto y la hoja mudarse a ella de una vez.
+  try { organizeDriveFolders_(); } catch (e) { Logger.log('organizeDriveFolders_: ' + e.message); }
 
   // Populates LIVE_STOCK / SITE_STOCK / WASTED_STOCK with their headers (and
   // any stock, on a copy that already has movements) so the first load reads a
@@ -1570,6 +1660,7 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'mergeLocations')     return mergeLocations(data, auth);
   if (action === 'saveColumnPrefs')    return saveColumnPrefs(data, auth);
   if (action === 'saveCompanyProfile') return saveCompanyProfile(data, auth);
+  if (action === 'parseIncomingEmail') return parseIncomingEmail(data, auth);
   // ── Material management (ADMIN only) ──────────────────────────────────────
   if (action === 'listMaterials')  return listMaterials(auth);
   if (action === 'manageMaterial') return manageMaterial(data, auth);
@@ -3442,6 +3533,9 @@ function getOrCreateFolder_(path) {
         // folder gets created rather than the original being found. Caching
         // every level (above) is what keeps that from happening in practice.
         next = DriveApp.createFolder(parts[i]);
+        // Nace ya dentro de la carpeta maestra, así que una instalación nueva
+        // nunca deja nada suelto en la raíz.
+        ensureUnderMaster_(next);
       }
       try { props.setProperty(cacheKey, next.getId()); } catch (e) {}
     }
@@ -4273,6 +4367,7 @@ function onOpen() {
     .addItem('🧹 Normalize Status Column (run once)', 'menuNormalizeStatus')
     .addItem('Push Update Live (owner, standard Cloud project only)', 'menuActivateWebApp')
     .addSeparator()
+    .addItem('📁 Tidy up my Drive (one folder for everything)', 'menuOrganizeDrive')
     .addItem('🩺 Check this installation', 'menuCheckInstallation')
     .addItem('🔎 Check if this copy is a clean template', 'menuVerifyMasterTemplate')
     .addItem('💣 Erase everything — make this a blank template', 'menuPrepareMasterTemplate');
@@ -5847,6 +5942,128 @@ function deleteIncoming(id, sessionToken) {
     }
   }
   throw new Error('Incoming item not found: ' + id);
+}
+
+// ─── READ AN EMAIL INTO EXPECTED DELIVERIES ──────────────────────────────────
+// The supplier's confirmation email already contains everything an "expected
+// delivery" record needs. Retyping it is the boring, error-prone part of the
+// job, and it is the reason the Incoming tab sits empty in most installations.
+//
+// This takes the text of the email — pasted in, no Gmail permission of any
+// kind — and returns DRAFTS for a person to check before anything is saved. It
+// never writes: extraction from prose is a guess, and a guess that saves itself
+// is how a warehouse ends up with deliveries nobody ordered.
+//
+// Reading the message the user pastes needs no scope at all. That is the whole
+// point: the alternative, searching their mailbox, needs Google's restricted
+// mail scope and an annual paid audit to distribute (see isGmailScanEnabled).
+function parseIncomingEmail(data, auth) {
+  auth = requireAuth_('ADMIN');
+  // One email is one Gemini call against the owner's paid quota.
+  requireQuota_('emailparse', auth.email, 20, 600);
+
+  var text = String((data && data.text) || '').trim();
+  if (!text) throw new Error('Paste the email first.');
+  if (text.length < 25) throw new Error('That is too short to read anything out of.');
+  if (text.length > 12000) text = text.substring(0, 12000);
+
+  var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) throw new Error(
+    'This needs a Gemini API key, which has not been set up on this system.\n\n' +
+    'An admin adds it once: Apps Script editor → ⚙ Project Settings → Script Properties\n' +
+    'Property: GEMINI_API_KEY   Value: a key from aistudio.google.com\n\n' +
+    'The key is yours and the usage is billed to you by Google, not by us.'
+  );
+
+  // The customer's own categories and units, so the answer lands on the lists
+  // this installation actually uses instead of inventing new ones.
+  var cfg   = loadConfig();
+  var cats  = (cfg.categories || []).slice(0, 40);
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  var prompt =
+    'You are reading an email for a warehouse, to record what is ARRIVING and when.\n' +
+    'Today is ' + today + '. Resolve any relative date against that.\n\n' +
+    'Return ONLY a JSON array — no markdown, no explanation. One object per distinct\n' +
+    'material being delivered. If the email is not about a delivery at all, return [].\n\n' +
+    '{\n' +
+    '  "name":     "what is arriving, as specific as the email allows",\n' +
+    '  "category": ' + (cats.length ? 'one of: ' + cats.join(' | ') + ' (or null if none fit)' : 'null') + ',\n' +
+    '  "qty":      number or null,\n' +
+    '  "unit":     "UNIT | SQ FT | LN FT | PIECE | BOX | PALLET",\n' +
+    '  "supplier": "who is sending it",\n' +
+    '  "po":       "PO or order number",\n' +
+    '  "pm":       "project manager or contact named, if any",\n' +
+    '  "dateMode": "exact | window | about | unknown",\n' +
+    '  "estDate":  "YYYY-MM-DD or null",\n' +
+    '  "estDateEnd":"YYYY-MM-DD or null, only when dateMode is window",\n' +
+    '  "dateNote": "the words the email used about timing, verbatim and short",\n' +
+    '  "notes":    "tracking number, delivery instructions, anything else useful"\n' +
+    '}\n\n' +
+    'RULES ABOUT THE DATE — these matter more than anything else here:\n' +
+    '- A named day ("arriving Sept 3", "ships Monday") → "exact".\n' +
+    '- A range ("between the 5th and the 10th") → "window", with both dates.\n' +
+    '- Vague but bounded ("next week", "in about 2 weeks", "end of the month")\n' +
+    '  → "about", estDate = your best single date, dateNote = their words.\n' +
+    '- Nothing about timing, or explicitly unknown ("we will confirm", "waiting\n' +
+    '  on the factory") → "unknown", estDate = null, dateNote = why if it says.\n' +
+    '- NEVER invent a date to fill the field. "unknown" is a correct answer and\n' +
+    '  a wrong date is worse than no date — nobody can tell them apart later.\n\n' +
+    'Use null for anything the email does not say. Do not guess quantities.\n\n' +
+    'EMAIL:\n' + text;
+
+  var response = geminiFetch_({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.05, maxOutputTokens: 2048 }
+  }, apiKey);
+
+  var code = response.getResponseCode();
+  var body = response.getContentText();
+  if (code === 429) throw new Error('The AI is over its quota for now. Try again in a few minutes.');
+  if (code !== 200) {
+    Logger.log('parseIncomingEmail HTTP ' + code + ': ' + body.substring(0, 400));
+    throw new Error('The AI could not be reached (HTTP ' + code + '). Check the Gemini key in Script Properties.');
+  }
+
+  var items = [];
+  try {
+    var raw = JSON.parse(body).candidates[0].content.parts[0].text;
+    raw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    var start = raw.indexOf('['), end = raw.lastIndexOf(']');
+    if (start !== -1 && end !== -1) raw = raw.substring(start, end + 1);
+    items = JSON.parse(raw) || [];
+  } catch (e) {
+    Logger.log('parseIncomingEmail parse error: ' + e.message + ' | ' + body.substring(0, 400));
+    throw new Error('The AI answered in a shape this could not read. Try pasting a bit less of the email.');
+  }
+  if (!Array.isArray(items)) items = [];
+
+  // Everything the model returns is normalised here rather than trusted. A
+  // date mode outside the four we support, or an end date on something that is
+  // not a window, would be written straight into the sheet otherwise.
+  var out = items.slice(0, 20).map(function (it) {
+    it = it || {};
+    var mode = incomingDateMode_(it.dateMode);
+    if (!it.estDate) mode = (mode === 'window' || mode === 'about') ? 'unknown' : mode;
+    if (mode === 'unknown') it.estDate = '';
+    if (mode !== 'window') it.estDateEnd = '';
+    return {
+      name:       String(it.name || '').trim().substring(0, 120),
+      category:   String(it.category || '').toUpperCase().trim().substring(0, 40),
+      qty:        Number(it.qty) > 0 ? Number(it.qty) : 0,
+      unit:       String(it.unit || 'UNIT').toUpperCase().trim().substring(0, 20),
+      supplier:   String(it.supplier || '').trim().substring(0, 80),
+      po:         String(it.po || '').trim().substring(0, 40),
+      pm:         String(it.pm || '').trim().substring(0, 80),
+      dateMode:   mode,
+      estDate:    String(it.estDate || '').substring(0, 10),
+      estDateEnd: String(it.estDateEnd || '').substring(0, 10),
+      dateNote:   String(it.dateNote || '').trim().substring(0, 60),
+      notes:      String(it.notes || '').trim().substring(0, 300)
+    };
+  }).filter(function (it) { return it.name; });
+
+  return { status: 'success', items: out };
 }
 
 // ─── GMAIL SCANNER ───────────────────────────────────────────────────────────
