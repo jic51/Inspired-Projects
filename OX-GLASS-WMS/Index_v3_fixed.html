@@ -90,14 +90,34 @@
     .nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
     .nav button.active{background:var(--accent);color:#fff}
     .author-badge{background:rgba(0,0,0,.2);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.7rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
-    /* Left-aligned identity stack on real screens — logo, company name, the
-       Acopio badge right under it, tight. Jose: this reads as a lockup, not
-       three separate things scattered in a row. Left as the existing row
-       layout below 769px — the small-screen topbar is cramped enough
-       already without stacking three lines of brand into it too. */
+    /* Left-aligned identity stack — logo, company name, the Acopio badge
+       right under it, tight. Jose: this reads as a lockup, not three
+       separate things scattered in a row, and (v9.89, emphatic) Acopio has
+       to stay under the company name on EVERY screen size, never beside it
+       — so unlike the header-merge below, this one is NOT gated to wide
+       screens; a phone stacks the same three lines too now. */
+    .topbar-brand{flex-direction:column;align-items:flex-start;gap:3px}
+    .brand-mark{align-items:flex-start}
     @media (min-width:769px){
-      .topbar-brand{flex-direction:column;align-items:flex-start;gap:3px}
-      .brand-mark{align-items:flex-start}
+      /* Jose (v9.89, image reference): the brand block used to sit in its own
+         full-width row above the tabs, leaving that whole row mostly empty
+         space to the right of it. Bringing it down to sit beside the tabs
+         instead removes that row entirely on a screen with room to spare.
+         .topbar-row2's own internal grid (nav centred, tools right-aligned)
+         is untouched — it just now sizes against the space left over after
+         the brand block, rather than the full topbar width. Narrower than
+         this, row1 stays exactly where it always was, above row2 — Jose's
+         own words, it still "jumps above the tabs" the moment the window
+         shrinks past this same breakpoint. */
+      /* flex-wrap, not a second fixed breakpoint: a longer company name (a
+         future customer, not just OX Glass) needs more room before row2 fits
+         beside it than a short one does. Letting the row wrap on its own
+         content, rather than guessing one pixel width that happens to work
+         for "PRODUCTION OX GLASS", is what makes row2 actually jump back
+         above the tabs exactly when it stops fitting — for any name. */
+      .topbar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:.4rem 1.25rem}
+      .topbar-row1{flex-shrink:0}
+      .topbar-row2{flex:1 1 auto}
     }
     /* ── LAYOUT ── */
     .container{max-width:1400px;margin:0 auto;padding:1.25rem;flex-grow:1;width:100%}
@@ -607,7 +627,10 @@
     .lg-table th,.lg-table td{border:1px solid var(--border);padding:.4rem .55rem;text-align:left;vertical-align:top}
     .lg-table th{background:var(--bg);font-weight:700}
     @media(max-width:640px){
-      .acct-menu{position:fixed;left:50%;right:auto;top:50%;transform:translate(-50%,-50%);width:calc(100vw - 2rem);max-width:360px;max-height:84vh;overflow-y:auto;animation:none}
+      /* Jose: 3/4 of the screen, not nearly the whole thing (v9.89) — the
+         bell panel and Rack Drawer went to 2/3 in v9.86; this one is
+         explicitly wider than those, at his request. */
+      .acct-menu{position:fixed;left:50%;right:auto;top:50%;transform:translate(-50%,-50%);width:75vw;max-width:420px;max-height:84vh;overflow-y:auto;animation:none}
     }
     .presence-user{display:flex;align-items:center;gap:.5rem;padding:.5rem 1rem;font-size:.78rem;border-bottom:1px solid var(--border)}
     .presence-user:last-child{border-bottom:none}
@@ -1361,12 +1384,17 @@
       .topbar-row2{display:flex;flex-wrap:nowrap}
       .topbar-row2 .nav{flex:1 1 auto;margin:0}
       .topbar-tools{flex-direction:column;gap:8px;align-items:center;margin-left:auto}
-      /* The account tooltip normally drops 8px below the avatar, but right
-         here the notification bell is stacked directly beneath it with that
-         same 8px gap — Jose caught the bell rendering right through the
-         tooltip's name/role text. Clearing the bell's own height (34px) plus
-         its gap pushes the tooltip safely below both instead. */
-      #acctBtn.tip::after{top:calc(100% + 46px)}
+      /* v9.88 pushed the tooltip down to clear the bell here; Jose (v9.90)
+         asked for it back at its natural spot instead — most people won't
+         hold the hover long enough to read a tooltip shoved down into the
+         page below. The actual problem was never the position, it was that
+         the bell rendered THROUGH the tooltip's text. Fading the bell out
+         while the tooltip is up removes that fight outright, timed to the
+         same 4s delay the tooltip itself already waits on so nothing here
+         needs a second number to stay in sync. pointer-events:none with it
+         so an invisible bell can't still eat a stray tap underneath. */
+      .topbar-tools:has(#acctBtn.tip:hover) #cfgBellBtn,
+      .topbar-tools:has(#acctBtn.tip:focus-visible) #cfgBellBtn{opacity:0;pointer-events:none;transition:opacity .15s ease 4s}
     }
     @media (max-width:520px){
       .setup-nudge{left:12px;right:auto;width:calc(50vw - 18px);max-width:none}
@@ -2568,7 +2596,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '9.88';
+var APP_VERSION = '9.90';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
