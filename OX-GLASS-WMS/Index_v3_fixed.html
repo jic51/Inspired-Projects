@@ -5,6 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Acopio — Warehouse Management</title>
+  <!-- Default tab icon — the Acopio mark (same one on the splash screen), a
+       navy tile with the stacked-layers glyph. Web apps served through Apps
+       Script otherwise fall back to a generic Apps Script icon, which is what
+       Jose was seeing. applyCompanyBranding() swaps this for the company's
+       own uploaded logo once one exists — see the c.logoId branch there. -->
+  <link rel="icon" id="appFavicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231B2A4A'/%3E%3Cpath d='M12 4L4 8l8 4 8-4-8-4zM4 15l8 4 8-4M4 11l8 4 8-4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -52,9 +58,16 @@
        pinned to the right edge and stays there at every width. Auto margins on
        the nav absorb the free space evenly on both sides, which centres it
        without a spacer element and without unpinning the cluster. */
-    .topbar-row2{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
-    .topbar-row2 .nav{margin:0 auto}
-    .topbar-tools{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:auto}
+    /* THREE COLUMNS, not auto margins. `margin:0 auto` on the tabs and
+       `margin-left:auto` on the cluster made THREE auto margins share the free
+       space, so the tabs settled a third of the way along instead of in the
+       middle — which is the lopsided bar Jose measured with red pen. An empty
+       first column the same width as the third puts the tabs dead centre of the
+       whole bar, wherever the cluster happens to end up. minmax(0,…) lets the
+       tab bar give way first when the window narrows, as it did before. */
+    .topbar-row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto) minmax(0,1fr);align-items:center;gap:10px}
+    .topbar-row2 .nav{grid-column:2;justify-self:center;margin:0}
+    .topbar-tools{grid-column:3;justify-self:end;display:flex;align-items:center;gap:10px;flex-shrink:0}
     .tools-primary{display:flex;align-items:center;gap:9px}
     /* The Acopio badge with the running version tucked under it — present
        enough to read when someone asks "what version are you on?", quiet
@@ -64,12 +77,28 @@
     .ver-bad{color:#fff;background:rgba(255,0,0,.55);border-radius:4px;padding:2px 6px;font-size:.62rem}
     .topbar h1{color:#fff;font-size:1.1rem;font-weight:700}
     .topbar-brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .app-logo{height:30px;max-width:150px;object-fit:contain;border-radius:4px;flex-shrink:0}
+    /* A framed light card, not the raw upload floating on navy — most
+       logos customers upload have a white or light background of their own,
+       and showing that background directly against navy read as a mistake.
+       Framing it neutrally is what the wizard's own logo preview and the
+       Company tab's preview box already do; the header/splash were the two
+       spots that still showed the raw image. */
+    .app-logo{height:24px;max-width:150px;object-fit:contain;border-radius:4px;flex-shrink:0;
+      background:#F3F4F6;padding:4px 7px;box-sizing:content-box}
     .nav{display:flex;gap:2px;background:var(--steel);padding:3px;border-radius:8px;flex-wrap:wrap;flex-shrink:1;min-width:0;max-width:100%}
     .nav button{background:none;border:none;color:rgba(255,255,255,.6);padding:.45rem clamp(.4rem,1.5vw,1rem);border-radius:6px;font-size:clamp(.68rem,1.2vw,.8rem);font-weight:600;transition:.2s;white-space:nowrap}
     .nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
     .nav button.active{background:var(--accent);color:#fff}
     .author-badge{background:rgba(0,0,0,.2);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.7rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
+    /* Left-aligned identity stack on real screens — logo, company name, the
+       Acopio badge right under it, tight. Jose: this reads as a lockup, not
+       three separate things scattered in a row. Left as the existing row
+       layout below 769px — the small-screen topbar is cramped enough
+       already without stacking three lines of brand into it too. */
+    @media (min-width:769px){
+      .topbar-brand{flex-direction:column;align-items:flex-start;gap:3px}
+      .brand-mark{align-items:flex-start}
+    }
     /* ── LAYOUT ── */
     .container{max-width:1400px;margin:0 auto;padding:1.25rem;flex-grow:1;width:100%}
     .section{display:none}.section.active{display:block}
@@ -163,16 +192,24 @@
     .rack-card.rack-dim{opacity:.22}
     [data-theme="dark"] .map-letter-hdr{color:#cfe0ff}
     /* Rack Detail Drawer */
-    .rack-drawer{position:fixed;right:0;top:0;bottom:0;width:min(400px,100vw);background:var(--card);box-shadow:-6px 0 28px rgba(0,0,0,.18);z-index:500;transform:translateX(110%);transition:transform .25s ease;display:flex;flex-direction:column}
+    /* Jose: on a phone this was hitting the 100vw side of the min() and
+       covering almost the whole screen — capped at two-thirds of the
+       viewport instead, same as the "not on your lists" bell panel. Still
+       400px max on anything wider than a phone, unchanged from before. */
+    .rack-drawer{position:fixed;right:0;top:0;bottom:0;width:min(400px,66.667vw);background:var(--card);box-shadow:-6px 0 28px rgba(0,0,0,.18);z-index:500;transform:translateX(110%);transition:transform .25s ease;display:flex;flex-direction:column}
     .rack-drawer.open{transform:translateX(0)}
     .rack-drawer-hdr{background:var(--navy);color:#fff;padding:.85rem 1.1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .rack-drawer-hdr h3{font-size:1rem;font-weight:700;margin:0}
     .rack-drawer-hdr button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.85rem}
-    .rack-drawer-actions{display:flex;gap:.5rem;padding:.75rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0}
     .rack-drawer-body{flex:1;overflow-y:auto;padding:.5rem}
     .rdw-item{display:flex;align-items:center;gap:.5rem;padding:.5rem .65rem;border-radius:7px;margin-bottom:3px;transition:background .12s}
     .rdw-item:hover{background:#F8FAFC}
-    .rdw-name{flex:1;font-size:.83rem;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .rdw-name{flex:1;font-size:.83rem;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+    .rdw-name:after{content:'▾';margin-left:.35rem;font-size:.7rem;color:var(--muted);display:inline-block;transition:transform .15s}
+    .rdw-name.rdw-name-open:after{transform:rotate(180deg)}
+    .rdw-item-wrap{margin-bottom:3px}
+    .rdw-item-wrap .rdw-item{margin-bottom:0}
+    .rdw-actions{display:none;gap:.4rem;padding:.1rem .65rem .6rem 1.6rem;flex-wrap:wrap}
     .rdw-rack-qty{font-size:.82rem;font-weight:700;color:var(--red);flex-shrink:0}
     .rdw-total-qty{font-size:.72rem;color:var(--muted);flex-shrink:0}
     .rdw-lock-badge{flex-shrink:0;font-size:.9rem;cursor:default}
@@ -350,6 +387,10 @@
     .exit-avail.ok{color:var(--green);background:var(--green-bg)}
     .exit-avail.warn{color:var(--red);background:var(--red-bg)}
     .exit-avail.neutral{color:var(--muted);background:#F3F4F6}
+    /* Tap the green available number to fill the qty field with it — only the
+       "ok" state is a real number worth one-tapping into place. */
+    .exit-avail.ok, .el-avail.ok, .mstock-avail.ok{cursor:pointer}
+    .exit-avail.ok:hover, .el-avail.ok:hover{text-decoration:underline}
     .exit-row .btn-remove-loc{background:var(--red-bg);color:var(--red);border:none;border-radius:5px;padding:5px 9px;cursor:pointer;font-size:.85rem;font-weight:700;line-height:1;transition:.15s;flex-shrink:0}
     .exit-row .btn-remove-loc:hover{background:var(--red);color:#fff}
     /* ── MULTI-PAIR TRANSFER ── */
@@ -476,6 +517,20 @@
       100%      {transform:rotate(360deg)}
     }
     .spin-hg{display:inline-block;animation:hg-flip 2.6s ease-in-out infinite;will-change:transform}
+    /* ── SWITCH ──────────────────────────────────────────────────────────────
+       For settings that are ON or OFF and take effect immediately. A checkbox
+       would work, but a checkbox reads as "part of a form I still have to
+       submit", and this one acts the moment it moves. Built on a real
+       <input type="checkbox"> so the keyboard and screen readers get it free. */
+    .sw{position:relative;display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
+    .sw input{position:absolute;opacity:0;width:44px;height:24px;margin:0;cursor:pointer}
+    .sw-track{width:44px;height:24px;border-radius:999px;background:var(--border);transition:background .2s ease;flex:none;position:relative}
+    .sw-track::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .2s cubic-bezier(.22,.61,.36,1)}
+    .sw input:checked + .sw-track{background:var(--green)}
+    .sw input:checked + .sw-track::after{transform:translateX(20px)}
+    .sw input:focus-visible + .sw-track{box-shadow:0 0 0 3px rgba(59,125,216,.35)}
+    .sw input:disabled + .sw-track{opacity:.5;cursor:wait}
+    .sw-text{font-size:.85rem;font-weight:600}
     /* ── BUTTONS THAT ARE WORKING ────────────────────────────────────────────
        A real spinner, drawn in CSS from the button's own text colour, so the
        same rule works on a white button and on a red one. The ⏳ it replaces was
@@ -616,10 +671,6 @@
     @media (hover:none){.rack-photo-card .rpc-btn{opacity:1}}
     [data-theme="dark"] .rack-photo-card{background:#0F172A}
     /* Rack drawer keeps the large photo — it's a panel about one rack. */
-    .rdp-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:pointer;background:#F3F4F6;border-radius:8px}
-    .rdp-empty{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.75rem;background:#F3F4F6;flex-direction:column;gap:.3rem;border-radius:8px}
-    .rdp-btn{font-size:.72rem;background:var(--border);color:var(--text);border:none;border-radius:6px;padding:.3rem .6rem;cursor:pointer;transition:.15s;margin-top:.4rem}
-    .rdp-btn:hover{background:var(--accent);color:#fff}
     /* ── SETTINGS MODAL — vertical sidebar layout ──
        .settings-tab keeps its base look (used by JS toggling .active) but now
        lays out as a full-width sidebar row instead of an inline pill, so a long
@@ -738,6 +789,35 @@
        actual fix for the horizontal-scroll bug (setting overflow-y alone makes
        browsers compute overflow-x as "auto" too, per the CSS overflow spec, so
        any box that's ever even 1px too wide silently added a horizontal scrollbar). */
+    /* ── LOW-STOCK MONITOR ───────────────────────────────────────────────────
+       It used to open as every material in the warehouse at once — hundreds of
+       boxes, and the question "which of these do I care about?" answered by
+       scrolling. It now starts from the question a warehouse manager actually
+       asks first: WHICH CATEGORY do I want to watch something in? Nothing but
+       the category names to begin with; a category opens only when you pick it.
+       A chip is grey — the same grey the app uses for anything switched off —
+       until it is chosen, and then it takes its category's own colour. */
+    .mon-chips{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;padding:.25rem 0 .85rem;border-bottom:1px solid var(--border);margin-bottom:.6rem}
+    .mon-chip{border:1px solid var(--border);background:var(--bg);color:var(--muted);border-radius:999px;padding:.4rem .9rem;font-size:.76rem;font-weight:700;font-family:inherit;cursor:pointer;transition:.18s;letter-spacing:.02em}
+    .mon-chip:hover{border-color:var(--accent);color:var(--text)}
+    .mon-chip .mon-chip-n{font-weight:600;opacity:.7;margin-left:.3rem}
+    /* Active: the badge colours the rest of the app already gives this category,
+       so the chip and the material's own badge agree without a second palette. */
+    .mon-chip.on{color:#fff;border-color:transparent}
+    .mon-chip.on.badge-blue{background:var(--accent2)}   .mon-chip.on.badge-teal{background:#0D9488}
+    .mon-chip.on.badge-navy{background:var(--navy)}      .mon-chip.on.badge-orange{background:var(--orange)}
+    .mon-chip.on.badge-pink{background:#DB2777}          .mon-chip.on.badge-purple{background:var(--purple)}
+    .mon-chip.on.badge-yellow{background:var(--yellow)}  .mon-chip.on.badge-dark{background:#334155}
+    /* Only eleven categories have a colour of their own; everything else falls
+       to badge-gray, and grey is the OFF state — an unmapped category would
+       have looked switched off while switched on. The accent is unambiguous. */
+    .mon-chip.on.badge-green{background:var(--green)}    .mon-chip.on.badge-gray{background:var(--accent)}
+    .mon-picked-hdr{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:.6rem .15rem .35rem;margin-top:.5rem;border-bottom:1px solid var(--border)}
+    .mon-empty{padding:1.4rem .5rem;text-align:center;color:var(--muted);font-size:.82rem;line-height:1.6}
+    /* Min is dead until its checkbox is ticked — a threshold on a material
+       nobody is watching is a number that does nothing. */
+    .mon-min-inp:disabled{background:var(--bg);color:var(--muted);cursor:not-allowed;opacity:.6}
+    .monitor-item.off{opacity:.72}
     .monitor-grid{max-height:50vh;overflow-y:auto;overflow-x:hidden;padding:.25rem}
     .monitor-cat-hdr{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.72rem;font-weight:700;color:var(--muted);padding:.5rem .15rem .35rem;margin-top:.4rem;border-bottom:1px solid var(--border)}
     .monitor-cat-hdr:first-child{margin-top:0}
@@ -810,23 +890,70 @@
        rotated corners and the badge to sit OUTSIDE the top card. */
     .deck{position:fixed;right:22px;bottom:22px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(400px,calc(100vw - 44px));padding:16px 12px 0 14px}
     .deck:empty{display:none}
+    /* Reading the pile should not mean the page slides around underneath it.
+       Scroll only — no backdrop, no dimming: this is a corner of the screen
+       asking for a moment, not a window demanding the room. The page scrollbar
+       is already hidden (see html{scrollbar-width:none}), so nothing reflows
+       when it locks. */
+    html.deck-open{overflow:hidden}
     /* Each kind carries its own size, and the collapse is computed FROM that
        size rather than from one hardcoded number — so a mixed pile still
        collapses exactly, whatever is in it. Colour alone was not enough of a
        difference: a notification holds a sentence and needs the width to show
        it, a suggestion holds one name and a pair of buttons. */
-    .deck-card{position:relative;--card-h:96px;--card-w:270px;width:var(--card-w);max-width:100%;height:var(--card-h);flex-shrink:0;border-radius:11px;padding:.62rem .8rem;font-size:.78rem;box-shadow:0 6px 20px rgba(0,0,0,.22);transition:margin .5s ease,transform .5s ease,background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease}
+    /* One place for the pace of the whole pile. Jose asked for "2 out of 5" —
+       unhurried enough that the eye follows what moved, short of the point
+       where waiting for it becomes the feeling. */
+    .deck{--deck-in:.62s;--deck-out:.5s;--deck-ease:cubic-bezier(.22,.61,.36,1);--deck-step:55ms}
+    /* transform-origin lives HERE, unconditionally, not only on the resting
+       rule below. It used to be set only while the pile was closed, so the
+       instant the pile opened that rule stopped matching and the origin
+       snapped back to the CSS default (dead centre) one frame before the
+       scale transition even started — which is exactly the "jump toward the
+       middle, then grow" Jose caught on video. One constant anchor for every
+       state is what makes a card grow from the corner it actually sits in. */
+    .deck-card{position:relative;--card-h:96px;--card-w:270px;width:var(--card-w);max-width:100%;height:var(--card-h);flex-shrink:0;border-radius:11px;padding:.62rem .8rem;font-size:.78rem;box-shadow:0 6px 20px rgba(0,0,0,.22);transform-origin:bottom right;transition:margin var(--deck-in) var(--deck-ease),transform var(--deck-in) var(--deck-ease),opacity var(--deck-out) ease,background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease}
+    /* Fanning out: all at once, each a beat behind the one in front, so the pile
+       reads as paper being spread rather than a list appearing. --i is written
+       by _paintDeck, counting back from the card on top. Unconditional now —
+       not scoped to .open — so CLOSING fans back in on the same stagger
+       instead of every card snapping shut in lockstep the instant the pointer
+       leaves. */
+    .deck-card{transition-delay:calc(var(--i, 0) * var(--deck-step))}
+    /* Open, the cards need air between them and a lighter shadow. The resting
+       shadow is tuned for ONE card lifting off the page; repeated down a fan it
+       lands in the gap between two white cards and reads as a dark bar. */
+    .deck.open .deck-card{box-shadow:0 4px 14px rgba(0,0,0,.13)}
+    .deck.open .deck-card + .deck-card{margin-top:.7rem}
+    /* Arriving from off-screen right. The card is already at its resting size
+       when it lands, so it does not grow and slide at the same time — one
+       movement at a time is what makes either of them readable. */
+    @keyframes deck-in-rest{from{transform:translateX(150%) scale(.88);opacity:0}to{transform:scale(.88);opacity:1}}
+    @keyframes deck-in-open{from{transform:translateX(150%);opacity:0}to{transform:none;opacity:1}}
+    .deck:not(.open) .deck-card.entering{animation:deck-in-rest var(--deck-in) var(--deck-ease) both}
+    .deck.open .deck-card.entering{animation:deck-in-open var(--deck-in) var(--deck-ease) both}
+    /* Leaving. The card slides out to the right and gives its height back over
+       the same beat, so everything below rises into the gap instead of jumping.
+       margin-bottom is what moves the others: shrinking it by the card's own
+       height pulls the whole column up, and because it is on the transition
+       list above it does it over time rather than in one frame. */
+    .deck-card.leaving{opacity:0;transform:translateX(150%) scale(.9);margin-bottom:calc(-1 * (var(--card-h) + .45rem));pointer-events:none;transition-delay:0s!important}
     .sys-card{--card-h:112px;--card-w:352px;cursor:pointer}
     .deck-card + .deck-card{margin-top:.45rem}
-    /* Closing is deliberately slower than opening — a pile snapping shut the
-       instant the pointer leaves reads as the app swatting you away. */
-    .deck:hover .deck-card,.deck.open .deck-card{transition:margin .22s ease,transform .22s ease,background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease}
-    /* Piled: every card pulled up under the next, offset a few px, rotation
-       alternating for a hand-stacked look. */
-    .deck:not(:hover):not(.open) .deck-card{margin-top:calc(6px - var(--card-h));transform:rotate(-2.4deg)}
-    .deck:not(:hover):not(.open) .deck-card:nth-child(even){transform:rotate(1.8deg) translateX(-4px)}
-    .deck:not(:hover):not(.open) .deck-card:nth-child(3n){transform:rotate(-3.4deg) translateX(3px)}
-    .deck:not(:hover):not(.open) .deck-card:first-child{margin-top:0}
+    /* --deck-in already governs margin/transform unconditionally, from the
+       base rule above, so it needs no separate re-statement here for opening —
+       closing uses the exact same duration, which is the "en el mismo tiempo"
+       Jose asked for. (An earlier version DID re-state it here, redundantly;
+       removed rather than left as decoration a reader might mistake for load-
+       bearing — see the shorthand-vs-longhand trap noted further down for why
+       that kind of redundant rule is worth being suspicious of, not comforted
+       by.) */
+    /* Every card is scaled DOWN at rest, not just the visible one, so opening
+       the pile is one movement — they grow to full size on the way out and
+       shrink back on the way in. The hand-stacked rotations that used to live
+       here only ever applied to cards nobody could see. */
+    .deck:not(.open) .deck-card{margin-top:calc(6px - var(--card-h));transform:scale(.88)}
+    .deck:not(.open) .deck-card:first-child{margin-top:0}
     /* At rest ONE card is on screen and you can see the app through it. Two
        earlier attempts are the reason it works this way: per-card opacity
        stacked into a smudge with the cards behind bleeding through, and muting
@@ -834,15 +961,56 @@
        the answer — the ones behind are hidden outright so nothing can stack,
        and the front one gets a translucent BACKGROUND rather than a faded
        element, which is what keeps its badge and its ✕ crisp on top of it. */
-    .deck:not(:hover):not(.open) .deck-card:not(:last-child){visibility:hidden;pointer-events:none}
-    .deck:not(:hover):not(.open) .deck-card:last-child{transform:rotate(0deg) scale(.88);transform-origin:bottom right}
+    /* CLOSING, the back cards must visibly shrink and fade before they vanish
+       — not vanish and then (invisibly) shrink. visibility is not on the
+       transition list on any other rule, so switching to hidden is instant the
+       moment this selector starts matching; it used to fire on the very first
+       frame of closing, blanking every card but the front one before their
+       margin/transform/opacity had moved at all. That is the "just disappears"
+       Jose described.
+       The fix is a delayed, zero-duration transition on visibility ALONE, so
+       the switch to hidden waits for the shrink to actually finish — including
+       its own stagger, so a card delayed behind the front one is not hidden
+       before its delayed turn has even started. This has to be its own full
+       `transition` shorthand (not an addition to the base rule): a shorthand
+       here replaces the whole list for elements it matches, and since only the
+       CLOSING target state needs the extra visibility entry, scoping it to
+       this selector — rather than the base .deck-card rule — is also what
+       keeps OPENING un-delayed: cards must turn visible on the very first
+       frame there, or the fan-out motion would be hidden behind its own
+       entrance. */
+    .deck:not(.open) .deck-card:not(:last-child){
+      visibility:hidden;pointer-events:none;opacity:0;
+      transition:margin var(--deck-in) var(--deck-ease),transform var(--deck-in) var(--deck-ease),
+                 opacity var(--deck-out) ease,
+                 visibility 0s calc(var(--i, 0) * var(--deck-step) + var(--deck-in)),
+                 background-color .45s ease,color .45s ease,border-color .45s ease,box-shadow .45s ease;
+    }
+    /* "There are more underneath" — two strips peeking above the front card,
+       never more, however deep the pile goes; the badge already says the exact
+       number. They are DRAWN rather than being the real cards showing through:
+       the front card is deliberately see-through at rest, so a card behind it
+       would bleed through its whole face and turn the corner into the smudge
+       two earlier attempts already produced. A strip sits only in the few
+       pixels above the card, where there is nothing to muddy. */
+    .deck-card::before,.deck-card::after{content:'';position:absolute;left:50%;transform:translateX(-50%);border-radius:8px 8px 0 0;height:7px;background:var(--peek,rgba(148,163,184,.75));opacity:0;pointer-events:none;transition:opacity var(--deck-out) var(--deck-ease)}
+    /* Far enough apart to read as two sheets rather than one thick bar, and the
+       one further back is fainter — depth is what tells you it is a pile. */
+    .deck:not(.open) .deck-card:last-child::before{width:92%;top:-7px}
+    .deck:not(.open) .deck-card:last-child::after{width:82%;top:-15px}
+    .deck.stack-2:not(.open) .deck-card:last-child::before{opacity:1}
+    .deck.stack-3:not(.open) .deck-card:last-child::after{opacity:.6}
+    .sys-card{--peek:rgba(148,163,184,.72)}
+    .cfg-card{--peek:rgba(27,42,74,.5)}
+    [data-theme="dark"] .sys-card{--peek:rgba(148,163,184,.5)}
+    [data-theme="dark"] .cfg-card{--peek:rgba(148,178,230,.45)}
 
     /* A suggestion: dark card, asks a question, answered with its buttons. */
     .cfg-card{background:var(--navy);color:#fff;border:1px solid transparent}
-    .deck.dim:not(:hover):not(.open) .cfg-card{background:var(--navy-ghost);color:rgba(255,255,255,.72);border-color:rgba(255,255,255,.12);box-shadow:0 2px 10px rgba(0,0,0,.12)}
-    .deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-lbl,
-    .deck.dim:not(:hover):not(.open) .cfg-card .cfg-card-val{color:rgba(255,255,255,.72)}
-    .deck.dim:not(:hover):not(.open) .cfg-card-acts{opacity:0}
+    .deck.dim:not(.open) .cfg-card{background:var(--navy-ghost);color:rgba(255,255,255,.72);border-color:rgba(255,255,255,.12);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+    .deck.dim:not(.open) .cfg-card .cfg-card-lbl,
+    .deck.dim:not(.open) .cfg-card .cfg-card-val{color:rgba(255,255,255,.72)}
+    .deck.dim:not(.open) .cfg-card-acts{opacity:0}
     .cfg-card-lbl{font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;color:#a1b0cb;font-weight:700}
     .cfg-card-val{font-weight:700;margin:.15rem 0 .45rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .cfg-card-acts{display:flex;gap:.4rem;align-items:center}
@@ -853,10 +1021,10 @@
 
     /* A notification: light card, reports a fact, dismissed with its ✕. */
     .sys-card{background:var(--card);color:var(--text);border:1px solid var(--border);border-left:4px solid var(--green)}
-    .deck.dim:not(:hover):not(.open) .sys-card{background:var(--card-ghost);border-color:rgba(0,0,0,.06);border-left-color:var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08)}
-    .deck.dim:not(:hover):not(.open) .sys-card .sys-card-title{color:var(--muted)}
-    .deck.dim:not(:hover):not(.open) .sys-card-when,
-    .deck.dim:not(:hover):not(.open) .sys-card-detail{opacity:.6}
+    .deck.dim:not(.open) .sys-card{background:var(--card-ghost);border-color:rgba(0,0,0,.06);border-left-color:var(--border);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .deck.dim:not(.open) .sys-card .sys-card-title{color:var(--muted)}
+    .deck.dim:not(.open) .sys-card-when,
+    .deck.dim:not(.open) .sys-card-detail{opacity:.6}
     .sys-card-title{font-weight:800;color:var(--text);display:flex;align-items:center;gap:.35rem}
     .sys-card-when{color:var(--muted);font-size:.72rem;margin-top:.15rem}
     .sys-card-detail{color:var(--muted);font-size:.71rem;margin-top:.3rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;line-height:1.32}
@@ -869,7 +1037,7 @@
     .sys-card-x{position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:12px;background:var(--navy);color:#fff;border:2px solid var(--card);font-size:.78rem;font-weight:800;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
     .sys-card-x:hover{background:var(--red)}
     .cfg-count{position:absolute;top:-9px;left:-9px;min-width:24px;height:24px;border-radius:12px;background:var(--accent);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 6px;border:2px solid var(--card);box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2}
-    .deck:hover .cfg-count,.deck.open .cfg-count{display:none}
+    .deck.open .cfg-count{display:none}
     .deck.dim .cfg-count,.deck.dim .sys-card-x{opacity:1}
 
     /* ── Phone/tablet: bell in the topbar instead of the hover deck ── */
@@ -895,7 +1063,8 @@
     .app-splash{position:fixed;inset:0;z-index:2000;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;transition:opacity .45s ease;padding:1.5rem}
     .app-splash.gone{opacity:0;pointer-events:none}
     .splash-mark{display:flex;align-items:center;gap:.6rem;font-size:1.7rem;font-weight:800;letter-spacing:.02em;text-align:center}
-    .splash-logo{max-width:min(350px,72vw);max-height:120px;object-fit:contain}
+    .splash-logo{max-width:min(310px,68vw);max-height:96px;object-fit:contain;
+      background:#F3F4F6;padding:14px 20px;border-radius:10px;box-sizing:content-box}
     /* Deliberately quiet: the customer's name is the headline, ours is a
        credit line under the bar. */
     .splash-by{font-size:.68rem;color:#8fa0bd;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:.4rem}
@@ -954,10 +1123,24 @@
        decided by the operating system, not by the page. */
     .tip{position:relative}
     .tip::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%) translateY(-4px);
-      background:var(--navy);color:#fff;font-size:.72rem;font-weight:600;line-height:1.35;letter-spacing:0;text-transform:none;
-      padding:.4rem .55rem;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.28);white-space:normal;width:max-content;max-width:190px;
+      background:var(--navy);color:#fff;font-size:.74rem;font-weight:600;line-height:1.45;letter-spacing:0;text-transform:none;
+      padding:.55rem .7rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.28);white-space:pre-line;width:max-content;max-width:240px;
       opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:60}
-    .tip:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+    .tip:hover::after,.tip:focus-visible::after{opacity:1;transform:translateX(-50%) translateY(0)}
+    /* Centered-on-the-icon is wrong the moment the icon sits near either edge
+       of the screen — the box (up to 240px wide) runs past it and gets cut
+       off by the viewport. _positionTip (JS) measures the anchor against the
+       window and adds one of these instead of the centered default. */
+    .tip.tip-edge-l::after{left:0;transform:translateX(0) translateY(-4px)}
+    .tip.tip-edge-l:hover::after,.tip.tip-edge-l:focus-visible::after{transform:translateX(0) translateY(0)}
+    .tip.tip-edge-r::after{left:auto;right:0;transform:translateX(0) translateY(-4px)}
+    .tip.tip-edge-r:hover::after,.tip.tip-edge-r:focus-visible::after{transform:translateX(0) translateY(0)}
+    /* The small "i" badge that replaces a paragraph of always-visible help text —
+       same explanation, available on demand instead of taking up the window. */
+    .info-ic{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+      border-radius:50%;background:var(--border);color:var(--muted);font:italic 700 .68rem/1 Georgia,'Times New Roman',serif;
+      cursor:help;flex:none}
+    .info-ic:hover,.info-ic:focus-visible{background:var(--accent2);color:#fff;outline:none}
     /* A table heading that carries a tooltip must still stick.
        .tip sets position:relative to anchor its bubble, and a class beats the
        `thead th` rule that makes headings sticky whatever the order — so every
@@ -1148,13 +1331,60 @@
     /* Stacked from here down, not only on a phone: the moment the tabs need
        two rows there is height beside them going spare and no width to spare,
        so the account circle goes on top and the bell under it. */
+    /* Below this the grid goes away and the old flex row comes back unchanged —
+       tabs taking the room, cluster stacked beside them. Jose asked for the
+       small-screen behaviour to stay exactly as it is, so it is restored here
+       rather than reworked. */
     @media (max-width:720px){
-      .topbar-tools{flex-direction:column;gap:8px;align-items:center}
-      .nav{flex:1 1 auto}
+      .topbar-row2{display:flex;flex-wrap:nowrap}
+      .topbar-row2 .nav{flex:1 1 auto;margin:0}
+      .topbar-tools{flex-direction:column;gap:8px;align-items:center;margin-left:auto}
     }
     @media (max-width:520px){
       .setup-nudge{left:12px;right:auto;width:calc(50vw - 18px);max-width:none}
-      .cfg-bell-panel{left:auto;right:12px;width:calc(50vw - 18px);max-width:none}
+      /* Jose: on his phone this read as too small at half the screen —
+         two-thirds instead, still right-anchored. */
+      .cfg-bell-panel{left:auto;right:12px;width:calc(66.667vw - 18px);max-width:none}
+    }
+    /* ── TOUCH ───────────────────────────────────────────────────────────────
+       Measured across six real device widths, and the finding was the same at
+       every one of them: nothing overflows the page, but almost everything is
+       too small to hit with a thumb. The search boxes and filters were 30–32px
+       tall, the buttons 25–27px, the avatar 34px, and the connection dot — a
+       real button that reloads the data — was TEN PIXELS square. Apple asks for
+       44, Android for 48; a warehouse worker wearing gloves needs every one of
+       them.
+
+       (pointer: coarse) rather than a width breakpoint, on purpose: this is
+       about the finger, not the window. A tablet at 1024px is still a
+       touchscreen, and a narrow window on a laptop is still a mouse — a width
+       rule gets both of those backwards.
+
+       Only the hit areas grow. Nothing here changes a font size, a colour or a
+       layout, so the app looks the same and simply becomes usable. */
+    @media (pointer: coarse){
+      .toolbar input,.toolbar select,.toolbar button,
+      .btn,.btn-sm{min-height:44px}
+      /* Inside a table row the buttons stay compact — 44px each would double
+         the height of every row — but 22px is not a target either. */
+      td .btn-sm,td button,.cfg-btn{min-height:34px;min-width:34px}
+      .acct-btn{width:44px;height:44px;font-size:.85rem}
+      .cfg-bell{min-width:44px;min-height:44px}
+      .nav button{min-height:44px}
+      /* The ones with no class of their own — a bare <button> inherits none of
+         the sizing above, which is exactly why these were the smallest things
+         on the screen: the ✕ on the morning popup measured 16×19. */
+      .alert-banner-actions button,.morning-popup-hdr button,.rack-drawer-hdr button,
+      .rm-btn,.sys-card-x,.cfg-card-add,.cfg-card-skip{min-height:36px;min-width:36px}
+      .rm-btn,.alert-banner-actions button{min-height:40px}
+      /* The connection dot keeps its size and gains a 44px hit area around it.
+         A pseudo-element with no paint of its own still takes the tap, so the
+         design does not change at all — the target simply stops being the size
+         of the dot. */
+      .conn-btn{position:relative}
+      .conn-btn::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%}
+      /* Anything a finger has to land on inside a modal, too. */
+      .modal input,.modal select,.modal textarea,.modal-type-bar button{min-height:44px}
     }
     /* ── RESPONSIVE ── */
     @media(max-width:768px){
@@ -1265,7 +1495,7 @@
          everything you can do to the app itself lives behind it, instead of
          being scattered across the topbar. -->
     <div class="acct-wrap" id="acctWrap">
-      <button class="acct-btn" id="acctBtn" onclick="toggleAccountMenu(event)" title="Your account">
+      <button class="acct-btn tip" id="acctBtn" onclick="toggleAccountMenu(event)" data-tip="Your account">
         <span id="acctInitials">·</span>
       </button>
       <div class="acct-menu" id="acctMenu">
@@ -1716,12 +1946,15 @@
       <h3>⚙ Low-Stock Monitor Settings</h3>
       <button class="modal-x" onclick="closeModal('monitorOverlay')" title="Close">✕</button>
     </div>
-    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">
-      Select which materials appear in the alert banner, and set a minimum stock threshold per material (leave "Min" blank for no threshold). Leave all unchecked to monitor <em>all</em> materials. <strong>"wh"</strong> = units currently in the warehouse.
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.6rem">
+      Start with the category you want to watch something in. Tick a material to
+      watch it, then give it a minimum — the alert fires when available stock
+      drops below that number. <strong>"wh"</strong> = units in the warehouse now.
     </p>
-    <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
-      <button class="btn btn-ghost btn-sm" onclick="monitorSelectAll(true)">✓ Select All</button>
-      <button class="btn btn-ghost btn-sm" onclick="monitorSelectAll(false)">✕ Clear All</button>
+    <div class="mon-chips" id="monChips"></div>
+    <div style="display:flex;gap:.5rem;margin-bottom:.5rem;justify-content:center">
+      <button class="btn btn-ghost btn-sm" onclick="monitorSelectAll(true)">✓ Watch everything</button>
+      <button class="btn btn-ghost btn-sm" onclick="monitorSelectAll(false)">✕ Clear all</button>
     </div>
     <div class="monitor-grid" id="monitorGrid"></div>
     <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
@@ -1861,11 +2094,6 @@
     <h3 id="rackDrawerTitle">📦 Rack</h3>
     <button onclick="closeRackDrawer()">✕</button>
   </div>
-  <div class="rack-drawer-actions">
-    <button class="btn btn-danger btn-sm" id="rackDrawerExitBtn" onclick="openExitFromRack()" style="display:none">↑ Exit from here</button>
-    <button class="btn btn-ghost btn-sm" id="rackDrawerTransferBtn" onclick="openTransferFromRack()">⇄ Transfer from here</button>
-  </div>
-  <div id="rackDrawerPhotoBox" style="padding:.6rem .75rem 0"></div>
   <div class="rack-drawer-body" id="rackDrawerBody">
     <p style="color:var(--muted);padding:1rem;font-size:.85rem">Select a rack to see its contents.</p>
   </div>
@@ -1886,11 +2114,11 @@
 
     <!-- Move Type Selector -->
     <div class="modal-type-bar" id="moveTypeBar">
-      <button data-type="ENTRY"    onclick="setModalType('ENTRY')">↓ Entry</button>
-      <button data-type="EXIT"     onclick="setModalType('EXIT')">↑ Exit</button>
-      <button data-type="TRANSFER" onclick="setModalType('TRANSFER')">⇄ Transfer</button>
-      <button data-type="RETURN"   onclick="setModalType('RETURN')">↩ Return</button>
-      <button data-type="WASTE"    onclick="setModalType('WASTE')">✕ Waste</button>
+      <button data-type="ENTRY"    onclick="_moveTypeBarClick('ENTRY')">↓ Entry</button>
+      <button data-type="EXIT"     onclick="_moveTypeBarClick('EXIT')">↑ Exit</button>
+      <button data-type="TRANSFER" onclick="_moveTypeBarClick('TRANSFER')">⇄ Transfer</button>
+      <button data-type="RETURN"   onclick="_moveTypeBarClick('RETURN')">↩ Return</button>
+      <button data-type="WASTE"    onclick="_moveTypeBarClick('WASTE')">✕ Waste</button>
     </div>
 
     <!-- Stock Warning -->
@@ -2147,6 +2375,7 @@
       <nav class="settings-sidebar" aria-label="Settings sections">
         <div class="settings-sidebar-label">Company</div>
         <button class="settings-tab"        data-tab="company"     onclick="switchSettingsTab('company')">🏷 <span>Name &amp; Logo</span></button>
+        <button class="settings-tab"        data-tab="permissions" onclick="switchSettingsTab('permissions')">🔑 <span>Permissions</span></button>
         <div class="settings-sidebar-label">Catalog</div>
         <button class="settings-tab active" data-tab="categories"  onclick="switchSettingsTab('categories')">📦 <span>Categories</span></button>
         <button class="settings-tab"        data-tab="projects"    onclick="switchSettingsTab('projects')">📁 <span>Projects</span></button>
@@ -2258,7 +2487,7 @@
 <!-- One pile for both kinds of card. Tapping toggles .open — touch has no
      hover, and without that anything behind the front card would be
      unreachable on a tablet. -->
-<div class="deck" id="cornerDeck" onclick="this.classList.toggle('open')"></div>
+<div class="deck" id="cornerDeck"></div>
 
 <div class="overlay" id="reportIssueOverlay">
   <div class="modal modal-sm">
@@ -2304,8 +2533,24 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '9.68';
+var APP_VERSION = '9.86';
 var userRole = 'WAREHOUSE';
+// Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
+// DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
+// anything that matters: every action this gates in the UI is re-checked by
+// requirePerm_ on the server, which is the only copy of this that a browser
+// console cannot lie about.
+var rolePerms = { canSeeCosts:false, canEditMovements:false, canManageCatalog:false, canExportData:true };
+// The internal role value is always 'WAREHOUSE' (USERS_V3, every role check) —
+// this is only what an admin has chosen to call it on screen, e.g. "Supervisor".
+var warehouseRoleLabel = 'Warehouse';
+function _displayRole(role){ return role === 'WAREHOUSE' ? warehouseRoleLabel : role; }
+// ADMIN always; WAREHOUSE only with the switch on; VIEWER never — VIEWER
+// cannot even open the Entry form (btnEntry is hidden for them in
+// applyRoleUI), so this only really has to distinguish the other two.
+function _canSeeCosts(){
+  return userRole === 'ADMIN' || (userRole === 'WAREHOUSE' && !!rolePerms.canSeeCosts);
+}
 var userEmail = '';
 var _lastUserName = '';    // display name on file, so the account menu can be repainted without it
 // Company identity, filled from getInitialData on every load (including the
@@ -2318,11 +2563,34 @@ var _SESSION_KEY   = 'oxwms_session_v3';
 var _sessionToken  = (function(){ try{ return localStorage.getItem(_SESSION_KEY)||''; }catch(e){return '';} })();
 // Injects the verified session token into any payload sent to processMovement.
 function _h(data){ return _sessionToken ? Object.assign({}, data||{}, {_sessionToken:_sessionToken}) : (data||{}); }
+// Errors that are not ours, and must never reach an admin's inbox.
+//
+// Browser extensions run their own code inside every page, and when theirs
+// fails the page hears about it. A crypto wallet extension threw "Failed to
+// connect to MetaMask" on Jose's browser and the app dutifully filed it as a
+// system error and emailed OX Glass about it — an alert, to a warehouse, about
+// a wallet nobody installed on purpose.
+//
+// The test is where the code CAME FROM, not what it says: anything whose stack
+// points at an extension is not ours. The name list is the second net, for
+// extensions that throw before there is a stack to read. Alerts that cry wolf
+// get filtered out by the person receiving them, which costs the real ones
+// their value — so this matters more than its size suggests.
+var _FOREIGN_ERROR_SOURCES = /chrome-extension:\/\/|moz-extension:\/\/|safari-extension:\/\/|extensions::/i;
+var _FOREIGN_ERROR_NAMES   = /metamask|ethereum provider|web3|coinbase wallet|phantom|solana|tronlink|binance chain|keplr|grammarly|lastpass|adblock/i;
+
+function _isForeignError(message, stack) {
+  if (_FOREIGN_ERROR_SOURCES.test(String(stack || ''))) return true;
+  if (_FOREIGN_ERROR_NAMES.test(String(message || ''))) return true;
+  return false;
+}
+
 // Fire-and-forget report of an unexpected client error to ERROR_LOG. Never
 // blocks or alarms the user if the report itself fails — logging is best-effort.
 function _reportClientError(action, message, stack) {
   try {
     if (!_sessionToken && userRole === 'NO_SESSION') return;
+    if (_isForeignError(message, stack)) return;
     google.script.run
       .withSuccessHandler(function(){})
       .withFailureHandler(function(){})
@@ -3064,6 +3332,9 @@ function getBase64(file){
 // copy can complete it — the backend enforces that (see getSetupState); this
 // side just renders what it is told.
 var PRODUCT = 'Acopio';
+// Read from the <link> itself rather than duplicating the data: URI as a
+// second literal — one source of truth for the default mark.
+var APP_FAVICON_DEFAULT = (document.getElementById('appFavicon') || {}).href || '';
 var _wizStep = 0;
 var _wizSkipped = {};
 // Set the moment setup succeeds, so the reload it kicks off doesn't race the
@@ -3637,6 +3908,7 @@ function applyCompanyBranding(c){
       logo.src = dataUrl;
       logo.alt = name || '';
       logo.style.display = '';
+      _setFavicon(dataUrl);
       // Kept for the next load's splash. Anything big enough to be worth
       // worrying about is left out: a logo that does not fit is simply not
       // remembered, and the splash falls back to the company name.
@@ -3647,8 +3919,17 @@ function applyCompanyBranding(c){
                                            // thumbnail would drop its transparency
   } else if (logo && !c.logoId){
     logo.style.display = 'none';
+    _setFavicon(APP_FAVICON_DEFAULT);
     try { localStorage.removeItem('acopio_brand_logo'); } catch (e) {}   // a removed logo must not linger on the splash
   }
+}
+
+// The company's own uploaded logo becomes the browser tab icon too, once
+// there is one — same file, no extra upload. Falls back to the default
+// Acopio mark when there isn't (or isn't yet) a company logo.
+function _setFavicon(href){
+  var link = document.getElementById('appFavicon');
+  if (link && href) link.href = href;
 }
 
 // ── Report a Problem (floating button) ──────────────────────────────────────
@@ -3834,6 +4115,30 @@ function renderStats(){
   var totalWasted = items.reduce(function(a,s){ return a + Math.max(0, s.wastedQty||0); }, 0);
   var activeProjects = new Set(movements.map(function(m){ return m.project; }).filter(Boolean)).size;
 
+  // Inventory value: sum of (avg cost × warehouse qty) over materials that
+  // actually HAVE a cost on record. Cost is opt-in (see addMovementsBatch_'s
+  // WAC blend), so this is honest about the gap rather than treating an
+  // unpriced material as worth $0 — pricedCount is shown alongside the total
+  // for exactly that reason: "$48,200 across 34 of 61 SKUs" says something
+  // true, "$48,200" alone implies a total that isn't.
+  var invValue = 0, pricedCount = 0;
+  items.forEach(function(s){
+    var c = config.avgCost && config.avgCost[_normKey(s.category) + '|||' + _normKey(s.name)];
+    if (c && s.warehouseQty > 0) { invValue += c.avg * s.warehouseQty; pricedCount++; }
+  });
+
+  // Waste in dollars: sum of the cost STAMPED on each WASTE movement at the
+  // time it was recorded (movements[].totalCost — the server-computed average
+  // on record then, never recalculated from today's average). Same honesty
+  // pattern as Inventory Value: shows "X of Y waste records priced" instead
+  // of pretending an unpriced WASTE row cost $0.
+  var wasteCost = 0, wastePriced = 0, wasteRows = 0;
+  movements.forEach(function(m){
+    if (normMT(m.moveType) !== 'WASTE') return;
+    wasteRows++;
+    if (m.totalCost !== null && m.totalCost !== undefined) { wasteCost += m.totalCost; wastePriced++; }
+  });
+
   // ── Low-stock alert: apply monitored filter, then find zero + below-min ────
   // monitoredMaterials = null  → watch everything
   // monitoredMaterials = []    → watching nothing (no alerts)
@@ -3895,12 +4200,18 @@ function renderStats(){
   }
 
   document.getElementById('statsRow').innerHTML =
-    '<div class="stat"><label>SKUs Tracked</label><div class="val">'+items.length+'</div><div class="sub">'+inStock+' with stock</div></div>'+
-    '<div class="stat" style="border-left-color:var(--green)"><label>In Warehouse</label><div class="val">'+totalWh.toLocaleString()+'</div><div class="sub">units across all racks</div></div>'+
-    '<div class="stat" style="border-left-color:var(--red)"><label>Dispatched</label><div class="val">'+totalSite.toLocaleString()+'</div><div class="sub">units sent to site</div></div>'+
-    '<div class="stat" style="border-left-color:var(--orange)"><label>Active Projects</label><div class="val">'+activeProjects+'</div><div class="sub">in system</div></div>'+
-    '<div class="stat" style="border-left-color:var(--yellow)"><label>Zero Stock</label><div class="val" style="color:'+(zeroItems.length>0?'var(--red)':'var(--green)')+'">'+zeroItems.length+'</div><div class="sub">'+(belowMin.length?' · '+belowMin.length+' below min':'need restocking')+'</div></div>'+
-    (totalWasted>0?'<div class="stat" style="border-left-color:#6B7280"><label>Total Wasted</label><div class="val" style="color:var(--red)">'+totalWasted.toLocaleString()+'</div><div class="sub">units recorded as waste</div></div>':'');
+    '<div class="stat">'+_statLabel('SKUs Tracked','Every distinct category + material combination the system has ever seen — including ones with zero stock right now. The line below shows how many currently have stock.')+'<div class="val">'+items.length+'</div><div class="sub">'+inStock+' with stock</div></div>'+
+    (_canSeeCosts() && pricedCount > 0 ?
+      '<div class="stat" style="border-left-color:var(--green)">'+_statLabel('Inventory Value','Average cost × quantity in warehouse, added up across every material that has a recorded cost. Materials with no cost on record are left out rather than counted as $0 — see how many are priced below.')+'<div class="val">$'+
+        Math.round(invValue).toLocaleString()+'</div><div class="sub">'+pricedCount+' of '+items.length+' SKUs priced</div></div>' : '')+
+    '<div class="stat" style="border-left-color:var(--green)">'+_statLabel('In Warehouse','Total units currently sitting in any rack or location, added up across every material.')+'<div class="val">'+totalWh.toLocaleString()+'</div><div class="sub">units across all racks</div></div>'+
+    '<div class="stat" style="border-left-color:var(--red)">'+_statLabel('Dispatched','Total units currently sent out to a project or site and not yet back in the warehouse.')+'<div class="val">'+totalSite.toLocaleString()+'</div><div class="sub">units sent to site</div></div>'+
+    '<div class="stat" style="border-left-color:var(--orange)">'+_statLabel('Active Projects','Number of distinct projects that have at least one movement recorded against them.')+'<div class="val">'+activeProjects+'</div><div class="sub">in system</div></div>'+
+    '<div class="stat" style="border-left-color:var(--yellow)">'+_statLabel('Zero Stock','Materials with nothing left in the warehouse and nothing at any site. "Below min" counts materials that still have some stock but less than the minimum you set in the Low-Stock Monitor.')+'<div class="val" style="color:'+(zeroItems.length>0?'var(--red)':'var(--green)')+'">'+zeroItems.length+'</div><div class="sub">'+(belowMin.length?' · '+belowMin.length+' below min':'need restocking')+'</div></div>'+
+    (totalWasted>0?'<div class="stat" style="border-left-color:#6B7280">'+_statLabel('Total Wasted','Total units ever recorded as WASTE, all-time — this never resets.')+'<div class="val" style="color:var(--red)">'+totalWasted.toLocaleString()+'</div><div class="sub">units recorded as waste</div></div>':'')+
+    (_canSeeCosts() && wastePriced > 0 ?
+      '<div class="stat" style="border-left-color:var(--red)">'+_statLabel('Waste Cost','Sum of the cost recorded at the moment each WASTE happened — never recalculated from today\'s price, so last year\'s waste doesn\'t change value later.')+'<div class="val" style="color:var(--red)">$'+
+        Math.round(wasteCost).toLocaleString()+'</div><div class="sub">'+wastePriced+' of '+wasteRows+' waste records priced</div></div>' : '');
 }
 
 // ── Dashboard: Document Map (for stock doc panel) ────────────────────────────
@@ -4416,7 +4727,12 @@ function renderMovements(){
   // Which columns, in which order, is the reader's — see COL_TABLES. Each row
   // builds every cell and then emits the ones this reader asked for, rather
   // than a fixed sequence of conditionals.
-  var isAdmin   = userRole === 'ADMIN';
+  // Despite the name, this now means "can edit/delete movements" — ADMIN
+  // always, or WAREHOUSE when the admin has switched that on in Settings →
+  // Permissions (see requirePerm_/canEditMovements server-side, which is what
+  // actually enforces this; hiding the buttons here is just so a WAREHOUSE
+  // user without the flag never sees a control that would fail on the save).
+  var isAdmin   = userRole === 'ADMIN' || (userRole === 'WAREHOUSE' && !!rolePerms.canEditMovements);
   var order     = _colOrder('mov');
   var hiddenNow = {};
   _colHidden('mov').forEach(function(k){ hiddenNow[k] = 1; });
@@ -4599,7 +4915,7 @@ function renderProjectView(){
     return;
   }
   var summary = {};
-  var totalIn = 0, totalOut = 0;
+  var totalIn = 0, totalOut = 0, projectCost = 0, hasCost = false;
   movements.filter(function(m){ return (m.project||'') === proj; }).forEach(function(m){
     var name = displayName(m);
     var norm = normMT(m.moveType);
@@ -4608,14 +4924,21 @@ function renderProjectView(){
     var isOut = (norm === 'EXIT' || norm === 'WASTE');
     if (isOut){ summary[name].out += q; totalOut += q; }
     else       { summary[name].in  += q; totalIn  += q; }
+    // What this project actually consumed, in dollars: sum of what left for it
+    // (EXIT only — a RETURN or WASTE is a separate story, not "project cost").
+    if (norm === 'EXIT' && m.totalCost !== null && m.totalCost !== undefined) {
+      projectCost += m.totalCost; hasCost = true;
+    }
     summary[name].history.push({date:m.dateRec||m.timestamp, qty:q, isOut:isOut, loc:m.sourceLoc||m.destLoc||'—', user:m.userEmail||'—', comment:m.comments||''});
   });
 
   stats.innerHTML =
-    '<div class="stat" style="border-left-color:var(--green)"><label>Total Received</label><div class="val">'+totalIn+'</div></div>'+
-    '<div class="stat" style="border-left-color:var(--red)"><label>Total Dispatched</label><div class="val">'+totalOut+'</div></div>'+
-    '<div class="stat" style="border-left-color:var(--accent)"><label>Still in Bodega</label><div class="val">'+(totalIn-totalOut)+'</div></div>'+
-    '<div class="stat" style="border-left-color:var(--orange)"><label>SKUs</label><div class="val">'+Object.keys(summary).length+'</div></div>';
+    '<div class="stat" style="border-left-color:var(--green)">'+_statLabel('Total Received','Sum of everything received, transferred in, or returned for this project (all non-EXIT, non-WASTE movements).')+'<div class="val">'+totalIn+'</div></div>'+
+    '<div class="stat" style="border-left-color:var(--red)">'+_statLabel('Total Dispatched','Sum of everything that left as EXIT or WASTE for this project.')+'<div class="val">'+totalOut+'</div></div>'+
+    '<div class="stat" style="border-left-color:var(--accent)">'+_statLabel('Still in Warehouse','Total Received minus Total Dispatched — the net still on hand for this project.')+'<div class="val">'+(totalIn-totalOut)+'</div></div>'+
+    '<div class="stat" style="border-left-color:var(--orange)">'+_statLabel('SKUs','Number of distinct materials with any movement recorded for this project.')+'<div class="val">'+Object.keys(summary).length+'</div></div>' +
+    (_canSeeCosts() && hasCost ?
+      '<div class="stat" style="border-left-color:var(--green)">'+_statLabel('Project Cost','Sum of what actually left the warehouse for this project (EXIT only), priced at cost at the moment each one was recorded.')+'<div class="val">$'+Math.round(projectCost).toLocaleString()+'</div></div>' : '');
 
   body.innerHTML = Object.values(summary).map(function(s,i){
     var net = s.in - s.out;
@@ -4821,6 +5144,14 @@ function addTransferRow(rack, qty, dest){
   var destInp = row.querySelector('.tr-dest');
   rackInp.addEventListener('input', function(){ validateTransferRows(); renderTransferLocPicker(); });
   qtyInp.addEventListener('input',  validateTransferRows);
+  // Same tap-the-green-number shortcut as the EXIT rows.
+  row.querySelector('.exit-avail').addEventListener('click', function(){
+    if (!this.classList.contains('ok')) return;
+    var avail = this.dataset.avail;
+    if (!avail) return;
+    qtyInp.value = avail;
+    validateTransferRows();
+  });
 
   container.appendChild(row);
   validateTransferRows();
@@ -4844,7 +5175,15 @@ function validateTransferRows(){
     var dest = (row.querySelector('.tr-dest').value || '').trim().toUpperCase();
     var qty  = Math.max(0, parseInt(row.querySelector('.tr-qty').value) || 0);
     var chip = row.querySelector('.exit-avail');
-    if (!rack || qty <= 0){ chip.textContent = '—'; chip.className = 'exit-avail neutral'; return; }
+    // Available should show the moment a rack is picked — that's the whole
+    // point of the tap-to-fill-qty shortcut, which needs a number to tap
+    // BEFORE qty has anything in it. Requiring qty > 0 first made this show
+    // nothing until the user had already typed the number it was supposed to
+    // save them from typing (Jose's report: picking a rack from the map's
+    // Rack Drawer, which leaves qty blank on purpose, showed no "avail" at
+    // all until qty was filled by hand). qty only matters now for the
+    // over-limit warning below, not for whether anything shows at all.
+    if (!rack){ chip.textContent = '—'; chip.className = 'exit-avail neutral'; return; }
     // Locked-with-a-destination-list: this row's transfer will be rejected by the
     // backend unless the chosen destination is on the allow-list — warn early.
     var lock = _findLock(key, rack);
@@ -4859,10 +5198,10 @@ function validateTransferRows(){
     var avail = locs[rack] !== undefined ? locs[rack] : null;
     if (avail === null){
       chip.textContent = '? unknown rack'; chip.className = 'exit-avail neutral';
-    } else if (qty > avail){
+    } else if (qty > 0 && qty > avail){
       chip.textContent = '⚠ only ' + avail + ' avail'; chip.className = 'exit-avail warn';
     } else {
-      chip.textContent = '✓ ' + avail + ' available';  chip.className = 'exit-avail ok';
+      chip.textContent = '✓ ' + avail + ' available';  chip.className = 'exit-avail ok'; chip.dataset.avail = avail;
     }
   });
 }
@@ -4935,12 +5274,27 @@ function openMoveModal(type){
   }
   currentMoveType = (type || 'ENTRY').toUpperCase();
 
+  // Every fresh open starts as a normal, unrestricted movement — the Rack
+  // Drawer flow (_rdwMoveFromDrawer) re-arms this right after this call
+  // returns, once it has its own material to prefill.
+  _rdwPrefillActive = null;
+  _syncMoveTypeBarForRdw();
+
   // Reset form
-  ['mName','mQty','mSrc','mDest','mSup','mGC','mPO','mProj','mResp','mPM','mComm',
+  // mExitDest used to be left out of this list — after two EXITs in a row the
+  // destination box would silently still hold the FIRST one's value, which is
+  // information the person never typed into this movement. Nothing here
+  // should ever show data the user hasn't entered for this specific save.
+  ['mName','mQty','mSrc','mDest','mExitDest','mSup','mGC','mPO','mProj','mResp','mPM','mComm',
    'mNotifyEmails','mNotifyName','mNotifyMsg'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = (id === 'mQty' ? '1' : '');
   });
+  // Same reasoning for the single-material category select (WASTE/TRANSFER/
+  // RETURN) — it has no blank option, so "reset" means back to the first
+  // category rather than leaving whatever was chosen last time.
+  var mTypeSel = document.getElementById('mType');
+  if (mTypeSel) mTypeSel.selectedIndex = 0;
   // Reset multi-location rows (always start with one empty row)
   document.getElementById('locRowsContainer').innerHTML  = '';
   document.getElementById('exitRowsContainer').innerHTML = '';
@@ -5146,13 +5500,24 @@ function checkStock(){
       warn.innerHTML = '⚠️ Low stock: '+s.availableQty+' available @ '+_he(locSummary(s.warehouseLocs));
       warn.style.cssText = 'background:#FEF3C7;color:var(--yellow);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
     } else {
-      warn.innerHTML = '✓ Available: '+s.availableQty+' units | '+_he(locSummary(s.warehouseLocs));
+      // The number itself is tappable — same shortcut as the EXIT/TRANSFER rows,
+      // so WASTE (which has one plain Qty field instead of per-rack rows) gets it too.
+      warn.innerHTML = '✓ Available: <span class="mstock-avail ok" data-avail="'+s.availableQty+'" onclick="_fillQtyFromAvail(this)">'+s.availableQty+'</span> units | '+_he(locSummary(s.warehouseLocs));
       warn.style.cssText = 'background:#D1FAE5;color:var(--green);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
     }
   } else {
     warn.innerHTML = '⚠️ Item not found in stock — will create new SKU on ENTRY';
     warn.style.cssText = 'background:#FEF3C7;color:var(--yellow);padding:.5rem .75rem;border-radius:6px;font-size:.82rem';
   }
+}
+
+// Tap the green available number in the single-field WASTE stock check (the
+// EXIT/TRANSFER per-row equivalent is wired directly on those rows instead).
+function _fillQtyFromAvail(el){
+  var avail = el.getAttribute('data-avail');
+  if (!avail) return;
+  var q = document.getElementById('mQty');
+  if (q) q.value = avail;
 }
 
 // ── Notification Helpers ──────────────────────────────────────────────────────
@@ -5496,6 +5861,17 @@ function _matLineTpl(n){
         '<label class="mat-line-lbl-sm">Unit</label>' +
         '<select id="mat-unit-' + n + '">' + _matLineUnitOpts() + '</select>' +
       '</div>' +
+      // Optional, and hidden entirely from anyone without canSeeCosts — not
+      // just left blank for them, since a field they cannot use but can see
+      // is a worse experience than one that simply is not there. Never shown
+      // on anything but ENTRY: EXIT/TRANSFER/WASTE/RETURN price themselves
+      // from the running average, server-side, and a field here would invite
+      // someone to type a number that the save would just ignore.
+      (_canSeeCosts() ?
+      '<div class="field">' +
+        '<label class="mat-line-lbl-sm">Unit Cost <span style="text-transform:none;opacity:.7">(optional)</span></label>' +
+        '<input type="number" id="mat-cost-' + n + '" min="0" step="0.01" placeholder="$0.00">' +
+      '</div>' : '') +
     '</div>' +
     '<div class="mat-loc-box">' +
       '<div style="display:flex;gap:.4rem;margin-bottom:.25rem">' +
@@ -5912,6 +6288,15 @@ function addExitLocRowMat(n, rack, qty, silent){
     '<button type="button" class="el-rm" onclick="removeExitLocRowMat('+n+',this)" title="Remove">×</button>';
   row.querySelector('.el-rack').addEventListener('input', function(){ syncExitRackAvail(n); syncExitMatTotal(n); });
   row.querySelector('.el-qty').addEventListener('input',  function(){ syncExitRackAvail(n); syncExitMatTotal(n); });
+  // Tap the green "✓ N avail" figure to put that same number straight into
+  // Qty to Take, instead of retyping a number the app is already showing.
+  row.querySelector('.el-avail').addEventListener('click', function(){
+    if (!this.classList.contains('ok')) return;
+    var avail = this.dataset.avail;
+    if (!avail) return;
+    row.querySelector('.el-qty').value = avail;
+    syncExitRackAvail(n); syncExitMatTotal(n);
+  });
   locsDiv.appendChild(row);
   if (!silent){ syncExitRackAvail(n); if (locsDiv.querySelectorAll('.exit-loc-row').length===1) row.querySelector('.el-rack').focus(); }
 }
@@ -5960,7 +6345,7 @@ function syncExitRackAvail(n){
     var lock = _findLock(key, rack);
     if (lock){ chip.className='el-avail warn'; chip.textContent='🔒 locked — ' + lock.reason; return; }
     if (qty > avail){ chip.className='el-avail warn'; chip.textContent='⚠ only '+avail; }
-    else { chip.className='el-avail ok'; chip.textContent='✓ '+avail+' avail'; }
+    else { chip.className='el-avail ok'; chip.textContent='✓ '+avail+' avail'; chip.dataset.avail = avail; }
   });
 }
 
@@ -6258,6 +6643,13 @@ function submitMultiEntry(){
     }
 
     var matEntry = { category: cat, name: name, unit: unit, locations: locs, qty: totalQty };
+    // Per-material always, unlike Supplier/PO/etc below — cost belongs to the
+    // material being bought, never to the "same info for all" grouping, and
+    // the field doesn't exist in the DOM at all for someone without
+    // canSeeCosts, so this naturally reads '' and the batch is priced by
+    // reading the current average later, same as any other unpriced entry.
+    var costEl = document.getElementById('mat-cost-' + n);
+    if (costEl && String(costEl.value || '').trim() !== '') matEntry.unitCost = costEl.value;
     if (!sameInfo) {
       matEntry.supplier    = ((document.getElementById('mat-sup-'  + n) || {}).value || '').trim();
       matEntry.gc          = ((document.getElementById('mat-gc-'   + n) || {}).value || '').trim();
@@ -6362,8 +6754,42 @@ var _matListAll   = [];   // full material list for Materials tab
 function openSettingsModal() {
   _clearRowModes();
   document.getElementById('settingsMsgBar').style.display = 'none';
+  _filterSettingsSidebar();
   document.getElementById('settingsOverlay').classList.add('show');
   _loadSettings();
+}
+
+// Reaching this modal at all now means ADMIN, or WAREHOUSE with
+// canManageCatalog — see applyRoleUI's canOpenSettings. The second case must
+// only ever see the four Catalog tabs: Company, Materials, Directory, Import,
+// Permissions and Diagnostics stay admin business regardless of that one
+// permission, because none of them are "the catalog" — Materials in
+// particular can rename or merge a name across the ENTIRE movement history,
+// which is a different order of risk than adding a supplier.
+var SETTINGS_CATALOG_TABS = { categories:1, projects:1, suppliers:1, locations:1 };
+
+function _filterSettingsSidebar(){
+  var isAdmin = (userRole === 'ADMIN');
+  var nav = document.querySelector('.settings-sidebar');
+  if (!nav) return;
+  nav.querySelectorAll('.settings-tab').forEach(function(btn){
+    var tab = btn.getAttribute('data-tab');
+    btn.style.display = (isAdmin || SETTINGS_CATALOG_TABS[tab]) ? '' : 'none';
+  });
+  // The section labels ("Company", "Diagnostics") read oddly sitting above an
+  // empty space once their only buttons are hidden.
+  nav.querySelectorAll('.settings-sidebar-label').forEach(function(lbl){
+    var next = lbl.nextElementSibling, anyVisible = false;
+    while (next && next.classList && next.classList.contains('settings-tab')) {
+      if (next.style.display !== 'none') anyVisible = true;
+      next = next.nextElementSibling;
+    }
+    lbl.style.display = anyVisible ? '' : 'none';
+  });
+  // A non-admin landing on a tab they can no longer see (e.g. Settings was
+  // last closed on "System" by an admin using the same browser profile) gets
+  // dropped onto the first catalog tab instead of a blank pane.
+  if (!isAdmin && !SETTINGS_CATALOG_TABS[_settingsTab]) _settingsTab = 'categories';
 }
 
 function _loadSettings() {
@@ -6479,19 +6905,121 @@ function _coLogoBoxHtml(){
                ' — click Save changes to apply it.</div>' : '');
 }
 
+// What each switch grants, in plain language. Shown ONLY via the "i" icon next
+// to each switch (hover or focus) — not as always-visible text, so the tab
+// stays short — but it has to say the real consequence, not just repeat the
+// flag's name, since the icon is the only place a customer ever sees it.
+var PERM_DEFS = [
+  { key:'canEditMovements', label:'Edit movements',
+    desc:'Warehouse staff can fix or delete a movement someone already saved, the same way an admin can today. Off by default: until now only an admin could.' },
+  { key:'canManageCatalog', label:'Manage catalog',
+    desc:'Warehouse staff can add, rename or remove categories, projects, suppliers and locations — the four Catalog tabs here in Settings. Off by default.' },
+  { key:'canExportData', label:'Export data',
+    desc:'Warehouse staff (and viewers) can use the ⬇ CSV button in Movements. On by default — this is what everyone could already do; turn it off to route exports through an admin instead.' },
+  { key:'canSeeCosts', label:'See costs',
+    desc:'Warehouse staff can enter a unit cost when receiving material, see the Inventory Value tile on the dashboard, and see cost totals per project. Off by default — many businesses keep pricing admin-only.' }
+];
+
+function _renderPermissionsTab(){
+  // The global, not _settingsData — getSettings() doesn't carry this (it is
+  // not catalog data), and the global is already kept fresh: getInitialData
+  // sets it on every load, and _savePermSwitch updates it the moment a switch
+  // is actually saved.
+  var perms = rolePerms || {};
+  var rows = PERM_DEFS.map(function(d){
+    var on = !!perms[d.key];
+    return '<div class="field" style="margin-bottom:1.1rem;padding-bottom:1.1rem;border-bottom:1px solid var(--border)">' +
+      '<div style="display:flex;align-items:center;gap:.4rem">' +
+        '<label class="sw">' +
+          '<input type="checkbox" class="perm-sw" data-perm="' + d.key + '"' + (on ? ' checked' : '') + '>' +
+          '<span class="sw-track"></span>' +
+          '<span class="sw-text" style="color:var(--text)">' + _he(d.label) + '</span>' +
+        '</label>' +
+        _infoIc(d.desc) +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('settingsTabContent').innerHTML =
+    '<div class="field" style="margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border)">' +
+      '<label class="co-label" for="warehouseRoleLabelInput" style="display:flex;align-items:center;gap:.4rem">' +
+        'What you call this role ' + _infoIc('Shown as this name everywhere in the app: the user list, the account ' +
+          'menu, the Add User form. Use whatever your team already calls this person, e.g. "Supervisor" or "Manager". ' +
+          'It never changes what they can actually do.') +
+      '</label>' +
+      '<div style="display:flex;gap:.5rem;align-items:center;max-width:320px">' +
+        '<input type="text" id="warehouseRoleLabelInput" class="co-input" maxlength="30" ' +
+          'value="' + _escAttr(warehouseRoleLabel) + '" placeholder="Warehouse">' +
+        '<button type="button" class="btn btn-ghost btn-sm" id="btnSaveRoleLabel" onclick="_saveWarehouseRoleLabel()">Save</button>' +
+      '</div>' +
+    '</div>' +
+    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">' +
+      'What the ' + _he(warehouseRoleLabel) + ' role can do, beyond recording movements and viewing stock. ' +
+      'Admins can already do all of this — these switches only ever widen ' + _he(warehouseRoleLabel) + ', never narrow an admin. ' +
+      'Viewers stay read-only no matter what is on here.</p>' +
+    rows;
+
+  document.querySelectorAll('.perm-sw').forEach(function(sw){
+    sw.addEventListener('change', function(){ _savePermSwitch(sw); });
+  });
+}
+
+function _saveWarehouseRoleLabel(){
+  var inp = document.getElementById('warehouseRoleLabelInput');
+  var btn = document.getElementById('btnSaveRoleLabel');
+  var label = (inp.value || '').trim();
+  _btnBusy(btn, 'Saving…');
+  google.script.run
+    .withSuccessHandler(function(res){
+      warehouseRoleLabel = res.label;
+      _applyWarehouseRoleLabel();
+      _setAccountIdentity(_lastUserName, userEmail, userRole, false);
+      _btnDone(btn, true, function(){ _renderPermissionsTab(); });
+    })
+    .withFailureHandler(function(e){
+      _btnDone(btn, false);
+      showToast('Could not save: ' + (e.message || e), 'err', 6000);
+    })
+    .processMovement('setWarehouseRoleLabel', _h({ label: label }));
+}
+
+function _savePermSwitch(sw){
+  var key = sw.getAttribute('data-perm');
+  var want = sw.checked;
+  sw.disabled = true;
+  var next = {};
+  PERM_DEFS.forEach(function(d){ next[d.key] = (d.key === key) ? want : !!rolePerms[d.key]; });
+  google.script.run
+    .withSuccessHandler(function(res){
+      sw.disabled = false;
+      rolePerms = res.perms;
+      showToast('Saved ✓', 'ok');
+    })
+    .withFailureHandler(function(e){
+      sw.checked = !want; sw.disabled = false;   // put it back
+      showToast('Could not save: ' + (e.message || e), 'err', 6000);
+    })
+    .processMovement('setRolePerms', _h(next));
+}
+
 function _renderCompanyTab(){
   var c = (_settingsData && _settingsData.company) || {};
   document.getElementById('settingsTabContent').innerHTML =
     '<div class="co-form">' +
-      '<label class="co-label" for="coName">Company name</label>' +
+      '<label class="co-label" for="coName" style="display:flex;align-items:center;gap:.4rem">Company name ' +
+        _infoIc('Shown in the header, on the browser tab, on the loading screen, and as the sender name on every email this system sends.') +
+      '</label>' +
       '<input type="text" id="coName" class="co-input" maxlength="60" value="' + _escAttr(c.name || '') + '">' +
-      '<p class="co-hint">Shown in the header, on the browser tab, on the loading screen, and as the sender name on every email this system sends.</p>' +
 
-      '<label class="co-label" for="coDomain">Email domain <span class="co-opt">(optional)</span></label>' +
+      '<label class="co-label" for="coDomain" style="display:flex;align-items:center;gap:.4rem">' +
+        'Email domain <span class="co-opt">(optional)</span> ' +
+        _infoIc('People with an email at this domain are recognised as staff. Everyone still has to be on the user list to get in — this only saves them the extra sign-in step. Leave it blank if your team uses personal Gmail accounts.') +
+      '</label>' +
       '<input type="text" id="coDomain" class="co-input" maxlength="60" placeholder="yourcompany.com" value="' + _escAttr(c.domain || '') + '">' +
-      '<p class="co-hint">People with an email at this domain are recognised as staff. Everyone still has to be on the user list to get in — this only saves them the extra sign-in step. Leave it blank if your team uses personal Gmail accounts.</p>' +
 
-      '<label class="co-label">Logo</label>' +
+      '<label class="co-label" style="display:flex;align-items:center;gap:.4rem">Logo ' +
+        _infoIc('Any size or shape works — it is resized automatically. Appears beside the company name in the header and on the loading screen.') +
+      '</label>' +
       '<div id="coLogoWrap">' + _coLogoBoxHtml() + '</div>' +
       '<div class="co-logo-acts">' +
         '<input type="file" id="coLogoFile" accept="image/*" style="display:none" onchange="_coLogoPick(this)">' +
@@ -6502,7 +7030,6 @@ function _renderCompanyTab(){
         (_coLogoRemove || _coLogo
           ? '<button type="button" class="btn btn-ghost btn-sm" onclick="_coUndoLogo()">Undo</button>' : '') +
       '</div>' +
-      '<p class="co-hint">Any size or shape works — it is resized automatically. Appears beside the company name in the header and on the loading screen.</p>' +
 
       '<div class="co-save"><button type="button" class="btn btn-primary" id="coSave" onclick="_saveCompanyProfile()">Save changes</button></div>' +
     '</div>';
@@ -6649,8 +7176,8 @@ function _renderSystemTab() {
           _sysActRefHtml(a) +
         '</li>';
       }).join('') + '</ul>'
-    : '<p style="font-size:.78rem;color:var(--muted)">Nothing automatic has run yet. The daily backup runs at 2am ' +
-      'once it is switched on from the ' + _he(PRODUCT) + ' menu in the spreadsheet.</p>';
+    : '<p style="font-size:.78rem;color:var(--muted)">Nothing automatic has run yet. Switch the nightly backup on below ' +
+      'and the first one runs tonight at 2am.</p>';
 
   content.innerHTML =
     '<p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">System-wide maintenance — not specific to any one category.</p>' +
@@ -6658,23 +7185,120 @@ function _renderSystemTab() {
       '<label>What the system did on its own</label>' + actHtml +
     '</div>' +
     '<div class="field" style="margin-bottom:1.25rem">' +
-      '<label>Archive movements older than</label>' +
+      '<label style="display:flex;align-items:center;gap:.4rem">Archive movements older than ' +
+        _infoIc('Older movements stay accessible via "Load Older History" — this only moves them out of the main table for speed.') +
+      '</label>' +
       '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' +
         '<select id="archiveCutoffSel" onchange="_saveArchiveCutoff()" style="padding:.4rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text)">' +
           '<option value="6"'  + (months==='6'  ? ' selected' : '') + '>6 months</option>' +
           '<option value="12"' + (months==='12' ? ' selected' : '') + '>12 months</option>' +
           '<option value="18"' + (months==='18' ? ' selected' : '') + '>18 months</option>' +
         '</select>' +
-        '<span style="color:var(--muted);font-size:.75rem">Older movements stay accessible via "Load Older History".</span>' +
       '</div>' +
     '</div>' +
+    '<div class="field" style="margin-bottom:1.25rem">' +
+      '<label>Backups</label>' +
+      '<div id="backupBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Checking…</div>' +
+    '</div>' +
     '<div class="field">' +
-      '<label>Stock totals</label>' +
+      '<label style="display:flex;align-items:center;gap:.4rem">Stock totals ' +
+        _infoIc('Recalculates every stock total from the current movement history. Use this if a deleted or edited movement left stale numbers behind.') +
+      '</label>' +
       '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' +
         '<button id="btnRebuildStock" class="btn btn-ghost btn-sm" onclick="_rebuildStockNow()">🔧 Rebuild Stock Totals Now</button>' +
-        '<span style="color:var(--muted);font-size:.75rem">Recalculates LIVE_STOCK / SITE_STOCK / WASTED_STOCK from the current movement history. Use this if a deleted or edited movement left stale numbers behind.</span>' +
       '</div>' +
     '</div>';
+
+  _loadBackupStatus();
+}
+
+// The nightly backup used to be reachable only from the spreadsheet menu, and
+// this very tab told people so — without offering any way to do it. An admin
+// who lives in the app could not see whether their data was being backed up at
+// all, which is a strange thing for a system to keep to itself.
+function _loadBackupStatus(){
+  var box = document.getElementById('backupBox');
+  if (!box) return;
+  google.script.run
+    .withSuccessHandler(function(st){ _drawBackupBox(st || {}); })
+    .withFailureHandler(function(e){
+      var b = document.getElementById('backupBox');
+      if (b) b.innerHTML = '<span style="color:var(--red)">Could not read the backup schedule: ' + _he(e.message||e) + '</span>';
+    })
+    .processMovement('getBackupStatus', _h({}));
+}
+
+function _drawBackupBox(st){
+  var box = document.getElementById('backupBox');
+  if (!box) return;
+  var on = !!st.enabled;
+  // Read straight from a Script Property (see runBackupNow_), not from the
+  // audit log the way "What the system did on its own" above does — that
+  // list only shows the last ~1500 audit rows, and on a busy install that
+  // window can scroll past yesterday's backup in well under a day even
+  // though the file is sitting safely in Drive the whole time. This line
+  // can't be scrolled past.
+  var lastHtml = '';
+  if (st.lastBackupAt) {
+    var link = st.lastBackupFileId
+      ? '<a target="_blank" href="https://drive.google.com/file/d/' + _he(st.lastBackupFileId) + '/view">' +
+        _he(st.lastBackupName || 'Open in Drive') + ' ↗</a>'
+      : _he(st.lastBackupName || '');
+    lastHtml = '<div style="font-size:.75rem;margin-top:.35rem">Last backup: ' + _he(_fmtWhen(st.lastBackupAt)) +
+      (link ? ' — ' + link : '') + '</div>';
+  }
+  box.innerHTML =
+    '<label class="sw" style="margin-bottom:.5rem">' +
+      '<input type="checkbox" id="backupSw"' + (on ? ' checked' : '') + ' onchange="_toggleBackup(this)">' +
+      '<span class="sw-track"></span>' +
+      '<span class="sw-text" style="color:var(--text)">Back up automatically every night at 2am</span>' +
+    '</label>' +
+    '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:.35rem">' +
+      '<button id="btnBackupNow" class="btn btn-ghost btn-sm" onclick="_backupNow()">🗄 Back up now</button>' +
+      '<span style="color:var(--muted);font-size:.75rem">' +
+        (on
+          ? 'Copies are kept for ' + (st.retentionDays || 30) + ' days in a Drive folder called "' + _he(st.folder || '') + '", then deleted.'
+          : 'Nothing is being backed up on a schedule. Turn this on — it costs nothing and it is the only thing that gets your data back after a bad import or a deleted row.') +
+      '</span>' +
+    '</div>' +
+    lastHtml +
+    // Deliberately separate from the switch: "back this up before I do
+    // something risky" and "back it up every night" are different decisions,
+    // and the menu version ran them together.
+    '<div style="color:var(--muted);font-size:.72rem;margin-top:.4rem">' +
+      '"Back up now" makes one extra copy immediately. It does not change the schedule.' +
+    '</div>';
+}
+
+function _toggleBackup(el){
+  var want = el.checked;
+  el.disabled = true;
+  google.script.run
+    .withSuccessHandler(function(res){
+      _drawBackupBox({ enabled: res && res.enabled, retentionDays: 30, folder: '' });
+      _loadBackupStatus();                       // re-read, so the text is the server's truth
+      showToast(want ? 'Nightly backup is on ✓' : 'Nightly backup turned off', want ? 'ok' : 'warn');
+    })
+    .withFailureHandler(function(e){
+      el.checked = !want; el.disabled = false;   // put the switch back where it was
+      showToast('Could not change it: ' + (e.message||e), 'err', 6000);
+    })
+    .processMovement('setBackupEnabled', _h({ enabled: want }));
+}
+
+function _backupNow(){
+  var btn = document.getElementById('btnBackupNow');
+  _btnBusy(btn, 'Backing up…');
+  google.script.run
+    .withSuccessHandler(function(res){
+      _btnDone(btn, true, function(){ _loadBackupStatus(); });   // refresh "Last backup" line
+      showToast('Backup created: ' + ((res && res.name) || 'done'), 'ok', 5000);
+    })
+    .withFailureHandler(function(e){
+      _btnReset(btn);
+      showToast('Backup failed: ' + (e.message||e), 'err', 6000);
+    })
+    .processMovement('runBackupOnDemand', _h({}));
 }
 
 // ── Bulk Import (CSV) ─────────────────────────────────────────────────────────
@@ -6875,6 +7499,7 @@ function _renderSettingsTab(tab) {
   if (tab === 'import')      { _renderImportTab(); return; }
   if (tab === 'locations')   { _renderLocationsTab(); return; }
   if (tab === 'company')     { _renderCompanyTab(); return; }
+  if (tab === 'permissions') { _renderPermissionsTab(); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
@@ -7991,6 +8616,45 @@ function _applyMatChangeLocally(p){
 function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
+// The "i" badge used everywhere a field used to carry a paragraph of always-
+// visible help text: same explanation, shown on hover/focus instead of taking
+// up the window. See .info-ic / .tip in the stylesheet.
+function _infoIc(text){
+  return '<span class="info-ic tip" tabindex="0" data-tip="' + _escAttr(text) + '">i</span>';
+}
+
+// A stat-tile <label> with a leading info icon — the icon comes first here
+// because the tile's own numbers stay fully visible either way; nothing is
+// being removed for it to replace. See _infoIc for the trailing-icon case,
+// used where an icon took the place of text that used to be shown.
+function _statLabel(text, tip){
+  return '<label style="display:flex;align-items:center;gap:.32rem">' + _infoIc(tip) + text + '</label>';
+}
+
+// ── Tooltip edge avoidance ────────────────────────────────────────────────────
+// .tip's default centers its bubble on the anchor, which is wrong the instant
+// the anchor sits near the left or right edge of the window — a stat tile's
+// info icon at the end of the row, for instance. Delegated on mouseenter
+// (capture, since it doesn't bubble) and focusin so it works for every .tip
+// added anywhere, including ones rendered long after this file loaded.
+var TIP_MAX_WIDTH = 240, TIP_EDGE_MARGIN = 8;
+function _positionTip(el){
+  el.classList.remove('tip-edge-l', 'tip-edge-r');
+  var r = el.getBoundingClientRect();
+  var cx = r.left + r.width / 2;
+  var half = TIP_MAX_WIDTH / 2;
+  if (cx - half < TIP_EDGE_MARGIN) el.classList.add('tip-edge-l');
+  else if (cx + half > window.innerWidth - TIP_EDGE_MARGIN) el.classList.add('tip-edge-r');
+}
+document.addEventListener('mouseenter', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.tip');
+  if (el) _positionTip(el);
+}, true);
+document.addEventListener('focusin', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.tip');
+  if (el) _positionTip(el);
+});
+
 // ── Event delegation ──────────────────────────────────────────────────────────
 // Buttons inside dynamically-rendered lists carry  data-action + data-* payload
 // instead of inline  onclick="fn('+value+')".  The payload is read with
@@ -8030,6 +8694,10 @@ function _escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&
       openLockModal(el.getAttribute('data-matid'), el.getAttribute('data-cat'), el.getAttribute('data-name'), el.getAttribute('data-rack'));
     } else if (a === 'unlock-material') {
       unlockMaterialConfirm(el.getAttribute('data-lock-id'), el.getAttribute('data-lock-name'));
+    } else if (a === 'toggle-rdw') {
+      _toggleRdwActions(parseInt(el.getAttribute('data-idx'), 10));
+    } else if (a === 'rdw-move') {
+      _rdwMoveFromDrawer(el.getAttribute('data-type'), parseInt(el.getAttribute('data-idx'), 10));
     }
   }
   document.addEventListener('click', function(e){
@@ -8917,8 +9585,11 @@ function _recomputeCfgDeck(){
 
 function _unqueueCfgAdd(type, value){
   var key = _cfgKey(type, value);
-  _pendingCfgAdds = _pendingCfgAdds.filter(function(p){ return _cfgKey(p.type, p.value) !== key; });
-  _renderCfgDeck();
+  var el  = document.querySelector('.cfg-card[data-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+  _deckCardLeave(el, function(){
+    _pendingCfgAdds = _pendingCfgAdds.filter(function(p){ return _cfgKey(p.type, p.value) !== key; });
+    _renderCfgDeck();
+  });
 }
 
 // All of them — no cap here. The pile only ever shows _DECK_VISIBLE at a time,
@@ -8932,6 +9603,21 @@ function _unqueueCfgAdd(type, value){
 // innerHTML a second time would throw away the handlers wired after the first.
 var _cfgDeckHtml = '', _sysDeckHtml = '', _cfgDeckTotal = 0, _sysDeckTotal = 0;
 
+// Cards already shown at least once, so a background refresh cannot make the
+// whole pile fly in from the right again.
+var _deckSeenIds = {};
+
+// Every card leaves the same way, whichever kind it is and whichever control
+// removed it: out to the right, giving its height back over the same beat so
+// the ones below rise into the gap. Redrawing first would rebuild the pile and
+// leave nothing to animate, so the redraw waits for the movement to finish.
+var _DECK_LEAVE_ANIM_MS = 500;
+function _deckCardLeave(el, then){
+  if (!el){ if (then) then(); return; }
+  el.classList.add('leaving');
+  setTimeout(function(){ if (then) then(); }, _DECK_LEAVE_ANIM_MS);
+}
+
 function _paintDeck(){
   var deck = document.getElementById('cornerDeck');
   if (!deck) return;
@@ -8939,7 +9625,36 @@ function _paintDeck(){
   // something already done, the other is waiting on an answer, and the thing
   // waiting on you belongs on top.
   deck.innerHTML = _sysDeckHtml + _cfgDeckHtml;
-  if (!deck.innerHTML){ deck.classList.remove('open'); return; }
+  if (!deck.innerHTML){
+    deck.classList.remove('open', 'stack-2', 'stack-3');
+    return;
+  }
+
+  var cards = deck.querySelectorAll('.deck-card');
+
+  // Two strips above the front card say "there is more underneath" without
+  // ever showing a third. The badge already gives the exact number, so the
+  // strips only have to answer "one, or several?".
+  deck.classList.toggle('stack-2', cards.length >= 2);
+  deck.classList.toggle('stack-3', cards.length >= 3);
+
+  // Fan-out order: the card on top moves first and the ones under it follow a
+  // beat later, which is the direction paper actually spreads.
+  for (var ci = 0; ci < cards.length; ci++){
+    cards[ci].style.setProperty('--i', String(cards.length - 1 - ci));
+  }
+
+  // A card that has never been on screen slides in from off the right edge.
+  // Anything already seen must NOT re-animate: this function runs on every
+  // background refresh, and a pile that flies in again each time a movement is
+  // saved somewhere else is worse than one that never moved at all.
+  cards.forEach(function(card){
+    var id = card.getAttribute('data-card-id') || card.getAttribute('data-key');
+    if (!id || _deckSeenIds[id]) return;
+    _deckSeenIds[id] = 1;
+    card.classList.add('entering');
+    card.addEventListener('animationend', function(){ card.classList.remove('entering'); }, { once: true });
+  });
 
   // The badge counts the WHOLE pile, including the cards held back from the
   // DOM, and rides on whichever card is actually on top.
@@ -9027,7 +9742,7 @@ function _renderCfgDeck(){
     if (!_cfgSeenKeys[k]) { _cfgSeenKeys[k] = 1; isNew = true; }
   });
 
-  if (deck.matches(':hover') || deck.classList.contains('open')) _cfgWake();
+  if (deck.classList.contains('open')) _cfgWake();
   else if (isNew) { deck.classList.remove('dim'); _cfgScheduleDim(_CFG_SOLID_MS); }
   else deck.classList.add('dim');   // a re-render on its own never wakes it
 }
@@ -9181,11 +9896,65 @@ function _cfgWake(){
   if (deck) deck.classList.remove('dim');
 }
 
+// ── The pile opens and closes from HERE, not from CSS :hover ─────────────────
+// :hover fed back into itself. Opening the pile makes it grow upward and the
+// front card jump from scale(.88) to full size, which moves the geometry out
+// from under the pointer; :hover is then false, so it shuts; the pointer is
+// over it again, so it opens. That is the card "changing size three times" in
+// Jose's video — not a transition to be tuned, a loop to be cut.
+//
+// Driving it from JS with a delay on the way out breaks the loop: a momentary
+// loss of hover while the pile is still settling no longer closes anything.
+// Clicking PINS it open, so reading a long notice does not depend on holding
+// the mouse still.
+var _deckHover = false, _deckPinned = false, _deckLeaveTimer = null;
+var _DECK_LEAVE_MS = 280;
+
+function _deckApply(){
+  var deck = document.getElementById('cornerDeck');
+  if (!deck) return;
+  var open = _deckHover || _deckPinned;
+  deck.classList.toggle('open', open);
+  // The page behind must hold still while somebody is reading the pile — but
+  // NOT dim. A modal darkens because it wants your whole attention; this only
+  // wants the words under the pointer to stop sliding away. The page scrollbar
+  // is already hidden, so locking it shifts no layout.
+  document.documentElement.classList.toggle('deck-open', open);
+  if (open) _cfgWake(); else _cfgScheduleDim(_CFG_REDIM_MS);
+}
+
+function _deckEnter(){
+  clearTimeout(_deckLeaveTimer);
+  _deckHover = true;
+  _deckApply();
+}
+
+function _deckLeave(){
+  clearTimeout(_deckLeaveTimer);
+  _deckLeaveTimer = setTimeout(function(){ _deckHover = false; _deckApply(); }, _DECK_LEAVE_MS);
+}
+
+function _deckTogglePin(){
+  _deckPinned = !_deckPinned;
+  _deckApply();
+}
+
 (function _wireCfgDeckFade(){
   var deck = document.getElementById('cornerDeck');
   if (!deck) return;
-  deck.addEventListener('mouseenter', _cfgWake);
-  deck.addEventListener('mouseleave', function(){ _cfgScheduleDim(_CFG_REDIM_MS); });
+  deck.addEventListener('mouseenter', _deckEnter);
+  deck.addEventListener('mouseleave', _deckLeave);
+  // Touch has no hover at all, so a tap has to do the whole job.
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('[data-sys-x],[data-sys-open],button')) return;  // real controls win
+    _deckTogglePin();
+  });
+  // Unpin by clicking anywhere else, the way any other open panel behaves.
+  document.addEventListener('click', function(e){
+    if (!_deckPinned) return;
+    if (deck.contains(e.target)) return;
+    _deckPinned = false; _deckApply();
+  });
 })();
 
 // Above the breakpoint the corner decks take over and the bell disappears — but
@@ -9550,22 +10319,21 @@ function openRackDrawer(rackName) {
 
   document.getElementById('rackDrawerTitle').textContent = '📦 ' + rackName;
 
-  // Show Exit button only for admins/warehouse users
-  var exitBtn = document.getElementById('rackDrawerExitBtn');
-  if (exitBtn) exitBtn.style.display = (userRole !== 'VIEWER') ? '' : 'none';
-
-  _renderRackDrawerPhoto();
-
   if (!items.length) {
+    _rdwItems = [];
     document.getElementById('rackDrawerBody').innerHTML =
       '<p style="padding:1rem;color:var(--muted);font-size:.85rem">No items in this rack.</p>';
   } else {
     var isAdmin = userRole === 'ADMIN';
+    // Indexed here rather than re-read from the DOM when a Exit/Transfer/Waste
+    // button is clicked — a material name can contain quotes (36" GLASS,
+    // O'BRIEN), so it travels through a JS array instead of an HTML attribute.
+    _rdwItems = items.map(function(item){ return { category: item.category, name: item.name, rack: rackName }; });
     document.getElementById('rackDrawerBody').innerHTML =
       '<div style="padding:.35rem .5rem .15rem;display:flex;justify-content:space-between;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">'+
-        '<span>Material</span><span>In Rack&nbsp;/&nbsp;Total WH</span>'+
+        '<span>Material — tap for actions</span><span>In Rack&nbsp;/&nbsp;Total WH</span>'+
       '</div>'+
-      items.map(function(item){
+      items.map(function(item, idx){
         var col  = CAT_DOT_COLORS[nt(item.category)] || '#9CA3AF';
         var lock = _findLock(item.matId, rackName);
         var lockBtn = '';
@@ -9575,12 +10343,19 @@ function openRackDrawer(rackName) {
         } else if (isAdmin) {
           lockBtn = '<button class="rdw-lock-btn" data-action="open-lock-modal" data-matid="'+_he(item.matId)+'" data-cat="'+_he(item.category)+'" data-name="'+_he(item.name)+'" data-rack="'+_he(rackName)+'" title="Lock this material at this rack">🔒 Lock</button>';
         }
-        return '<div class="rdw-item">'+
-          '<span class="rack-cat-dot" style="background:'+col+';width:10px;height:10px;flex-shrink:0"></span>'+
-          '<span class="rdw-name" title="'+_he(item.name)+'">'+_he(item.name)+'</span>'+
-          '<span class="rdw-rack-qty">'+item.qty+' '+item.unit+'</span>'+
-          '<span class="rdw-total-qty" title="Total in warehouse">('+item.warehouseTotal+' total)</span>'+
-          lockBtn +
+        return '<div class="rdw-item-wrap">'+
+          '<div class="rdw-item">'+
+            '<span class="rack-cat-dot" style="background:'+col+';width:10px;height:10px;flex-shrink:0"></span>'+
+            '<span class="rdw-name" data-action="toggle-rdw" data-idx="'+idx+'" title="'+_he(item.name)+'">'+_he(item.name)+'</span>'+
+            '<span class="rdw-rack-qty">'+item.qty+' '+item.unit+'</span>'+
+            '<span class="rdw-total-qty" title="Total in warehouse">('+item.warehouseTotal+' total)</span>'+
+            lockBtn +
+          '</div>'+
+          '<div class="rdw-actions" id="rdw-actions-'+idx+'">'+
+            '<button type="button" class="btn btn-danger btn-sm" data-action="rdw-move" data-type="EXIT" data-idx="'+idx+'">↑ Exit</button>'+
+            '<button type="button" class="btn btn-ghost btn-sm" data-action="rdw-move" data-type="TRANSFER" data-idx="'+idx+'">⇄ Transfer</button>'+
+            '<button type="button" class="btn btn-ghost btn-sm" data-action="rdw-move" data-type="WASTE" data-idx="'+idx+'">✕ Waste</button>'+
+          '</div>'+
         '</div>';
       }).join('');
   }
@@ -9589,36 +10364,124 @@ function openRackDrawer(rackName) {
   document.getElementById('rackDrawerOverlay').classList.add('open');
 }
 
+// This rack drawer's items, indexed for the Exit/Transfer/Waste action menu —
+// see the comment in openRackDrawer for why a JS array instead of DOM attrs.
+var _rdwItems = [];
+
+function _toggleRdwActions(idx){
+  var el = document.getElementById('rdw-actions-' + idx);
+  if (!el) return;
+  var opening = el.style.display !== 'flex';
+  // Only one open at a time — keeps a long rack's list from turning into a
+  // wall of buttons.
+  document.querySelectorAll('.rdw-actions').forEach(function(a){ a.style.display = 'none'; });
+  document.querySelectorAll('.rdw-name').forEach(function(n){ n.classList.remove('rdw-name-open'); });
+  if (opening){
+    el.style.display = 'flex';
+    var nameEl = document.querySelector('.rdw-name[data-idx="' + idx + '"]');
+    if (nameEl) nameEl.classList.add('rdw-name-open');
+  }
+}
+
+// Opens the EXIT/TRANSFER/WASTE modal with this material's category, name,
+// and source rack already filled in — only qty, destination and comments are
+// left for the user to type, per Jose's spec: tap a material in the rack
+// drawer instead of retyping what the app already knows.
+//
+// Set for the life of that one material's modal session: which material this
+// modal is about, so switching between EXIT/TRANSFER/WASTE inside the SAME
+// open modal (the type bar at the top) can re-apply the same prefill instead
+// of losing it — those three types keep completely separate fields
+// (exit-cat-1/exit-name-1 for EXIT, the shared mType/mName for TRANSFER and
+// WASTE), so switching between them with no data to carry over meant the
+// second type just showed empty. openMoveModal() clears this back to null on
+// every fresh, non-Rack-Drawer open.
+var _rdwPrefillActive = null;
+
+function _rdwMoveFromDrawer(type, idx){
+  var item = _rdwItems[idx];
+  if (!item) return;
+  closeRackDrawer();
+  openMoveModal(type);
+  setTimeout(function(){
+    _rdwPrefillActive = { category: item.category, name: item.name, rack: item.rack };
+    _syncMoveTypeBarForRdw();
+    _prefillMoveModalMaterial(type, item.category, item.name, item.rack);
+  }, 300);
+}
+
+// A material tapped from a specific rack only ever makes sense leaving that
+// rack (EXIT), moving from it (TRANSFER), or being written off from it
+// (WASTE) — ENTRY (new stock in) and RETURN (coming back from a site, not a
+// rack) don't have a "from this exact rack+material" reading at all, so they
+// stay hidden while a Rack Drawer material is active instead of being two
+// dead ends that also happened to wipe the prefill if clicked.
+function _syncMoveTypeBarForRdw(){
+  var bar = document.getElementById('moveTypeBar');
+  if (!bar) return;
+  var restrict = !!_rdwPrefillActive;
+  bar.querySelectorAll('button').forEach(function(b){
+    var t = b.getAttribute('data-type');
+    b.style.display = (restrict && (t === 'ENTRY' || t === 'RETURN')) ? 'none' : '';
+  });
+}
+
+// Every click on the modal's own type bar (Entry/Exit/Transfer/Return/Waste)
+// goes through here instead of calling setModalType directly, so a Rack
+// Drawer material session survives switching between its three allowed
+// types instead of the second type opening blank.
+function _moveTypeBarClick(type){
+  setModalType(type);
+  if (_rdwPrefillActive) {
+    _prefillMoveModalMaterial(type, _rdwPrefillActive.category, _rdwPrefillActive.name, _rdwPrefillActive.rack);
+  }
+}
+
+function _prefillMoveModalMaterial(type, cat, name, rack){
+  if (type === 'WASTE'){
+    var catSel = document.getElementById('mType');
+    var nameInp = document.getElementById('mName');
+    var srcInp = document.getElementById('mSrc');
+    var qtyInp = document.getElementById('mQty');
+    if (catSel) catSel.value = cat;
+    if (nameInp) nameInp.value = name;
+    if (srcInp) srcInp.value = rack;
+    if (qtyInp) qtyInp.value = '';    // qty is the one thing NOT auto-filled
+    checkStock();
+  } else if (type === 'TRANSFER'){
+    var catSel2 = document.getElementById('mType');
+    var nameInp2 = document.getElementById('mName');
+    if (catSel2) catSel2.value = cat;
+    if (nameInp2) nameInp2.value = name;
+    addTransferRow(rack, '', '');     // qty and destination left blank
+    renderTransferLocPicker();
+  } else if (type === 'EXIT'){
+    // openMoveModal(EXIT) already seeded Material 1 with one empty loc row —
+    // fill that one in rather than adding a second.
+    var catSel3 = document.getElementById('exit-cat-1');
+    var nameInp3 = document.getElementById('exit-name-1');
+    if (catSel3) catSel3.value = cat;
+    if (nameInp3) nameInp3.value = name;
+    var locsDiv = document.getElementById('exit-locs-1');
+    var rackInp = locsDiv && locsDiv.querySelector('.el-rack');
+    if (rackInp) rackInp.value = rack;   // qty left blank
+    updateExitMatNameList(1);
+    syncExitRackAvail(1);
+    syncExitMatTotal(1);
+  }
+}
+
 function closeRackDrawer() {
   document.getElementById('rackDrawer').classList.remove('open');
   document.getElementById('rackDrawerOverlay').classList.remove('open');
 }
 
 // ── Rack Photos ────────────────────────────────────────────────────────────────
-// One reference photo per physical location, uploaded/viewed from either the Rack
-// Drawer (Warehouse Map) or the Photos|Documents split panel on a Dashboard row.
+// One reference photo per physical location — used to live in the Rack Drawer
+// too, but Jose asked for it out (v9.82): "está de más" for a popup whose job
+// is picking a material fast, not looking at a photo. Still uploadable/viewable
+// from the Photos|Documents split panel on a Dashboard row.
 var _rackPhotoUploadTarget = '';
-
-function _renderRackDrawerPhoto(){
-  var box = document.getElementById('rackDrawerPhotoBox');
-  if (!box) return;
-  var photo = rackPhotos[String(_openRackName || '').toUpperCase()];
-  var canUpload = userRole !== 'VIEWER';
-
-  // Own classes, not .rpc-* — those are now the compact 52px chips used in the
-  // expanded stock row. The drawer is the one place a big photo still belongs:
-  // it's a whole panel about a single rack, not one cell in a grid of them.
-  var img = photo
-    ? _privImgTag(photo.url, 'class="rdp-img" data-action="preview-media" data-url="'+_he(photo.url)+'" data-label="'+_he(_openRackName)+'" title="Click to view full size"', _openRackName)
-    : '<div class="rdp-empty">' +
-        '<span style="font-size:1.3rem">📷</span><span>No photo yet</span>' +
-      '</div>';
-  var action = canUpload
-    ? '<button class="rdp-btn" data-action="rack-photo-upload" data-rack="'+_he(_openRackName)+'">' + (photo ? '🔄 Replace Photo' : '+ Add Photo') + '</button>'
-    : '';
-
-  box.innerHTML = img + (action ? '<div style="text-align:center">'+action+'</div>' : '');
-}
 
 // Large-preview lightbox for a document OR a rack photo. Fetches through
 // _fetchPrivateFile (google.script.run — see the comment on that function for
@@ -9805,7 +10668,6 @@ function _handleRackPhotoFileChange(){
         var openIds = Array.prototype.map.call(document.querySelectorAll('.stock-detail-row.open'), function(el){ return el.id; });
         renderStock();
         openIds.forEach(function(id){ var el = document.getElementById(id); if (el) el.classList.add('open'); });
-        if (_openRackName === rack) _renderRackDrawerPhoto();
         renderWarehouseMap();
         showToast('📷 Photo saved for ' + rack, 'ok');
       })
@@ -9891,25 +10753,6 @@ function _doUnlockMaterial(lockId){
     .processMovement('unlockMaterial', _h({ id: lockId }));
 }
 
-function openExitFromRack() {
-  closeRackDrawer();
-  // Open EXIT modal pre-set — user picks material and auto-fill will use this rack
-  openMoveModal('EXIT');
-  // Small delay so modal is rendered, then trigger autofill for this rack
-  setTimeout(function(){
-    showToast('Select the material, then click "↗ Auto-fill Racks" to pull from ' + _openRackName, 'ok', 4000);
-  }, 300);
-}
-
-function openTransferFromRack() {
-  closeRackDrawer();
-  openMoveModal('TRANSFER');
-  setTimeout(function(){
-    var src = document.getElementById('mSrc');
-    if (src) { src.value = _openRackName; src.dispatchEvent(new Event('input')); }
-  }, 300);
-}
-
 // ── Render All ────────────────────────────────────────────────────────────────
 function renderAll(){
   // Mark all tabs dirty, then render only the active one
@@ -9964,52 +10807,180 @@ function toggleStockPanel() {
 // ── Monitor Settings (which materials to watch) ───────────────────────────────
 // Grouped by category (alphabetical), materials alphabetical within each category —
 // matches the physical Category → Materials mental model instead of one long mixed list.
+// ── Low-Stock Monitor ────────────────────────────────────────────────────────
+// State lives HERE, not in the DOM, because the DOM only ever holds the
+// categories that are currently open. Reading the checkboxes at save time —
+// which is what the old version did — would silently drop every material whose
+// category happened to be collapsed.
+var _monSel = {};        // NAME(upper) -> true when watched
+var _monMin = {};        // NAME(upper) -> minimum, '' for none
+var _monOpenCats = {};   // CATEGORY -> true when expanded
+var _monByCat = {};      // CATEGORY -> [stock rows], built once per open
+var _monTotal = 0;       // every material, for the "all of them = no filter" rule
+
 function openMonitorModal() {
   var monSet = {};
   if (monitoredMaterials && monitoredMaterials.length) {
-    monitoredMaterials.forEach(function(n){ monSet[(n||'').toUpperCase()] = true; });
+    monitoredMaterials.forEach(function(nm){ monSet[(nm || '').toUpperCase()] = true; });
   }
+  // The long-standing rule, kept: nothing selected means WATCH EVERYTHING. It
+  // is not obvious from a screen of empty checkboxes, so the screen now says so
+  // in as many words rather than leaving it to be discovered.
   var allMonitored = !monitoredMaterials || monitoredMaterials.length === 0;
 
-  // Group by category
-  var byCat = {};
-  Object.values(stockData).forEach(function(s){
-    var cat = nt(s.category) || 'UNCATEGORIZED';
-    (byCat[cat] = byCat[cat] || []).push(s);
+  _monSel = {}; _monMin = {}; _monOpenCats = {}; _monByCat = {}; _monTotal = 0;
+
+  Object.values(stockData).forEach(function(st){
+    var cat  = nt(st.category) || 'UNCATEGORIZED';
+    var name = (st.name || '').toUpperCase().trim();
+    if (!name) return;
+    (_monByCat[cat] = _monByCat[cat] || []).push(st);
+    _monTotal++;
+    if (!allMonitored && monSet[name]) _monSel[name] = true;
+    var mv = (config.minStock && (config.minStock[st.name] || config.minStock[name]));
+    _monMin[name] = (mv === 0 || mv) ? String(mv) : '';
   });
-  var cats = Object.keys(byCat).sort(); // alphabetical category order
-  cats.forEach(function(c){ byCat[c].sort(function(a,b){ return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); }); });
+  Object.keys(_monByCat).forEach(function(c){
+    _monByCat[c].sort(function(a, b){ return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+  });
 
-  var html = cats.map(function(cat){
-    var itemsHtml = byCat[cat].map(function(s) {
-      var upperName = (s.name || '').toUpperCase().trim();
-      var checked = allMonitored || !!monSet[upperName];
-      var minVal = (config.minStock && (config.minStock[s.name] || config.minStock[upperName])) || '';
-      return '<label class="monitor-item">' +
-        '<div class="monitor-item-top">' +
-          '<input type="checkbox" class="mon-chk" value="' + upperName.replace(/"/g,'&quot;') + '"' +
-            (checked ? ' checked' : '') + '>' +
-          '<span class="monitor-item-wh" title="Units currently in the warehouse (wh = warehouse)">' + (s.warehouseQty||0) + ' wh</span>' +
-        '</div>' +
-        '<span class="monitor-item-name" title="' + _he(s.name) + '">' + _he(s.name) + '</span>' +
-        '<div class="monitor-item-min">' +
-          '<label>Min</label>' +
-          '<input type="number" class="mon-min-inp" min="0" placeholder="—" data-name="' + upperName.replace(/"/g,'&quot;') + '"' +
-            (minVal !== '' ? ' value="' + minVal + '"' : '') +
-            ' onclick="event.stopPropagation()" title="Minimum stock — alert fires when available stock drops below this">' +
-        '</div>' +
-      '</label>';
-    }).join('');
-    return '<div class="monitor-cat-hdr">' + catBadge(cat) + '<span>' + byCat[cat].length + ' item' + (byCat[cat].length!==1?'s':'') + '</span></div>' +
-           '<div class="monitor-cat-grid">' + itemsHtml + '</div>';
-  }).join('');
+  // A category that already has something watched in it opens straight away —
+  // otherwise reopening this window hides the very choices you came back to
+  // change.
+  Object.keys(_monByCat).forEach(function(c){
+    if (_monByCat[c].some(function(st){ return _monSel[(st.name || '').toUpperCase().trim()]; })) {
+      _monOpenCats[c] = true;
+    }
+  });
 
-  document.getElementById('monitorGrid').innerHTML = html;
+  _renderMonitor();
   document.getElementById('monitorOverlay').classList.add('show');
-  // Shrink long material names to fit their fixed-size box instead of overflowing
-  // (only after the modal is visible — measuring width on a display:none element gives 0).
   setTimeout(_shrinkMonitorNames, 0);
 }
+
+function _monItemHtml(st){
+  var name = (st.name || '').toUpperCase().trim();
+  var on   = !!_monSel[name];
+  var minv = _monMin[name] || '';
+  var esc  = name.replace(/"/g, '&quot;');
+  return '<label class="monitor-item' + (on ? '' : ' off') + '" data-mon-row="' + esc + '">' +
+    '<div class="monitor-item-top">' +
+      '<input type="checkbox" class="mon-chk" value="' + esc + '"' + (on ? ' checked' : '') + '>' +
+      '<span class="monitor-item-wh" title="Units currently in the warehouse">' + (st.warehouseQty || 0) + ' wh</span>' +
+    '</div>' +
+    '<span class="monitor-item-name" title="' + _he(st.name) + '">' + _he(st.name) + '</span>' +
+    '<div class="monitor-item-min">' +
+      '<label>Min</label>' +
+      '<input type="number" class="mon-min-inp" min="0" placeholder="—" data-name="' + esc + '"' +
+        (minv !== '' ? ' value="' + _escAttr(minv) + '"' : '') + (on ? '' : ' disabled') +
+        ' onclick="event.stopPropagation()"' +
+        ' title="' + (on ? 'Alert when available stock drops below this' : 'Tick the box first') + '">' +
+    '</div>' +
+  '</label>';
+}
+
+function _monSectionHtml(cat, items){
+  return '<div class="monitor-cat-hdr">' + catBadge(cat) +
+           '<span>' + items.length + ' item' + (items.length !== 1 ? 's' : '') + '</span></div>' +
+         '<div class="monitor-cat-grid">' + items.map(_monItemHtml).join('') + '</div>';
+}
+
+function _renderMonitor(){
+  var cats = Object.keys(_monByCat).sort();
+
+  var chips = cats.map(function(c){
+    var cls    = CAT_BADGE[nt(c)] || 'badge-gray';
+    var open   = !!_monOpenCats[c];
+    var picked = _monByCat[c].filter(function(st){ return _monSel[(st.name || '').toUpperCase().trim()]; }).length;
+    return '<button type="button" class="mon-chip ' + cls + (open ? ' on' : '') + '" data-mon-cat="' + _escAttr(c) + '">' +
+      _he(c) + (picked ? '<span class="mon-chip-n">' + picked + '</span>' : '') + '</button>';
+  }).join('');
+
+  var body = cats.filter(function(c){ return _monOpenCats[c]; })
+                 .map(function(c){ return _monSectionHtml(c, _monByCat[c]); }).join('');
+
+  // Everything already ticked in a CLOSED category stays on screen underneath,
+  // so collapsing a category never hides a choice you have made — it only hides
+  // the hundreds you have not.
+  var picked = [];
+  cats.forEach(function(c){
+    if (_monOpenCats[c]) return;
+    _monByCat[c].forEach(function(st){
+      if (_monSel[(st.name || '').toUpperCase().trim()]) picked.push(st);
+    });
+  });
+  if (picked.length){
+    body += '<div class="mon-picked-hdr">Also being watched — ' + picked.length + ' from other categories</div>' +
+            '<div class="monitor-cat-grid">' + picked.map(_monItemHtml).join('') + '</div>';
+  }
+
+  if (!body){
+    body = '<div class="mon-empty">Pick a category above to choose what to watch.<br>' +
+           '<span style="font-size:.78rem">With nothing selected, <strong>every</strong> material is watched.</span></div>';
+  }
+
+  document.getElementById('monChips').innerHTML  = chips;
+  document.getElementById('monitorGrid').innerHTML = body;
+  setTimeout(_shrinkMonitorNames, 0);
+}
+
+function _monToggleCat(cat){
+  if (_monOpenCats[cat]) delete _monOpenCats[cat];
+  else _monOpenCats[cat] = true;
+  _renderMonitor();
+}
+
+// Ticking a box updates the row in place rather than redrawing the list: a
+// redraw would throw away the scroll position halfway down a long category.
+function _monToggleItem(name, on){
+  if (on) _monSel[name] = true; else delete _monSel[name];
+  var row = document.querySelector('[data-mon-row="' + (window.CSS && CSS.escape ? CSS.escape(name) : name) + '"]');
+  if (row){
+    row.classList.toggle('off', !on);
+    var inp = row.querySelector('.mon-min-inp');
+    if (inp){
+      inp.disabled = !on;
+      inp.title = on ? 'Alert when available stock drops below this' : 'Tick the box first';
+      if (on) inp.focus();
+    }
+  }
+  // Only the chip's count changes, so only the chips are redrawn.
+  var chipHolder = document.getElementById('monChips');
+  if (chipHolder){
+    var cats = Object.keys(_monByCat).sort();
+    chipHolder.innerHTML = cats.map(function(c){
+      var cls    = CAT_BADGE[nt(c)] || 'badge-gray';
+      var open   = !!_monOpenCats[c];
+      var picked = _monByCat[c].filter(function(st){ return _monSel[(st.name || '').toUpperCase().trim()]; }).length;
+      return '<button type="button" class="mon-chip ' + cls + (open ? ' on' : '') + '" data-mon-cat="' + _escAttr(c) + '">' +
+        _he(c) + (picked ? '<span class="mon-chip-n">' + picked + '</span>' : '') + '</button>';
+    }).join('');
+  }
+}
+
+// One listener on the window, not one per chip and checkbox — the list is
+// rebuilt every time a category opens, and per-element listeners would have to
+// be rewired on each redraw.
+(function _wireMonitor(){
+  var ov = document.getElementById('monitorOverlay');
+  if (!ov) return;
+  ov.addEventListener('click', function(e){
+    var chip = e.target.closest('[data-mon-cat]');
+    if (chip){ e.preventDefault(); _monToggleCat(chip.getAttribute('data-mon-cat')); return; }
+  });
+  ov.addEventListener('change', function(e){
+    if (e.target.classList.contains('mon-chk')){
+      _monToggleItem(e.target.value, e.target.checked);
+    } else if (e.target.classList.contains('mon-min-inp')){
+      _monMin[e.target.getAttribute('data-name')] = e.target.value;
+    }
+  });
+  ov.addEventListener('input', function(e){
+    if (e.target.classList.contains('mon-min-inp')){
+      _monMin[e.target.getAttribute('data-name')] = e.target.value;
+    }
+  });
+})();
 
 // Progressively reduces font-size on any .monitor-item-name whose text is wider
 // than its box, until it fits (or hits a minimum floor, where ellipsis takes over).
@@ -10027,27 +10998,36 @@ function _shrinkMonitorNames(){
 }
 
 function monitorSelectAll(val) {
-  document.querySelectorAll('.mon-chk').forEach(function(c){ c.checked = val; });
+  // Operates on the state, not the checkboxes on screen: with categories
+  // collapsed, "Select all" would otherwise mean "select the handful I can
+  // currently see", which is the opposite of what it says.
+  _monSel = {};
+  if (val) {
+    Object.keys(_monByCat).forEach(function(c){
+      _monByCat[c].forEach(function(st){
+        var nm = (st.name || '').toUpperCase().trim();
+        if (nm) _monSel[nm] = true;
+      });
+    });
+  }
+  _renderMonitor();
 }
 
 function saveMonitorSettings() {
-  var selected = [];
-  document.querySelectorAll('.mon-chk:checked').forEach(function(c){
-    selected.push((c.value || '').toUpperCase().trim()); // always uppercase
-  });
-  // If everything is checked, treat as "no filter" (watch all)
-  var total = document.querySelectorAll('.mon-chk').length;
-  var names = (selected.length === 0 || selected.length === total) ? [] : selected;
+  // Read the STATE, never the DOM. Only the open categories are rendered, so
+  // querying the checkboxes would quietly forget every material sitting in a
+  // collapsed one — which, with this design, is most of them.
+  var selected = Object.keys(_monSel);
+  // Everything ticked means the same as nothing ticked: no filter, watch all.
+  var names = (selected.length === 0 || selected.length === _monTotal) ? [] : selected;
 
-  // Collect min-stock threshold changes (only send the ones that actually changed)
   var minUpdates = [];
   if (!config.minStock) config.minStock = {};
-  document.querySelectorAll('.mon-min-inp').forEach(function(inp){
-    var name    = inp.getAttribute('data-name');
-    var qty     = parseInt(inp.value) || 0;
-    var current = config.minStock[name] || 0;
-    if (qty !== current) minUpdates.push({ name: name, qty: qty });
-    config.minStock[name] = qty; // apply locally immediately regardless
+  Object.keys(_monMin).forEach(function(nm){
+    var qty     = parseInt(_monMin[nm], 10) || 0;
+    var current = config.minStock[nm] || 0;
+    if (qty !== current) minUpdates.push({ name: nm, qty: qty });
+    config.minStock[nm] = qty;
   });
 
   // Apply locally IMMEDIATELY (no server round-trip needed for UX)
@@ -10843,7 +11823,7 @@ function _loadUsersTable() {
 
 function _roleBadge(role) {
   var cls = { ADMIN: 'admin', WAREHOUSE: 'warehouse', VIEWER: 'viewer' }[role] || 'viewer';
-  return '<span class="role-badge-' + cls + '">' + role + '</span>';
+  return '<span class="role-badge-' + cls + '">' + _he(_displayRole(role)) + '</span>';
 }
 
 function _renderUsersTable() {
@@ -10966,12 +11946,56 @@ function deactivateUser(email) {
 // ── Identity Picker (for non-org users when GAS can't detect email) ──────────
 // Sign-in screen for non-org users. Company users never reach this (auto-detected).
 var _oauthClientId = '', _oauthRedirectUri = '';
+
+// Everything that is not the gate has to go, not just the topbar.
+//
+// Both gate screens replaced .container and hid the topbar, and stopped there —
+// but the notification pile, the bell panel and the footer are siblings of
+// .container, not children, so they stayed on screen. The result was a sign-in
+// page with the company's backup notices stacked over it: information about the
+// system, shown to somebody the system has not identified yet.
+function _enterGatedScreen(){
+  ['.topbar', '.system-footer', '#cfgBellPanel', '#cornerDeck', '#rackDrawer', '#rackDrawerOverlay']
+    .forEach(function(sel){
+      var el = document.querySelector(sel);
+      if (el) el.style.display = 'none';
+    });
+  // Nothing is left to hover, so nothing should still be holding the scroll.
+  document.documentElement.classList.remove('deck-open');
+  _deckHover = false; _deckPinned = false;
+}
+
+// Links that reload the app as each of the browser's other signed-in Google
+// accounts. GAS web apps honour ?authuser=N (0 = first signed in, 1 = second…).
+//
+// This lived only on the "access denied" screen, which is the wrong one: denied
+// means the app KNOWS who you are and your address is not on the list. The
+// screen that actually needs it is the one that cannot identify you at all,
+// because by far the most common cause is being signed into the wrong Google
+// account in this browser — which is precisely what happened to Jose on his
+// phone and with his personal account on the laptop.
+//
+// target="_top" is required: a plain link navigates the sandboxed iframe to the
+// /exec address, which Google will not render inside itself, and the frame goes
+// white.
+function _accountSwitcherHtml(){
+  var baseUrl = window.location.href.replace(/[?&]authuser=\d/g, '');
+  var sep     = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+  return [0, 1, 2, 3].map(function(nn){
+    var bg = nn === 0 ? '#F3F4F6' : nn === 1 ? '#EFF6FF' : nn === 2 ? '#F0FDF4' : '#FFF7ED';
+    return '<a href="' + baseUrl + sep + 'authuser=' + nn + '" target="_top" rel="noopener" ' +
+      'style="display:inline-flex;align-items:center;justify-content:center;background:' + bg + ';' +
+             'color:#1a1a2e;border:1px solid #E5E7EB;border-radius:8px;padding:.5rem .9rem;' +
+             'font-size:.82rem;font-weight:600;text-decoration:none;flex:1;min-width:90px">' +
+      'Account ' + (nn + 1) + '</a>';
+  }).join('');
+}
+
 function _showGoogleSignIn(clientId, redirectUri) {
   _oauthClientId    = clientId    || '';
   _oauthRedirectUri = redirectUri || '';
-  var topbar    = document.querySelector('.topbar');
   var container = document.querySelector('.container');
-  if (topbar)    topbar.style.display = 'none';
+  _enterGatedScreen();
   if (!container) return;
 
   var configured = _oauthClientId && _oauthRedirectUri;
@@ -11005,6 +12029,16 @@ function _showGoogleSignIn(clientId, redirectUri) {
               'That is switched on separately by whoever set this system up.</p>' +
           '</div>'
       ) +
+      // Offered whether or not external sign-in is configured, because it is
+      // the fix in most cases: the browser is simply on the wrong account.
+      '<div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #E5E7EB">' +
+        '<p style="font-size:.75rem;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">' +
+          'Signed in with the wrong account?</p>' +
+        '<div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center">' + _accountSwitcherHtml() + '</div>' +
+        '<p style="font-size:.72rem;color:#9CA3AF;margin-top:.6rem">' +
+          'These are the Google accounts already signed in on this device, in the order Google lists them. ' +
+          'On a phone, the company account is often not the first one.</p>' +
+      '</div>' +
     '</div></div>';
 }
 
@@ -11063,21 +12097,9 @@ function _showAccessDeniedScreen(status, email) {
   // GAS web apps respect the ?authuser=N parameter to pick which signed-in
   // Google account runs the app (0 = first, 1 = second, 2 = third…).
   // We generate links for accounts 0–3 so the user can switch without logging out.
-  var baseUrl = window.location.href.replace(/[?&]authuser=\d/g, '');
-  var sep     = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+  var accountBtns = _accountSwitcherHtml();
 
-  var accountBtns = [0, 1, 2, 3].map(function(n) {
-    var url = baseUrl + sep + 'authuser=' + n;
-    return '<a href="' + url + '" ' +
-      'style="display:inline-flex;align-items:center;justify-content:center;gap:.35rem;' +
-             'background:' + (n === 0 ? '#F3F4F6' : n === 1 ? '#EFF6FF' : n === 2 ? '#F0FDF4' : '#FFF7ED') + ';' +
-             'color:#1a1a2e;border:1px solid #E5E7EB;border-radius:8px;' +
-             'padding:.5rem .9rem;font-size:.82rem;font-weight:600;text-decoration:none;flex:1;min-width:90px">' +
-      'Account ' + (n + 1) +
-      '</a>';
-  }).join('');
-
-  document.querySelector('.topbar').style.display = 'none';
+  _enterGatedScreen();
   document.querySelector('.container').innerHTML  =
     '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:var(--bg)">' +
     '<div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.12);padding:2.5rem 2rem;max-width:480px;width:100%;text-align:center">' +
@@ -11237,6 +12259,9 @@ function _applyData(data) {
   config             = data.config             || config;
   reservations       = data.reservations       || [];
   userRole           = data.userRole           || 'WAREHOUSE';
+  if (data.rolePerms) rolePerms = data.rolePerms;
+  if (data.warehouseRoleLabel) warehouseRoleLabel = data.warehouseRoleLabel;
+  _applyWarehouseRoleLabel();
   userEmail          = data.userEmail          || '';
   incoming           = data.incoming           || [];
   monitoredMaterials = data.monitoredMaterials || null;
@@ -11246,6 +12271,38 @@ function _applyData(data) {
   if (data.columnPrefs) { columnPrefs = data.columnPrefs; _applyColumnPrefs(); }
   _rebuildLocksIndex();
   if (data.users && data.users.length) _usersData = data.users;
+  _refreshOpenRackDrawer();
+}
+
+// Jose's report: exit a rack's last material, re-enter the drawer before the
+// background refresh lands, and it kept showing the material that's already
+// gone — because openRackDrawer only ever re-reads stockData when something
+// EXPLICITLY re-opens it, never when fresh data quietly arrives underneath an
+// already-open drawer. loadDataFromGoogle only ever runs _applyData after a
+// real change (there is no idle polling in this app — see the heartbeat
+// comment below), so this can only fire when something legitimately moved.
+function _refreshOpenRackDrawer(){
+  var drawer = document.getElementById('rackDrawer');
+  if (!drawer || !drawer.classList.contains('open') || !_openRackName) return;
+  var items = (_buildRackMap('', '')[_openRackName] || []);
+  if (!items.length){
+    // The map itself refuses to open a drawer for an empty location fresh —
+    // an already-open one should not keep showing one either once the data
+    // catches up.
+    closeRackDrawer();
+    showToast(_openRackName + ' is now empty.', 'info', 3000);
+  } else {
+    openRackDrawer(_openRackName);   // re-render in place with fresh contents
+  }
+}
+
+// Pushes the admin's custom WAREHOUSE-role label into the one place it's baked
+// into static HTML (the Add/Edit User role dropdown) rather than built by JS.
+// Everywhere else (badges, account tag) reads the `warehouseRoleLabel` global
+// directly at render time via _displayRole(), so nothing else needs patching.
+function _applyWarehouseRoleLabel(){
+  var opt = document.querySelector('#uRole option[value="WAREHOUSE"]');
+  if (opt) opt.textContent = warehouseRoleLabel + ' — Record movements';
 }
 
 // Warn if the backend (Code.gs) and this page (Index.html) were not deployed
@@ -11298,23 +12355,37 @@ function _fmtWhen(iso){
   return sameDay ? 'today at ' + time : d.toLocaleDateString() + ' at ' + time;
 }
 
-var _SYSACT_DISMISS_KEY = 'acopio_sysact_dismissed';
 var _sysCards = [];
 
-function _loadSysDismissed(){
-  try { return JSON.parse(localStorage.getItem(_SYSACT_DISMISS_KEY) || '{}') || {}; }
-  catch (e) { return {}; }
-}
+// Dismissals are the SERVER's memory now, not this browser's.
+//
+// They lived in localStorage, and every backup notice since August came back on
+// every load however many times the ✕ had been pressed. The app runs inside
+// Apps Script's sandboxed googleusercontent.com frame and storage there is not
+// something to build on. It is also the wrong place in principle: pressing ✕ is
+// a fact about a person, so it should hold on their phone too.
+//
+// This set is only a same-session mirror, so a dismissed card cannot flicker
+// back before the next load answers.
+var _sysDismissedNow = {};
+
 function _dismissSysCard(id){
-  var d = _loadSysDismissed();
-  d[id] = 1;
-  // Only the recent ones are ever shown, so this map cannot grow unbounded in
-  // any way that matters, but trim it anyway rather than letting it creep.
-  var keys = Object.keys(d);
-  if (keys.length > 200) keys.slice(0, keys.length - 200).forEach(function(k){ delete d[k]; });
-  try { localStorage.setItem(_SYSACT_DISMISS_KEY, JSON.stringify(d)); } catch (e) {}
-  _sysCards = _sysCards.filter(function(c){ return c.id !== id; });
-  _renderSysDeck();
+  _sysDismissedNow[id] = 1;
+  google.script.run
+    .withFailureHandler(function(){ /* the card is already gone on screen; the
+        next load will bring it back, which is the honest outcome if the write
+        did not land */ })
+    .processMovement('dismissSystemCard', _h({ id: id }));
+
+  // Animate it out first, THEN redraw. Redrawing immediately rebuilds the pile
+  // from scratch and the card simply blinks out of existence — the cards below
+  // jump into the gap with no motion at all, which is what made the deck feel
+  // like a list rather than a stack of paper.
+  var el = document.querySelector('[data-card-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+  _deckCardLeave(el, function(){
+    _sysCards = _sysCards.filter(function(c){ return c.id !== id; });
+    _renderSysDeck();
+  });
 }
 
 // A notification stays until somebody presses its ✕. It used to carry a
@@ -11330,9 +12401,8 @@ function _dismissSysCard(id){
 // backup a day that is a month of ignoring it, which is long enough to mean
 // nobody was ever going to read it.
 function _announceSystemActivity(){
-  var dismissed = _loadSysDismissed();
   _sysCards = (systemActivity || []).filter(function(a){
-    return a.at && !dismissed[a.at + '|' + a.action];
+    return a.at && !_sysDismissedNow[a.at + '|' + a.action];
   }).map(function(a){
     return { id: a.at + '|' + a.action, label: a.label, at: a.at, detail: a.detail, extra: a.extra };
   });
@@ -11348,7 +12418,7 @@ function _renderSysDeck(){
 
   // Newest painted last so it sits nearest the top of the pile.
   _sysDeckHtml = _sysCards.slice(0, 5).reverse().map(function(c){
-    return '<div class="deck-card sys-card" data-sys-open="' + _he(c.id) + '" title="Click for the full record">' +
+    return '<div class="deck-card sys-card" data-card-id="' + _he(c.id) + '" data-sys-open="' + _he(c.id) + '" title="Click for the full record">' +
       '<button class="sys-card-x" data-sys-x="' + _he(c.id) + '" title="Dismiss">✕</button>' +
       '<div class="sys-card-title">✓ ' + _he(c.label) + '</div>' +
       '<div class="sys-card-when">' + _he(_fmtWhen(c.at)) + '</div>' +
@@ -11454,12 +12524,18 @@ function toggleDarkMode() {
   _setDarkUI(!isDark);
   try { localStorage.setItem('oxwms_theme', next); } catch(e) {}
 }
+// Light unless the person asked for dark IN THIS APP. It used to follow the
+// operating system, which meant anyone whose laptop is set to dark — most
+// people now — met the app in dark for the very first time, before it had a
+// chance to look like anything. Dark mode is a preference somebody chooses once
+// they already know the product; it is a bad first impression, and first
+// impressions are the one thing that cannot be retried.
+//
+// The toggle is untouched: choose dark and it is remembered for ever. What is
+// gone is the app guessing on somebody's behalf before they have seen it.
 (function initTheme() {
   var saved;
   try { saved = localStorage.getItem('oxwms_theme'); } catch(e) {}
-  if (!saved) {
-    saved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
   if (saved === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     _setDarkUI(true);
@@ -11471,20 +12547,64 @@ function toggleDarkMode() {
 // round trip reports no progress, so it eases toward 90% and only completes
 // when data actually lands.
 var _splashTimer = null, _splashPct = 8;
+
+// A single "almost there" message read the same whether the load takes 3
+// seconds or 20 — a real wait deserves more than one sentence. Rotates every
+// 3.5s (Jose: 2.5s read as too fast) — the last one stays up and stops
+// rotating rather than looping, since repeating "taking longer than
+// expected" over and over reads as broken, not as still trying.
+var SPLASH_NOTES = [
+  'Connecting to your spreadsheet…',
+  'Reading your inventory…',
+  'Almost there — this can take a few seconds the first time.',
+  'Still working on it…',
+  'This is taking longer than usual.',
+  'This is taking longer than expected.'
+];
+var _splashNoteTimer = null, _splashNoteIdx = 0;
+
 (function _startSplash(){
   _splashTimer = setInterval(function(){
     _splashPct = Math.min(90, _splashPct + (90 - _splashPct) * 0.12 + 1);
     var f = document.getElementById('splashFill');
     if (f) f.style.width = _splashPct + '%';
-    if (_splashPct > 55) {
-      var n = document.getElementById('splashNote');
-      if (n) n.textContent = 'Almost there — this can take a few seconds the first time.';
-    }
   }, 400);
+
+  _splashNoteTimer = setInterval(function(){
+    _splashNoteIdx++;
+    var n = document.getElementById('splashNote');
+    if (_splashNoteIdx >= SPLASH_NOTES.length - 1) {
+      // Out of phrases. Rather than guess a "definitely stuck" timeout and
+      // auto-reload on it — this app's OWN normal load time is documented at
+      // up to 10-20 seconds elsewhere (loadDataFromGoogle), so anything
+      // shorter risks reloading a load that was seconds from succeeding —
+      // offer a manual way out instead and let the person decide.
+      clearInterval(_splashNoteTimer);
+      if (n) n.textContent = SPLASH_NOTES[SPLASH_NOTES.length - 1];
+      _showSplashReload();
+      return;
+    }
+    if (n) n.textContent = SPLASH_NOTES[_splashNoteIdx];
+  }, 3500);
 })();
+
+function _showSplashReload(){
+  if (document.getElementById('splashReload')) return;
+  var n = document.getElementById('splashNote');
+  if (!n) return;
+  var btn = document.createElement('button');
+  btn.id = 'splashReload';
+  btn.type = 'button';
+  btn.textContent = '↻ Reload';
+  btn.style.cssText = 'margin-top:.6rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);' +
+    'color:#fff;border-radius:6px;padding:.4rem .9rem;font-size:.78rem;font-weight:600;cursor:pointer';
+  btn.onclick = function(){ window.location.reload(); };
+  n.insertAdjacentElement('afterend', btn);
+}
 
 function _hideSplash(){
   clearInterval(_splashTimer);
+  clearInterval(_splashNoteTimer);
   var sp = document.getElementById('appSplash');
   if (!sp || sp.classList.contains('gone')) return;
   var f = document.getElementById('splashFill');
@@ -11635,8 +12755,26 @@ function applyRoleUI(){
   // to the email; both are rows in the menu now.
   var mu = document.getElementById('btnUsersMgmt');
   if (mu) mu.style.display = isAdmin ? '' : 'none';
+
+  // Settings opens for ADMIN always, and for a non-admin ONLY when they hold
+  // the one permission that has a Settings surface at all — canManageCatalog
+  // (Categories/Projects/Suppliers/Locations). canExportData and canSeeCosts
+  // live outside Settings entirely (a toolbar button; nothing yet), so they
+  // grant nothing here. _filterSettingsSidebar (called when Settings actually
+  // opens) is what keeps a catalog-only visitor OUT of Users, Error Log,
+  // System and the rest even though the button itself is now visible to them.
+  var canOpenSettings = isAdmin || (userRole === 'WAREHOUSE' && !!rolePerms.canManageCatalog);
   var st = document.getElementById('btnSettings');
-  if (st) st.style.display = isAdmin ? '' : 'none';
+  if (st) st.style.display = canOpenSettings ? '' : 'none';
+
+  // Export existed for everyone, always — canExportData defaults to true for
+  // exactly that reason (see DEFAULT_ROLE_PERMS server-side). This is NOT a
+  // security boundary: the data behind it is already sitting in this page's
+  // memory for any signed-in user, admin or not. Hiding the button only
+  // removes the one-click convenience for an admin who has decided exporting
+  // should go through them — it is a process control, not a lock.
+  var exp = document.getElementById('btnExportCSV');
+  if (exp) exp.style.display = (isAdmin || rolePerms.canExportData !== false) ? '' : 'none';
 
   // Only people who signed in with Google (rather than being recognised by
   // their company domain) have another account to switch to.
@@ -11893,7 +13031,15 @@ function _setAccountIdentity(name, email, role, stale){
   var btn = document.getElementById('acctBtn');
   var ini = document.getElementById('acctInitials');
   if (ini) ini.textContent = initials;
-  if (btn) btn.style.background = color;
+  if (btn) {
+    btn.style.background = color;
+    // Name over role, not "Your account" — the button already IS the
+    // account, saying so back is not information; who's signed in and as
+    // what is.
+    var tipName = (name && String(name).trim()) ? name : (email || '');
+    var tipRole = role ? _displayRole(role) : '';
+    btn.setAttribute('data-tip', tipRole ? (tipName + '\n' + tipRole) : tipName);
+  }
 
   var av = document.getElementById('acctAvatar');
   if (av){ av.textContent = initials; av.style.background = color; }
@@ -11906,7 +13052,7 @@ function _setAccountIdentity(name, email, role, stale){
   var tags = document.getElementById('acctTags');
   if (tags){
     var html = '';
-    if (role) html += '<span class="acct-tag" style="' + (_ROLE_TAG_STYLE[role] || _ROLE_TAG_STYLE.VIEWER) + '">' + _he(role) + '</span>';
+    if (role) html += '<span class="acct-tag" style="' + (_ROLE_TAG_STYLE[role] || _ROLE_TAG_STYLE.VIEWER) + '">' + _he(_displayRole(role)) + '</span>';
     if (role === 'VIEWER') html += '<span class="acct-tag" style="background:#FEF3C7;color:#92400E">👁 VIEW ONLY</span>';
     if (stale) html += '<span class="acct-tag" style="background:var(--border);color:var(--muted)">REFRESHING…</span>';
     tags.innerHTML = html;
@@ -12170,11 +13316,15 @@ document.addEventListener('visibilitychange', function(){
 });
 
 // ── Version tag — set by JS so we can confirm script is running ───────────────
+// Its real job was always the failure canary: "JS NOT LOADED" stays on
+// screen, in alarming red, for as long as this code never runs at all — that
+// part is untouched. Once it DOES run, the version number used to replace
+// that text in the topbar; Jose asked for it out of there (it's one click
+// away in the account menu — see acctFoot) rather than shown twice.
 (function(){
   var t = document.getElementById('jsVersionTag');
   if (!t) return;
-  t.textContent = 'v' + APP_VERSION;
-  t.className = 'ver-tag';       // the alarm styling was only for "never ran"
+  t.style.display = 'none';
 })();
 
 // A JavaScript error anywhere in the first render used to leave the splash up

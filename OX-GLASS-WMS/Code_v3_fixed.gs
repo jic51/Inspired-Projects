@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.68';
+var APP_VERSION = '9.86';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -56,8 +56,20 @@ var AC = {
   TIMESTAMP:0,  CATEGORY:1,  NAME:2,     GC:3,        PO:4,
   QTY:5,        UNIT:6,      DATE_REC:7, SRC_LOC:8,   SUPPLIER:9,
   COMMENTS:10,  STATUS:11,   RESPONSIBLE:12, PROJECT:13, MAT_ID:14,
-  DOC_LINKS:15, USER_EMAIL:16, DEST_LOC:17,  MOVETYPE:18, PM:19
+  DOC_LINKS:15, USER_EMAIL:16, DEST_LOC:17,  MOVETYPE:18, PM:19,
+  // Added for pricing. Appended at the end, not inserted among the columns
+  // above, on purpose: every other index in AC is a POSITION some existing
+  // sheet already has data in, and inserting would shift every column after
+  // it on every installation that has ever saved a movement. Appending is the
+  // only change here that is safe on data that already exists.
+  UNIT_COST:20, TOTAL_COST:21
 };
+// The archive row's true width. Every fixed-size read or write of the whole
+// row uses this constant, not a literal — four different places in this file
+// used to each spell out `20` by hand, which is exactly the kind of duplicated
+// magic number that gets fixed in three places and shipped broken in the
+// fourth. One constant, so adding a column here again means changing ONE line.
+var AC_WIDTH = 22;
 
 // ═══ COMPANY IDENTITY ════════════════════════════════════════════════════════
 // Everything that used to say "OX Glass" reads from here instead, so one copy
@@ -239,11 +251,11 @@ function ensureCoreSheets_(ss) {
     { name: SHEETS.ARCHIVE, header: [
         'System Date','Type','Name','GC','PO#','Qty','Unit','Date Received','Source Location',
         'Supplier','Comments','Status','Received By','Project','Mat ID','Doc Links','User Email',
-        'Destination Location','MoveType','PM'] },
+        'Destination Location','MoveType','PM','Unit Cost','Total Cost'] },
     { name: SHEETS.CONFIG, header: [
         'Projects','Categories','Suppliers','Locations','Location Type','User Email','User Role',
         'Admin Email','Truck','Truck Person','Truck Status','Min Stock Material','Min Stock Qty',
-        'Archive Cutoff Months'] },
+        'Archive Cutoff Months','Cost Category','Cost Material','Avg Cost'] },
     { name: SHEETS.RESERVATIONS, header: [
         'ID','Category','Name','Project','Qty','Reserved By','Date','Status','Release Date'] },
     { name: SHEETS.AUDIT, header: ['Timestamp','Action','User','Details','Old Value','New Value'] },
@@ -393,6 +405,13 @@ function saveSetupWizard(data) {
   // can record who accepted rather than only that somebody did.
   recordTermsAcceptance_(actor);
   removeStartHereSheet_(ss);   // setup done — the welcome sheet has served its purpose
+
+  // Stamped ONCE, not on every re-save. saveSetupWizard also runs whenever an
+  // existing admin re-opens setup to tweak a company setting — if this were
+  // overwritten each time, "days since setup" would reset on every unrelated
+  // change and the check-in below would never reach its milestones.
+  if (!p.getProperty('SETUP_COMPLETED_AT')) p.setProperty('SETUP_COMPLETED_AT', new Date().toISOString());
+  try { ensureCheckinTrigger_(); } catch (e) { Logger.log('ensureCheckinTrigger_: ' + e.message); }
 
   p.setProperty('SETUP_COMPLETE', 'true');
   auditLog_(ss, 'SETUP_COMPLETED', actor, companyName, '', '');
@@ -938,6 +957,90 @@ function requireAuth_(minRole) {
   return a;
 }
 
+// ─── PER-INSTALLATION PERMISSIONS ────────────────────────────────────────────
+// Everything used to be binary: ADMIN can do a thing, WAREHOUSE cannot, full
+// stop, decided in the code rather than by the customer. That is correct for
+// most of what the app does — but a warehouse of three people run by an owner
+// who trusts their lead hand is a real, common shape, and for those customers
+// "only the owner can add a supplier" is a wall with no door.
+//
+// Three roles stay exactly as they are (Jose: "los mismos 3 roles, con
+// interruptores nuevos") — this does not add a fourth tier or per-person
+// permissions. It adds toggles ADMIN can flip for the WAREHOUSE role only;
+// VIEWER stays exactly what it always was, read-only, no exceptions, because
+// nothing about "can view" needs a permission to widen.
+//
+// Each flag's DEFAULT matters as much as what it gates: it must reproduce
+// TODAY's behaviour exactly on every installation that never touches this
+// screen, so shipping this changes nothing until an admin deliberately opts
+// in. canEditMovements/canManageCatalog default to false because WAREHOUSE
+// could not do either of those before this existed — false is a no-op.
+// canExportData is the opposite case: WAREHOUSE (and VIEWER) could ALREADY
+// export, so its default is true — anything else would quietly take away
+// something every existing customer already has the moment they update.
+// canSeeCosts has no UI to gate yet (there is no cost data in the app yet) —
+// it exists now so the pricing feature, when it ships, has a home to read
+// from on day one instead of needing this exact same plumbing built twice.
+var DEFAULT_ROLE_PERMS = {
+  canSeeCosts:      false,
+  canEditMovements: false,
+  canManageCatalog: false,
+  canExportData:    true
+};
+
+function rolePerms_() {
+  var raw = PropertiesService.getScriptProperties().getProperty('ROLE_PERMS_WAREHOUSE');
+  var stored = {};
+  try { stored = JSON.parse(raw || '{}') || {}; } catch (e) { stored = {}; }
+  var out = {};
+  Object.keys(DEFAULT_ROLE_PERMS).forEach(function (k) {
+    out[k] = (stored[k] === true || stored[k] === false) ? stored[k] : DEFAULT_ROLE_PERMS[k];
+  });
+  return out;
+}
+
+function setRolePerms(data, auth) {
+  auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  var next = {};
+  Object.keys(DEFAULT_ROLE_PERMS).forEach(function (k) { next[k] = !!(data && data[k]); });
+  PropertiesService.getScriptProperties().setProperty('ROLE_PERMS_WAREHOUSE', JSON.stringify(next));
+  auditLog_(SpreadsheetApp.getActiveSpreadsheet(), 'UPDATE_ROLE_PERMS', auth.email,
+    'Permissions changed for the WAREHOUSE role', '', JSON.stringify(next));
+  return { status: 'success', perms: next };
+}
+
+// The WAREHOUSE role's internal value (USERS_V3, every role check) never
+// changes — only what a customer sees on screen for it. A store or restaurant
+// often already calls this person "Supervisor" or "Manager"; forcing "WAREHOUSE"
+// on them is the kind of mismatch that makes customers distrust the whole app.
+function warehouseRoleLabel_() {
+  var v = String(PropertiesService.getScriptProperties().getProperty('WAREHOUSE_ROLE_LABEL') || '').trim();
+  return v || 'Warehouse';
+}
+
+function setWarehouseRoleLabel(data, auth) {
+  auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  var label = String((data && data.label) || '').trim().slice(0, 30);
+  var p = PropertiesService.getScriptProperties();
+  if (label) p.setProperty('WAREHOUSE_ROLE_LABEL', label);
+  else p.deleteProperty('WAREHOUSE_ROLE_LABEL');
+  auditLog_(SpreadsheetApp.getActiveSpreadsheet(), 'UPDATE_ROLE_LABEL', auth.email,
+    'Display name for the WAREHOUSE role changed', '', label || '(default) Warehouse');
+  return { status: 'success', label: warehouseRoleLabel_() };
+}
+
+// The check every gated action actually calls. ADMIN passes everything,
+// unconditionally — permissions only ever widen WAREHOUSE, never narrow an
+// admin. VIEWER never passes, regardless of what is turned on; the flags exist
+// to let a trusted WAREHOUSE user do more, not to let a read-only visitor do
+// anything at all.
+function requirePerm_(auth, permKey) {
+  if (auth.role === 'ADMIN') return auth;
+  if (auth.role === 'WAREHOUSE' && rolePerms_()[permKey] === true) return auth;
+  throw new Error('This requires a permission your admin has not turned on for your role. ' +
+    'Ask them to check Settings → Permissions.');
+}
+
 // Gate for entry points that legitimately have no session token: the daily
 // time-based trigger and the developer diagnostics run from the Apps Script
 // editor. Both of those execute AS THE OWNER, so getEffectiveUser() and
@@ -1014,7 +1117,7 @@ function loadConfig() {
   var cfg = ss.getSheetByName(SHEETS.CONFIG);
   if (!cfg) return {};
   var data = cfg.getDataRange().getValues();
-  var c = { projects: [], categories: [], suppliers: [], locations: [], users: [], trucks: [], minStock: {} };
+  var c = { projects: [], categories: [], suppliers: [], locations: [], users: [], trucks: [], minStock: {}, avgCost: {} };
 
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
@@ -1039,6 +1142,14 @@ function loadConfig() {
       c.minStock[String(row[11]).toUpperCase().trim()] = Number(row[12]) || 0;
     }
     if (row[13] && i === 1) c.archiveCutoffMonths = Number(row[13]) || 12;
+    // Keyed by matId (category+name), not by name alone like Min Stock above —
+    // deliberately more precise: two categories can legitimately share a
+    // material name at different price points, and cost is exactly the field
+    // where conflating them would produce a wrong number nobody would notice.
+    if (row[14] && row[15] && row[16] !== '' && row[16] !== null) {
+      var costCat = String(row[14]).trim(), costName = String(row[15]).trim();
+      c.avgCost[getMaterialId(costCat, costName)] = { category: costCat, name: costName, avg: Number(row[16]) || 0 };
+    }
   }
   
   if (!c.archiveCutoffMonths) c.archiveCutoffMonths = 12;
@@ -1098,6 +1209,14 @@ function safeStr_(val) {
   if (val === null || val === undefined || val === '') return '';
   if (val instanceof Date) return '';  // don't show garbled dates where text is expected
   return String(val).trim();
+}
+
+// Money, rounded to the cent. Plain floating-point division (unit_cost * qty,
+// the weighted-average blend) drifts past two decimals almost immediately —
+// this is the one place that matters, since every cost figure downstream
+// (inventory value, cost per project) is a sum of numbers that came from here.
+function round2_(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
 }
 
 function getMaterialId(cat, name) {
@@ -1201,13 +1320,15 @@ function getInitialData(sessionToken) {
     return {
       serverVersion:      APP_VERSION,
       company:            publicCompany_(),
-      systemActivity:     (function(){ try { return getSystemActivity(30); } catch (e) { return []; } })(),
+      systemActivity:     (function(){ try { return getSystemActivity(30, _auth.email); } catch (e) { return []; } })(),
       columnPrefs:        columnPrefs_(),
       movements:          movements,
       stock:              stock,
       config:             config,
       reservations:       reservations,
       userRole:           auth.role,
+      rolePerms:          rolePerms_(),
+      warehouseRoleLabel: warehouseRoleLabel_(),
       userName:           auth.name || '',
       userEmail:          auth.email,
       activeUsers:        activeUsers,
@@ -1274,7 +1395,9 @@ function parseArchiveRow(row, rowIdx) {
     matId:       String(row[AC.MAT_ID]     || ''),
     docLinks:    String(row[AC.DOC_LINKS]  || ''),
     userEmail:   String(row[AC.USER_EMAIL] || ''),
-    pm:          String(row[AC.PM]         || '')
+    pm:          String(row[AC.PM]         || ''),
+    unitCost:    (row[AC.UNIT_COST]  === '' || row[AC.UNIT_COST]  === null || row[AC.UNIT_COST]  === undefined) ? null : Number(row[AC.UNIT_COST]),
+    totalCost:   (row[AC.TOTAL_COST] === '' || row[AC.TOTAL_COST] === null || row[AC.TOTAL_COST] === undefined) ? null : Number(row[AC.TOTAL_COST])
   };
 }
 
@@ -1543,6 +1666,7 @@ function processMovementInner_(ss, action, data, auth) {
           comments:         data.comments,
           responsible:      data.responsible,
           pm:               data.pm,
+          unitCost:         data.unitCost,
           // Shared docs + notify go only on the first location row.
           files:            entryRows.length === 0 ? (data.files     || []) : [],
           docGroups:        entryRows.length === 0 ? (data.docGroups || []) : [],
@@ -1723,6 +1847,12 @@ function processMovementInner_(ss, action, data, auth) {
   }
   if (action === 'getErrorLog')     return getErrorLog(auth);
   if (action === 'clearErrorLog')   return clearErrorLog(data, auth);
+  if (action === 'dismissSystemCard') return dismissSystemCard(data, auth);
+  if (action === 'setRolePerms')     return setRolePerms(data, auth);
+  if (action === 'setWarehouseRoleLabel') return setWarehouseRoleLabel(data, auth);
+  if (action === 'getBackupStatus')  return getBackupStatus(auth);
+  if (action === 'setBackupEnabled') return setBackupEnabled(data, auth);
+  if (action === 'runBackupOnDemand') return runBackupOnDemand(data, auth);
   if (action === 'logClientError')  return logClientError(data, auth);
   if (action === 'loadOlderHistory') return loadOlderHistory(auth);
   throw new Error('Unknown action: ' + action);
@@ -1777,6 +1907,14 @@ function addMovementsBatch_(ss, archive, movements, auth) {
     var tzDate  = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
     var newRows = [];   // arrays for setValues
     var rowMeta = [];   // parallel metadata for post-write steps
+
+    // ── Cost bookkeeping (weighted-average) for this batch ────────────────────
+    // Loaded once, mutated in memory as ENTRY rows are processed below, and
+    // written back to CONFIG only after the archive write is VERIFIED further
+    // down — never before, so a cost blend can never be recorded for a
+    // movement that did not actually save.
+    var avgCostMap  = loadConfig().avgCost || {};
+    var costTouched = {};   // matId -> true, for the ones this batch actually changes
 
     // ── Validate every movement against the live snapshot, build its row ─────
     for (var i = 0; i < movements.length; i++) {
@@ -1836,12 +1974,46 @@ function addMovementsBatch_(ss, archive, movements, auth) {
         throw new Error('WASTE movements require a reason in comments.');
       }
 
+      // Captured before the snapshot mutates below — the weighted-average
+      // formula blends the incoming quantity into what was ALREADY on hand,
+      // not into what will be on hand once this row is applied.
+      var whBeforeThisRow = snap.wh;
+
       // Mutate snapshot so subsequent rows in this batch see the effect.
       applyMovementToSnapshot_(snap, mt, qty, srcKey, destKey);
 
       var statusVal = statusForMoveType_(mt);
 
-      var row = new Array(20);
+      // ── Cost: optional on ENTRY, always server-computed otherwise ──────────
+      // ENTRY: a cost typed by the user blends into the material's running
+      // average — bootstrapping it if this is the first cost that material has
+      // ever had. Leaving it blank changes nothing: cost is opt-in on purpose,
+      // so adopting the app never requires pricing 400 materials on day one.
+      // Everything else NEVER trusts a client-supplied cost — it reads
+      // whatever average is on record right now and stamps that, blank if the
+      // material has never been priced. A WASTE of an unpriced item has no
+      // honest dollar figure to give it, so it gets none, not a zero that
+      // would misread as "this cost nothing."
+      var unitCost = null, totalCost = null;
+      if (mt === 'ENTRY') {
+        var enteredCost = (d.unitCost !== undefined && d.unitCost !== null && String(d.unitCost).trim() !== '')
+          ? Number(d.unitCost) : NaN;
+        if (!isNaN(enteredCost) && enteredCost >= 0) {
+          unitCost  = round2_(enteredCost);
+          totalCost = round2_(unitCost * qty);
+          var priorCost = avgCostMap[matId];
+          var newAvg = (!priorCost || whBeforeThisRow <= 0)
+            ? unitCost
+            : round2_((whBeforeThisRow * priorCost.avg + qty * unitCost) / (whBeforeThisRow + qty));
+          avgCostMap[matId] = { category: cleanDisplay_(d.category), name: cleanDisplay_(d.name), avg: newAvg };
+          costTouched[matId] = true;
+        }
+      } else if (avgCostMap[matId]) {
+        unitCost  = avgCostMap[matId].avg;
+        totalCost = round2_(unitCost * qty);
+      }
+
+      var row = new Array(AC_WIDTH);
       row[AC.TIMESTAMP]   = now;
       row[AC.CATEGORY]    = sheetSafe_(cleanDisplay_(d.category));  // stored as typed (keeps , - /)
       row[AC.NAME]        = sheetSafe_(cleanDisplay_(d.name));      // matId above still uses normalized form
@@ -1868,6 +2040,8 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       row[AC.DEST_LOC]    = sheetSafe_(dest);
       row[AC.MOVETYPE]    = mt;
       row[AC.PM]          = sheetSafe_(String(d.pm || '').trim());
+      row[AC.UNIT_COST]   = (unitCost  === null) ? '' : unitCost;
+      row[AC.TOTAL_COST]  = (totalCost === null) ? '' : totalCost;
 
       newRows.push(row);
       rowMeta.push({
@@ -1884,7 +2058,7 @@ function addMovementsBatch_(ss, archive, movements, auth) {
 
     // ── ONE write of all rows ────────────────────────────────────────────────
     var startRow = archive.getLastRow() + 1;
-    archive.getRange(startRow, 1, newRows.length, 20).setValues(newRows);
+    archive.getRange(startRow, 1, newRows.length, AC_WIDTH).setValues(newRows);
     archive.getRange(startRow, AC.TIMESTAMP + 1, newRows.length, 1).setNumberFormat('mm/dd/yyyy hh:mm');
 
     // ── ONE write-verify read of the whole block ─────────────────────────────
@@ -1894,6 +2068,15 @@ function addMovementsBatch_(ss, archive, movements, auth) {
         throw new Error('WRITE_VERIFY_FAIL: row ' + (startRow + v) +
           ' could not be confirmed in the archive. Please reload and check before retrying.');
       }
+    }
+
+    // ── Persist the cost blend — only now, with the archive write verified ───
+    // Best-effort, same philosophy as the derived-sheet refresh below: a
+    // failure here must never undo or block a movement that has already,
+    // successfully, saved.
+    if (Object.keys(costTouched).length) {
+      try { saveAvgCostUpdates_(ss, costTouched, avgCostMap); }
+      catch (ce) { Logger.log('saveAvgCostUpdates_: ' + ce.message); }
     }
 
     // ── File / document uploads (per row carrying docs) ──────────────────────
@@ -2168,6 +2351,10 @@ function addMultiEntry(ss, archive, data, auth) {
         comments:         mat.comments    || data.comments    || '',
         responsible:      mat.responsible || data.responsible || '',
         pm:               mat.pm          || data.pm          || '',
+        // Per-material always, unlike the fields above — cost belongs to the
+        // material being purchased, not to the "same info for all" grouping,
+        // so it never falls back to a shared data.unitCost.
+        unitCost:         mat.unitCost,
         files:            [],
         // Shared docs + notify go only on the very first archive row.
         docGroups:        isFirstRow ? (data.docGroups       || []) : [],
@@ -2363,7 +2550,7 @@ function ensureArchiveHistorySheet_(ss) {
   var sheet = ss.getSheetByName(SHEETS.ARCHIVE_HISTORY);
   if (!sheet) {
     var archive = ss.getSheetByName(SHEETS.ARCHIVE);
-    var headers = archive.getRange(1, 1, 1, 20).getValues()[0];
+    var headers = archive.getRange(1, 1, 1, AC_WIDTH).getValues()[0];
     sheet = ss.insertSheet(SHEETS.ARCHIVE_HISTORY);
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.setFrozenRows(1);
@@ -2506,6 +2693,16 @@ function runBackupNow_() {
     pruneOldBackups_(folder);
 
     auditLog_(ss, 'BACKUP_CREATED', 'system', copyName, '', copyFile.getId());
+    // Remembered directly, not just logged: AUDIT_LOG only keeps its last ~1500
+    // rows readable from the app (getSystemActivity), and on a busy install
+    // ADD_MOVEMENT alone can push yesterday's BACKUP_CREATED out of that window
+    // in well under a day — the backup itself is still safe in Drive, but the
+    // System tab would show "nothing has run" for a backup that plainly did.
+    // A Script Property can't be scrolled past.
+    var p = PropertiesService.getScriptProperties();
+    p.setProperty('LAST_BACKUP_AT', new Date().toISOString());
+    p.setProperty('LAST_BACKUP_NAME', copyName);
+    p.setProperty('LAST_BACKUP_FILE_ID', copyFile.getId());
     return { status: 'success', name: copyName, id: copyFile.getId() };
   } catch (e) {
     logError_(ss, 'ERROR', 'backend', 'runBackupNow', 'system', e.message, null, newRequestId_());
@@ -2539,12 +2736,218 @@ function pruneOldBackups_(folder) {
 // Backup" menu item rather than onOpen(): onOpen is a SIMPLE trigger under
 // Apps Script's security model and can't call authorized services like
 // ScriptApp.newTrigger() or DriveApp — it would throw on every single open.
+// The nightly backup, controllable from inside the app.
+//
+// It could only ever be switched on from the spreadsheet menu, which means the
+// people most likely to care — an admin who lives in the app and may never open
+// the Sheet — had no way to see whether it was on, let alone turn it on. Worse,
+// the System tab said "once it is switched on from the Acopio menu" and then
+// offered no way to do it.
+//
+// Read on demand rather than in getInitialData: getProjectTriggers() is a real
+// call and every app load would pay for it, to answer a question nobody asks
+// except when they open this tab.
+function backupEnabled_() {
+  try {
+    var t = ScriptApp.getProjectTriggers();
+    for (var i = 0; i < t.length; i++) {
+      if (t[i].getHandlerFunction() === 'dailyBackupTrigger') return true;
+    }
+  } catch (e) { Logger.log('backupEnabled_: ' + e.message); }
+  return false;
+}
+
+function getBackupStatus(auth) {
+  auth = requireAuth_('ADMIN');
+  var p = PropertiesService.getScriptProperties();
+  var lastAt   = p.getProperty('LAST_BACKUP_AT');
+  var lastName = p.getProperty('LAST_BACKUP_NAME');
+  var lastId   = p.getProperty('LAST_BACKUP_FILE_ID');
+  // Nothing recorded yet doesn't mean nothing ever ran — an install that was
+  // backing up before this feature shipped has real files sitting in Drive
+  // with no property pointing at them. One folder scan finds the newest one
+  // and remembers it, so this only ever happens once per install rather than
+  // on every Settings → System load.
+  if (!lastAt) {
+    try {
+      var found = _findMostRecentBackup_();
+      if (found) {
+        lastAt = found.date.toISOString();
+        lastName = found.name;
+        lastId = found.id;
+        p.setProperty('LAST_BACKUP_AT', lastAt);
+        p.setProperty('LAST_BACKUP_NAME', lastName);
+        p.setProperty('LAST_BACKUP_FILE_ID', lastId);
+      }
+    } catch (e) { Logger.log('getBackupStatus backfill: ' + e.message); }
+  }
+  return {
+    enabled:          backupEnabled_(),
+    retentionDays:    BACKUP_RETENTION_DAYS,
+    folder:           backupFolderName_(),
+    lastBackupAt:     lastAt || '',
+    lastBackupName:   lastName || '',
+    lastBackupFileId: lastId || ''
+  };
+}
+
+function _findMostRecentBackup_() {
+  var folder = getOrCreateFolder_(backupFolderName_());
+  var files = folder.getFiles();
+  var best = null;
+  while (files.hasNext()) {
+    var f = files.next();
+    var created = f.getDateCreated();
+    if (!best || created > best.date) best = { date: created, name: f.getName(), id: f.getId() };
+  }
+  return best;
+}
+
+function setBackupEnabled(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var on = !!(data && data.enabled);
+  if (on) {
+    ensureBackupTrigger_();
+  } else {
+    try {
+      ScriptApp.getProjectTriggers().forEach(function (t) {
+        if (t.getHandlerFunction() === 'dailyBackupTrigger') ScriptApp.deleteTrigger(t);
+      });
+    } catch (e) { throw new Error('Could not change the schedule: ' + e.message); }
+  }
+  // Turning the nightly backup OFF is exactly the kind of thing somebody should
+  // be able to point at afterwards.
+  auditLog_(SpreadsheetApp.getActiveSpreadsheet(), on ? 'BACKUP_SCHEDULE_ON' : 'BACKUP_SCHEDULE_OFF',
+    auth.email, 'Daily backup ' + (on ? 'enabled' : 'disabled'), '', '');
+  return { status: 'success', enabled: backupEnabled_() };
+}
+
+// Deliberately does NOT switch the schedule on as a side effect. "Back this up
+// before I do something risky" and "back it up every night from now on" are two
+// different decisions, and the menu version conflating them is why an admin
+// could have the schedule running without ever having chosen it.
+function runBackupOnDemand(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var res = runBackupNow_();
+  return { status: 'success', name: res && res.name ? res.name : '' };
+}
+
 function ensureBackupTrigger_() {
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     if (triggers[i].getHandlerFunction() === 'dailyBackupTrigger') return;
   }
   ScriptApp.newTrigger('dailyBackupTrigger').timeBased().everyDays(1).atHour(2).create();
+}
+
+// ─── CHECK-IN — CATCH A STUCK CUSTOMER BEFORE THEY QUIETLY LEAVE ─────────────
+// Jose's own problem statement: a customer pays, doesn't understand it, and
+// cancels without ever saying why — which costs the sale AND the feedback that
+// would have prevented the next one. The fix isn't more software for the
+// customer; it's Jose finding out FAST that someone is stuck, instead of
+// finding out when they don't renew.
+//
+// This is a private signal to JOSE, not a nudge to the customer. It reads two
+// counts (movements, users), sends a plain email describing what it found, and
+// touches nothing else in this file. It cannot ever crash a customer's app: it
+// runs from its own daily trigger, wrapped in try/catch, same as the backup.
+//
+// WHAT IT SENDS AND WHY IT MATTERS: an email carrying the company name, the
+// admin's address and a movement count leaves this installation and reaches
+// Jose. That is real — no inventory contents, no costs, no names of materials,
+// just "0 movements in 3 days" — but it is still data leaving the customer's
+// Drive, and the Privacy Policy currently promises data never does. That
+// promise needs one honest line added for this before it ships to a real
+// customer; flagged to Jose rather than quietly worded around.
+//
+// OFF unless two things are both true: SUPPORT_EMAIL is set (Jose's own
+// address — nothing to send it to otherwise) and CHECKIN_ALERTS_ENABLED has
+// not been explicitly turned off. Auto-armed at the end of setup because it
+// benefits Jose, not the customer, and costs the customer nothing to have
+// running — but it never actually mails anyone until SUPPORT_EMAIL exists,
+// which today is true for zero installations.
+var CHECKIN_MILESTONE_DAYS = [3, 7];
+
+function ensureCheckinTrigger_() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'dailyCheckinTrigger') return;
+  }
+  // A different hour than the 2am backup, on purpose — this one is meant to
+  // land in Jose's inbox at a time he might actually be reading it.
+  ScriptApp.newTrigger('dailyCheckinTrigger').timeBased().everyDays(1).atHour(9).create();
+}
+
+function dailyCheckinTrigger() {
+  try { runCheckin_(); } catch (e) { Logger.log('dailyCheckinTrigger: ' + e.message); }
+}
+
+function runCheckin_() {
+  var p = PropertiesService.getScriptProperties();
+  if (!companySettings_().setupComplete) return;      // nothing to check in on yet
+  if (p.getProperty('CHECKIN_ALERTS_ENABLED') === 'false') return;
+
+  // Backfill rather than assume day zero: an installation that finished setup
+  // before this feature existed (OX Glass's own copy, first) must not fire an
+  // alarm the instant this ships, computed against a start date it never had.
+  var startedIso = p.getProperty('SETUP_COMPLETED_AT');
+  if (!startedIso) {
+    startedIso = new Date().toISOString();
+    p.setProperty('SETUP_COMPLETED_AT', startedIso);
+  }
+  var daysSince = Math.floor((Date.now() - new Date(startedIso).getTime()) / 86400000);
+
+  var sentRaw = p.getProperty('CHECKIN_MILESTONES_SENT') || '';
+  var sent    = sentRaw.split(',').filter(function (s) { return s; });
+
+  // Only the milestones actually reached AND not yet handled — one run can
+  // catch up on several at once (the trigger was paused, say), but only ever
+  // emails about the ONE that matters most: the latest. Every reached
+  // milestone is marked handled in the same pass either way, so a gap in the
+  // trigger's own uptime can never queue up a backlog of alerts.
+  var due = CHECKIN_MILESTONE_DAYS.filter(function (d) {
+    return daysSince >= d && sent.indexOf(String(d)) === -1;
+  });
+  if (!due.length) return;
+
+  due.forEach(function (d) { sent.push(String(d)); });
+  p.setProperty('CHECKIN_MILESTONES_SENT', sent.join(','));
+
+  var support = String(p.getProperty('SUPPORT_EMAIL') || '').trim();
+  if (!support) return;   // nowhere to send it — the feature is effectively off
+
+  var ss      = SpreadsheetApp.getActiveSpreadsheet();
+  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
+  var movementCount = archive ? Math.max(0, archive.getLastRow() - 1) : 0;
+  if (movementCount > 0) return;   // the good outcome — nothing to say
+
+  var milestone = due[due.length - 1];
+  var cs      = companySettings_();
+  var cfg     = loadConfig();
+  var users   = ss.getSheetByName('USERS_V3');
+  var userCount = users && users.getLastRow() > 1 ? users.getLastRow() - 1 : 0;
+  var url = String(savedWebAppUrl_() || '');
+
+  MailApp.sendEmail({
+    to: support,
+    subject: '👀 ' + (cs.name || 'A new install') + ' — nothing recorded ' + milestone + ' days in',
+    htmlBody:
+      '<div style="font-family:Arial,sans-serif;font-size:14px;color:#111">' +
+      '<p><b>' + escHtml_(cs.name || '(no company name set)') + '</b> finished setup ' + daysSince +
+        ' days ago and has not recorded a single movement yet.</p>' +
+      '<table cellpadding="6" style="border-collapse:collapse;font-size:13px">' +
+        '<tr><td style="color:#666">Admin</td><td>' + escHtml_(cfg.adminEmail || '(not set)') + '</td></tr>' +
+        '<tr><td style="color:#666">Users registered</td><td>' + userCount + '</td></tr>' +
+        '<tr><td style="color:#666">Movements recorded</td><td>0</td></tr>' +
+        '<tr><td style="color:#666">Days since setup</td><td>' + daysSince + '</td></tr>' +
+        (url ? '<tr><td style="color:#666">Their app</td><td><a href="' + escHtml_(url) + '">' + escHtml_(url) + '</a></td></tr>' : '') +
+      '</table>' +
+      '<p style="font-size:13px">This is the moment to reach out — a short call in the first two weeks is ' +
+        'the biggest thing that predicts whether an install turns into a renewal.</p>' +
+      '<p style="font-size:12px;color:#666">This is a private check-in, sent only to you — the customer never ' +
+        'sees it. To turn it off for this installation: Apps Script → Project Settings → Script Properties → ' +
+        'CHECKIN_ALERTS_ENABLED = false</p></div>'
+  });
 }
 
 // ADMIN only. Returns movements older than the cutoff, for on-demand viewing/
@@ -3692,6 +4095,51 @@ function updateMinStockBulk(data, auth) {
   return { status: 'success', updated: updates.length };
 }
 
+// Same find-or-append shape as updateMinStockBulk just above, for the cost
+// columns (O/P/Q — Cost Category, Cost Material, Avg Cost). Deliberately its
+// own function rather than a shared one: the KEY is different. Min Stock is
+// keyed by material name alone; this is keyed by category+name (matId),
+// because two categories can legitimately share a name at different price
+// points, and conflating them is exactly the kind of thing nobody would
+// notice until the dollar figures were already wrong.
+//
+// Called from inside addMovementsBatch_, after the archive write is verified —
+// never before — so a cost blend can never be recorded for a movement that
+// did not actually save. `touched` names which matIds this batch changed;
+// `avgCostMap` (already mutated in memory by the caller) holds the values.
+function saveAvgCostUpdates_(ss, touched, avgCostMap) {
+  var cfg = ss.getSheetByName(SHEETS.CONFIG);
+  if (!cfg) return;
+  var matIds = Object.keys(touched);
+  if (!matIds.length) return;
+
+  var rows = cfg.getDataRange().getValues();
+  var rowByMatId = {};
+  for (var i = 1; i < rows.length; i++) {
+    var rCat = String(rows[i][14] || '').trim();
+    var rNm  = String(rows[i][15] || '').trim();
+    if (rCat || rNm) rowByMatId[getMaterialId(rCat, rNm)] = i + 1;   // 1-based sheet row
+  }
+
+  var appended = [];
+  matIds.forEach(function (mid) {
+    var c = avgCostMap[mid];
+    if (!c) return;
+    if (rowByMatId[mid] !== undefined) {
+      cfg.getRange(rowByMatId[mid], 17).setValue(c.avg);   // column Q — Avg Cost only; category/name already match
+    } else {
+      // 14 blank cells (columns A–N) then Cost Category / Cost Material / Avg
+      // Cost — built with Array(14), not typed out by hand, because a
+      // hand-counted run of empty strings is exactly the kind of thing that
+      // is off by one and silent about it.
+      appended.push(new Array(14).fill('').concat([sheetSafe_(c.category), sheetSafe_(c.name), c.avg]));
+    }
+  });
+  if (appended.length) {
+    cfg.getRange(cfg.getLastRow() + 1, 1, appended.length, 17).setValues(appended);
+  }
+}
+
 // ─── BULK IMPORT (CSV) ────────────────────────────────────────────────────────
 // Lets an admin migrate an existing inventory (from Excel, a competitor's
 // export, a paper count) into the app in one shot instead of typing every line
@@ -4049,7 +4497,52 @@ function describeMatIdFixes_(fixes) {
 // _announceSystemActivity on the client. Kept generous rather than tight: a
 // notice that disappears before it is read is the bug this whole feature was
 // meant to fix.
-function getSystemActivity(limit) {
+// WHICH CARDS THIS PERSON HAS ALREADY DISMISSED — SERVER-SIDE, ON PURPOSE.
+//
+// It used to live in the browser's localStorage, and every backup notice since
+// August came back on every load however many times the ✕ had been pressed.
+// The app is served inside Apps Script's sandboxed googleusercontent.com frame,
+// and storage there is not something to build on: it is partitioned, and the
+// frame's origin is not the customer's to rely on. A dismissal is a fact about
+// a PERSON, not about a browser — press ✕ at the desk and it should also be
+// gone on the phone — so it belongs on the server, where the rest of what the
+// app knows about that person already lives.
+function sysDismissKey_(email) {
+  return 'SYSDISM_' + String(email || '').toLowerCase().replace(/\W/g, '_').substring(0, 80);
+}
+
+function sysDismissedSet_(email) {
+  var out = {};
+  if (!email) return out;
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty(sysDismissKey_(email));
+    (JSON.parse(raw || '[]') || []).forEach(function (id) { out[id] = 1; });
+  } catch (e) {}
+  return out;
+}
+
+// Capped so one property can never outgrow the 9KB a Script Property holds.
+// The oldest dismissals are the ones to drop: their events have long since
+// fallen off the end of the 30 the server returns, so they can never come back
+// anyway.
+var SYS_DISMISS_MAX = 150;
+
+function dismissSystemCard(data, auth) {
+  auth = requireAuth_();
+  var id = String((data && data.id) || '').trim();
+  if (!id) return { status: 'success' };
+  var p    = PropertiesService.getScriptProperties();
+  var key  = sysDismissKey_(auth.email);
+  var list = [];
+  try { list = JSON.parse(p.getProperty(key) || '[]') || []; } catch (e) { list = []; }
+  if (list.indexOf(id) === -1) list.push(id);
+  if (list.length > SYS_DISMISS_MAX) list = list.slice(list.length - SYS_DISMISS_MAX);
+  p.setProperty(key, JSON.stringify(list));
+  return { status: 'success', dismissed: list.length };
+}
+
+function getSystemActivity(limit, forEmail) {
+  var dismissed = sysDismissedSet_(forEmail);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEETS.AUDIT);
   if (!sheet) return [];
@@ -4068,6 +4561,11 @@ function getSystemActivity(limit) {
     var actor = String(rows[i][2] || '').toLowerCase().trim();
     if (!SYSTEM_ACTORS[actor]) continue;
     var action = String(rows[i][1] || '');
+    var atIso  = rows[i][0] ? new Date(rows[i][0]).toISOString() : '';
+    // Same id the browser used to build: timestamp + action. Filtered HERE so
+    // the limit above counts cards this person will actually see, instead of
+    // being spent on ones they dismissed months ago.
+    if (dismissed[atIso + '|' + action]) continue;
     // Anything the app can take you to, it should. A backup is a file in
     // Drive; a re-link happened on numbered rows of the archive. Both are
     // reachable, and "corrected automatically" is only reassuring if you can
@@ -4080,7 +4578,7 @@ function getSystemActivity(limit) {
       if (m) ref = { kind: 'rows', rows: m[1].split(','), label: 'Show the movement' + (m[1].indexOf(',') === -1 ? '' : 's') };
     }
     out.push({
-      at:     rows[i][0] ? new Date(rows[i][0]).toISOString() : '',
+      at:     atIso,
       action: action,
       label:  SYSTEM_EVENT_LABELS[action] || action.replace(/_/g, ' ').toLowerCase(),
       detail: String(rows[i][3] || ''),
@@ -5138,6 +5636,30 @@ var PROPERTY_GUIDE = [
     lost:'Staff are asked to sign in with Google instead of being recognised.' },
   { key:'COMPANY_LOGO_ID', sev:'COSMETIC',
     what:'Your logo.', lost:'No logo. Upload it again in Settings › Company.' },
+  { key:'ROLE_PERMS_WAREHOUSE', sev:'OPTIONAL',
+    what:'Extra permissions an admin turned on for the WAREHOUSE role (Settings → Permissions).',
+    lost:'Nothing missing — absent just means every toggle is at its default.' },
+  { key:'WAREHOUSE_ROLE_LABEL', sev:'OPTIONAL',
+    what:'The display name an admin chose for the WAREHOUSE role (e.g. "Supervisor"), Settings → Permissions.',
+    lost:'Nothing missing — absent just means the role shows as "Warehouse", the default.' },
+  { key:'SUPPORT_EMAIL', sev:'OPTIONAL',
+    what:'Where bug reports and check-in alerts go, in addition to this installation\'s own admin.',
+    lost:'Nothing breaks — reports go to the admin only, and check-in alerts have nowhere to go so they never send.' },
+  { key:'SETUP_COMPLETED_AT', sev:'AUTO',
+    what:'When setup finished — used only to time the check-in alerts above.',
+    lost:'Recreated automatically as "now" the next time the check-in runs.' },
+  { key:'CHECKIN_MILESTONES_SENT', sev:'OPTIONAL',
+    what:'Which check-in alerts have already been sent, so none repeats.',
+    lost:'Nothing lost by its absence; if cleared, past milestones could re-fire once.' },
+  { key:'LAST_BACKUP_AT', sev:'AUTO',
+    what:'When the most recent backup ran — shown in Settings → System so "is this actually backing up?" doesn\'t depend on scrolling far enough back in the audit log.',
+    lost:'The System tab just stops showing a last-backup time until the next one runs. The backups themselves live in Drive and are untouched.' },
+  { key:'LAST_BACKUP_NAME', sev:'AUTO',
+    what:'The file name of the most recent backup, shown next to LAST_BACKUP_AT.',
+    lost:'Same as LAST_BACKUP_AT — cosmetic only, recreated on the next backup.' },
+  { key:'LAST_BACKUP_FILE_ID', sev:'AUTO',
+    what:'Drive file ID of the most recent backup, used for the "Open in Drive" link in Settings → System.',
+    lost:'That one link stops working until the next backup; every backup file in Drive is still there and still openable by hand.' },
   { key:'WEB_APP_URL', sev:'IMPORTANT',
     what:'The /exec address your team opens.',
     lost:'Setup shows the wrong link again, and bug reports cannot say where the app lives.' },
@@ -5649,7 +6171,15 @@ function removeUser(email, auth) {
 // suppliers, and locations. Renaming a category also updates MASTER_ARCHIVE_V3.
 
 function getSettings(auth) {
-  auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  // A READ, not a write — the actual writes (updateConfig) still decide who
+  // may CHANGE a category, project, supplier or location, via requirePerm_.
+  // This only has to answer "what are they right now", which is exactly what
+  // a WAREHOUSE user needs before they can manage the catalog at all — the
+  // Categories/Projects/Suppliers/Locations tabs cannot show a current list
+  // without it. Was ADMIN-only, which meant a WAREHOUSE user granted
+  // canManageCatalog could open Settings (the UI now lets them in) and get an
+  // error on the very first thing it tried to load.
+  auth = requireAuth_('WRITE');
   var c = loadConfig();
   return {
     categories: c.categories,
@@ -5945,12 +6475,20 @@ function mergeConfigValues(data, auth) {
 }
 
 function updateConfig(data, auth) {
-  auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  // Split gate, not a single ADMIN wall any more. archiveCutoffMonths is a
+  // system-wide retention setting — stays ADMIN-only, unconditionally, same as
+  // System tab always has been. The catalog ops below it (categories, projects,
+  // suppliers, locations — the four tabs literally labelled "Catalog" in
+  // Settings) are what "Manage catalog" in Settings → Permissions actually
+  // grants; requireAuth_('WRITE') here only establishes "authenticated, not a
+  // VIEWER" — requirePerm_ below is what actually decides.
+  auth = requireAuth_('WRITE');
   var ss  = SpreadsheetApp.getActiveSpreadsheet();
   var cfg = ss.getSheetByName(SHEETS.CONFIG);
   if (!cfg) throw new Error('CONFIG sheet not found.');
 
   if (data.type === 'archiveCutoffMonths') {
+    requireAuth_('ADMIN');   // re-checked deliberately: this branch is admin-only regardless of any catalog permission
     var months = Number(data.value);
     if ([6, 12, 18].indexOf(months) === -1) throw new Error('Cutoff must be 6, 12, or 18 months.');
     cfg.getRange(2, 14).setValue(months);
@@ -5959,6 +6497,8 @@ function updateConfig(data, auth) {
     auditLog_(ss, 'UPDATE_CONFIG', auth.email, 'archiveCutoffMonths', 'set', String(months) + 'mo');
     return { status: 'success', reconcile: res };
   }
+
+  requirePerm_(auth, 'canManageCatalog');
 
   // Column index in CONFIG sheet (0-based array index = col number - 1)
   var colMap = { categories: 1, projects: 0, suppliers: 2, locations: 3 };
@@ -6461,7 +7001,12 @@ function parseIncomingEmail(data, auth) {
 // ─── MODIFY MOVEMENT ────────────────────────────────────────────────────────
 // Admin only. Updates a row in MASTER_ARCHIVE_V3, logs to AUDIT_LOG, emails admin.
 function modifyMovement(data, auth) {
-  auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  // Was flatly ADMIN-only. Now: ADMIN always, or WAREHOUSE if the admin has
+  // switched on "Edit movements" for their role in Settings → Permissions —
+  // see requirePerm_. VIEWER never reaches here: requireAuth_('WRITE')
+  // refuses it before the permission is even checked.
+  auth = requireAuth_('WRITE');
+  requirePerm_(auth, 'canEditMovements');
 
   var rowIdx = parseInt(data.rowIdx || 0);
   if (rowIdx < 2) throw new Error('Invalid row index.');
@@ -6477,7 +7022,7 @@ function modifyMovement(data, auth) {
   if (rowIdx > lastRow) throw new Error('Row #' + rowIdx + ' does not exist (last row: ' + lastRow + ').');
 
   // Read current row (20 cols)
-  var range   = archive.getRange(rowIdx, 1, 1, 20);
+  var range   = archive.getRange(rowIdx, 1, 1, AC_WIDTH);
   var rowVals = range.getValues()[0];
 
   // Row numbers shift whenever archiveOldMovements() reconciles the sheet —
