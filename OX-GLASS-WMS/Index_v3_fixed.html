@@ -103,21 +103,35 @@
          full-width row above the tabs, leaving that whole row mostly empty
          space to the right of it. Bringing it down to sit beside the tabs
          instead removes that row entirely on a screen with room to spare.
-         .topbar-row2's own internal grid (nav centred, tools right-aligned)
-         is untouched — it just now sizes against the space left over after
-         the brand block, rather than the full topbar width. Narrower than
-         this, row1 stays exactly where it always was, above row2 — Jose's
-         own words, it still "jumps above the tabs" the moment the window
-         shrinks past this same breakpoint. */
-      /* flex-wrap, not a second fixed breakpoint: a longer company name (a
-         future customer, not just OX Glass) needs more room before row2 fits
-         beside it than a short one does. Letting the row wrap on its own
-         content, rather than guessing one pixel width that happens to work
-         for "PRODUCTION OX GLASS", is what makes row2 actually jump back
-         above the tabs exactly when it stops fitting — for any name. */
-      .topbar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:.4rem 1.25rem}
-      .topbar-row1{flex-shrink:0}
-      .topbar-row2{flex:1 1 auto}
+         Below this breakpoint the merge never even attempts — row1 stays
+         exactly where it always was, above row2. Whether it ACTUALLY merges
+         above this breakpoint is JS's call, not this media query's — see
+         .topbar.merged below and _syncBrandWidth's fit check, since a
+         longer company name (a future customer, not just "OX Glass") needs
+         more room before it fits beside five tabs than a short one does. */
+      /* Jose also caught the tabs landing off-centre once brand shared the
+         row — reasonable: sizing row2 against "whatever's left after
+         brand" made its own centred nav track the MIDDLE OF THAT LEFTOVER
+         SPACE, not the middle of the page, and brand (logo+name+Acopio) is
+         never the same width as the avatar cluster on the right. Taking
+         row1 out of flow with position:absolute is what actually fixes it:
+         row2 goes back to spanning the full topbar width — the exact same
+         box test-topbar-deck.js already measures as centred at
+         1024/1440px — with brand floated on top of its left edge instead
+         of eating into it. min-height on .topbar reserves room for
+         brand's tallest case (logo + name + Acopio stacked) since it no
+         longer contributes to the topbar's own flow height once it's out
+         of flow. */
+      .topbar.merged{position:relative;min-height:74px;gap:.4rem 1.25rem}
+      .topbar.merged .topbar-row1{position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);z-index:1}
+      /* row2 itself stays full-width (unpadded) so its centring math is
+         still exactly "middle of the page" — the fix isn't in row2's box,
+         it's in giving column 1 the SAME minimum width as brand actually
+         needs, via --brand-w (see _syncBrandWidth). Column 3 gets that same
+         minimum for free since both share one minmax() — which is exactly
+         what keeps them equal and nav centred, the same reason column 1 was
+         an empty spacer matching column 3's width in the first place. */
+      .topbar.merged .topbar-row2{grid-template-columns:minmax(var(--brand-w,180px),1fr) minmax(0,auto) minmax(var(--brand-w,180px),1fr)}
     }
     /* ── LAYOUT ── */
     .container{max-width:1400px;margin:0 auto;padding:1.25rem;flex-grow:1;width:100%}
@@ -814,6 +828,16 @@
     .morning-item:last-child{border-bottom:none}
     .morning-item-name{font-weight:600}
     .morning-item-meta{color:var(--muted);font-size:.75rem}
+    /* Status and the shortcut stack on the right, so a long material name
+       cannot squeeze the button down to nothing. */
+    .morning-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0;margin-left:.5rem}
+    .morning-arrived{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;
+      padding:.2rem .5rem;font-size:.72rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
+    .morning-arrived:hover{background:var(--accent);color:#fff}
+    /* Briefly marks the one field a shortcut just changed on the reader's
+       behalf, so nothing is altered invisibly. */
+    @keyframes field-flag{0%{box-shadow:0 0 0 3px rgba(59,130,246,.45)}100%{box-shadow:0 0 0 3px rgba(59,130,246,0)}}
+    .field-flagged{animation:field-flag 2.6s ease-out both;border-color:var(--accent)!important}
     .morning-popup-footer{padding:.75rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.75rem}
     /* ── MONITOR MODAL ── */
     /* Outer container: the ONLY scrollbar is vertical — overflow-x:hidden is the
@@ -1254,6 +1278,17 @@
     .sysact-detail{color:var(--muted);font-size:.72rem;width:100%;padding-left:1.3rem;line-height:1.5}
     .sysact-link{display:inline-block;margin:.3rem 0 0 1.3rem;background:none;border:none;padding:0;font-family:inherit;font-size:.72rem;font-weight:700;color:var(--accent);cursor:pointer;text-decoration:none}
     .sysact-link:hover{text-decoration:underline}
+    /* The full backup list, collapsed. ~30 near-identical rows on a healthy
+       install: worth having, not worth opening the tab into. */
+    .bk-all{margin-top:.4rem}
+    .bk-all summary{font-size:.75rem;color:var(--accent);cursor:pointer;font-weight:700;list-style:revert}
+    .bk-all summary:hover{text-decoration:underline}
+    .bk-list{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.2rem;max-height:260px;overflow-y:auto}
+    .bk-list li{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;justify-content:space-between;
+      background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.35rem .55rem;font-size:.75rem}
+    .bk-list a{color:var(--accent);text-decoration:none;min-width:0;overflow-wrap:anywhere}
+    .bk-list a:hover{text-decoration:underline}
+    .bk-when{color:var(--muted);font-size:.72rem;flex:none}
     /* Lands you on the exact entry you clicked through from. */
     @keyframes spotlight{0%{background:var(--yellow-bg)}100%{background:transparent}}
     .sysact-spot{animation:spotlight 6s ease-out both;border-radius:8px}
@@ -2596,7 +2631,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '9.90';
+var APP_VERSION = '9.95';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3978,6 +4013,7 @@ function applyCompanyBranding(c){
       try {
         if (dataUrl.length < 400000) localStorage.setItem('acopio_brand_logo', dataUrl);
       } catch (e) {}
+      _syncBrandWidth();   // the logo arrives async and changes brand's width
     }, 'full');                            // full file: a logo is already tiny, and the
                                            // thumbnail would drop its transparency
   } else if (logo && !c.logoId){
@@ -3985,6 +4021,7 @@ function applyCompanyBranding(c){
     _setFavicon(APP_FAVICON_DEFAULT);
     try { localStorage.removeItem('acopio_brand_logo'); } catch (e) {}   // a removed logo must not linger on the splash
   }
+  _syncBrandWidth();
 }
 
 // The company's own uploaded logo becomes the browser tab icon too, once
@@ -3993,6 +4030,43 @@ function applyCompanyBranding(c){
 function _setFavicon(href){
   var link = document.getElementById('appFavicon');
   if (link && href) link.href = href;
+}
+
+// The header-merge layout (≥769px) takes the brand block out of flow with
+// position:absolute so the tabs stay mathematically centred on the page —
+// see .topbar-row1's rule — but that means .topbar-row2 has to be told by
+// hand how much room to leave for it, since an out-of-flow element no
+// longer pushes anything over on its own. Brand's width varies with the
+// company name and whether a logo is showing, so this is measured, not
+// guessed: a static number that happened to fit "OX Glass" would just be
+// the same off-centre bug again for a longer name.
+//
+// Whether the merge actually HAPPENS is also decided here, not by the
+// media query alone: forcing it on and then checking whether the tabs
+// wrapped is the only way to know it really fits, for the same reason a
+// fixed pixel breakpoint keeps being wrong — this is a measure-then-verify
+// pass, not a guess, exactly like _positionTip's edge avoidance elsewhere
+// in this file.
+function _syncBrandWidth(){
+  var brandEl = document.querySelector('.topbar-brand');
+  var topbarEl = document.querySelector('.topbar');
+  if (!brandEl || !topbarEl) return;
+  document.documentElement.style.setProperty('--brand-w', brandEl.getBoundingClientRect().width + 'px');
+
+  if (window.innerWidth < 769) { topbarEl.classList.remove('merged'); return; }
+  topbarEl.classList.add('merged');
+  var buttons = document.querySelectorAll('.topbar-row2 .nav button');
+  var wrapped = false;
+  if (buttons.length > 1) {
+    var firstTop = buttons[0].getBoundingClientRect().top;
+    buttons.forEach(function(b){
+      if (Math.abs(b.getBoundingClientRect().top - firstTop) > 2) wrapped = true;
+    });
+  }
+  // A tab spilling onto its own line under the rest, inside what was
+  // supposed to be one merged row, means there wasn't really room for the
+  // merge — fall back to the original two full-width rows instead.
+  if (wrapped) topbarEl.classList.remove('merged');
 }
 
 // ── Report a Problem (floating button) ──────────────────────────────────────
@@ -7265,11 +7339,21 @@ function _movRowIndexAt(i){ return _movRenderedRows[i]; }
 function _renderSystemTab() {
   var content = document.getElementById('settingsTabContent');
   var months = String((_settingsData && _settingsData.archiveCutoffMonths) || 12);
-  // The scheduled jobs already ran and already logged; this is the first place
-  // the app has ever shown it. Answers "is this thing actually backing up?"
-  // without anyone having to open the Sheet and read AUDIT_LOG by hand.
-  var actHtml = (systemActivity && systemActivity.length)
-    ? '<ul class="sysact-list">' + systemActivity.map(function(a){
+  // Everything the app did on its own EXCEPT backups. Backups have their own
+  // section below, built from the Drive folder itself, and listing them twice
+  // was worse than pointless: this copy is the unreliable one — read from
+  // AUDIT_LOG, whose readable tail a busy install scrolls past in under a
+  // day, and which keeps advertising backups the customer has since deleted
+  // with links that land on Drive's "unable to open the file". Jose asked why
+  // there were two areas showing the same thing; this is the answer.
+  //
+  // Deliberately NOT filtered by `dismissed`, unlike the corner deck. Pressing
+  // ✕ on a notice means "I have read this", not "this never happened" —
+  // conflating the two is what emptied this list out and made it claim nothing
+  // automatic had ever run, directly above a "Last backup: today" line.
+  var sysActs = (systemActivity || []).filter(function(a){ return a.action !== 'BACKUP_CREATED'; });
+  var actHtml = (sysActs.length)
+    ? '<ul class="sysact-list">' + sysActs.map(function(a){
         return '<li id="sysact-' + _he(_sysActId(a)) + '"><span class="sysact-dot">✓</span>' +
           '<span class="sysact-label">' + _he(a.label) + '</span>' +
           '<span class="sysact-when">' + _he(_fmtWhen(a.at)) + '</span>' +
@@ -7277,8 +7361,11 @@ function _renderSystemTab() {
           _sysActRefHtml(a) +
         '</li>';
       }).join('') + '</ul>'
-    : '<p style="font-size:.78rem;color:var(--muted)">Nothing automatic has run yet. Switch the nightly backup on below ' +
-      'and the first one runs tonight at 2am.</p>';
+    // No longer mentions backups: they are not counted here any more, so
+    // "nothing has run" next to a nightly backup that plainly did run would
+    // be the same contradiction in a new place.
+    : '<p style="font-size:.78rem;color:var(--muted)">Nothing so far. Repairs the app makes on its own — ' +
+      'a movement re-linked to the right material, an archive run — get listed here. Backups have their own section below.</p>';
 
   content.innerHTML =
     '<p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">System-wide maintenance — not specific to any one category.</p>' +
@@ -7348,6 +7435,27 @@ function _drawBackupBox(st){
     lastHtml = '<div style="font-size:.75rem;margin-top:.35rem">Last backup: ' + _he(_fmtWhen(st.lastBackupAt)) +
       (link ? ' — ' + link : '') + '</div>';
   }
+
+  // EVERY backup, not just the newest — Jose: "what if the customer wants
+  // yesterday's backup? do they have to go hunting in Drive?" They did.
+  // st.backups comes from the folder itself (listBackups_), so a backup that
+  // was deleted or moved simply is not listed, rather than being listed with
+  // a link that lands on Drive's "unable to open the file at this time".
+  // Collapsed by default: on a healthy install this is ~30 near-identical
+  // rows, and the answer to "is it backing up?" is the one line above.
+  var allHtml = '';
+  if (st.backups && st.backups.length > 1) {
+    allHtml =
+      '<details class="bk-all">' +
+        '<summary>All backups in Drive (' + st.backups.length + ')</summary>' +
+        '<ul class="bk-list">' +
+          st.backups.map(function(b){
+            return '<li><a target="_blank" href="https://drive.google.com/file/d/' + _he(b.id) + '/view">' +
+              _he(b.name) + ' ↗</a><span class="bk-when">' + _he(_fmtWhen(b.at)) + '</span></li>';
+          }).join('') +
+        '</ul>' +
+      '</details>';
+  }
   box.innerHTML =
     '<label class="sw" style="margin-bottom:.5rem">' +
       '<input type="checkbox" id="backupSw"' + (on ? ' checked' : '') + ' onchange="_toggleBackup(this)">' +
@@ -7363,6 +7471,7 @@ function _drawBackupBox(st){
       '</span>' +
     '</div>' +
     lastHtml +
+    allHtml +
     // Deliberately separate from the switch: "back this up before I do
     // something risky" and "back it up every night" are different decisions,
     // and the menu version ran them together.
@@ -8777,6 +8886,8 @@ document.addEventListener('focusin', function(e){
       openRackDrawer(el.getAttribute('data-rack'));
     } else if (a === 'edit-incoming') {
       openIncomingModal(el.getAttribute('data-id'));
+    } else if (a === 'morning-arrived') {
+      _markArrivedFromPopup(el.getAttribute('data-id'));
     } else if (a === 'edit-user') {
       editUser(el.getAttribute('data-email'));
     } else if (a === 'deact-user') {
@@ -10068,6 +10179,7 @@ window.addEventListener('resize', function(){
     if (panel) panel.classList.remove('show');
   }
 });
+window.addEventListener('resize', _debounce(_syncBrandWidth, 150));
 
 function toggleCfgBell(e){
   if (e) e.stopPropagation();
@@ -11719,7 +11831,13 @@ function showMorningPopup(items, todayStr) {
   var todayItems = items.filter(function(i){ return _incOnDay(i, todayStr); });
   var restItems  = items.filter(function(i){ return !_incOnDay(i, todayStr); });
 
+  // Same rule as the Incoming table's own edit pencil (_incRowHtml): only an
+  // ADMIN gets to change an expected delivery, so only an ADMIN is offered the
+  // shortcut to it. Anything already marked Arrived has nothing left to do.
+  var canMarkArrived = (userRole === 'ADMIN');
+
   function itemRow(item) {
+    var done = String(item.status || '').toLowerCase() === 'arrived';
     return '<div class="morning-item">' +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.15rem">' +
@@ -11731,7 +11849,12 @@ function showMorningPopup(items, todayStr) {
           (item.notes ? _he(item.notes) : '') +
         '</div>' +
       '</div>' +
-      '<span class="inc-status-' + (item.status||'pending').toLowerCase() + '" style="flex-shrink:0;margin-left:.5rem">' + (item.status||'Pending') + '</span>' +
+      '<div class="morning-item-right">' +
+        '<span class="inc-status-' + (item.status||'pending').toLowerCase() + '">' + (item.status||'Pending') + '</span>' +
+        (canMarkArrived && !done
+          ? '<button class="morning-arrived" data-action="morning-arrived" data-id="' + _escAttr(item.id) + '">Mark arrived →</button>'
+          : '') +
+      '</div>' +
     '</div>';
   }
 
@@ -11751,6 +11874,33 @@ function showMorningPopup(items, todayStr) {
   var noShowLbl = document.getElementById('noShowTodayLabel');
   if (noShowLbl) noShowLbl.style.display = (userRole === 'ADMIN') ? 'flex' : 'none';
   document.getElementById('morningOverlay').classList.add('show');
+}
+
+// "Mark arrived →" on a morning-popup card. Jose: from the card, go straight
+// to the exact place where you record that it turned up — which is the
+// Incoming item's own edit window, since that is where Status lives.
+//
+// It does NOT save on its own. Status is pre-selected as Arrived and the
+// field is flagged so it is obvious what changed, but the person still
+// presses Save — a delivery marked received by one stray tap, with nobody
+// having looked at it, is worse than one extra click.
+function _markArrivedFromPopup(id){
+  if (userRole !== 'ADMIN') return;              // same gate as the button itself
+  var item = incoming.find(function(i){ return i.id === id; });
+  if (!item) { showToast('That expected delivery is no longer on the list.', 'warn'); return; }
+  closeMorningPopup();
+  // The Incoming tab has to be the one on screen behind the modal: closing the
+  // window and landing on the Dashboard would leave no trace of what just
+  // happened.
+  showTab('incoming', 'btn-incoming');
+  openIncomingModal(id);
+  var sel = document.getElementById('incStatus');
+  if (sel){
+    sel.value = 'Arrived';
+    sel.classList.add('field-flagged');
+    sel.focus();
+    setTimeout(function(){ sel.classList.remove('field-flagged'); }, 2600);
+  }
 }
 
 function closeMorningPopup() {
@@ -12507,8 +12657,14 @@ function _dismissSysCard(id){
 // backup a day that is a month of ignoring it, which is long enough to mean
 // nobody was ever going to read it.
 function _announceSystemActivity(){
+  // a.dismissed is the server's answer (this person pressed ✕ on a previous
+  // load); _sysDismissedNow is the same-session mirror so a card just
+  // dismissed cannot flicker back before the next load. The deck wants
+  // neither — Settings → System, which reads the same list, deliberately
+  // shows both (see _renderSystemTab): a notice is something you dismiss,
+  // a maintenance record is not.
   _sysCards = (systemActivity || []).filter(function(a){
-    return a.at && !_sysDismissedNow[a.at + '|' + a.action];
+    return a.at && !a.dismissed && !_sysDismissedNow[a.at + '|' + a.action];
   }).map(function(a){
     return { id: a.at + '|' + a.action, label: a.label, at: a.at, detail: a.detail, extra: a.extra };
   });
@@ -12755,6 +12911,11 @@ document.addEventListener('DOMContentLoaded', function(){
   // First thing, before any window can be opened: nothing behind an open
   // window may be clicked, tabbed into or scrolled.
   _initModalShield();
+
+  // Before the real company name arrives, so the header-merge decision
+  // (see _syncBrandWidth) already has something to measure instead of
+  // defaulting to "not merged" for the first paint.
+  _syncBrandWidth();
 
   // Nav
   _safeOn('btn-dashboard','click', function(){ showTab('dashboard','btn-dashboard'); });

@@ -33,7 +33,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '9.90';
+var APP_VERSION = '9.95';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -2787,8 +2787,41 @@ function getBackupStatus(auth) {
     folder:           backupFolderName_(),
     lastBackupAt:     lastAt || '',
     lastBackupName:   lastName || '',
-    lastBackupFileId: lastId || ''
+    lastBackupFileId: lastId || '',
+    // The whole list, straight from Drive — see listBackups_ for why it is
+    // not read from AUDIT_LOG like the rest of the System tab.
+    backups:          (function(){ try { return listBackups_(); } catch (e) { Logger.log('listBackups_: ' + e.message); return []; } })()
   };
+}
+
+// EVERY backup currently sitting in the folder, newest first.
+//
+// Read from Drive, NOT from AUDIT_LOG, and that difference is the whole
+// point. AUDIT_LOG answers "what happened", and it fails this job twice
+// over: only its last ~1500 rows are readable from the app, which ordinary
+// ADD_MOVEMENT traffic can scroll a backup past in under a day; and it keeps
+// reporting a backup the customer has since deleted or moved, so the link
+// leads to Drive's "Sorry, unable to open the file at this time".
+//
+// The folder answers "what still exists", which is the question actually
+// being asked when someone opens this list to go and restore something. A
+// deleted backup simply stops being listed, which is the honest outcome.
+//
+// Costs one folder scan, paid only when Settings → System is opened (that
+// tab already calls getBackupStatus), never on an ordinary app load.
+function listBackups_() {
+  var folder = getOrCreateFolder_(backupFolderName_());
+  var files  = folder.getFiles();
+  var out    = [];
+  // Bounded: retention prunes at 30 days so this is normally ~30 files, but
+  // an install whose schedule was off and on, or one restored by hand, can
+  // hold more, and this runs while someone waits on a settings tab.
+  while (files.hasNext() && out.length < 120) {
+    var f = files.next();
+    out.push({ id: f.getId(), name: f.getName(), at: f.getDateCreated().toISOString() });
+  }
+  out.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });
+  return out;
 }
 
 function _findMostRecentBackup_() {
@@ -4557,15 +4590,33 @@ function getSystemActivity(limit, forEmail) {
   var span  = Math.min(1500, last - 1);
   var rows  = sheet.getRange(last - span + 1, 1, span, 6).getValues();
   var out   = [];
-  for (var i = rows.length - 1; i >= 0 && out.length < (limit || 8); i--) {
+  // Dismissed events are RETURNED, flagged — not dropped. They used to be
+  // filtered out right here, which quietly conflated two different things:
+  // the corner deck (a notice you dismiss once you have read it) and
+  // Settings → System's "what the system did on its own" (a maintenance
+  // record that has to keep saying a backup ran). Both read this one list,
+  // so pressing ✕ on a backup notice also erased it from the history —
+  // which is why Jose's install showed "Nothing automatic has run yet"
+  // above a "Last backup: today at 2:13 AM" line that was perfectly true.
+  // It started when dismissals moved from localStorage (where they never
+  // stuck) to the server (where they do), which is exactly the v9.65→v9.70
+  // window he remembers the list disappearing in.
+  //
+  // The limit still counts only UNDISMISSED events, so the deck gets its
+  // full budget of live cards rather than spending it on ones dismissed
+  // months ago — that part of the original reasoning was right. A separate
+  // hard cap bounds the history that rides along with them.
+  var live = 0;
+  var maxLive = limit || 8;
+  var MAX_TOTAL = 60;
+  for (var i = rows.length - 1; i >= 0 && live < maxLive && out.length < MAX_TOTAL; i--) {
     var actor = String(rows[i][2] || '').toLowerCase().trim();
     if (!SYSTEM_ACTORS[actor]) continue;
     var action = String(rows[i][1] || '');
     var atIso  = rows[i][0] ? new Date(rows[i][0]).toISOString() : '';
-    // Same id the browser used to build: timestamp + action. Filtered HERE so
-    // the limit above counts cards this person will actually see, instead of
-    // being spent on ones they dismissed months ago.
-    if (dismissed[atIso + '|' + action]) continue;
+    // Same id the browser builds: timestamp + action.
+    var isDismissed = !!dismissed[atIso + '|' + action];
+    if (!isDismissed) live++;
     // Anything the app can take you to, it should. A backup is a file in
     // Drive; a re-link happened on numbered rows of the archive. Both are
     // reachable, and "corrected automatically" is only reassuring if you can
@@ -4578,12 +4629,13 @@ function getSystemActivity(limit, forEmail) {
       if (m) ref = { kind: 'rows', rows: m[1].split(','), label: 'Show the movement' + (m[1].indexOf(',') === -1 ? '' : 's') };
     }
     out.push({
-      at:     atIso,
-      action: action,
-      label:  SYSTEM_EVENT_LABELS[action] || action.replace(/_/g, ' ').toLowerCase(),
-      detail: String(rows[i][3] || ''),
-      extra:  [rows[i][4], rows[i][5]].filter(function (v) { return String(v || '').trim(); }).join(' · '),
-      ref:    ref
+      at:        atIso,
+      action:    action,
+      label:     SYSTEM_EVENT_LABELS[action] || action.replace(/_/g, ' ').toLowerCase(),
+      detail:    String(rows[i][3] || ''),
+      extra:     [rows[i][4], rows[i][5]].filter(function (v) { return String(v || '').trim(); }).join(' · '),
+      ref:       ref,
+      dismissed: isDismissed
     });
   }
   return out;
