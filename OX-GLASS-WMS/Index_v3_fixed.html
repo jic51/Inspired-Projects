@@ -2631,7 +2631,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '10.0';
+var APP_VERSION = '10.4';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -7736,7 +7736,21 @@ function _renderSettingsTab(tab) {
   }).join('');
 
   content.innerHTML =
-    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Manage '+label.toLowerCase()+'s. Renaming a category updates all existing movements automatically.' +
+    // One sentence used to serve all four tabs: "Renaming a category updates
+    // all existing movements automatically." True on Categories, FALSE on the
+    // other three — the app was telling people it would do something it does
+    // not do. And the difference is not an oversight, it is the design (see
+    // the note above updateConfig in Code.gs): a category is a CLASSIFICATION
+    // and correcting its spelling does not change what a 2024 window was,
+    // while a supplier, a project and a location are HISTORICAL FACTS. Who we
+    // bought from, which job it went to and which rack it sat in were true
+    // under the name in use at the time, and those names are already printed
+    // on PDFs and emails that went out. Rewriting them would make the app
+    // disagree with paperwork the customer is holding.
+    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Manage '+label.toLowerCase()+'s. ' +
+      (tab === 'categories'
+        ? 'Renaming a category updates all existing movements automatically.'
+        : 'Renaming updates the list only — existing movements keep the name they were recorded with.') +
       (mergeable ? ' Tick two or more to merge them by hand.' : '') + '</p>' +
     (mergeable ? _renderSimilarGroups(tab, items, label) : '') +
     (mergeable ? '<div class="cfg-pickbar" id="cfgPickBar"></div>' : '') +
@@ -7801,6 +7815,10 @@ function _renderLocationsTab(){
       '<p style="font-size:.8rem;color:var(--muted);margin:0;flex:1">' +
         'Drag a location into a group to file it there. Grouping is for organising only — every location still counts toward stock, ' +
         'and the Warehouse Map shows these same groups.' +
+        // Said here for the same reason it is said on the other catalog tabs:
+        // where a thing WAS is a fact about the past, and renaming the rack
+        // today cannot make January's material have sat somewhere else.
+        '<br>Renaming a location updates the list only — existing movements keep the name they were recorded with.' +
         '<br><b>Dragging needs a mouse</b> — on a phone this list is read-only for now.' +
       '</p>' +
       '<div class="loc-plus-wrap">' +
@@ -8576,7 +8594,11 @@ function _cfgSaveRename(tab, i) {
   var oldV = li ? li.dataset.val : '';
   var inp  = document.getElementById('cfgInp-'+tab+'-'+i);
   var newV = inp ? inp.value.trim() : '';
-  if (!newV || newV === oldV) { _cfgCancelEdit(tab, i); return; }
+  // Uppercased for the same reason _cfgAdd does it, and so the list patched
+  // locally shows exactly what the server stored — not a mixed-case copy that
+  // only corrects itself on the next full load.
+  newV = newV.toUpperCase();
+  if (!newV || newV === oldV.toUpperCase()) { _cfgCancelEdit(tab, i); return; }
   _cfgCall({ type: tab, op: 'rename', value: oldV, newValue: newV });
 }
 
@@ -8610,13 +8632,42 @@ function _cfgAdd(tab) {
 // "Loading…", then rebuilt the whole list — seconds of churn to show one new
 // row. The server call is the only part that has to happen; the browser already
 // knows exactly what changed.
+// One catalog edit at a time, and say so while it runs.
+//
+// Renaming a category rewrites every matching row in the archive and then
+// rebuilds the stock cache. That is fast now, but never instant — and this
+// button used to give no sign it was working. The natural thing to do with a
+// button that appears to have done nothing is press it again, and the second
+// press asked the server to rename a value the first press had already
+// renamed, so it came back '"IGU" not found in categories' — a red error for
+// an operation that had actually succeeded. That is a worse outcome than
+// waiting, and it was the app's fault, not the user's.
+var _cfgBusy = false;
+function _cfgSetBusy(on) {
+  _cfgBusy = on;
+  var scope = document.getElementById('settingsTabContent');
+  if (!scope) return;
+  var btns = scope.querySelectorAll('.cfg-btn, .cfg-add-row button');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].disabled = on;
+    btns[i].style.opacity = on ? '.5' : '';
+    btns[i].style.cursor  = on ? 'wait' : '';
+  }
+}
 function _cfgCall(payload, onDone) {
+  if (_cfgBusy) return;              // the guard itself; the greying-out is only the explanation
+  _cfgSetBusy(true);
+  _settingMsg('Saving…', 'info');
+  function done() { _cfgSetBusy(false); }
   google.script.run
     .withSuccessHandler(function() {
+      done();
       if (onDone) onDone();
-      _applyCfgChangeLocally(payload);
+      _applyCfgChangeLocally(payload);   // re-renders the tab, rebuilding the buttons enabled
+      _settingMsg('Saved ✓', 'ok');
     })
     .withFailureHandler(function(e){
+      done();
       var msg = (e && e.message) || String(e);
       // A duplicate is not a failure worth a red banner — the value is on the
       // list, which is what was asked for.
@@ -8662,6 +8713,27 @@ function _applyCfgChangeLocally(p) {
   if (p.op === 'add') {
     var box = document.getElementById('cfgNewVal');
     if (box) { box.value = ''; box.focus(); }
+  }
+
+  // Renaming a CATEGORY is the one catalog edit that rewrites the movements
+  // themselves, so it is the one where patching locally is not enough.
+  //
+  // Everything else on this screen only adds or removes a value from a list,
+  // and the browser genuinely does know what changed. A category rename does
+  // not: the server rewrote the Category cell of every archive row and rebuilt
+  // the stock cache, while `movements` and `oldMovements` in this tab still
+  // hold the OLD name. The filter dropdown gets the new name from the catalog
+  // and renderMovements() compares it against rows that still say the old one,
+  // so filtering by the renamed category returned NOTHING until the page was
+  // reloaded by hand. Found in production, v10.1.
+  //
+  // It is also more than the visible text: a material's MatID is built from
+  // its category, so a rename leaves every MatID this tab is holding stale.
+  // Patching four arrays and hoping to catch every derived field is more code
+  // and more ways to be subtly wrong than simply asking the server again.
+  // Renaming a category happens a few times a year; correct beats instant.
+  if (p.type === 'categories' && p.op === 'rename' && typeof loadDataFromGoogle === 'function') {
+    loadDataFromGoogle(true, true);   // skipCache, quiet — no spinner over the whole app
   }
 }
 

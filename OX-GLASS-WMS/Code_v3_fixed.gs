@@ -33,7 +33,44 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '10.0';
+var APP_VERSION = '10.4';
+
+// The browser-tab icon every installation gets unless it sets FAVICON_URL.
+// See the note in doGet for why one shared mark rather than each customer's
+// own logo.
+//
+// This is the SQUARE stacked-boxes mark, out of Jose's own Drive — no customer
+// file is published, so nothing of theirs becomes public. It moves to
+// acopio.com/favicon.png once the domain exists; this line is the only change.
+//
+// lh3.googleusercontent.com/d/ID rather than drive.google.com/uc?export=view:
+// the uc form answers with an HTML interstitial rather than image bytes often
+// enough that it is not worth relying on for something a browser fetches
+// unauthenticated.
+//
+// ⚠ TWO THINGS HERE ARE UNVERIFIED, AND SAYING SO IS THE POINT.
+//
+// This session's network cannot reach drive.google.com (the proxy answers 403
+// for every form of the URL), so nothing here has been confirmed by fetching
+// it. Specifically:
+//   1. Whether this file is really shared "anyone with the link". If it is
+//      not, Google returns a sign-in page instead of an image and the tab
+//      falls back to the Apps Script icon — the state we are in today, so the
+//      failure is harmless but silent.
+//   2. Whether this is the SQUARE file. Jose sent three links alongside three
+//      images and this is the second of each; the mapping is an assumption
+//      about the order, not something checked. A wide logo squeezed into
+//      16 pixels is a smear, so it matters.
+//
+// Both are settled by the same one-minute check, in an INCOGNITO window (a
+// normal window uses Jose's own Google session and would load a private file
+// happily, proving nothing): open the URL. An image that appears is public;
+// the image that appears tells you which of the three it is.
+//
+// After the favicon episode, an unverified claim gets labelled rather than
+// stated. See tools/test-favicon.js — it checks this chain is wired and says
+// plainly that wiring is not a tab icon.
+var ACOPIO_FAVICON_URL = 'https://lh3.googleusercontent.com/d/1pvA5GEBHLkJMIx6SYpvoL0WscfRXyBsB';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -465,7 +502,26 @@ function doGet(e) {
   // so an installation can be pointed at the Acopio mark, or at the
   // customer's own, without a code change. Unset simply leaves Google's
   // default — the behaviour everyone has today.
+  // Decided with Jose (v10.3): the DEFAULT is Acopio's own mark, the same on
+  // every installation, and no customer ever touches it. The earlier plan —
+  // upload a square PNG, publish it, build a Drive URL, paste it into Script
+  // Properties — was a to-do list, not a feature. No customer would do it, and
+  // Jose did not want to ask them to.
+  //
+  // One mark for everyone is also the better product decision, not a
+  // concession: every tab open in every warehouse showing the Acopio icon is
+  // the difference between looking like a product and looking like a
+  // spreadsheet.
+  //
+  // Per-customer icons are deliberately deferred (BACKLOG: "Level 2"). Doing
+  // it properly means publishing a file out of the customer's own Drive, which
+  // needs explicit consent AND fails silently on Workspace domains that forbid
+  // link-sharing — a whole feature, not a line.
+  //
+  // FAVICON_URL still wins when set, so a customer who wants their own is one
+  // property away and nothing here has to change.
   var favicon = String(PropertiesService.getScriptProperties().getProperty('FAVICON_URL') || '').trim();
+  if (!favicon) favicon = ACOPIO_FAVICON_URL;
   if (/^https:\/\//i.test(favicon)) {
     try { out.setFaviconUrl(favicon); } catch (e) { Logger.log('setFaviconUrl: ' + e.message); }
   }
@@ -6387,6 +6443,15 @@ function getSettings(auth) {
 // where it went TO, and a location can appear in either.
 //
 // data = { from: ['A1A','A1 A'], into: 'A1A' }
+// Merging locations moves stock between them, so it takes the stock lock —
+// step 2 of the concurrency fix.
+//
+// Unlike manageMaterial this one was already in good shape: it writes each
+// column in a single setValues and it already rebuilds the derived sheets. The
+// only gap besides the lock was ARCHIVE_HISTORY, closed below.
+//
+// Validation stays outside the lock so a bad request is refused without
+// queueing behind whoever is saving.
 function mergeLocations(data, auth) {
   auth = requireAuth_('ADMIN');
   var into = String(data.into || '').trim();
@@ -6394,26 +6459,30 @@ function mergeLocations(data, auth) {
   var from = (data.from || []).map(function (v) { return String(v || '').trim(); })
                               .filter(function (v) { return v && v.toUpperCase() !== into.toUpperCase(); });
   if (!from.length) throw new Error('Pick at least one other location to merge in.');
+  return withStockLock_(function () { return mergeLocationsLocked_(data, auth, into, from); });
+}
 
+function mergeLocationsLocked_(data, auth, into, from) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var wanted = {};
   from.forEach(function (v) { wanted[v.toUpperCase()] = true; });
 
-  var rowsChanged = 0;
-  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
-  if (archive && archive.getLastRow() > 1) {
-    var n = archive.getLastRow() - 1;
-    [AC.SRC_LOC, AC.DEST_LOC].forEach(function (col) {
-      var range = archive.getRange(2, col + 1, n, 1);
-      var vals  = range.getValues();
-      var hit = 0;
-      for (var i = 0; i < vals.length; i++) {
-        var cur = String(vals[i][0] || '').trim();
-        if (cur && wanted[cur.toUpperCase()]) { vals[i][0] = sheetSafe_(into); hit++; }
-      }
-      if (hit) { range.setValues(vals); rowsChanged += hit; }
-    });
+  // Source AND destination columns, on BOTH sheets. ARCHIVE_HISTORY was
+  // missing: once a customer's archive fills and old rows move out, a merged
+  // location would go on living in the history under its old name, and
+  // refreshDerivedSheets_ reads the two concatenated — so the location would
+  // reappear as a place stock still sits.
+  var storedInto = sheetSafe_(into);
+  function keep(row, col) {
+    var cur = String(row[col] || '').trim();
+    return (cur && wanted[cur.toUpperCase()]) ? storedInto : null;
   }
+  var rowsChanged = 0;
+  [ss.getSheetByName(SHEETS.ARCHIVE), ensureArchiveHistorySheet_(ss)].forEach(function (sheet) {
+    [AC.SRC_LOC, AC.DEST_LOC].forEach(function (col) {
+      rowsChanged += rewriteArchiveColumn_(sheet, col, function (row) { return keep(row, col); });
+    });
+  });
 
   // Drop the merged-away names from CONFIG, keeping each surviving location
   // with the group it was already filed under.
@@ -6592,6 +6661,15 @@ function saveLocationLayout(data, auth) {
 // rows keep the old text, so this rewrites the movement rows too.
 //
 // data = { type: 'projects'|'suppliers', from: ['A','B'], into: 'C' }
+// Merging two spellings of a project or supplier rewrites archive rows, so it
+// takes the stock lock — step 2 of the concurrency fix. Like mergeLocations and
+// unlike manageMaterial, this one already wrote in bulk and already rebuilt the
+// derived sheets; the lock and ARCHIVE_HISTORY were the gaps.
+//
+// Note this is a MERGE, not a rename, and that is why it is allowed to rewrite
+// history where renaming a supplier is not (see the note above updateConfig).
+// A merge says "these two spellings were always the same company" — it corrects
+// a record that was wrong, rather than restating a true one under a new name.
 function mergeConfigValues(data, auth) {
   auth = requireAuth_('ADMIN');
   var type = String(data.type || '');
@@ -6602,25 +6680,25 @@ function mergeConfigValues(data, auth) {
   var from = (data.from || []).map(function (v) { return String(v || '').trim(); })
                               .filter(function (v) { return v && v.toUpperCase() !== into.toUpperCase(); });
   if (!from.length) throw new Error('Pick at least one other name to merge in.');
+  return withStockLock_(function () { return mergeConfigValuesLocked_(data, auth, type, into, from); });
+}
 
+function mergeConfigValuesLocked_(data, auth, type, into, from) {
   var ss  = SpreadsheetApp.getActiveSpreadsheet();
   var col = (type === 'projects') ? AC.PROJECT : AC.SUPPLIER;
 
   var wanted = {};
   from.forEach(function (v) { wanted[v.toUpperCase()] = true; });
 
-  // 1. Rewrite the archive so history reads as one project.
+  // 1. Rewrite both archives so history reads as one project.
+  var storedInto = sheetSafe_(into);
   var rowsChanged = 0;
-  var archive = ss.getSheetByName(SHEETS.ARCHIVE);
-  if (archive && archive.getLastRow() > 1) {
-    var range  = archive.getRange(2, col + 1, archive.getLastRow() - 1, 1);
-    var values = range.getValues();
-    for (var i = 0; i < values.length; i++) {
-      var cur = String(values[i][0] || '').trim();
-      if (cur && wanted[cur.toUpperCase()]) { values[i][0] = sheetSafe_(into); rowsChanged++; }
-    }
-    if (rowsChanged) range.setValues(values);
-  }
+  [ss.getSheetByName(SHEETS.ARCHIVE), ensureArchiveHistorySheet_(ss)].forEach(function (sheet) {
+    rowsChanged += rewriteArchiveColumn_(sheet, col, function (row) {
+      var cur = String(row[col] || '').trim();
+      return (cur && wanted[cur.toUpperCase()]) ? storedInto : null;
+    });
+  });
 
   // 2. Drop the merged-away spellings from CONFIG, and make sure the survivor
   //    is actually on the list — it may only ever have existed as free text.
@@ -6649,6 +6727,90 @@ function mergeConfigValues(data, auth) {
   return { status: 'success', rowsChanged: rowsChanged, removed: removed, into: into };
 }
 
+// Rewrites the Category column of one archive-shaped sheet in ONE round trip.
+//
+// It used to be a setValue() per matching row — one network call to Google per
+// row. On a real archive that is minutes, and it showed: the button gave no
+// feedback, so it got clicked again, and the second click reported
+// '"IGU" not found in categories' for a rename that had in fact worked.
+//
+// Worse, minutes of work meant a real chance of hitting the 6-minute execution
+// ceiling PART WAY THROUGH, leaving half the archive renamed and half not —
+// one category silently split in two. Read once, change in memory, write once
+// removes that failure mode entirely: either the whole column lands or none
+// of it does.
+//
+// The cost of the bulk write is that untouched cells get their own value
+// written back. That is safe here and only here: this app never writes a
+// formula (there is no setFormula anywhere in this file), the column holds
+// plain text, and setValues does not disturb formatting. It also writes
+// nothing at all when nothing matched.
+//
+// Guarded by tools/test-category-rename.js, which runs this exact function
+// over a fake sheet and asserts that every non-matching cell comes out
+// byte-identical — because the flip side of one big write is that a mistake
+// lands everywhere at once instead of slowly.
+//
+// `decide(row)` receives the WHOLE row and returns the new value for `col`, or
+// null to leave that cell exactly as it is. The whole row, because the callers
+// that matter do not match on the column they write: renaming a material
+// matches on category AND name and writes the name; moving one to another
+// category matches on the same pair and writes the category. Matching only on
+// the target column would rename every "GE SILPRUF" in the building instead of
+// the one in the category the admin was looking at.
+function rewriteArchiveColumn_(sheet, col, decide) {
+  if (!sheet) return 0;
+  var last = sheet.getLastRow();
+  if (last < 2) return 0;
+  var width = Math.max(sheet.getLastColumn(), col + 1);
+  var rows  = sheet.getRange(2, 1, last - 1, width).getValues();
+  var out = [], changed = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var nv = decide(rows[i]);
+    if (nv === null || nv === undefined) out.push([rows[i][col]]);
+    else { out.push([nv]); changed++; }
+  }
+  if (changed) sheet.getRange(2, col + 1, last - 1, 1).setValues(out);
+  return changed;
+}
+
+function renameCategoryColumn_(sheet, oldVal, newValStored) {
+  var want = String(oldVal || '').trim().toUpperCase();
+  return rewriteArchiveColumn_(sheet, AC.CATEGORY, function (row) {
+    return String(row[AC.CATEGORY] || '').trim().toUpperCase() === want ? newValStored : null;
+  });
+}
+
+// ─── WHY ONLY CATEGORIES ARE REWRITTEN INTO THE ARCHIVE ─────────────────────
+// Renaming a category rewrites every matching movement. Renaming a supplier, a
+// project or a location does not. That asymmetry looks like an oversight and
+// is not — it is the design, and it is written down here because the next
+// person to notice it (this file's own author included) will otherwise
+// "fix" it.
+//
+// A CATEGORY is a CLASSIFICATION. "WINDOW" describes what the thing IS, and
+// that did not stop being true because the spelling was corrected. Renaming
+// IGU to "IGU (ISOLATED GLASS UNIT)" says nothing new about the glass; it
+// tidies up how it is written. Carrying it into the archive is right.
+//
+// There is also no choice about it: stock is grouped by category+name, so a
+// category renamed in the catalog but not in the archive splits one material
+// into two and THE NUMBERS COME OUT WRONG. Categories must carry.
+//
+// A SUPPLIER, a PROJECT and a LOCATION are HISTORICAL FACTS. Who we bought it
+// from, which job it left for, which rack it sat in — each was true under the
+// name in use on that day. Rack A3B was called A3B until yesterday; saying
+// January's material sat in "B7C" is not a correction, it is false.
+//
+// The practical half of the argument, which is the half that settles it:
+// supplier and project names are printed on PDFs and emails that have already
+// been sent. A customer comparing an old PDF against the screen and finding
+// they disagree does not conclude "somebody renamed something" — they conclude
+// the system cannot be trusted. An inventory system sells traceability;
+// rewriting the past is the one thing it must not do.
+//
+// The Settings screen now says which is which, per tab, so a customer meets
+// this rule before renaming rather than after — see _renderSettingsTab.
 function updateConfig(data, auth) {
   // Split gate, not a single ADMIN wall any more. archiveCutoffMonths is a
   // system-wide retention setting — stays ADMIN-only, unconditionally, same as
@@ -6702,9 +6864,19 @@ function updateConfig(data, auth) {
     if (!val) throw new Error('Current value required for rename.');
     if (!nv)  throw new Error('New value required for rename.');
     var renamed = 0;
+    // Uppercased, like every other write to this list. It was the one path
+    // that stored the value exactly as typed: _cfgAdd uppercases in the
+    // browser, the wizard uppercases, the chip inputs uppercase, and the
+    // archive rewrite below uppercases — so renaming a category to
+    // "IGU (isolated glass unit)" put THAT in CONFIG and
+    // "IGU (ISOLATED GLASS UNIT)" in the archive, and the two stopped
+    // matching each other. Found by renaming a real category for the first
+    // time, in production, which is exactly where a mismatch like this
+    // finally shows up.
+    var nvStored = sheetSafe_(nv.toUpperCase());
     for (var i = 1; i < rows.length; i++) {
       if (String(rows[i][col] || '').trim().toUpperCase() === val.toUpperCase()) {
-        cfg.getRange(i + 1, col + 1).setValue(sheetSafe_(nv));
+        cfg.getRange(i + 1, col + 1).setValue(nvStored);
         renamed++;
       }
     }
@@ -6723,14 +6895,29 @@ function updateConfig(data, auth) {
     // the same lock and would find it already held.
     if (data.type === 'categories') {
       withStockLock_(function () {
-        var archive = ss.getSheetByName(SHEETS.ARCHIVE);
-        if (!archive) return;
-        var aData = archive.getDataRange().getValues();
-        for (var j = 1; j < aData.length; j++) {
-          if (String(aData[j][AC.CATEGORY] || '').trim().toUpperCase() === val.toUpperCase()) {
-            archive.getRange(j + 1, AC.CATEGORY + 1).setValue(sheetSafe_(nv.toUpperCase()));
-          }
-        }
+        // BOTH sheets. The rename used to touch MASTER_ARCHIVE_V3 only, and
+        // refreshDerivedSheets_ reads the archive and ARCHIVE_HISTORY
+        // concatenated — so the first time archiveOldMovements moved rows out,
+        // one category would have silently split into two materials: the
+        // recent rows under the new name, the old ones under the old. Nobody
+        // had hit it yet only because no installation has filled up.
+        var n  = renameCategoryColumn_(ss.getSheetByName(SHEETS.ARCHIVE), val, nvStored);
+        n     += renameCategoryColumn_(ensureArchiveHistorySheet_(ss), val, nvStored);
+
+        // LIVE_STOCK / SITE_STOCK / WASTED_STOCK are a cache of the archive,
+        // and every screen in the app reads the cache, not the archive. Without
+        // this the rename was invisible until somebody happened to save a
+        // movement — the category list showed the new name while the whole
+        // inventory still showed the old one.
+        //
+        // It also repairs the MatIDs. A material's id is built from its
+        // category, so renaming the category makes every stored MatID stale;
+        // refreshDerivedSheets_ recomputes and rewrites them as it goes.
+        //
+        // Inside the lock on purpose: the rewrite above and the rebuild are one
+        // operation, and a save landing between them would be replayed against
+        // a half-renamed archive.
+        if (n) refreshDerivedSheets_(ss);
       });
     }
 
@@ -6771,8 +6958,34 @@ function listMaterials(auth) {
 }
 
 // data.op values: 'rename' | 'changeCategory' | 'merge' | 'deleteRow'
+// Every op here changes what the stock numbers come out as, so the whole thing
+// runs behind the stock lock (step 2 of the concurrency fix).
+//
+// Reviewing it to add that lock turned up four more problems, all older than
+// the lock and all the same ones renaming a category had — this is the same
+// family of code and it had drifted the same way. Locking a slow, half-correct
+// function would only have held everyone else out for longer, so they are
+// fixed together rather than in sequence:
+//
+//   • setValue PER ROW on rename / changeCategory / merge. Minutes on a real
+//     archive, and a live chance of hitting the 6-minute ceiling part way
+//     through — leaving a material half-renamed, which is to say split in two.
+//   • refreshDerivedSheets_ was NEVER called by those three. Only deleteRow
+//     did. Every screen reads LIVE_STOCK, so renaming a material appeared to
+//     do nothing at all until somebody happened to save a movement. Exactly
+//     what Jose hit renaming a category, still waiting to be hit here.
+//   • ARCHIVE_HISTORY was untouched. Once a customer's archive fills and old
+//     rows move out, a renamed material would split into two: recent rows
+//     under the new name, old rows under the old.
+//   • changeCategory changes what a material's MatID IS, since the id is built
+//     from category+name. Without the rebuild, every stored MatID for it went
+//     stale; refreshDerivedSheets_ repairs them as it goes.
 function manageMaterial(data, auth) {
   auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
+  return withStockLock_(function () { return manageMaterialLocked_(data, auth); });
+}
+
+function manageMaterialLocked_(data, auth) {
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var archive = ss.getSheetByName(SHEETS.ARCHIVE);
   if (!archive) throw new Error('Archive sheet not found.');
@@ -6781,60 +6994,59 @@ function manageMaterial(data, auth) {
   var cat = String(data.category || '').trim().toUpperCase();
   var nm  = String(data.name     || '').trim().toUpperCase();
 
+  // Both sheets, every time. Returns the total so the count reported to the
+  // admin covers the rows that were archived out as well as the live ones.
+  function rewriteBoth(col, decide) {
+    return rewriteArchiveColumn_(archive, col, decide) +
+           rewriteArchiveColumn_(ensureArchiveHistorySheet_(ss), col, decide);
+  }
+  function matches(wantCat, wantName) {
+    return function (row) {
+      return String(row[AC.CATEGORY] || '').trim().toUpperCase() === wantCat &&
+             String(row[AC.NAME]     || '').trim().toUpperCase() === wantName;
+    };
+  }
+
   if (op === 'rename') {
     // Change NAME across all rows matching category + oldName
     var oldNm = nm;
     var newNm = String(data.newName || '').trim();
     if (!newNm) throw new Error('New name required.');
-    var rows = archive.getDataRange().getValues();
-    var count = 0;
-    for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][AC.CATEGORY]||'').trim().toUpperCase() === cat &&
-          String(rows[i][AC.NAME]    ||'').trim().toUpperCase() === oldNm) {
-        archive.getRange(i + 1, AC.NAME + 1).setValue(sheetSafe_(newNm));
-        count++;
-      }
-    }
+    var hit = matches(cat, oldNm), storedNm = sheetSafe_(newNm);
+    var count = rewriteBoth(AC.NAME, function (row) { return hit(row) ? storedNm : null; });
+    if (count) refreshDerivedSheets_(ss);
     auditLog_(ss, 'RENAME_MATERIAL', auth.email, cat, oldNm, newNm + ' (' + count + ' rows)');
     return { status: 'success', updated: count };
 
   } else if (op === 'changeCategory') {
     var newCat = String(data.newCategory || '').trim().toUpperCase();
     if (!newCat) throw new Error('New category required.');
-    var rows = archive.getDataRange().getValues();
-    var count = 0;
-    for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][AC.CATEGORY]||'').trim().toUpperCase() === cat &&
-          String(rows[i][AC.NAME]    ||'').trim().toUpperCase() === nm) {
-        archive.getRange(i + 1, AC.CATEGORY + 1).setValue(sheetSafe_(newCat));
-        count++;
-      }
-    }
-    auditLog_(ss, 'CHANGE_CAT', auth.email, nm, cat, newCat + ' (' + count + ' rows)');
-    return { status: 'success', updated: count };
+    var hitC = matches(cat, nm), storedCat = sheetSafe_(newCat);
+    var countC = rewriteBoth(AC.CATEGORY, function (row) { return hitC(row) ? storedCat : null; });
+    if (countC) refreshDerivedSheets_(ss);
+    auditLog_(ss, 'CHANGE_CAT', auth.email, nm, cat, newCat + ' (' + countC + ' rows)');
+    return { status: 'success', updated: countC };
 
   } else if (op === 'merge') {
     // Rename all rows of sourceName → targetName (same category)
     var srcNm  = nm;
     var tgtNm  = String(data.targetName || '').trim();
     if (!tgtNm) throw new Error('Target name required.');
-    var rows = archive.getDataRange().getValues();
-    var count = 0;
-    for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][AC.CATEGORY]||'').trim().toUpperCase() === cat &&
-          String(rows[i][AC.NAME]    ||'').trim().toUpperCase() === srcNm) {
-        archive.getRange(i + 1, AC.NAME + 1).setValue(sheetSafe_(tgtNm));
-        count++;
-      }
-    }
-    auditLog_(ss, 'MERGE_MATERIAL', auth.email, cat, srcNm, tgtNm + ' (' + count + ' rows)');
-    return { status: 'success', merged: count };
+    var hitM = matches(cat, srcNm), storedTgt = sheetSafe_(tgtNm);
+    var countM = rewriteBoth(AC.NAME, function (row) { return hitM(row) ? storedTgt : null; });
+    if (countM) refreshDerivedSheets_(ss);
+    auditLog_(ss, 'MERGE_MATERIAL', auth.email, cat, srcNm, tgtNm + ' (' + countM + ' rows)');
+    return { status: 'success', merged: countM };
 
   } else if (op === 'deleteRow') {
     var rowIdx = parseInt(data.rowIdx || 0);
     if (rowIdx < 2) throw new Error('Invalid row index.');
-    // Log the row content before deleting
-    var rowData = archive.getRange(rowIdx, 1, 1, 19).getValues()[0];
+    // Log the row content before deleting. AC_WIDTH, not the 19 that used to be
+    // hardcoded here: the row grew to 22 columns when pricing was added, so the
+    // audit record of a deleted movement had been quietly dropping the PM and
+    // both cost columns — the record of a deletion is the one place that must
+    // be complete.
+    var rowData = archive.getRange(rowIdx, 1, 1, AC_WIDTH).getValues()[0];
     auditLog_(ss, 'DELETE_ROW', auth.email, String(rowData[AC.CATEGORY]), String(rowData[AC.NAME]),
               'row ' + rowIdx + ' — ' + JSON.stringify(rowData.slice(0, 8)));
     archive.deleteRow(rowIdx);
