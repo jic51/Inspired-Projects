@@ -75,7 +75,16 @@
     .brand-mark{display:flex;flex-direction:column;align-items:center;gap:2px}
     .ver-tag{font-size:.55rem;font-weight:700;letter-spacing:.05em;line-height:1;color:rgba(255,255,255,.4)}
     .ver-bad{color:#fff;background:rgba(255,0,0,.55);border-radius:4px;padding:2px 6px;font-size:.62rem}
-    .topbar h1{color:#fff;font-size:1.1rem;font-weight:700}
+    /* The customer's name, set apart from the interface around it. Everything
+       else on this page is Inter; this is the one string that belongs to THEM,
+       and a different face is what makes it read as a name rather than another
+       label. A system stack rather than a webfont on purpose — a warehouse app
+       should not wait on fonts.googleapis.com to render its own header, and a
+       font that fails to load would leave the one line that matters looking
+       like a fallback. Optical sizing, not decoration: slightly tighter
+       tracking and a touch more weight than the UI text. */
+    .topbar h1{color:#fff;font-size:1.12rem;font-weight:600;letter-spacing:.01em;
+      font-family:"Trebuchet MS","Lucida Grande","Segoe UI",Candara,Optima,sans-serif}
     .topbar-brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     /* A framed light card, not the raw upload floating on navy — most
        logos customers upload have a white or light background of their own,
@@ -83,13 +92,24 @@
        Framing it neutrally is what the wizard's own logo preview and the
        Company tab's preview box already do; the header/splash were the two
        spots that still showed the raw image. */
-    .app-logo{height:24px;max-width:150px;object-fit:contain;border-radius:4px;flex-shrink:0;
-      background:#F3F4F6;padding:4px 7px;box-sizing:content-box}
+    /* A logo cannot be fitted by height alone. A fixed 24px height is right for
+       a wide wordmark and turns a tall or square mark into an 8px smudge —
+       every customer uploads a different shape and the box has to follow the
+       shape, not the other way round. _fitAppLogo (JS) measures the image the
+       moment it loads and adds one of the three classes below; the base rule
+       is the wide case, since that is what most company logos are. */
+    .app-logo{max-height:26px;max-width:170px;width:auto;height:auto;object-fit:contain;
+      border-radius:4px;flex-shrink:0;background:#F3F4F6;padding:4px 7px;box-sizing:content-box}
+    .app-logo.logo-square{max-height:36px;max-width:36px}
+    .app-logo.logo-tall{max-height:44px;max-width:34px}
     .nav{display:flex;gap:2px;background:var(--steel);padding:3px;border-radius:8px;flex-wrap:wrap;flex-shrink:1;min-width:0;max-width:100%}
     .nav button{background:none;border:none;color:rgba(255,255,255,.6);padding:.45rem clamp(.4rem,1.5vw,1rem);border-radius:6px;font-size:clamp(.68rem,1.2vw,.8rem);font-weight:600;transition:.2s;white-space:nowrap}
     .nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
     .nav button.active{background:var(--accent);color:#fff}
-    .author-badge{background:rgba(0,0,0,.2);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.7rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
+    /* Trimmed from 4px/.7rem: this badge is the bottom of the brand stack, so
+       every pixel it loses is a pixel of clearance from the blue edge it was
+       crossing. It is a signature, not a heading — smaller suits it anyway. */
+    .author-badge{background:rgba(0,0,0,.2);padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.66rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
     /* Left-aligned identity stack — logo, company name, the Acopio badge
        right under it, tight. Jose: this reads as a lockup, not three
        separate things scattered in a row, and (v9.89, emphatic) Acopio has
@@ -122,7 +142,16 @@
          brand's tallest case (logo + name + Acopio stacked) since it no
          longer contributes to the topbar's own flow height once it's out
          of flow. */
-      .topbar.merged{position:relative;min-height:74px;gap:.4rem 1.25rem}
+      /* The 74px was a guess that held only while the logo was a fixed 26px.
+         Now that the logo box follows its own shape, the stack can be 44px of
+         logo plus the name plus the Acopio badge — taller than 74px — and a
+         block that is centred inside a box smaller than itself overflows at
+         BOTH ends: the logo touched the browser chrome and the Acopio badge
+         crossed the blue edge into the white. That is what Jose photographed.
+         --brand-h is measured by _syncBrandWidth from the real block, so the
+         bar fits whatever this customer's logo turned out to be, plus room to
+         breathe above and below. */
+      .topbar.merged{position:relative;min-height:max(78px, calc(var(--brand-h, 60px) + 26px));gap:.4rem 1.25rem}
       .topbar.merged .topbar-row1{position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);z-index:1}
       /* row2 itself stays full-width (unpadded) so its centring math is
          still exactly "middle of the page" — the fix isn't in row2's box,
@@ -2643,7 +2672,19 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '10.5';
+var APP_VERSION = '11.5';
+// Build fingerprint — a short hash of the two shipped files, written by
+// tools/build-fingerprint.js and shown next to the version in the app.
+//
+// It DETECTS drift, it does not prevent it. Nothing inside a copy running in
+// the customer's own account can stop them editing it. What this buys: it
+// tells "they are behind" apart from "they changed it", it lets Jose ask
+// "what does your footer say?" instead of asking for the file, and it makes
+// concealing an edit a deliberate act rather than an accident — which is the
+// part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
+//
+// Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
+var APP_BUILD = 'c8876a9a';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3981,6 +4022,34 @@ function _dismissNudge(){
   _nudgeQuietFor(_NUDGE_WEEK, null);     // "Later" is the one that buys a week
 }
 
+// A logo cannot be fitted by height alone, and every customer uploads a
+// different shape. A wide wordmark wants to be short and long; a square mark at
+// the same height reads as a stamp; a tall one at 26px is an unreadable smudge.
+//
+// So the box follows the shape. Measured from the image itself once it has
+// decoded — naturalWidth/naturalHeight are 0 before that, which is why this
+// waits rather than reading them straight away.
+//
+// The thresholds are deliberately loose: 1.6 and 0.85 leave a wide middle band
+// that gets the square treatment, because a logo that is only slightly wider
+// than it is tall looks wrong stretched along a wide box.
+function _fitAppLogo(img){
+  if (!img) return;
+  function apply(){
+    var w = img.naturalWidth, h = img.naturalHeight;
+    img.classList.remove('logo-square', 'logo-tall');
+    if (w && h){
+      var ratio = w / h;
+      if (ratio < 0.85)      img.classList.add('logo-tall');
+      else if (ratio <= 1.6) img.classList.add('logo-square');
+      // wider than 1.6 keeps the base rule, which is the wide case
+    }
+    _syncBrandWidth();   // the class just changed how much room brand needs
+  }
+  if (img.complete && img.naturalWidth) apply();
+  else img.addEventListener('load', apply, { once: true });
+}
+
 // Paints the customer's own identity over the app. Called on every load, and
 // again right after setup, so nothing anywhere says "OX Glass" to someone else.
 function applyCompanyBranding(c){
@@ -4018,6 +4087,7 @@ function applyCompanyBranding(c){
       logo.src = dataUrl;
       logo.alt = name || '';
       logo.style.display = '';
+      _fitAppLogo(logo);
       _setFavicon(dataUrl);
       // Kept for the next load's splash. Anything big enough to be worth
       // worrying about is left out: a logo that does not fit is simply not
@@ -4063,7 +4133,14 @@ function _syncBrandWidth(){
   var brandEl = document.querySelector('.topbar-brand');
   var topbarEl = document.querySelector('.topbar');
   if (!brandEl || !topbarEl) return;
-  document.documentElement.style.setProperty('--brand-w', brandEl.getBoundingClientRect().width + 'px');
+  var box = brandEl.getBoundingClientRect();
+  document.documentElement.style.setProperty('--brand-w', box.width + 'px');
+  // Height as well as width, and for the same reason: the merged bar reserves
+  // room for a block that is out of flow, so it cannot discover that height by
+  // itself. A hardcoded reserve was right until the logo box started following
+  // the logo's shape; now a tall logo makes this stack taller than any fixed
+  // number, and a centred block inside too small a box spills out of both ends.
+  document.documentElement.style.setProperty('--brand-h', box.height + 'px');
 
   if (window.innerWidth < 769) { topbarEl.classList.remove('merged'); return; }
   topbarEl.classList.add('merged');
@@ -4085,10 +4162,19 @@ function _syncBrandWidth(){
 var _riPhotos = []; // { fileData, fileMimeType, fileName }
 
 function openReportIssueModal(){
-  document.getElementById('riMessage').value = '';
+  var ta = document.getElementById('riMessage');
+  ta.value = '';
   _riPhotos = [];
   _renderReportIssuePreview();
   document.getElementById('reportIssueOverlay').classList.add('show');
+  // The cursor belongs in the box. This is the one window where the first
+  // thing anybody does is type, and having to click the field first is a
+  // second of friction on top of however long the window took to appear.
+  //
+  // After the class change, so the element is displayed and focusable; the
+  // shield's MutationObserver runs on a microtask and releasing `inert` has to
+  // land before focus() or it is refused silently.
+  setTimeout(function(){ try { ta.focus(); } catch (e) {} }, 0);
 }
 
 function _onReportIssuePhotos(fileList){
@@ -5979,9 +6065,34 @@ async function submitMovement(){
 var _matLineIdx = 0;
 
 function _matLineUnitOpts(){
+  // PALLET, CASE and BAG added in v11.5 (Jose): a shop that receives by the
+  // pallet and a bakery that receives by the sack were both being asked to
+  // pick from a list that had no word for what they actually count.
   return '<option value="UNIT">Unit</option><option value="BOX">Box</option>' +
-         '<option value="SET">Set</option><option value="ROLL">Roll</option>' +
-         '<option value="SHEET">Sheet</option><option value="LF">LF</option>';
+         '<option value="CASE">Case</option><option value="PALLET">Pallet</option>' +
+         '<option value="BAG">Bag</option><option value="SET">Set</option>' +
+         '<option value="ROLL">Roll</option><option value="SHEET">Sheet</option>' +
+         '<option value="LF">LF</option>';
+}
+
+// The cost field's label, in the unit the person is actually looking at.
+// "Unit Cost" next to a dropdown reading "Box" cannot be read correctly: it is
+// either the cost of the box or of one unit inside it, and the two differ by
+// however many fit in a box. Naming the unit removes the question.
+var _UNIT_WORDS = {
+  UNIT:'Unit', BOX:'Box', CASE:'Case', PALLET:'Pallet', BAG:'Bag',
+  SET:'Set', ROLL:'Roll', SHEET:'Sheet', LF:'Linear Foot'
+};
+function _costLabelFor(unit){
+  var w = _UNIT_WORDS[String(unit || 'UNIT').toUpperCase()];
+  return w ? ('Cost per ' + w) : 'Unit Cost';
+}
+function _syncCostLabel(n){
+  var sel = document.getElementById('mat-unit-' + n);
+  var lbl = document.getElementById('mat-cost-lbl-' + n);
+  if (!sel || !lbl) return;
+  lbl.innerHTML = _he(_costLabelFor(sel.value)) +
+    ' <span style="text-transform:none;opacity:.7">(optional)</span>';
 }
 
 function _matLineTpl(n){
@@ -6008,7 +6119,7 @@ function _matLineTpl(n){
       '</div>' +
       '<div class="field">' +
         '<label class="mat-line-lbl-sm">Unit</label>' +
-        '<select id="mat-unit-' + n + '">' + _matLineUnitOpts() + '</select>' +
+        '<select id="mat-unit-' + n + '" onchange="_syncCostLabel(' + n + ')">' + _matLineUnitOpts() + '</select>' +
       '</div>' +
       // Optional, and hidden entirely from anyone without canSeeCosts — not
       // just left blank for them, since a field they cannot use but can see
@@ -6018,7 +6129,14 @@ function _matLineTpl(n){
       // someone to type a number that the save would just ignore.
       (_canSeeCosts() ?
       '<div class="field">' +
-        '<label class="mat-line-lbl-sm">Unit Cost <span style="text-transform:none;opacity:.7">(optional)</span></label>' +
+        // The label follows the unit. "Unit Cost" beside a dropdown that says
+        // "Box" is genuinely ambiguous — is that the cost of a box, or of one
+        // unit inside it? Nobody can tell, and the answer decides whether the
+        // number is right or twelve times wrong. Saying "Cost per Box" removes
+        // the question instead of documenting it. _syncCostLabel keeps it in
+        // step when the unit is changed.
+        '<label class="mat-line-lbl-sm" id="mat-cost-lbl-' + n + '">' + _costLabelFor('UNIT') +
+          ' <span style="text-transform:none;opacity:.7">(optional)</span></label>' +
         '<input type="number" id="mat-cost-' + n + '" min="0" step="0.01" placeholder="$0.00" oninput="_checkPriceChange(' + n + ')">' +
       '</div>' : '') +
     '</div>' +
@@ -6289,13 +6407,21 @@ function _checkIncomingSuggest(n, inputEl){
   _positionSuggestBox(box, inputEl);
 }
 
-// Safe bridge for a stock-match click: just fills the name (and category, if
-// empty) — informational only, the user still picks the destination rack.
+// Picking a material out of "📦 Already In Stock" used to fill the NAME and
+// nothing else — the person then retyped the supplier, the GC, the PO and the
+// project that the app already knew from the last time that exact material came
+// in. It is the same material from the same supplier; making somebody type it
+// again is the app forgetting on purpose.
+//
+// The destination rack is still theirs to choose, and nothing already typed is
+// touched. What gets filled is only what is blank.
 function _clickStockMatchSuggest(el) {
   var n    = parseInt(el.getAttribute('data-n'), 10);
   var name = el.getAttribute('data-stock-name');
   var nameEl = document.getElementById('mat-name-' + n);
   if (nameEl) nameEl.value = name;
+  var catEl = document.getElementById('mat-cat-' + n);
+  _fillSharedFromHistory(name, (catEl || {}).value || '', n);
   var box = document.getElementById('inc-suggest-' + n);
   if (box) box.style.display = 'none';
   _checkPriceChange(n);   // programmatic value, so oninput never fired on its own
@@ -6328,12 +6454,14 @@ function _applyIncomingSuggest(n, incId){
     syncMatLineQty(n);
   }
 
-  // ── Shared form fields (fill if empty) ──
+  // ── Supplier / project / GC / PO / PM (fill if empty) ──
+  // `n` matters: with "All materials share the same…" unticked these have to
+  // land on THIS line's own fields, not the hidden shared ones.
   _fillSharedFromData({ supplier: item.supplier, project: item.project,
-                        gc: item.gc, po: item.po, pm: item.pm });
+                        gc: item.gc, po: item.po, pm: item.pm }, n);
 
   // Also try to fill from movement history for fields incoming doesn't have
-  _fillSharedFromHistory(item.name, item.category);
+  _fillSharedFromHistory(item.name, item.category, n);
 
   // Hide box
   var box = document.getElementById('inc-suggest-' + n);
@@ -6341,19 +6469,47 @@ function _applyIncomingSuggest(n, incId){
   _checkPriceChange(n);   // programmatic value, so oninput never fired on its own
 }
 
-// Fill shared ENTRY form fields from any data source (only overwrites empty fields)
-function _fillSharedFromData(d) {
-  var map = { mSup: d.supplier, mProj: d.project, mGC: d.gc, mPO: d.po, mPM: d.pm };
+// Fill the ENTRY form's supplier / project / GC / PO / PM from any source, only
+// ever into fields the person has left empty.
+//
+// WHICH fields those are depends on the "All materials share the same…"
+// checkbox, and that is the bug Jose found. Ticked, one shared set at the
+// bottom of the form serves every line. UNTICKED, each material line grows its
+// own copy with different ids — and this function only ever knew the shared
+// ones, so picking an existing material filled nothing at all. The autofill
+// looked broken when what was actually happening is that it was writing into
+// five boxes that were hidden at the time.
+//
+// `n` is the material line that was just filled in. Passing it is what lets
+// this reach the right line's own fields; without it there is no way to tell
+// which of five lines the person is working on.
+function _fillSharedFromData(d, n) {
+  var shared = { mSup: d.supplier, mProj: d.project, mGC: d.gc, mPO: d.po, mPM: d.pm };
+  var perLine = {
+    'mat-sup-':  d.supplier, 'mat-proj-': d.project,
+    'mat-gc-':   d.gc,       'mat-po-':   d.po,   'mat-pm-': d.pm
+  };
+  var chk = document.getElementById('mSameEntryInfoChk');
+  var same = !chk || chk.checked;
+
+  var map = {};
+  if (same) map = shared;
+  else if (n !== undefined && n !== null) {
+    Object.keys(perLine).forEach(function(prefix){ map[prefix + n] = perLine[prefix]; });
+  }
+
   Object.keys(map).forEach(function(id) {
     var val = map[id];
     if (!val) return;
     var el = document.getElementById(id);
+    // Never overwrite something a person typed. Autofill is a shortcut, not an
+    // opinion about what they meant.
     if (el && !el.value) el.value = val;
   });
 }
 
 // Look up the most recent movement for this material and auto-fill shared fields
-function _fillSharedFromHistory(name, category) {
+function _fillSharedFromHistory(name, category, n) {
   if (!name) return;
   var nameUp = name.trim().toUpperCase();
   var catNt  = nt(category || '');
@@ -6362,7 +6518,7 @@ function _fillSharedFromHistory(name, category) {
     var m = movements[i];
     if (m.name.toUpperCase() === nameUp && (!catNt || nt(m.category) === catNt)) {
       _fillSharedFromData({ supplier: m.supplier, project: m.project !== 'GENERIC' ? m.project : '',
-                            gc: m.gc, po: m.po, pm: m.pm });
+                            gc: m.gc, po: m.po, pm: m.pm }, n);
       return; // only use the most recent
     }
   }
@@ -7406,6 +7562,12 @@ function _renderSystemTab() {
       '</label>' +
       '<div id="spaceBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Measuring…</div>' +
     '</div>' +
+    '<div class="field" style="margin-bottom:1.25rem">' +
+      '<label style="display:flex;align-items:center;gap:.4rem">Document reader (AI) ' +
+        _infoIc('Reads a pasted supplier email and pulls out what is arriving, how much and when. It runs on your own Google AI key — Google bills the usage to you, not to us.') +
+      '</label>' +
+      '<div id="aiBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Checking…</div>' +
+    '</div>' +
     '<div class="field">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Stock totals ' +
         _infoIc('Recalculates every stock total from the current movement history. Use this if a deleted or edited movement left stale numbers behind.') +
@@ -7417,6 +7579,112 @@ function _renderSystemTab() {
 
   _loadBackupStatus();
   _loadSpaceUsage();
+  _loadAiStatus();
+}
+
+// ── The AI key, set from inside the app ─────────────────────────────────────
+// Until now the only way to switch the document reader on was to open the Apps
+// Script editor and add a Script Property with the exact right name. That is a
+// developer's instruction printed inside a warehouse app, and it is why the
+// feature was off everywhere it shipped.
+//
+// The key itself never comes back from the server — only whether one exists
+// and its last four characters, which is enough to recognise which key you
+// pasted and useless to anybody else.
+function _loadAiStatus(){
+  var box = document.getElementById('aiBox');
+  if (!box) return;
+  google.script.run
+    .withSuccessHandler(function(st){ _drawAiBox(st || {}); })
+    .withFailureHandler(function(e){
+      var b = document.getElementById('aiBox');
+      if (b) b.innerHTML = '<span style="color:var(--red)">Could not read the AI setting: ' + _he(e.message||e) + '</span>';
+    })
+    .processMovement('getAiStatus', _h({}));
+}
+
+function _drawAiBox(st){
+  var box = document.getElementById('aiBox');
+  if (!box) return;
+  box.innerHTML = st.configured
+    ? '<div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">' +
+        '<span style="color:var(--green);font-weight:700">● On</span>' +
+        '<span>Key ending ' + _he(st.hint) + ' · model ' + _he(st.model || '') + '</span>' +
+        '<button class="btn btn-ghost btn-sm" onclick="_aiShowForm()">Replace key</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="_aiRemoveKey()">Remove</button>' +
+      '</div>'
+    : '<div>' +
+        '<div style="margin-bottom:.5rem">Off. Add a Google AI key to turn on reading supplier emails.</div>' +
+        '<button class="btn btn-primary btn-sm" onclick="_aiShowForm()">Add key</button>' +
+      '</div>';
+}
+
+function _aiShowForm(){
+  var box = document.getElementById('aiBox');
+  if (!box) return;
+  box.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:.5rem;max-width:520px">' +
+      '<div>Get a free key at <b>aistudio.google.com</b> → "Get API key". ' +
+         'It stays on this system and Google bills any usage to you, not to us.</div>' +
+      // type=password so a key does not sit readable on a screen in a warehouse
+      // where anyone walking past can see it.
+      '<input type="password" id="aiKeyInp" placeholder="Paste the key here" autocomplete="off" ' +
+        'style="padding:.45rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text)">' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" id="aiSaveBtn" onclick="_aiSaveKey()">Check and save</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="_loadAiStatus()">Cancel</button>' +
+      '</div>' +
+      '<div id="aiMsg" style="color:var(--muted)"></div>' +
+    '</div>';
+  var inp = document.getElementById('aiKeyInp');
+  if (inp) inp.focus();
+}
+
+function _aiSaveKey(){
+  var inp = document.getElementById('aiKeyInp');
+  var msg = document.getElementById('aiMsg');
+  var btn = document.getElementById('aiSaveBtn');
+  var key = inp ? inp.value.trim() : '';
+  if (!key) { if (inp) inp.focus(); return; }
+  // The server spends one real call on the key before saving it, so this wait
+  // is a second or two and worth saying out loud — a wrong key that saves
+  // silently fails days later in front of somebody trying to read an email.
+  if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Checking the key with Google…'; }
+  _btnBusy(btn, 'Checking…');
+  google.script.run
+    .withSuccessHandler(function(){
+      if (inp) inp.value = '';
+      showToast('Document reader is on.', 'ok');
+      _loadAiStatus();
+    })
+    .withFailureHandler(function(e){
+      _btnDone(btn, false);   // false = no tick, just give the button back
+      if (msg) { msg.style.color = 'var(--red)'; msg.textContent = (e && e.message) || String(e); }
+    })
+    .processMovement('setAiKey', _h({ key: key }));
+}
+
+// From the "Read an email" screen straight to the setting that turns it on,
+// landing on the System tab rather than dropping the person at the front door
+// of Settings to go hunting.
+function _aiSetupFromEmail(){
+  closeModal('emailImportOverlay');
+  _settingsTab = 'system';
+  openSettingsModal();
+}
+
+function _aiRemoveKey(){
+  _showConfirm({
+    icon:'🔑', danger:true, title:'Remove the AI key?',
+    message:'Reading supplier emails will stop working until a key is added again. Nothing else is affected.',
+    confirmText:'Remove',
+    onConfirm: function(){
+      google.script.run
+        .withSuccessHandler(function(){ showToast('Key removed.', 'ok'); _loadAiStatus(); })
+        .withFailureHandler(function(e){ showToast('Could not remove it: ' + (e.message||e), 'err', 6000); })
+        .processMovement('setAiKey', _h({ remove: true }));
+    }
+  });
 }
 
 // ── How full the spreadsheet is ──────────────────────────────────────────────
@@ -8131,6 +8399,16 @@ function _wireLocMerge(){
               bar.innerHTML = ''; bar.classList.remove('show');
               _redrawLocGroups();
               refreshDropdowns();
+              // The patches above fix the LISTS. They cannot fix the stock,
+              // which is where a location merge actually shows: the Warehouse
+              // Map and the location column read the derived totals, and the
+              // server has just rebuilt those. Without this the merged rack
+              // went on sitting in the map with its old contents until the page
+              // was reloaded by hand — Jose merged A5C into A6C, saw the map
+              // still showing both, and only a manual refresh put the 227 units
+              // in one place. Same fix, same reason, as the category rename in
+              // v10.2.
+              loadDataFromGoogle(true, true);   // skipCache, quiet
             })
             .withFailureHandler(function(e){
               btn.disabled = false; btn.textContent = 'Merge';
@@ -8276,6 +8554,12 @@ function _wireManualMerge(tab, label){
               showToast('Merged ✓ — ' + res.rowsChanged + ' movement(s) updated.', 'ok', 5000);
               _applyMergeLocally(tab, from, into);
               bar.innerHTML = ''; bar.classList.remove('show');
+              // Same reason as the location merge below: the local patch fixes
+              // the catalog list, but the movements and the project/supplier
+              // totals were rewritten server-side and the derived sheets
+              // rebuilt. Ask for them rather than trying to reproduce the
+              // rebuild in the browser.
+              loadDataFromGoogle(true, true);   // skipCache, quiet
             })
             .withFailureHandler(function(e){
               btn.disabled = false; btn.textContent = 'Merge';
@@ -8940,15 +9224,48 @@ function _matMergeConfirm(name, cat, nvTrimmed){
 // does NOT have to happen is the app blinking: the list on screen and the
 // movements already loaded are patched immediately, and the server refresh
 // runs underneath without the loading state.
+// The refresh was already here and correct. What was missing was any sign that
+// anything was happening: Jose renamed a material, the button did nothing
+// visible for a few seconds, and there was no way to tell whether to wait or
+// click again. That is the same complaint that produced the duplicate-rename
+// error on the Categories tab, arriving from a different screen — a slow
+// operation with a silent button invites a second press, and a second press is
+// where the damage is.
 function _matCall(payload) {
+  if (_matBusy) return;
+  _matSetBusy(true);
   google.script.run
     .withSuccessHandler(function(res) {
+      _matSetBusy(false);
       _applyMatChangeLocally(payload);
       showToast('Done ✓ — ' + (res.updated || res.merged || 1) + ' row(s) updated.', 'ok');
       loadDataFromGoogle(true, true);   // skipCache, quiet
     })
-    .withFailureHandler(function(e){ _settingMsg('Error: '+(e.message||e), 'error'); })
+    .withFailureHandler(function(e){
+      _matSetBusy(false);
+      _settingMsg('Error: '+(e.message||e), 'error');
+    })
     .processMovement('manageMaterial', _h(payload));
+}
+
+var _matBusy = false;
+function _matSetBusy(on) {
+  _matBusy = on;
+  var scope = document.getElementById('settingsTabContent');
+  if (scope) {
+    var btns = scope.querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].disabled = on;
+      btns[i].style.opacity = on ? '.5' : '';
+      btns[i].style.cursor  = on ? 'wait' : '';
+    }
+  }
+  // Says what is happening AND roughly how long, because "Saving…" on
+  // something that rewrites every matching row in the archive and then
+  // rebuilds the stock totals is not the same promise as "Saving…" on a
+  // one-cell edit.
+  if (on) _settingMsg('Updating every matching movement and rebuilding stock totals — this can take a few seconds…', 'info');
+  else    _settingMsg('Done ✓', 'ok');
 }
 
 function _applyMatChangeLocally(p){
@@ -11827,7 +12144,29 @@ function runEmailImport(){
     })
     .withFailureHandler(function(err){
       btn.disabled = false; btn.textContent = 'Read it';
-      status.textContent = (err && err.message ? err.message : String(err)).replace(/^Error:\s*/i, '');
+      var msg = (err && err.message ? err.message : String(err)).replace(/^Error:\s*/i, '');
+      // A feature that was never switched on is not a broken feature, and it
+      // should not look like one. The server sends NO_AI_KEY as a marker; this
+      // turns it into an explanation and a way forward, in the tone of an
+      // unconfigured setting rather than a failure. An admin gets the button;
+      // anybody else gets told who to ask, because sending a warehouse hand to
+      // a settings screen they cannot open is its own dead end.
+      if (msg === 'NO_AI_KEY') {
+        var admin = (userRole === 'ADMIN');
+        status.innerHTML =
+          '<div style="line-height:1.5">' +
+            '<b>Reading emails is not switched on yet.</b><br>' +
+            'It needs a free Google AI key, added once. The key stays on this ' +
+            'system and Google bills any usage to you, not to us.' +
+            (admin
+              ? '<br><button class="btn btn-primary btn-sm" style="margin-top:.55rem" ' +
+                'onclick="_aiSetupFromEmail()">Set it up</button>'
+              : '<br><span style="color:var(--muted)">Ask an admin to turn it on in Settings → System.</span>') +
+            '<div style="color:var(--muted);margin-top:.5rem">You can still add what is arriving by hand.</div>' +
+          '</div>';
+        return;
+      }
+      status.textContent = msg;
     })
     .processMovement('parseIncomingEmail', _h({ text: text }));
 }
@@ -12617,7 +12956,7 @@ function loadDataFromGoogle(skipCache, quiet){
         _announceSystemActivity();
         lastLoadTime = Date.now();
         setConnStatus('online');
-        _checkVersionMatch(data.serverVersion);
+        _checkVersionMatch(data.serverVersion, data.serverBuild);
         _setAccountIdentity(data.userName, userEmail, userRole, false);
         if (data.activeUsers) renderActiveUsers(data.activeUsers);
         applyRoleUI();
@@ -12729,9 +13068,16 @@ function _applyWarehouseRoleLabel(){
 
 // Warn if the backend (Code.gs) and this page (Index.html) were not deployed
 // together. A mismatch is the usual cause of "feature X silently doesn't work".
-function _checkVersionMatch(serverVersion) {
+function _checkVersionMatch(serverVersion, serverBuild) {
   var existing = document.getElementById('versionMismatchBanner');
-  if (!serverVersion || serverVersion === APP_VERSION) {
+  var verBad   = serverVersion && serverVersion !== APP_VERSION;
+  // The build catches what the version number cannot: two files from DIFFERENT
+  // releases that happen to carry the same version, which is what a
+  // half-finished paste produces. Only checked when BOTH sides are actually
+  // stamped, so an unstamped build never raises a false alarm.
+  var buildBad = !verBad && APP_BUILD && serverBuild && serverBuild !== APP_BUILD;
+
+  if (!verBad && !buildBad) {
     if (existing) existing.remove();
     return;
   }
@@ -12741,11 +13087,14 @@ function _checkVersionMatch(serverVersion) {
   bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b45309;' +
     'color:#fff;font-size:.8rem;font-weight:600;text-align:center;padding:8px 36px;' +
     'box-shadow:0 2px 8px rgba(0,0,0,.3)';
-  bar.innerHTML = '⚠ Version mismatch — App v' + APP_VERSION + ' vs Server v' + serverVersion +
+  bar.innerHTML = (verBad
+      ? '⚠ Version mismatch — App v' + APP_VERSION + ' vs Server v' + serverVersion
+      : '⚠ These two files are from different builds — App ' + APP_BUILD + ' vs Server ' + serverBuild) +
     '. Redeploy BOTH files (Code.gs and Index.html) with a <b>New version</b>. ' +
     '<span style="cursor:pointer;text-decoration:underline" onclick="this.parentNode.remove()">dismiss</span>';
   document.body.appendChild(bar);
-  console.warn('VERSION MISMATCH: frontend=' + APP_VERSION + ' backend=' + serverVersion);
+  console.warn('MISMATCH: frontend=' + APP_VERSION + '/' + APP_BUILD +
+               ' backend=' + serverVersion + '/' + serverBuild);
 }
 
 // ── Toast Notifications ───────────────────────────────────────────────────────
@@ -13494,7 +13843,12 @@ function _setAccountIdentity(name, email, role, stale){
   }
 
   var foot = document.getElementById('acctFoot');
-  if (foot) foot.textContent = (_companyName ? _companyName + ' · ' : '') + PRODUCT + ' v' + APP_VERSION;
+  // The build goes next to the version, quietly. It is not for the customer —
+  // it is so Jose can ask "what does this line say?" and know exactly which
+  // bytes they are running, without asking anyone to open the script editor or
+  // send a file. Shown only once it has actually been stamped.
+  if (foot) foot.textContent = (_companyName ? _companyName + ' · ' : '') + PRODUCT + ' v' + APP_VERSION +
+                               (APP_BUILD ? ' · build ' + APP_BUILD : '');
 }
 
 function renderActiveUsers(users){

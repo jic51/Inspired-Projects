@@ -33,7 +33,19 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '10.5';
+var APP_VERSION = '11.5';
+// Build fingerprint — a short hash of the two shipped files, written by
+// tools/build-fingerprint.js and shown next to the version in the app.
+//
+// It DETECTS drift, it does not prevent it. Nothing inside a copy running in
+// the customer's own account can stop them editing it. What this buys: it
+// tells "they are behind" apart from "they changed it", it lets Jose ask
+// "what does your footer say?" instead of asking for the file, and it makes
+// concealing an edit a deliberate act rather than an accident — which is the
+// part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
+//
+// Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
+var APP_BUILD = 'c8876a9a';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -43,34 +55,47 @@ var APP_VERSION = '10.5';
 // file is published, so nothing of theirs becomes public. It moves to
 // acopio.com/favicon.png once the domain exists; this line is the only change.
 //
-// lh3.googleusercontent.com/d/ID rather than drive.google.com/uc?export=view:
-// the uc form answers with an HTML interstitial rather than image bytes often
-// enough that it is not worth relying on for something a browser fetches
-// unauthenticated.
+// ─── THE `#.png` ON THE END IS LOAD-BEARING. DO NOT TIDY IT AWAY. ───────────
+// The docs spell out the rule in one clause that is easy to read past:
 //
-// ⚠ TWO THINGS HERE ARE UNVERIFIED, AND SAYING SO IS THE POINT.
+//   iconUrl — "The URL of the favicon image, WITH THE IMAGE EXTENSION
+//              indicating the image type."
 //
-// This session's network cannot reach drive.google.com (the proxy answers 403
-// for every form of the URL), so nothing here has been confirmed by fetching
-// it. Specifically:
-//   1. Whether this file is really shared "anyone with the link". If it is
-//      not, Google returns a sign-in page instead of an image and the tab
-//      falls back to the Apps Script icon — the state we are in today, so the
-//      failure is harmless but silent.
-//   2. Whether this is the SQUARE file. Jose sent three links alongside three
-//      images and this is the second of each; the mapping is an assumption
-//      about the order, not something checked. A wide logo squeezed into
-//      16 pixels is a smear, so it matters.
+// Google decides the image type from how the URL ENDS, not from what the
+// server sends back. A Drive URL ends in a file id, so there is no extension
+// to read and the icon is rejected — Apps Script issue 36756649 comment #22
+// reports the exact message, "The favicon icon image type is not supported",
+// for precisely this case, and comment #23 gives the fix used here: append a
+// fragment so the URL ends in the extension.
 //
-// Both are settled by the same one-minute check, in an INCOGNITO window (a
-// normal window uses Jose's own Google session and would load a private file
-// happily, proving nothing): open the URL. An image that appears is public;
-// the image that appears tells you which of the three it is.
+// A fragment is the right tool because browsers never send it to the server.
+// Google reads ".png" off the end; Drive receives the identical request it
+// received before. Nothing about the image changes — only what Google can tell
+// about it.
 //
-// After the favicon episode, an unverified claim gets labelled rather than
-// stated. See tools/test-favicon.js — it checks this chain is wired and says
-// plainly that wiring is not a tab icon.
-var ACOPIO_FAVICON_URL = 'https://lh3.googleusercontent.com/d/1pvA5GEBHLkJMIx6SYpvoL0WscfRXyBsB';
+// Two versions of this were deployed with no extension and no icon appeared,
+// which is consistent with the rule above and was the missing piece rather
+// than proof that the whole approach was impossible. setTitle() working on the
+// same object was always the sign that Apps Script CAN reach the outer page.
+//
+// lh3.googleusercontent.com/d/ID is kept over drive.google.com/uc?export=view
+// because Jose confirmed this exact URL renders an image in an incognito
+// window — so it is public and it serves image bytes to a browser. That is the
+// half already proven; the extension is the half that was missing.
+//
+// VERIFIED WORKING. Jose deployed v10.9 and the Acopio mark appears in the
+// browser tab. That settles the open question from three versions back:
+// setFaviconUrl IS honoured on an /exec web app. Everything that looked like
+// "Google may not support this" was the missing extension and nothing else.
+//
+// v11.0 swaps in the transparent-background mark. Transparent is the right
+// choice for a tab icon: it sits cleanly on light and dark browser chrome
+// alike, where a white square would show its edges on one of the two.
+//
+// Long term this moves to acopio.com/favicon.png: a plain file at a plain URL
+// needs none of the above, and Drive is a poor host for something every
+// customer fetches on every load.
+var ACOPIO_FAVICON_URL = 'https://lh3.googleusercontent.com/d/1taYWwdJzwbArrSVjtTideDrJyNOyenOq#.png';
 
 var SHEETS = {
   ARCHIVE: 'MASTER_ARCHIVE_V3',
@@ -84,7 +109,10 @@ var SHEETS = {
   ARCHIVE_HISTORY: 'ARCHIVE_HISTORY',
   // Only ever created inside a BACKUP COPY, never in the live file — see
   // writeConfigSnapshot_.
-  CONFIG_SNAPSHOT: 'ACOPIO_CONFIG_SNAPSHOT'
+  CONFIG_SNAPSHOT: 'ACOPIO_CONFIG_SNAPSHOT',
+  // How many stocking units are in a box, a pallet, a sack. See
+  // docs/UNIDADES-Y-CONVERSIONES.md.
+  PACKS: 'MATERIAL_PACKS'
 };
 
 // Column map matches the ACTUAL sheet structure (19 columns, 0-indexed):
@@ -815,6 +843,117 @@ function geminiUrl_(model, apiKey) {
   return 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
 }
 
+// Google's own wording, turned into something a warehouse manager can act on.
+//
+// "Gemini API error 503: This model is currently experiencing high demand" is
+// accurate and useless: it names a system the reader has never heard of, and
+// says nothing about whether they did something wrong, whether it will fix
+// itself, or what to do in the meantime. Jose hit exactly that and had to ask
+// what it meant — which is the definition of a bad error message.
+//
+// Every case below answers the same three questions: is it me, will it pass,
+// and what do I do now. And every one of them says the work can still be done
+// by hand, because it can, and nobody should be left staring at a dead screen
+// waiting for Google.
+function geminiErrorText_(code, googleMessage) {
+  if (code === 503 || code === 429) {
+    return 'The AI reader is busy right now — this is on Google\'s side, not yours, ' +
+           'and nothing was lost.\n\n' +
+           'It usually clears in a few minutes. Try again shortly, or just type the ' +
+           'details in by hand.\n\n' +
+           (code === 429
+             ? 'If it keeps happening, you are hitting the limits of a free Google AI key. ' +
+               'Adding billing to that key in Google AI Studio raises them.'
+             : 'Free Google AI keys are served after paying ones, so this happens more ' +
+               'often on a free key. Adding billing to it in Google AI Studio makes it rarer.') +
+           '\n\n(Google said: ' + googleMessage + ')';
+  }
+  if (code === 400 || code === 403) {
+    return 'Google would not accept the AI key on this system.\n\n' +
+           'Usually the key was copied incompletely, or the "Generative Language API" ' +
+           'is not switched on for the Google project it belongs to. An admin can ' +
+           'replace it in Settings → System → Document reader.\n\n' +
+           '(Google said: ' + googleMessage + ')';
+  }
+  if (code >= 500) {
+    return 'Google\'s AI service had a problem. Nothing was lost and nothing is wrong ' +
+           'with your data — try again in a few minutes, or enter the details by hand.\n\n' +
+           '(Google said: ' + googleMessage + ')';
+  }
+  return 'The AI reader could not finish (error ' + code + '). You can still enter the ' +
+         'details by hand.\n\n(Google said: ' + googleMessage + ')';
+}
+
+// ─── THE AI KEY, SET FROM INSIDE THE APP ────────────────────────────────────
+// The document reader runs on the customer's own Gemini key, billed to them by
+// Google. Until now the only way to supply one was: open the Apps Script
+// editor, find Project Settings, add a Script Property with the exact right
+// name. That is a developer's instruction printed inside a warehouse app, and
+// it is why the feature was effectively off everywhere.
+//
+// The key NEVER travels back to the browser. getAiStatus returns whether one
+// exists and its last four characters, which is enough for a person to
+// recognise which key they pasted and useless to anyone else.
+function getAiStatus(auth) {
+  auth = requireAuth_('ADMIN');
+  var k = String(PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY') || '').trim();
+  return {
+    configured: !!k,
+    hint: k ? ('…' + k.slice(-4)) : '',
+    model: geminiModel_()
+  };
+}
+
+function setAiKey(data, auth) {
+  auth = requireAuth_('ADMIN');
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var key = String((data && data.key) || '').trim();
+  var p   = PropertiesService.getScriptProperties();
+
+  if (data && data.remove) {
+    p.deleteProperty('GEMINI_API_KEY');
+    auditLog_(ss, 'AI_KEY', auth.email, 'GEMINI_API_KEY', 'remove', '');
+    return { status: 'success', configured: false };
+  }
+
+  if (!key) throw new Error('Paste your key first.');
+  // Cheap shape check before spending a network call. Google's keys start
+  // AIza and are around 39 characters; a pasted URL or an email address is the
+  // usual mistake and this catches it without pretending to validate.
+  if (/\s/.test(key)) throw new Error('That has a space in it — paste just the key, nothing around it.');
+  if (key.length < 20) throw new Error('That looks too short to be an API key.');
+
+  // Actually USE it once before saving. A key that is wrong, expired, or has
+  // the Generative Language API switched off fails identically to no key at
+  // all — days later, in front of somebody trying to read an email. Better to
+  // find out here, in the one place where the person can still fix it.
+  var probe;
+  try {
+    probe = geminiFetch_({
+      contents: [{ parts: [{ text: 'Reply with the single word: ok' }] }],
+      generationConfig: { maxOutputTokens: 5 }
+    }, key);
+  } catch (e) {
+    throw new Error('Could not reach Google to check the key: ' + e.message);
+  }
+
+  var code = probe.getResponseCode();
+  if (code !== 200) {
+    var why = 'Google rejected that key (HTTP ' + code + ').';
+    if (code === 400 || code === 403) {
+      why += '\n\nThe usual causes: the key was copied incompletely, or the ' +
+             '"Generative Language API" is not enabled on the Google project ' +
+             'the key belongs to.';
+    }
+    throw new Error(why);
+  }
+
+  p.setProperty('GEMINI_API_KEY', key);
+  // Never the key itself, not even partially, into a sheet anyone can open.
+  auditLog_(ss, 'AI_KEY', auth.email, 'GEMINI_API_KEY', 'set', 'verified against Google');
+  return { status: 'success', configured: true, hint: '…' + key.slice(-4) };
+}
+
 // One call, trying each model until one answers. Returns the HTTPResponse of
 // the first success, or of the last attempt so the caller can report something.
 function geminiFetch_(requestBody, apiKey) {
@@ -1401,6 +1540,10 @@ function getInitialData(sessionToken) {
 
     return {
       serverVersion:      APP_VERSION,
+      serverBuild:        APP_BUILD,
+      // Sent with the first load so the ENTRY form can offer a material's packs
+      // the moment its name is filled in, without a round trip per line.
+      materialPacks:      (function(){ try { return readPacks_(ss); } catch (e) { return {}; } })(),
       company:            publicCompany_(),
       systemActivity:     (function(){ try { return getSystemActivity(30, _auth.email); } catch (e) { return []; } })(),
       columnPrefs:        columnPrefs_(),
@@ -1938,6 +2081,11 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'logClientError')  return logClientError(data, auth);
   if (action === 'loadOlderHistory') return loadOlderHistory(auth);
   if (action === 'getSpaceUsage')   return getSpaceUsage(auth);
+  if (action === 'getAiStatus')     return getAiStatus(auth);
+  if (action === 'setAiKey')        return setAiKey(data, auth);
+  if (action === 'getMaterialPacks')   return getMaterialPacks(auth);
+  if (action === 'saveMaterialPack')   return saveMaterialPack(data, auth);
+  if (action === 'deleteMaterialPack') return deleteMaterialPack(data, auth);
   throw new Error('Unknown action: ' + action);
 }
 
@@ -2642,6 +2790,179 @@ function ensureWasteSheet_(ss) {
     sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
   }
   return sheet;
+}
+
+// ─── PACKS: HOW MANY UNITS COME IN A BOX ────────────────────────────────────
+// Phase 1 of docs/UNIDADES-Y-CONVERSIONES.md. The whole feature, in one line:
+// the customer almost never knows the cost of ONE unit. They know the invoice —
+// $120 a box, $600 a pallet — and the division gets done in someone's head,
+// wrong, or not at all.
+//
+// A pack is one sentence a person teaches the system once: "a box of GE SILPRUF
+// holds 12 tubes". Acopio never assumes it (Jose, v11.0: "no podemos dar por
+// sentado algo que no depende de nosotros") and never makes them retype it
+// either — it is remembered until they change it.
+//
+// ⚠ WHAT THIS PHASE DELIBERATELY DOES NOT DO: nothing here changes how stock is
+// stored, added up or taken out. Quantities stay in the stocking unit exactly as
+// they are today. Packs are an entry convenience and a calculator, which is what
+// keeps the risk near zero — issuing in a different unit is Phase 2 and is where
+// a misapplied factor turns 319 tubes into 3,828.
+//
+// Its own sheet rather than more CONFIG columns: CONFIG is a catalog of single
+// values per column, and this is a LIST per material. Two different shapes.
+var PACK_COLS = { CATEGORY:0, NAME:1, PACK:2, PER_PACK:3, LAST_PRICE:4, UPDATED_AT:5, UPDATED_BY:6 };
+
+function ensurePacksSheet_(ss) {
+  var sheet = ss.getSheetByName(SHEETS.PACKS);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEETS.PACKS);
+    sheet.appendRow(['Category','Name','Pack','Units_Per_Pack','Last_Pack_Price','Updated_At','Updated_By']);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, 7).setFontWeight('bold');
+  }
+  return sheet;
+}
+
+// Quantities carry decimals — a bakery's sack is 110.23 lb, not a round number —
+// and the danger there is not the decimals, it is floating point: 0.1 + 0.2 is
+// 0.30000000000000004 on every computer ever built, and summed five hundred
+// times the stock drifts. Rounding on every write is what stops the error
+// accumulating. Four places is grams inside a kilo, which is more precision than
+// any warehouse needs.
+var PACK_DECIMALS = 4;
+function roundQty_(n) {
+  var v = Number(n);
+  if (!isFinite(v)) return 0;
+  return Math.round(v * Math.pow(10, PACK_DECIMALS)) / Math.pow(10, PACK_DECIMALS);
+}
+
+// Keyed the same way stock is — category + name — so a pack follows the material
+// it belongs to and two materials with the same name in different categories
+// keep their own.
+function packKey_(category, name) {
+  return String(category || '').trim().toUpperCase() + '||' + String(name || '').trim().toUpperCase();
+}
+
+function readPacks_(ss) {
+  var sheet = ss.getSheetByName(SHEETS.PACKS);
+  if (!sheet || sheet.getLastRow() < 2) return {};
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
+  var out = {};
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var cat = String(r[PACK_COLS.CATEGORY] || '').trim();
+    var nm  = String(r[PACK_COLS.NAME] || '').trim();
+    var pk  = String(r[PACK_COLS.PACK] || '').trim();
+    var per = Number(r[PACK_COLS.PER_PACK]);
+    // A pack with no size is not a pack. Skipping rather than defaulting to 1:
+    // a silent 1 would quietly make "12 boxes" mean 12 units.
+    if (!cat || !nm || !pk || !isFinite(per) || per <= 0) continue;
+    var k = packKey_(cat, nm);
+    if (!out[k]) out[k] = { category: cat, name: nm, packs: [] };
+    out[k].packs.push({
+      pack: pk,
+      perPack: roundQty_(per),
+      lastPrice: Number(r[PACK_COLS.LAST_PRICE]) || 0
+    });
+  }
+  // Smallest first, so "Box (12)" is offered before "Pallet (360)" — the order
+  // somebody thinks in when they are looking at what arrived.
+  Object.keys(out).forEach(function (k) {
+    out[k].packs.sort(function (a, b) { return a.perPack - b.perPack; });
+  });
+  return out;
+}
+
+function getMaterialPacks(auth) {
+  auth = requireAuth_('READ');
+  return readPacks_(SpreadsheetApp.getActiveSpreadsheet());
+}
+
+// One pack, saved or replaced. Not batched on purpose: this is typed by a person
+// one line at a time, and a whole-sheet rewrite would put a catalog-sized risk
+// behind a single field.
+function saveMaterialPack(data, auth) {
+  auth = requireAuth_('WRITE');
+  requirePerm_(auth, 'canManageCatalog');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var cat  = String((data && data.category) || '').trim().toUpperCase();
+  var name = String((data && data.name) || '').trim().toUpperCase();
+  var pack = String((data && data.pack) || '').trim();
+  var per  = Number(data && data.perPack);
+
+  if (!cat || !name) throw new Error('Pick the material first.');
+  if (!pack)         throw new Error('Give the pack a name — Box, Pallet, Sack…');
+  if (!isFinite(per) || per <= 0) throw new Error('How many units are in one ' + pack + '? It has to be more than zero.');
+  // A pack that holds one unit is the unit. Allowing it would put a row in the
+  // sheet that changes nothing and an option in the form that means nothing.
+  if (per === 1) throw new Error('A ' + pack + ' of 1 is the same as the unit itself — no pack needed.');
+
+  var sheet = ensurePacksSheet_(ss);
+  var rows  = sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues() : [];
+  var stamp = new Date();
+  var row = [cat, name, pack.toUpperCase(), roundQty_(per),
+             Number(data.lastPrice) || 0, stamp, auth.email];
+
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i][PACK_COLS.CATEGORY] || '').trim().toUpperCase() === cat &&
+        String(rows[i][PACK_COLS.NAME] || '').trim().toUpperCase() === name &&
+        String(rows[i][PACK_COLS.PACK] || '').trim().toUpperCase() === pack.toUpperCase()) {
+      sheet.getRange(i + 2, 1, 1, 7).setValues([row]);
+      auditLog_(ss, 'PACK_SAVE', auth.email, cat + ' / ' + name, pack, String(per));
+      return { status: 'success', updated: true };
+    }
+  }
+  sheet.appendRow(row);
+  auditLog_(ss, 'PACK_SAVE', auth.email, cat + ' / ' + name, pack, String(per));
+  return { status: 'success', updated: false };
+}
+
+function deleteMaterialPack(data, auth) {
+  auth = requireAuth_('WRITE');
+  requirePerm_(auth, 'canManageCatalog');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEETS.PACKS);
+  if (!sheet || sheet.getLastRow() < 2) return { status: 'success', deleted: 0 };
+
+  var cat  = String((data && data.category) || '').trim().toUpperCase();
+  var name = String((data && data.name) || '').trim().toUpperCase();
+  var pack = String((data && data.pack) || '').trim().toUpperCase();
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
+
+  // Backwards: deleting a row shifts everything under it, and going forwards
+  // would make every index after the first deletion point at the wrong row.
+  var gone = 0;
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][PACK_COLS.CATEGORY] || '').trim().toUpperCase() === cat &&
+        String(rows[i][PACK_COLS.NAME] || '').trim().toUpperCase() === name &&
+        String(rows[i][PACK_COLS.PACK] || '').trim().toUpperCase() === pack) {
+      sheet.deleteRow(i + 2);
+      gone++;
+    }
+  }
+  if (gone) auditLog_(ss, 'PACK_DELETE', auth.email, cat + ' / ' + name, pack, '');
+  return { status: 'success', deleted: gone };
+}
+
+// The arithmetic, in one place so the browser and the server cannot disagree
+// about it. Returns null rather than a guess when it has not been given enough
+// to work with — a cost of 0 would be indistinguishable from "free".
+function packMath_(packCount, perPack, pricePerPack) {
+  var n     = Number(packCount);
+  var per   = Number(perPack);
+  var price = Number(pricePerPack);
+  if (!isFinite(n) || !isFinite(per) || n <= 0 || per <= 0) return null;
+  var qty = roundQty_(n * per);
+  var out = { qty: qty, unitCost: null, totalPrice: null };
+  if (isFinite(price) && price > 0) {
+    out.totalPrice = Math.round(price * n * 100) / 100;
+    // Cost per STOCKING unit, which is the only thing the costing engine
+    // understands — see the note at the top of this section.
+    out.unitCost = Math.round((price / per) * 10000) / 10000;
+  }
+  return out;
 }
 
 // ─── ARCHIVING OLD MOVEMENTS ─────────────────────────────────────────────────
@@ -5468,7 +5789,22 @@ function onEdit(e) {
     var sh = e.range.getSheet();
     if (sh.getName() !== START_HERE_SHEET) return;
     if (e.range.getA1Notation() !== TERMS_CHECKBOX_CELL) return;
-    if (e.range.getValue() !== true) return;
+
+    // Un-ticking has to undo what ticking wrote. It used to only handle the
+    // TRUE case, so clearing the box left "Accepted 8/24/2026, 2:30:03 PM" and
+    // the next-step line sitting there — a sheet claiming someone accepted
+    // terms they had just visibly declined. On a page whose entire job is
+    // recording consent, that is the one thing it must not get wrong.
+    if (e.range.getValue() !== true) {
+      sh.getRange(TERMS_STAMP_CELL).clearContent();
+      // Back to the grey prompt rather than an empty panel — the line explains
+      // what the box is for, and someone who unticked it is exactly the person
+      // who needs that sentence again.
+      sh.getRange(TERMS_NEXT_CELL)
+        .setValue(TERMS_PROMPT)
+        .setFontWeight('normal').setFontColor(SH_MUTED);
+      return;
+    }
 
     sh.getRange(TERMS_STAMP_CELL).setValue('Accepted ' + new Date().toLocaleString());
     sh.getRange(TERMS_NEXT_CELL)
@@ -5493,6 +5829,10 @@ var TERMS_CHECKBOX_CELL = 'B14';
 var TERMS_LABEL_CELL    = 'C14';
 var TERMS_STAMP_CELL    = 'C15';
 var TERMS_NEXT_CELL     = 'C16';
+// One constant for the grey prompt, because it is written in two places now —
+// when the panel is first drawn, and again when somebody unticks the box. Two
+// copies of the same sentence is how they drift apart.
+var TERMS_PROMPT = 'Tick the box above to continue.';
 
 // Google's own colours are the only ones a spreadsheet can be styled with, so
 // this borrows the app's palette rather than inventing a second one.
@@ -5577,7 +5917,7 @@ function createStartHereSheet_(ss) {
   // as a grey prompt so somebody who never ticks the box still sees what the
   // box is for.
   sh.setRowHeight(16, 32);
-  put(TERMS_NEXT_CELL, 'Tick the box above to continue.',
+  put(TERMS_NEXT_CELL, TERMS_PROMPT,
       { size: 11, color: SH_MUTED, bg: '#EFF4FB', wrap: true });
   sh.setRowHeight(17, 8);
 
@@ -7427,12 +7767,12 @@ function parseIncomingEmail(data, auth) {
   if (text.length > 12000) text = text.substring(0, 12000);
 
   var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) throw new Error(
-    'This needs a Gemini API key, which has not been set up on this system.\n\n' +
-    'An admin adds it once: Apps Script editor → ⚙ Project Settings → Script Properties\n' +
-    'Property: GEMINI_API_KEY   Value: a key from aistudio.google.com\n\n' +
-    'The key is yours and the usage is billed to you by Google, not by us.'
-  );
+  // NO_AI_KEY is a marker, not a sentence. This is not a failure — the feature
+  // is simply switched off — so the browser catches this exact string and
+  // shows an explanation with a button that turns it on, instead of the red
+  // error a broken thing gets. What used to be here was four lines of Apps
+  // Script editor instructions, printed inside a warehouse app.
+  if (!apiKey) throw new Error('NO_AI_KEY');
 
   // The customer's own categories and units, so the answer lands on the lists
   // this installation actually uses instead of inventing new ones.
@@ -8099,7 +8439,7 @@ function extractDocumentInfo(fileData, mimeType, sessionToken) {
   if (code !== 200) {
     var errObj = {};
     try { errObj = JSON.parse(body); } catch(e) {}
-    throw new Error('Gemini API error ' + code + ': ' + (errObj.error ? errObj.error.message : body.substring(0, 200)));
+    throw new Error(geminiErrorText_(code, errObj.error ? errObj.error.message : body.substring(0, 200)));
   }
 
   var result = JSON.parse(body);
