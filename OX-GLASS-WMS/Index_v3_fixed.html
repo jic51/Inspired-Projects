@@ -550,6 +550,61 @@
     .mat-cost-alert{font-size:.78rem;padding:.4rem .6rem;border-radius:6px;margin:-.15rem 0 .5rem}
     .mat-cost-alert.warn{background:#FEF3C7;color:var(--yellow)}
     .mat-cost-alert.info{background:#DBEAFE;color:var(--accent2)}
+    /* ── The pack question ──
+       Same shape as .cfg-new-hint ("New supplier — not on your list yet"),
+       because it is the same idea: react to what was already typed rather than
+       interrogate. Appears only when a pack unit is chosen for a named
+       material, so a warehouse whose every item is one unit never sees it. */
+    .pack-note{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.78rem;
+               padding:.4rem .6rem;border-radius:6px;margin:-.15rem 0 .5rem}
+    .pack-note.ask{background:#EFF6FF;color:var(--accent2);border:1px dashed #BFDBFE}
+    .pack-note.known{background:var(--green-bg);color:var(--green);border:1px solid #BBF7D0}
+    .pack-note .pack-qty{width:5.5rem;padding:.25rem .45rem;border:1px solid var(--border);
+                         border-radius:5px;font-family:inherit;font-size:.8rem}
+    .pack-note button{border:none;border-radius:5px;padding:.25rem .7rem;cursor:pointer;
+                      font-family:inherit;font-size:.76rem;font-weight:600;transition:.15s}
+    .pack-note .pack-save{background:var(--accent2);color:#fff}
+    .pack-note .pack-save:hover{background:var(--accent)}
+    .pack-note .pack-change{background:none;color:var(--green);text-decoration:underline;padding:.25rem .2rem}
+    /* Jose's orange box: changing a remembered factor changes money, so it
+       says what it is changing FROM and makes you press again. */
+    .pack-note .pack-warn{flex-basis:100%;background:#FEF3C7;color:var(--yellow);
+                          border-radius:5px;padding:.35rem .55rem;font-weight:600}
+    .pack-math{display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--muted);
+               font-weight:600;padding:0 .1rem;margin:-.3rem 0 .5rem}
+    /* The cost hint sits low in the form, so its bubble opens UPWARD — below
+       it would be clipped by the modal's own scroll edge. */
+    .pack-math .tip::after{top:auto;bottom:calc(100% + 8px)}
+    /* A cost of 0 is accepted, but it is not the way to say "we don't know".
+       Blank is. Jose: at OX most things have no known cost, so this is the
+       common case, not an edge one. */
+    .cost-zero-hint{font-size:.76rem;background:#FEF3C7;color:var(--yellow);font-weight:600;
+                    border-radius:6px;padding:.35rem .6rem;margin:-.3rem 0 .5rem}
+    /* Settings → Materials, above the material list: every pack factor at once. */
+    .packs-panel{border:1px solid var(--border);border-radius:8px;padding:.7rem .85rem;margin-bottom:1rem;background:#F8FAFC}
+    .packs-hd{display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem}
+    .packs-title{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--navy)}
+    .packs-count{font-size:.75rem;font-weight:700;background:#DBEAFE;color:var(--accent2);border-radius:10px;padding:1px 9px}
+    .packs-note,.packs-empty{font-size:.78rem;color:var(--muted);margin:0 0 .5rem;line-height:1.45}
+    .packs-empty{margin-bottom:0}
+    .packs-list{display:flex;flex-direction:column;gap:.3rem}
+    .packs-row{display:flex;align-items:center;gap:.5rem;background:var(--card);border:1px solid var(--border);
+               border-radius:6px;padding:.35rem .5rem;flex-wrap:wrap}
+    .packs-name{font-weight:600;font-size:.84rem;flex:1;min-width:8rem}
+    .packs-fact{font-size:.8rem;color:var(--muted);white-space:nowrap}
+    /* Does the latest backup carry the SETTINGS, or only the data? */
+    /* A value the app SUGGESTED, not one the row holds. It has to look
+       different, or the form would be asserting things about this movement
+       that are not recorded anywhere — the same mistake as the GENERIC that
+       started this. Amber, left bar, and it goes plain the moment it is
+       edited by hand. */
+    .em-suggested{background:#FFFBEB !important;border-color:#FDE68A !important;
+                  box-shadow:inset 3px 0 0 #F59E0B}
+    .em-gap-note{font-size:.76rem;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;
+                 border-radius:6px;padding:.5rem .7rem;margin-top:.75rem;line-height:1.5}
+    .snap-ok{font-size:.73rem;color:var(--green);margin-top:.2rem}
+    .snap-warn{font-size:.75rem;background:#FEF3C7;color:var(--yellow);font-weight:600;
+               border-radius:6px;padding:.4rem .6rem;margin-top:.35rem;line-height:1.45}
     /* ── The location box ──
        Jose's rule, from comparing the five screens side by side: the material
        box itself stays NEUTRAL, and the movement's colour appears only around
@@ -2298,6 +2353,10 @@
       </div>
     </div>
 
+    <!-- Says which boxes were empty on the row and were filled from this
+         material's own history. Hidden unless at least one was. -->
+    <div id="emGapNote" class="em-gap-note" style="display:none"></div>
+
     <!-- Reason — required -->
     <div class="edit-reason-box">
       <label>⚠️ Reason for modification (required)</label>
@@ -2788,7 +2847,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.8';
+var APP_VERSION = '11.17';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -2800,7 +2859,7 @@ var APP_VERSION = '11.8';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '26bde6a6';
+var APP_BUILD = '2eca4a99';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -2912,6 +2971,12 @@ var oldMovements       = [];  // ARCHIVE_HISTORY rows, loaded on demand via "Loa
 var _oldHistoryLoaded  = false;
 var incoming          = [];   // array of { id, estDate, category, name, qty, unit, supplier, po, notes, status }
 var monitoredMaterials = null; // null = all; array of names = filtered
+// How many stocking units come in a box / case / pallet / bag, PER MATERIAL.
+// Keyed CATEGORY||NAME (uppercased), same shape readPacks_ returns on the
+// server. A material that has never been told is simply absent — which is the
+// normal state, and the whole reason this can exist without bothering anyone:
+// a window is one unit and will never appear in here.
+var materialPacks = {};
 var rackPhotos = {}; // { LOCATION_UPPER: { url, uploadedBy, uploadedAt } }
 var _stockSelection = {}; // { matId: stockData[matId] } — checked rows in Stock Dashboard, for "Exit Selected"
 var materialLocks = []; // [{id, matId, category, name, rack, allowedDest:[...], reason, lockedBy, lockedAt}]
@@ -5677,7 +5742,7 @@ function openMoveModal(type){
   document.getElementById('mDateRec').value = new Date().toISOString().split('T')[0];
   document.getElementById('mStatus').value  = 'In Stock';
   document.getElementById('mUnit').value    = 'UNIT';
-  // Reset document builder (creates one default "Invoice" group)
+  // Reset document builder (creates one default "Document" group)
   resetDocBuilder();
   // Hide similar-material hint
   document.getElementById('similarHint').classList.remove('show');
@@ -6277,12 +6342,263 @@ function _costLabelFor(unit){
   var w = _UNIT_WORDS[String(unit || 'UNIT').toUpperCase()];
   return w ? ('Cost per ' + w) : 'Unit Cost';
 }
+
+// ── Packs: how many stocking units come in a box, for THIS material ──────────
+//
+// The units that can hold other units. UNIT/SET/ROLL/SHEET/LF are quantities in
+// their own right — nobody is going to say "a linear foot of 12 linear feet" —
+// so they never raise the question.
+var _PACK_UNITS = { BOX:1, CASE:1, PALLET:1, BAG:1 };
+function _isPackUnit(u){ return !!_PACK_UNITS[String(u || '').toUpperCase()]; }
+
+function _packKeyJs(cat, name){
+  return String(cat || '').trim().toUpperCase() + '||' + String(name || '').trim().toUpperCase();
+}
+// The remembered factor for this material in this pack, or null if we have
+// never been told. null is the ordinary answer: most materials are counted one
+// at a time and never appear in here at all.
+function _packFactor(cat, name, unit){
+  if (!_isPackUnit(unit)) return null;
+  var rec = materialPacks[_packKeyJs(cat, name)];
+  if (!rec || !rec.packs) return null;
+  var want = String(unit).toUpperCase();
+  for (var i = 0; i < rec.packs.length; i++){
+    if (String(rec.packs[i].pack).toUpperCase() === want){
+      var f = Number(rec.packs[i].perPack);
+      return (isFinite(f) && f > 0) ? f : null;
+    }
+  }
+  return null;
+}
+
+// The cost label may only name a pack when the app can actually DO the
+// conversion that name implies.
+//
+// v11.5 shipped this wrong and it is worth spelling out, because it is the
+// dangerous kind of wrong: the label read "Cost per Box" the moment the
+// dropdown said Box, but nothing divided. The backend takes this field as the
+// cost of ONE STOCKING UNIT (totalCost = unitCost x qty) and feeds it to the
+// weighted-average engine. So a box of 12 at $120 was recorded as $120 a tube
+// and blended into every future cost for that material — a 12x error, silent,
+// and unrecoverable without editing history. The label promised a conversion
+// that did not exist.
+//
+// Now the promise and the arithmetic are the same condition: name the pack
+// only when the factor is known, and divide by exactly that factor on save.
 function _syncCostLabel(n){
-  var sel = document.getElementById('mat-unit-' + n);
-  var lbl = document.getElementById('mat-cost-lbl-' + n);
+  var sel  = document.getElementById('mat-unit-' + n);
+  var lbl  = document.getElementById('mat-cost-lbl-' + n);
   if (!sel || !lbl) return;
-  lbl.innerHTML = _he(_costLabelFor(sel.value)) +
+  var cat  = (document.getElementById('mat-cat-'  + n) || {}).value || '';
+  var name = (document.getElementById('mat-name-' + n) || {}).value || '';
+  var f    = _packFactor(cat, name, sel.value);
+  lbl.innerHTML = _he(f ? _costLabelFor(sel.value) : 'Unit Cost') +
     ' <span style="text-transform:none;opacity:.7">(optional)</span>';
+  _syncPackNote(n);
+  _syncPackCostMath(n);
+}
+
+// ── The one line that asks, and only when there is something to ask ─────────
+//
+// Jose's shape, and his reasoning: nobody needs a calculator to work out that
+// 30 boxes of 12 is 360. What the app needs is the FACTOR, and the way to get
+// it is the way the app already gets a new supplier — react to what the person
+// has already said instead of interrogating them up front.
+//
+// So the question never exists until the person picks a pack unit. Choose
+// "Unit" and nothing appears, ever. That is the case that matters most here:
+// a window is one unit, it does not come in a box, and asking "how many
+// windows per box?" is a question with no answer. The absence of a pack is the
+// normal state, not an unfinished setup.
+//
+//   pack unit + material named + factor unknown  →  ask, inline
+//   pack unit + factor known                     →  say it quietly, offer change
+//   anything else                                →  nothing at all
+function _syncPackNote(n){
+  var host = document.getElementById('mat-pack-note-' + n);
+  if (!host) return;
+  var sel  = document.getElementById('mat-unit-' + n);
+  var cat  = (document.getElementById('mat-cat-'  + n) || {}).value || '';
+  var name = ((document.getElementById('mat-name-' + n) || {}).value || '').trim();
+  var unit = sel ? sel.value : 'UNIT';
+
+  if (!_isPackUnit(unit) || !name){ host.innerHTML = ''; host.style.display = 'none'; return; }
+  host.style.display = '';
+
+  var word = (_UNIT_WORDS[unit.toUpperCase()] || 'pack').toLowerCase();
+  var f = _packFactor(cat, name, unit);
+
+  if (f){
+    // Short, because it is the state this line spends almost all its life in:
+    // the question is asked once per material, the answer is read every time
+    // after that. Same place, same size — [edit] turns it back into the
+    // question without anything moving.
+    host.className = 'pack-note known';
+    host.innerHTML = '<span><strong>' + f + ' units</strong> per ' + _he(word) + '</span>' +
+      '<button type="button" class="pack-change">edit</button>';
+    host.querySelector('.pack-change').addEventListener('click', function(){ _packAsk(n, f); });
+  } else {
+    _packAsk(n, null);
+  }
+}
+
+function _packAsk(n, current){
+  var host = document.getElementById('mat-pack-note-' + n);
+  if (!host) return;
+  var sel  = document.getElementById('mat-unit-' + n);
+  var name = ((document.getElementById('mat-name-' + n) || {}).value || '').trim();
+  var unit = sel ? sel.value : 'BOX';
+  var word = (_UNIT_WORDS[String(unit).toUpperCase()] || 'pack').toLowerCase();
+
+  host.style.display = '';
+  host.className = 'pack-note ask';
+  host.innerHTML =
+    '<span>1 ' + _he(word) + ' of ' + _he(name) + ' = how many units?</span>' +
+    '<input type="number" class="pack-qty" min="0" step="any" placeholder="12"' +
+      (current ? ' value="' + _escAttr(String(current)) + '"' : '') + '>' +
+    '<button type="button" class="pack-save">' + (current ? 'Save' : '+ Add it') + '</button>' +
+    '<div class="pack-warn" style="display:none"></div>';
+
+  var inp  = host.querySelector('.pack-qty');
+  var warn = host.querySelector('.pack-warn');
+  var commit = function(){
+    var v = Number(inp.value);
+    if (!isFinite(v) || v <= 0){ inp.focus(); return; }
+    if (v === 1){
+      warn.style.display = '';
+      warn.textContent = 'A ' + word + ' of 1 is the same as a unit — pick "Unit" instead.';
+      return;
+    }
+    // Jose asked for this explicitly: changing a remembered factor is a change
+    // to money, backwards and forwards, so it says what it is changing FROM
+    // and waits. A new factor saves straight away — there is nothing to lose.
+    if (current && v !== current && warn.style.display === 'none'){
+      warn.style.display = '';
+      warn.innerHTML = 'You are changing the units per ' + _he(word) + ' for ' + _he(name) +
+        ' — was <strong>' + current + '</strong>, now <strong>' + v + '</strong>. Press Save again if that is right.';
+      return;
+    }
+    _packSave(n, unit, v);
+  };
+  host.querySelector('.pack-save').addEventListener('click', commit);
+  inp.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); commit(); } });
+  inp.addEventListener('input', function(){ warn.style.display = 'none'; });
+
+  // Typing 12 into a box that asks "how many units?" IS the answer. Requiring a
+  // press on top of that only creates a way to answer and have it forgotten —
+  // Jose's question: what happens if they never click Add?
+  //
+  // So leaving the field commits a NEW factor. Nothing is silent about it: the
+  // number was typed deliberately into a labelled box, and the line immediately
+  // changes to "12 units per box [edit]" to show it landed.
+  //
+  // A CHANGE to an existing factor is deliberately excluded — that one alters
+  // costs already being computed, so it keeps the two-press warning and is
+  // never committed by walking away.
+  if (!current){
+    inp.addEventListener('blur', function(){
+      // The click on Save blurs the input first; commit() would then run twice.
+      setTimeout(function(){
+        if (!host.contains(document.activeElement) && String(inp.value || '').trim() !== '') commit();
+      }, 120);
+    });
+  }
+  if (current) setTimeout(function(){ inp.focus(); inp.select(); }, 20);
+}
+
+function _packSave(n, unit, perPack){
+  var cat  = (document.getElementById('mat-cat-'  + n) || {}).value || '';
+  var name = ((document.getElementById('mat-name-' + n) || {}).value || '').trim();
+  // No _btnBusy here: _syncCostLabel below rebuilds this line into its "known"
+  // state, which destroys the button before any spinner could be seen and
+  // would leave _btnDone poking at a detached node. The line changing to
+  // "12 units per box [edit]" IS the feedback.
+  //
+  // Written into the local map immediately so the label, the note and the
+  // arithmetic all agree at once. The server call confirms it; if it fails the
+  // entry is rolled back rather than left looking saved.
+  var key = _packKeyJs(cat, name);
+  var prev = materialPacks[key] ? JSON.parse(JSON.stringify(materialPacks[key])) : null;
+  if (!materialPacks[key]) materialPacks[key] = { packs: [] };
+  var list = materialPacks[key].packs;
+  var hit = false;
+  for (var i = 0; i < list.length; i++){
+    if (String(list[i].pack).toUpperCase() === String(unit).toUpperCase()){ list[i].perPack = perPack; hit = true; break; }
+  }
+  if (!hit) list.push({ pack: String(unit).toUpperCase(), perPack: perPack });
+  _syncCostLabel(n);
+
+  google.script.run
+    .withSuccessHandler(function(){})
+    .withFailureHandler(function(err){
+      if (prev) materialPacks[key] = prev; else delete materialPacks[key];
+      _syncCostLabel(n);
+      toast('Could not save the units per ' + String(unit).toLowerCase() + ': ' +
+            ((err && err.message) || 'unknown error'), 'error');
+    })
+    .processMovement('saveMaterialPack', _h({ category: cat, name: name, pack: unit, perPack: perPack }));
+}
+
+// Shows the division rather than performing it out of sight. Not a calculator
+// — one line confirming what the app is about to record, so a wrong factor is
+// visible before it reaches the cost engine instead of after.
+function _syncPackCostMath(n){
+  var out = document.getElementById('mat-pack-math-' + n);
+  if (!out) return;
+  var sel  = document.getElementById('mat-unit-' + n);
+  var cost = document.getElementById('mat-cost-' + n);
+  var cat  = (document.getElementById('mat-cat-'  + n) || {}).value || '';
+  var name = (document.getElementById('mat-name-' + n) || {}).value || '';
+  var f = _packFactor(cat, name, sel ? sel.value : '');
+  var c = Number(cost && cost.value);
+  if (!f || !isFinite(c) || c <= 0){ out.style.display = 'none'; out.textContent = ''; return; }
+  var word = (_UNIT_WORDS[String(sel.value).toUpperCase()] || 'pack').toLowerCase();
+  var per  = Math.round((c / f) * 10000) / 10000;
+  out.style.display = '';
+  // Jose: the full sentence was too long to sit under a field. The RESULT is
+  // what matters at a glance — the working belongs behind the "i", where
+  // somebody who doubts the number can find it.
+  out.innerHTML = _infoIc('$' + c.toFixed(2) + ' per ' + word + ' ÷ ' + f + ' units = $' +
+                          per + ' per unit.\n\nThis is what gets recorded as the cost, not the ' +
+                          word + ' price.') +
+                  '<span>$' + per + ' per unit</span>';
+}
+
+// "We don't know what it cost" is BLANK, not 0.
+//
+// Jose: most things at OX have no known cost, so this is the ordinary case
+// rather than an edge one. Blank already does the right thing — no cost is
+// recorded, the material's average is left alone, and the reports show it as
+// unpriced instead of as free.
+//
+// A typed 0 does something quite different: the backend accepts it
+// (enteredCost >= 0) and blends $0.00 into the weighted average, dragging the
+// material's cost down for every movement afterwards. That is occasionally
+// what somebody means — a free sample is a real thing to record — so it is not
+// blocked. It is just no longer silent.
+function _syncCostZeroHint(n){
+  var host = document.getElementById('mat-cost-zero-' + n);
+  if (!host) return;
+  var cost = document.getElementById('mat-cost-' + n);
+  var raw  = cost ? String(cost.value || '').trim() : '';
+  if (raw === '' || Number(raw) !== 0){ host.style.display = 'none'; host.textContent = ''; return; }
+  host.style.display = '';
+  host.className = 'cost-zero-hint';
+  host.textContent = '$0.00 records this as FREE and pulls the average cost down. ' +
+                     'If the cost is simply not known, clear the box and leave it empty.';
+}
+
+// The number the backend must receive: cost of ONE STOCKING UNIT, always.
+function _entryUnitCost(n){
+  var cost = document.getElementById('mat-cost-' + n);
+  if (!cost || String(cost.value || '').trim() === '') return '';
+  var c = Number(cost.value);
+  if (!isFinite(c) || c < 0) return '';
+  var sel  = document.getElementById('mat-unit-' + n);
+  var cat  = (document.getElementById('mat-cat-'  + n) || {}).value || '';
+  var name = (document.getElementById('mat-name-' + n) || {}).value || '';
+  var f = _packFactor(cat, name, sel ? sel.value : '');
+  return f ? String(Math.round((c / f) * 10000) / 10000) : String(c);
 }
 
 function _matLineTpl(n){
@@ -6299,12 +6615,12 @@ function _matLineTpl(n){
     '<div class="mat-line-grid">' +
       '<div class="field">' +
         '<label class="mat-line-lbl-sm">Category</label>' +
-        '<select id="mat-cat-' + n + '" onchange="updateMatLineNameList(' + n + ');_checkPriceChange(' + n + ')">' + catOpts + '</select>' + _catHelperHtml() +
+        '<select id="mat-cat-' + n + '" onchange="updateMatLineNameList(' + n + ');_checkPriceChange(' + n + ');_syncCostLabel(' + n + ')">' + catOpts + '</select>' + _catHelperHtml() +
       '</div>' +
       '<div class="field" style="grid-column:span 1;position:relative">' +
         '<label class="mat-line-lbl-sm">Name / Description</label>' +
         '<input type="text" id="mat-name-' + n + '" placeholder="Type material name..." autocomplete="off"' +
-        ' oninput="_checkIncomingSuggest(' + n + ', this);_checkPriceChange(' + n + ')">' +
+        ' oninput="_checkIncomingSuggest(' + n + ', this);_checkPriceChange(' + n + ');_syncCostLabel(' + n + ')">' +
         '<div class="inc-suggest-box" id="inc-suggest-' + n + '" style="display:none"></div>' +
       '</div>' +
       '<div class="field">' +
@@ -6327,9 +6643,13 @@ function _matLineTpl(n){
         // step when the unit is changed.
         '<label class="mat-line-lbl-sm" id="mat-cost-lbl-' + n + '">' + _costLabelFor('UNIT') +
           ' <span style="text-transform:none;opacity:.7">(optional)</span></label>' +
-        '<input type="number" id="mat-cost-' + n + '" min="0" step="0.01" placeholder="$0.00" oninput="_checkPriceChange(' + n + ')">' +
+        '<input type="number" id="mat-cost-' + n + '" min="0" step="0.01" placeholder="$0.00" oninput="_checkPriceChange(' + n + ');_syncPackCostMath(' + n + ');_syncCostZeroHint(' + n + ')">' +
       '</div>' : '') +
     '</div>' +
+    // Empty and hidden until a pack unit is picked with a material named.
+    '<div class="pack-note" id="mat-pack-note-' + n + '" style="display:none"></div>' +
+    (_canSeeCosts() ? '<div class="pack-math" id="mat-pack-math-' + n + '" style="display:none"></div>' +
+                      '<div id="mat-cost-zero-' + n + '" style="display:none"></div>' : '') +
     (_canSeeCosts() ?
       '<div class="mat-cost-alert" id="mat-cost-alert-' + n + '" style="display:none"></div>' : '') +
     '<div class="mat-loc-box">' +
@@ -7195,7 +7515,14 @@ function submitMultiEntry(){
     // canSeeCosts, so this naturally reads '' and the batch is priced by
     // reading the current average later, same as any other unpriced entry.
     var costEl = document.getElementById('mat-cost-' + n);
-    if (costEl && String(costEl.value || '').trim() !== '') matEntry.unitCost = costEl.value;
+    // NOT costEl.value: when the label says "Cost per Box" the number typed
+    // is the cost of a box, and the backend multiplies whatever it gets by
+    // the quantity in stocking units. _entryUnitCost does the one division
+    // that keeps the label honest.
+    if (costEl && String(costEl.value || '').trim() !== '') {
+      var uc = _entryUnitCost(n);
+      if (uc !== '') matEntry.unitCost = uc;
+    }
     if (!sameInfo) {
       matEntry.supplier    = ((document.getElementById('mat-sup-'  + n) || {}).value || '').trim();
       matEntry.gc          = ((document.getElementById('mat-gc-'   + n) || {}).value || '').trim();
@@ -7999,6 +8326,24 @@ function _drawBackupBox(st){
       : _he(st.lastBackupName || '');
     lastHtml = '<div style="font-size:.75rem;margin-top:.35rem">Last backup: ' + _he(_fmtWhen(st.lastBackupAt)) +
       (link ? ' — ' + link : '') + '</div>';
+
+    // Whether the copy carries the CONFIGURATION, not just the data.
+    //
+    // A backup is a copy of the spreadsheet, and Script Properties do not live
+    // in the spreadsheet — so without this snapshot a restore brings back
+    // every movement and none of the settings, FOLDER_PREFIX included, and
+    // every attachment ever saved stops opening. Writing it is allowed to
+    // fail so that a snapshot problem never costs you the backup itself; it
+    // is NOT allowed to fail silently, which is what it did until v11.13.
+    var snap = st.lastBackupSnapshot || '';
+    if (/^FAILED/.test(snap)) {
+      lastHtml += '<div class="snap-warn">⚠ This copy has your data but NOT your settings — ' +
+        'the configuration snapshot could not be written (' + _he(snap.replace(/^FAILED:\s*/, '')) + '). ' +
+        'Restoring from it would mean re-entering the Script Properties by hand. See Error Log.</div>';
+    } else if (snap) {
+      lastHtml += '<div class="snap-ok">✓ Includes your settings — ' + _he(snap) +
+        ' saved in the <strong>ACOPIO_CONFIG_SNAPSHOT</strong> tab inside the copy.</div>';
+    }
   }
 
   // EVERY backup, not just the newest — Jose: "what if the customer wants
@@ -9322,6 +9667,7 @@ function _applyCfgChangeLocally(p) {
 function _renderMaterialsTab() {
   var content = document.getElementById('settingsTabContent');
   content.innerHTML =
+    '<div class="packs-panel" id="packsPanel"></div>' +
     '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Search, rename, merge, or move materials between categories. All changes update every row in the archive.</p>' +
     '<div class="mat-search-row">' +
       '<input type="text" id="matSearchInp" placeholder="Search material name…" oninput="_filterMatList()">' +
@@ -9331,7 +9677,139 @@ function _renderMaterialsTab() {
     '<div class="mat-list" id="matListContainer" data-rowscope="mat"><p style="color:var(--muted);font-size:.82rem">Loading…</p></div>';
   // Already prefetched in _loadSettings() (fired the moment the modal opened) —
   // render immediately instead of re-fetching and flashing "Loading…" again.
+  _renderPacksPanel();
   if (_matListAll) { _filterMatList(); } else { _loadMatList(); }
+}
+
+// ── Units per pack, all of them at once ──────────────────────────────────────
+//
+// The inline prompt on the ENTRY form creates and corrects a factor perfectly
+// well, and on most days that is all anyone needs. This panel exists for the
+// one job it cannot do: SEE every factor together, and fix a wrong one without
+// first hunting for a movement that happens to use it.
+//
+// That matters more than a settings list usually would. A wrong factor does
+// not announce itself — it quietly divides every future cost for that material
+// by the wrong number, and the only symptom is a cost that looks slightly off.
+//
+// Empty is the honest and ordinary state: a warehouse of windows, counted one
+// at a time, will never have a row here, so the panel says that plainly rather
+// than looking like setup somebody forgot to finish.
+function _packsPanelRows(){
+  var rows = [];
+  Object.keys(materialPacks).forEach(function(key){
+    var rec = materialPacks[key];
+    if (!rec || !rec.packs) return;
+    var parts = key.split('||');
+    rec.packs.forEach(function(p){
+      var f = Number(p.perPack);
+      if (!isFinite(f) || f <= 0) return;
+      rows.push({ cat: parts[0] || '', name: parts[1] || '',
+                  pack: String(p.pack || '').toUpperCase(), perPack: f });
+    });
+  });
+  rows.sort(function(a, b){
+    if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+    return a.perPack - b.perPack;
+  });
+  return rows;
+}
+
+function _renderPacksPanel(){
+  var host = document.getElementById('packsPanel');
+  if (!host) return;
+  var rows = _packsPanelRows();
+
+  var head = '<div class="packs-hd"><span class="packs-title">Units per Box / Pallet</span>' +
+             '<span class="packs-count">' + rows.length + '</span></div>';
+
+  if (!rows.length){
+    host.innerHTML = head +
+      '<p class="packs-empty">Nothing here yet — and for a warehouse that counts everything ' +
+      'one at a time, there never will be. A line appears the first time somebody receives ' +
+      'a material by the box, case, pallet or bag and says how many are inside.</p>';
+    return;
+  }
+
+  host.innerHTML = head +
+    '<p class="packs-note">Used to work out the cost of ONE unit from the price of a whole ' +
+    'pack. A wrong number here changes every future cost for that material, so it is worth ' +
+    'a look.</p>' +
+    '<div class="packs-list">' +
+    rows.map(function(r, i){
+      var word = (_UNIT_WORDS[r.pack] || r.pack).toLowerCase();
+      return '<div class="packs-row">' +
+        '<span class="packs-cat">' + catBadge(r.cat) + '</span>' +
+        '<span class="packs-name">' + _he(r.name) + '</span>' +
+        '<span class="packs-fact"><strong>' + r.perPack + '</strong> per ' + _he(word) + '</span>' +
+        '<button class="cfg-btn packs-edit" data-i="' + i + '">✏️ Edit</button>' +
+        '<button class="cfg-btn packs-del" data-i="' + i + '">🗑 Remove</button>' +
+      '</div>';
+    }).join('') + '</div>';
+
+  host.querySelectorAll('.packs-edit').forEach(function(b){
+    b.addEventListener('click', function(){ _packsPanelEdit(rows[+b.dataset.i]); });
+  });
+  host.querySelectorAll('.packs-del').forEach(function(b){
+    b.addEventListener('click', function(){ _packsPanelDelete(rows[+b.dataset.i], b); });
+  });
+}
+
+function _packsPanelEdit(r){
+  var word = (_UNIT_WORDS[r.pack] || r.pack).toLowerCase();
+  _showPrompt({
+    icon: '📦',
+    title: 'Units per ' + word,
+    message: 'How many units are in one ' + word + ' of ' + r.name + '?\n\n' +
+             'This changes what FUTURE entries cost per unit. Movements already saved keep ' +
+             'the cost they were recorded with.',
+    value: String(r.perPack),
+    onOk: function(v){
+      var num = Number(v);
+      // Returning a string keeps the dialog open with this as the error, which
+      // is what _showPrompt's contract asks for.
+      if (!isFinite(num) || num <= 1) return 'A pack has to hold more than one unit — otherwise it is a unit.';
+      google.script.run
+        .withSuccessHandler(function(){
+          var rec = materialPacks[_packKeyJs(r.cat, r.name)];
+          if (rec && rec.packs) rec.packs.forEach(function(p){
+            if (String(p.pack).toUpperCase() === r.pack) p.perPack = num;
+          });
+          _renderPacksPanel();
+          toast('One ' + word + ' of ' + r.name + ' is now ' + num + ' units.', 'success');
+        })
+        .withFailureHandler(function(e){ toast('Could not save: ' + ((e && e.message) || e), 'error'); })
+        .processMovement('saveMaterialPack',
+          _h({ category: r.cat, name: r.name, pack: r.pack, perPack: num }));
+    }
+  });
+}
+
+function _packsPanelDelete(r, btn){
+  var word = (_UNIT_WORDS[r.pack] || r.pack).toLowerCase();
+  _showConfirm({
+    icon: '📦',
+    title: 'Forget this pack?',
+    message: 'Acopio will stop knowing that a ' + word + ' of ' + r.name + ' holds ' +
+             r.perPack + ' units, and will ask again the next time somebody receives one.\n\n' +
+             'Nothing already saved changes.',
+    confirmText: 'Forget it',
+    onConfirm: function(){
+      _btnBusy(btn);
+      google.script.run
+        .withSuccessHandler(function(){
+          var key = _packKeyJs(r.cat, r.name);
+          var rec = materialPacks[key];
+          if (rec && rec.packs){
+            rec.packs = rec.packs.filter(function(p){ return String(p.pack).toUpperCase() !== r.pack; });
+            if (!rec.packs.length) delete materialPacks[key];
+          }
+          _renderPacksPanel();
+        })
+        .withFailureHandler(function(e){ _btnDone(btn); toast('Could not remove: ' + ((e && e.message) || e), 'error'); })
+        .processMovement('deleteMaterialPack', _h({ category: r.cat, name: r.name, pack: r.pack }));
+    }
+  });
 }
 
 function _loadMatList() {
@@ -10207,7 +10685,7 @@ function resetDocBuilder() {
   var c = document.getElementById('docGroupsContainer');
   if (c) c.innerHTML = '';
   _docGroupCounters['docGroupsContainer'] = 0;
-  addDocGroup('Invoice', 'docGroupsContainer', '');
+  addDocGroup('Document', 'docGroupsContainer', '');
 }
 
 // Reset the Attach modal document builder
@@ -13346,6 +13824,7 @@ function _applyData(data) {
   incoming           = data.incoming           || [];
   monitoredMaterials = data.monitoredMaterials || null;
   rackPhotos         = data.rackPhotos         || {};
+  materialPacks      = data.materialPacks      || {};
   materialLocks      = data.materialLocks      || [];
   systemActivity     = data.systemActivity     || [];
   if (data.columnPrefs) { columnPrefs = data.columnPrefs; _applyColumnPrefs(); }
@@ -14279,6 +14758,90 @@ var _editMovRowIdx = 0;
 var _editMovOrigCategory = '';
 var _editMovOrigName = '';
 
+// ── Editing should not be lazy ───────────────────────────────────────────────
+//
+// Jose: "al editar un material toda la información de ese material se muestre
+// en la ventana de edición, toda, para que solo pueda modificar lo que quiero
+// y no preocuparme por volver a llenar la demás información."
+//
+// The form already had every editable field. The problem is upstream: a
+// TRANSFER or a WASTE is SAVED with supplier, GC, PO and PM empty, because
+// those boxes are hidden on those screens. Open one to edit and you are
+// looking at five blanks for a material whose supplier the app has known all
+// along — and you either retype them or leave the history uneven, which is
+// exactly what Jose is seeing when he searches.
+//
+// So: fill the blanks from the same material's own history, most recent value
+// wins, and NEVER overwrite anything the row already has.
+//
+// The critical part is that these are marked. A suggestion that looks
+// identical to a stored value would make the form assert things about this row
+// that are not recorded — the same class of mistake as the GENERIC that
+// started all this. They are tinted, and a line says how many there are and
+// that they only become real if you save.
+var _EDIT_GAP_FIELDS = [
+  { id: 'em_supplier',    key: 'supplier'    },
+  { id: 'em_gc',          key: 'gc'          },
+  { id: 'em_po',          key: 'po'          },
+  { id: 'em_project',     key: 'project'     },
+  { id: 'em_pm',          key: 'pm'          },
+  { id: 'em_responsible', key: 'responsible' }
+];
+
+function _clearEditGapMarks() {
+  _EDIT_GAP_FIELDS.forEach(function(f){
+    var el = document.getElementById(f.id);
+    if (el) el.classList.remove('em-suggested');
+  });
+  var note = document.getElementById('emGapNote');
+  if (note) { note.style.display = 'none'; note.textContent = ''; }
+}
+
+function _fillEditGapsFromHistory(mov) {
+  _clearEditGapMarks();
+  var nameUp = String(mov.name || '').trim().toUpperCase();
+  var catNt  = nt(mov.category || '');
+  if (!nameUp) return;
+
+  // Most recent first, and never this row itself.
+  var found = {};
+  for (var i = movements.length - 1; i >= 0; i--) {
+    var m = movements[i];
+    if (m.rowIdx === mov.rowIdx) continue;
+    if (String(m.name || '').trim().toUpperCase() !== nameUp) continue;
+    if (catNt && nt(m.category) !== catNt) continue;
+    _EDIT_GAP_FIELDS.forEach(function(f){
+      if (found[f.key]) return;
+      var v = String(m[f.key] || '').trim();
+      if (!v || v === 'GENERIC') return;   // GENERIC is a placeholder, not a job
+      found[f.key] = v;
+    });
+  }
+
+  var filled = [];
+  _EDIT_GAP_FIELDS.forEach(function(f){
+    var el = document.getElementById(f.id);
+    if (!el) return;
+    if (String(el.value || '').trim() !== '') return;   // the row's own value always wins
+    if (!found[f.key]) return;
+    el.value = found[f.key];
+    el.classList.add('em-suggested');
+    // Touch it and it stops being a suggestion — it is yours now. `once`
+    // rather than a bare listener, so re-opening the dialog does not stack a
+    // new handler on the same box every time.
+    el.addEventListener('input', function(){ el.classList.remove('em-suggested'); }, { once: true });
+    filled.push(f.key);
+  });
+
+  var note = document.getElementById('emGapNote');
+  if (note && filled.length) {
+    note.style.display = '';
+    note.textContent = '✦ ' + filled.length + ' field' + (filled.length > 1 ? 's were' : ' was') +
+      ' empty on this row and filled from this material\'s own history (' + filled.join(', ') +
+      '). Nothing is recorded until you save. Clear any you do not want.';
+  }
+}
+
 function openEditMovModal(rowIdx) {
   var mov = null;
   for (var i = 0; i < movements.length; i++) {
@@ -14320,7 +14883,12 @@ function openEditMovModal(rowIdx) {
     em_responsible: mov.responsible || '',
     em_sourceLoc:   mov.sourceLoc   || '',
     em_destLoc:     mov.destLoc     || '',
-    em_project:     mov.project     || '',
+    // GENERIC is not a project — it is the app's word for "received into
+    // stock, not assigned to a job". Showing it in a box labelled Project
+    // invites somebody to keep it, or to edit around it, as though a customer
+    // called GENERIC existed. Blank is what it actually means, and leaving it
+    // blank on an ENTRY re-derives GENERIC on save anyway.
+    em_project:     (mov.project && mov.project !== 'GENERIC') ? mov.project : '',
     em_gc:          mov.gc          || '',
     em_supplier:    mov.supplier    || '',
     em_po:          mov.po          || '',
@@ -14331,6 +14899,8 @@ function openEditMovModal(rowIdx) {
     var el = document.getElementById(id);
     if (el) el.value = fmap[id] !== undefined ? fmap[id] : '';
   });
+
+  _fillEditGapsFromHistory(mov);
 
   document.getElementById('em_reason').value = '';
   document.getElementById('btnSaveEditMov').disabled  = false;
