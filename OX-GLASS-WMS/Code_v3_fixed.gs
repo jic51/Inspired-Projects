@@ -27,13 +27,26 @@
 //   doGet, getInitialData, processMovement, getPrivateFileData,
 //   getPrivateFileThumbnail, heartbeat, pollLogin, reportIssue,
 //   extractDocumentInfo, getSetupState, saveSetupWizard, checkDeploymentReady,
-//   saveWebAppUrl
+//   saveWebAppUrl, getIncoming, addIncoming, updateIncoming, deleteIncoming,
+//   getMonitoredMaterials
 // — plus the menu/trigger entry points, gated by getUi() / requireOwnerContext_().
+//
+// v11.27: this paragraph was the whole of the rule, and a paragraph does not
+// fail a build. The five Incoming/monitor names above were reachable and
+// authenticating correctly for two versions before anyone noticed the list had
+// never been updated to admit it — and in the same period `getSystemActivity`
+// went out with no trailing `_` and no check at all, reading the audit sheet
+// for anyone who typed its name into a browser console.
+//
+// tools/test-endpoint-auth.js now enumerates every public global in this file
+// and fails unless each one either carries a recognised guard or is named in
+// its allow-list with a written reason. The rule is still stated here for
+// whoever is reading; what makes it hold is that the test counts the doors.
 
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '11.19';
+var APP_VERSION = '11.30';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -45,7 +58,7 @@ var APP_VERSION = '11.19';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'ed72e4b6';
+var APP_BUILD = 'cf18f3a9';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -1209,6 +1222,28 @@ var DEFAULT_ROLE_PERMS = {
   canExportData:    true
 };
 
+// The server's own answer to "may this person see money?", and the ONLY one
+// that decides what leaves this file. _canSeeCosts() in Index_v3_fixed.html is
+// the same rule spelt the same way, but it runs in the browser and therefore
+// decides only what gets drawn — which is a different question, and until
+// v11.27 it was the only question anybody was asking.
+//
+// The two must agree, and a test holds them to it (tools/test-cost-privacy.js).
+// If they ever drift, the failure is silent in the worse direction: the server
+// would send what the page then declines to show, which looks perfect from the
+// outside and is exactly the bug this replaces.
+//
+//   ADMIN      always
+//   WAREHOUSE  only when an admin has turned the See costs toggle on
+//   VIEWER     never — read-only means read what you are shown, and costs are
+//              not part of that. There is no toggle to widen it, by design.
+function canSeeCosts_(auth) {
+  if (!auth || !auth.role) return false;
+  if (auth.role === 'ADMIN') return true;
+  if (auth.role === 'WAREHOUSE') return rolePerms_().canSeeCosts === true;
+  return false;
+}
+
 function rolePerms_() {
   var raw = PropertiesService.getScriptProperties().getProperty('ROLE_PERMS_WAREHOUSE');
   var stored = {};
@@ -1538,6 +1573,51 @@ function getInitialData(sessionToken) {
     var materialLocks = [];
     try { materialLocks = getMaterialLocks(); } catch(e) { Logger.log('getMaterialLocks: ' + e.message); }
 
+    // ── WHAT A ROLE MAY NOT SEE IS NOT SENT ─────────────────────────────────
+    // Finding 2 of the v11.26 audit. Costs were computed for everyone and put
+    // on the wire for everyone: parseArchiveRow always fills unitCost and
+    // totalCost, and config.avgCost carries the running average for every
+    // material. _canSeeCosts() then hid them — IN THE BROWSER. Which is to
+    // say it hid them from the screen, not from the person: the numbers had
+    // already arrived, and one console line printed the lot.
+    //
+    // A permission enforced only by the page drawing it is not a permission.
+    // It is a preference. And this one is sold: the published feature page
+    // promises that a warehouse role does not see what things cost unless an
+    // admin turns it on. So this is not only a leak, it is a leak of the
+    // thing the customer was told they were buying.
+    //
+    // Stripped here, at the one place everything leaves the server, rather
+    // than at each of the five screens that draw a dollar sign — the same
+    // reason the user list two blocks up is built only for ADMIN. Every
+    // consumer in the front end is already behind _canSeeCosts(), so a role
+    // that could not see these numbers sees exactly what it saw before; the
+    // difference is that now it was never handed them.
+    if (!canSeeCosts_(auth)) {
+      for (var ci = 0; ci < movements.length; ci++) {
+        movements[ci].unitCost  = null;
+        movements[ci].totalCost = null;
+      }
+      if (config) config.avgCost = {};
+    }
+
+    // Found while doing the above, in the same shape and worse: loadConfig()
+    // returns the CONFIG sheet whole, and that includes `users` — every
+    // colleague's email address with their role beside it — and `adminEmail`.
+    // Both were sent to every role on every load, VIEWER included. Not hidden
+    // by a check that could be argued about: NOTHING in Index_v3_fixed.html
+    // reads either one. The real user list arrives separately, two blocks up,
+    // and only for ADMIN, which is where the app has actually read it from
+    // since USERS_V3 replaced the CONFIG column.
+    //
+    // So this is a roster of who works here, mailed out to everyone who opens
+    // the page, in service of no feature at all. It is left in place for an
+    // ADMIN, who is the one role that already receives the same list by name.
+    if (config && auth.role !== 'ADMIN') {
+      config.users = [];
+      delete config.adminEmail;
+    }
+
     return {
       serverVersion:      APP_VERSION,
       serverBuild:        APP_BUILD,
@@ -1545,7 +1625,45 @@ function getInitialData(sessionToken) {
       // the moment its name is filled in, without a round trip per line.
       materialPacks:      (function(){ try { return readPacks_(ss); } catch (e) { return {}; } })(),
       company:            publicCompany_(),
-      systemActivity:     (function(){ try { return getSystemActivity(30, _auth.email); } catch (e) { return []; } })(),
+      // ONE UNDERSCORE. THAT IS THE WHOLE BUG, AND IT COST MONTHS.
+      //
+      // This read `_auth.email`. The variable in this scope is `auth`. There
+      // IS a `_auth` in this function — but it is declared at the bottom, in
+      // the error handler (`var _auth = getUserRole(sessionToken)`), and `var`
+      // hoists to the top of the function. So `_auth` existed here and held
+      // `undefined`, `_auth.email` threw a TypeError every single time, and
+      // the inline catch below turned that into an empty array.
+      //
+      // systemActivity was therefore [] on EVERY load, for EVERY user, since
+      // the day this line was written. Both things that read it went dark
+      // together, which is exactly what Jose reported and why he was right
+      // that they were one problem and not two:
+      //
+      //   • the corner deck never showed a card — _sysCards is built from it
+      //   • Settings → System said nothing automatic had ever run — the same
+      //     list feeds _renderSystemTab
+      //
+      // The backups were never broken. They ran nightly, wrote their row to
+      // AUDIT_LOG with actor 'system', and 27 of them are sitting in Drive.
+      // The rows simply never left the server.
+      //
+      // Nothing could have caught this from the outside. It is not a syntax
+      // error, `node --check` is happy, and tools/test-sysactivity-dismiss.js
+      // passes — because it calls getSystemActivity_ directly in a vm with its
+      // own arguments. The function was always correct. The CALL was wrong.
+      // Same lesson as the role label in v11.29: testing a function is not
+      // testing the line that uses it.
+      systemActivity:     (function(){
+        try { return getSystemActivity_(30, auth.email); }
+        catch (e) {
+          // NOT silent any more. The empty array stays — a failure to read the
+          // audit sheet must not take down the whole app load — but a failure
+          // that leaves no trace is how this one lasted. If this line is ever
+          // reached again, the reason is in the execution log.
+          Logger.log('getInitialData: systemActivity failed — ' + e.message);
+          return [];
+        }
+      })(),
       columnPrefs:        columnPrefs_(),
       movements:          movements,
       stock:              stock,
@@ -1596,7 +1714,7 @@ function parseArchiveRow(row, rowIdx) {
   } else if (rawMT === 'DISPATCHED' || rawMT === 'DISPATCH' || rawMT === 'DEL') {
     mt = 'EXIT';
   } else {
-    mt = rawMT; // ENTRY, EXIT, TRANSFER, RETURN, WASTE — already correct
+    mt = rawMT; // ENTRY, EXIT, TRANSFER, RETURN, WASTE, ADJUST — already correct
   }
 
   return {
@@ -1719,6 +1837,25 @@ function calculateStock(movements, reservations) {
       }
       s.warehouseQty = Math.max(0, s.warehouseQty - qty);
       s.wastedQty   += qty;
+
+    } else if (mt === 'ADJUST') {
+      // A correction to the count at ONE rack. Direction is which column the
+      // rack sits in — see adjustDirection_. Nothing moves to a site and
+      // nothing is wasted, so siteQty and wastedQty are untouched on purpose:
+      // an adjust that fed either of them would put "we counted wrong" into
+      // the waste figure, which is the exact confusion this type exists to
+      // prevent.
+      if (m.sourceLoc && !m.destLoc) {
+        s.warehouseLocs[m.sourceLoc] = (s.warehouseLocs[m.sourceLoc] || 0) - qty;
+        if (s.warehouseLocs[m.sourceLoc] < 0) {
+          s._errors.push('ADJUST NEG@' + m.sourceLoc);
+          s.warehouseLocs[m.sourceLoc] = 0;
+        }
+        s.warehouseQty = Math.max(0, s.warehouseQty - qty);
+      } else if (m.destLoc && !m.sourceLoc) {
+        s.warehouseLocs[m.destLoc] = (s.warehouseLocs[m.destLoc] || 0) + qty;
+        s.warehouseQty += qty;
+      }
     }
   }
 
@@ -2066,6 +2203,9 @@ function processMovementInner_(ss, action, data, auth) {
   // ── Material management (ADMIN only) ──────────────────────────────────────
   if (action === 'listMaterials')  return listMaterials(auth);
   if (action === 'manageMaterial') return manageMaterial(data, auth);
+  // ── Data quality sweep (ADMIN only) ───────────────────────────────────────
+  if (action === 'runDataQualityScan')  return runDataQualityScan(data);
+  if (action === 'applyDataQualityFix') return applyDataQualityFix(data);
   if (action === 'adminAction') {
     requireAuth_('ADMIN');
     return adminAction_(ss, data);
@@ -2183,7 +2323,7 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       var d  = movements[i];
       var mt = String(d.moveType || '').toUpperCase().trim();
       if (mt === 'DISPATCH') mt = 'EXIT';
-      if (['ENTRY','EXIT','TRANSFER','RETURN','WASTE'].indexOf(mt) === -1) {
+      if (['ENTRY','EXIT','TRANSFER','RETURN','WASTE','ADJUST'].indexOf(mt) === -1) {
         throw new Error('Invalid move type: ' + mt);
       }
 
@@ -2222,6 +2362,18 @@ function addMovementsBatch_(ss, archive, movements, auth) {
         proj = (carried && carried.project && carried.project !== 'GENERIC') ? carried.project : '';
       }
 
+      // An ADJUST carries NO project, and does not inherit one either.
+      //
+      // It is not a statement about work — it is a statement about the record:
+      // the count in the rack disagreed with the count in the app. Which job
+      // the two missing units would have belonged to is precisely what nobody
+      // knows, which is why the number was wrong in the first place.
+      //
+      // Stamping a job on it would push a correction into that job's Total
+      // Received / Total Dispatched, where it reads as material that moved for
+      // that customer. Blank is not a gap here; it is the honest answer.
+      if (mt === 'ADJUST') proj = '';
+
       // Locations: uppercase+trim for storage (special chars preserved), but use
       // normalizeString as the in-memory key so lookups match the snapshot.
       var src     = String(d.sourceLoc || '').toUpperCase().trim();
@@ -2241,6 +2393,33 @@ function addMovementsBatch_(ss, archive, movements, auth) {
 
       // Material lock check — authoritative, cannot be bypassed from the frontend.
       enforceMaterialLock_(locksMap, mt, matId, srcKey, destKey);
+
+      // ── ADJUST: a COUNT, not a move between two places ────────────────────
+      // Exactly one rack column is filled, and which one it is IS the
+      // direction — see adjustDirection_ for why the direction is stored that
+      // way instead of as a negative quantity.
+      var adjDir = 0;
+      if (mt === 'ADJUST') {
+        adjDir = adjustDirection_(srcKey, destKey);
+        if (!adjDir) throw new Error('An adjustment needs exactly one rack — the one you counted.');
+        if (!String(d.comments || '').trim()) {
+          throw new Error('ADJUST movements require a reason — say why the count was off.');
+        }
+        // Only downward adjustments can fail this way, and the failure is
+        // worth its own message: "insufficient stock" would be nonsense for a
+        // correction whose entire premise is that the stock figure is wrong.
+        // What it really means is that the figure MOVED between the count and
+        // the save — somebody exited the material while it was being counted —
+        // so the difference on screen is stale and the count has to be redone.
+        if (adjDir < 0) {
+          var adjHave = snap.locs[srcKey] || 0;
+          if (adjHave < qty) {
+            throw new Error('COUNT CHANGED for ' + name + ' at ' + src + '. The app now shows ' +
+              adjHave + ' there, so it cannot come down by ' + qty + '. Somebody moved this ' +
+              'material while you were counting — open the rack and count it again.');
+          }
+        }
+      }
 
       // Stock validation for outgoing moves against the LIVE (mutated) snapshot,
       // so two EXITs from the same rack in one batch are checked cumulatively.
@@ -2294,6 +2473,17 @@ function addMovementsBatch_(ss, archive, movements, auth) {
           avgCostMap[matId] = { category: cleanDisplay_(d.category), name: cleanDisplay_(d.name), avg: newAvg };
           costTouched[matId] = true;
         }
+      } else if (mt === 'ADJUST') {
+        // Deliberately nothing. An adjustment costs zero — not "zero dollars
+        // of material", but no dollar figure at all, which is why both columns
+        // stay blank rather than being written as 0.
+        //
+        // Two units that were never really there did not cost anything when
+        // they vanished; they cost something when they were bought, and that
+        // is already recorded on the ENTRY. Pricing an adjust would double it,
+        // and pricing a downward one would report a loss the company never
+        // took. It also must not disturb the running average: the average is
+        // about what material COSTS, and this row says nothing about that.
       } else if (avgCostMap[matId]) {
         unitCost  = avgCostMap[matId].avg;
         totalCost = round2_(unitCost * qty);
@@ -2510,6 +2700,16 @@ function applyMovementToSnapshot_(s, mt, qty, srcKey, destKey) {
     var wSrc = srcKey || findFirstWarehouseLoc(s.locs, qty);
     if (wSrc && s.locs[wSrc]) s.locs[wSrc] -= qty;
     s.wh = Math.max(0, s.wh - qty);
+  } else if (mt === 'ADJUST') {
+    // Direction lives in which rack column is filled — see adjustDirection_.
+    // Never touches site stock or wasted: nothing physically went anywhere.
+    if (srcKey && !destKey) {
+      if (s.locs[srcKey]) s.locs[srcKey] -= qty;
+      s.wh = Math.max(0, s.wh - qty);
+    } else if (destKey && !srcKey) {
+      s.locs[destKey] = (s.locs[destKey] || 0) + qty;
+      s.wh += qty;
+    }
   }
 }
 
@@ -2786,6 +2986,16 @@ function getCurrentStockForItem(ss, matId) {
       var wSrc = src || findFirstWarehouseLoc(locs, qty);
       if (wSrc && locs[wSrc]) locs[wSrc] -= qty;
       wh = Math.max(0, wh - qty);
+
+    } else if (mt === 'ADJUST') {
+      // Same rule as the other three stock readers — see adjustDirection_.
+      if (src && !dst) {
+        if (locs[src]) locs[src] -= qty;
+        wh = Math.max(0, wh - qty);
+      } else if (dst && !src) {
+        locs[dst] = (locs[dst] || 0) + qty;
+        wh += qty;
+      }
     }
   }
 
@@ -3690,7 +3900,25 @@ function ensureCheckinTrigger_() {
 }
 
 function dailyCheckinTrigger() {
-  try { runCheckin_(); } catch (e) { Logger.log('dailyCheckinTrigger: ' + e.message); }
+  // v11.27 — the trigger name is a public global, so it was also a door: any
+  // signed-in account with the app's URL could call it and make the install
+  // send its check-in mail on demand, as many times as they cared to click.
+  // Nothing was corrupted by that, but the owner's inbox is not a free
+  // service to strangers, and "runs as the owner" is exactly the condition
+  // requireOwnerContext_ was written to prove.
+  //
+  // The time-based trigger executes as the owner, so effective and active
+  // user are the same account and this passes. Under the web app's
+  // "Execute as: Me" deployment they never match for anyone else, so every
+  // google.script.run call from another user is refused here.
+  //
+  // The refusal is swallowed with everything else: a trigger that throws
+  // would mail the owner a failure notice every morning, which is a worse
+  // outcome than the call it just blocked.
+  try {
+    requireOwnerContext_();
+    runCheckin_();
+  } catch (e) { Logger.log('dailyCheckinTrigger: ' + e.message); }
 }
 
 function runCheckin_() {
@@ -3767,6 +3995,7 @@ function runCheckin_() {
 // and must never be sent to modifyMovement/updateDocument_.
 function loadOlderHistory(auth) {
   auth = requireAuth_();   // any registered user; unauthenticated callers are refused
+  var seeCosts = canSeeCosts_(auth);
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var history = ensureArchiveHistorySheet_(ss);
   var data    = history.getDataRange().getValues();
@@ -3776,6 +4005,14 @@ function loadOlderHistory(auth) {
     if (!row[AC.CATEGORY] && !row[AC.NAME]) continue;
     var m = parseArchiveRow(row, i + 1);
     m.archived = true;
+    // The second door for costs, and it would have been easy to miss: this
+    // returns exactly the same movement objects getInitialData does, from the
+    // other sheet, and requireAuth_() with no minimum role lets a VIEWER
+    // through. Stripping only the first load would have moved the leak to
+    // "Load older history" rather than closing it — which is why finding 2 is
+    // fixed at every place these objects leave the server, not at the first
+    // one found.
+    if (!seeCosts) { m.unitCost = null; m.totalCost = null; }
     out.push(m);
   }
   return out;
@@ -3881,6 +4118,19 @@ function refreshDerivedSheets_(ss) {
       var s2 = rackKey(m.sourceLoc || 'UNASSIGNED');
       s.locs[s2] = (s.locs[s2] || 0) - qty;
       s.wasted  += qty;
+
+    } else if (m.moveType === 'ADJUST') {
+      // The fourth and last place that turns movements into stock. All four
+      // have to agree or LIVE_STOCK drifts away from what the full scan says,
+      // and the drift only shows up as a rack drawer quietly reading wrong.
+      // `wasted` is deliberately not touched — see calculateStock.
+      if (m.sourceLoc && !m.destLoc) {
+        var aSrc = rackKey(m.sourceLoc);
+        s.locs[aSrc] = (s.locs[aSrc] || 0) - qty;
+      } else if (m.destLoc && !m.sourceLoc) {
+        var aDst = rackKey(m.destLoc);
+        s.locs[aDst] = (s.locs[aDst] || 0) + qty;
+      }
     }
   }
 
@@ -4206,7 +4456,13 @@ function enforceMaterialLock_(locksMap, mt, matId, srcKey, destKey) {
   if (!srcKey) return;
   var lock = locksMap[matId + '|||' + srcKey];
   if (!lock) return;
-  if (mt === 'EXIT' || mt === 'WASTE') {
+  // ADJUST is here for the same reason EXIT and WASTE are: a downward
+  // adjustment takes units off a locked rack, and to whoever is counting on
+  // that lock the effect is identical to an EXIT. An UPWARD adjust never
+  // reaches this branch — it writes DEST_LOC and leaves SRC_LOC empty, and
+  // this function returns early when there is no source — which is right:
+  // finding MORE than the record said takes nothing away from anybody.
+  if (mt === 'EXIT' || mt === 'WASTE' || mt === 'ADJUST') {
     throw new Error('LOCKED: This material is locked at ' + srcKey + ' — ' + lock.reason +
       ' (by ' + lock.lockedBy + '). Cannot ' + mt + '. Ask an admin to unlock it first.');
   }
@@ -5352,7 +5608,18 @@ function dismissSystemCard(data, auth) {
   return { status: 'success', dismissed: list.length };
 }
 
-function getSystemActivity(limit, forEmail) {
+// Renamed in v11.27 — it used to be `getSystemActivity`, with no trailing
+// underscore, which made it an internet-reachable endpoint: any signed-in
+// Google account holding the app's URL could call it and read the audit sheet
+// — who saved what, and when — with no session token and no role check. It has
+// exactly one caller, getInitialData, which has already authenticated by the
+// time it gets here. So the fix is not to add a check: it is to stop being a
+// door at all. The trailing `_` is the part Apps Script itself enforces, and
+// it is the rule the header comment at the top of this file already states.
+//
+// This one stood open for months because nothing counted the doors.
+// tools/test-endpoint-auth.js counts them now.
+function getSystemActivity_(limit, forEmail) {
   var dismissed = sysDismissedSet_(forEmail);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEETS.AUDIT);
@@ -5979,7 +6246,7 @@ var LEGAL_SHEET_TEXT = {
   terms: [
     ["title","Terms of Service — Acopio"],
     ["p",""],
-    ["p","Last updated: 26 August 2026"],
+    ["p","Last updated: 27 August 2026"],
     ["p",""],
     ["p","These terms govern your use of Acopio, warehouse-management software provided by Jose Castro (\"we\", \"us\"). By installing or using it, you agree to them. If you are agreeing on behalf of a company, you confirm you are authorised to do so."],
     ["p",""],
@@ -6122,6 +6389,34 @@ var LEGAL_SHEET_TEXT = {
     ["p",""],
     ["p","Add-ons follow the subscription: cancel one and it stops at the end of the current period, under the same rules as above."],
     ["p",""],
+    ["sub","How you are billed"],
+    ["p",""],
+    ["p","Payment is taken by card through Stripe, our payment processor."],
+    ["p",""],
+    ["li","•   Your card details go to Stripe, not to us. They are stored by Stripe"],
+    ["p","  under Stripe's own terms and security. We never see, hold or store your card number."],
+    ["li","•   The setup fee is charged once, when the installation is booked."],
+    ["li","•   The subscription is then charged automatically on each renewal date —"],
+    ["p","  monthly or annually, whichever you chose — until you cancel. Stripe emails you a receipt for every charge."],
+    ["li","•   Prices are in US dollars and do not include any tax that may apply where"],
+    ["p","  you are; if tax applies, it is added to the charge."],
+    ["li","•   If your company cannot pay by card, tell us before the installation and"],
+    ["p","  we will agree an alternative in writing."],
+    ["p",""],
+    ["sub","If a payment does not go through"],
+    ["p",""],
+    ["p","Nothing is switched off, at any point. We could not do it if we wanted to — the software is in your Google account."],
+    ["p",""],
+    ["p","Card payments fail for boring reasons — an expired card, a bank declining a recurring charge. What actually happens:"],
+    ["p",""],
+    ["p","1. Stripe retries the charge automatically over the following days and emails you each time. This is usually the end of it. 2. Day 10 after the first failed charge — if it is still unpaid, we email you personally, so it does not come down to you noticing a receipt that never arrived. 3. Day 30 — if it is still unpaid, support and new versions pause until the account is settled. You keep using the software and you keep every bit of your data. 4. We never withhold your data to get paid. It is not ours to withhold, and export stays available whatever the state of your account."],
+    ["p",""],
+    ["p","Settle the account and support and updates resume immediately, with no reconnection fee."],
+    ["p",""],
+    ["sub","Coming back after leaving"],
+    ["p",""],
+    ["p","If you cancel and later want to return, you are treated as a new customer: current prices, and any promotional or founding rate you previously had does not come back. That includes the setup fee if the installation has to be done again."],
+    ["p",""],
     ["head","10. Termination"],
     ["p",""],
     ["p","We may terminate your licence if you materially breach these terms and do not fix it within 30 days of written notice. On termination your right to support and updates ends. Your installation and your data are unaffected — we have no mechanism to remove them, and would not use one if we had it."],
@@ -6141,7 +6436,7 @@ var LEGAL_SHEET_TEXT = {
   privacy: [
     ["title","Privacy Policy — Acopio"],
     ["p",""],
-    ["p","Last updated: 21 August 2026"],
+    ["p","Last updated: 27 August 2026"],
     ["p",""],
     ["p","Acopio is warehouse-management software provided by Jose Castro (\"we\", \"us\"). This policy explains what happens to data when you use it."],
     ["p",""],
@@ -6182,13 +6477,15 @@ var LEGAL_SHEET_TEXT = {
     ["p",""],
     ["head","3. What we collect"],
     ["p",""],
-    ["p","We never receive your inventory data. Three things can send us something else, and they are listed here in full."],
+    ["p","We never receive your inventory data. Four things can send us something else, and they are listed here in full."],
     ["p",""],
     ["p","1. \"Report a problem\" (the 🐞 button). When you submit a report, the message you typed, any screenshots you attach, your email address and your app version are emailed to your own administrator. If you send it on to us for support, we receive whatever you chose to include. Do not attach screenshots containing information you would rather we did not see. 2. Support you initiate. If you email us for help and include a file, a screenshot or spreadsheet access, we see what you send us. We use it to resolve your issue and nothing else, and we do not retain copies afterwards. 3. The setup check-in — the one thing that sends without you asking. If, and only if, your installation was configured with a support address, the software emails us once at 3 days and once at 7 days after setup **when no inventory movement has been recorded at all**. It is there so a customer who got stuck during setup hears from us instead of quietly giving up."],
     ["p",""],
     ["p","   That email contains exactly four things: **your company name, your administrator's email address, how many users are registered, and how many days it has been since setup.** Nothing else — no inventory, no materials, no suppliers, no prices, no documents."],
     ["p",""],
     ["p","   It stops permanently as soon as a single movement is recorded, and it never sends more than those two messages. If your installation has no support address configured, it never sends at all."],
+    ["p",""],
+    ["p","4. Paying us. Your billing details — name, email, company, billing address — reach us through Stripe so we know who paid for what. **Your card number does not**: it goes to Stripe and stays there. See section 5."],
     ["p",""],
     ["p","We do not use analytics, tracking pixels, advertising identifiers or session recording. We do not sell, rent or share data — we have none to sell."],
     ["p",""],
@@ -6200,9 +6497,13 @@ var LEGAL_SHEET_TEXT = {
     ["p",""],
     ["head","5. Sub-processors"],
     ["p",""],
-    ["p","We use none for your business data, because we do not process it."],
+    ["p","For your business data: none, because we do not process it."],
     ["p",""],
     ["p","Google is not our sub-processor — Google is your provider, under your own agreement with them."],
+    ["p",""],
+    ["p","For billing: Stripe. Paying us means Stripe processes your billing details — the name and email on the account, your company name and billing address, and your card. **Your card number goes to Stripe and is held by Stripe; it never reaches us.** Stripe is a payment processor under its own privacy policy at stripe.com/privacy (https://stripe.com/privacy)."],
+    ["p",""],
+    ["p","This is the one place a third party sees anything of yours because of us, and it sees only what is needed to take a payment. **It has nothing to do with your inventory**, which stays in your Google account and is never sent anywhere."],
     ["p",""],
     ["head","6. Retention and deletion"],
     ["p",""],
@@ -7115,9 +7416,35 @@ function menuVerifyMasterTemplate() {
 // TRANSFER, …) is legacy data from before the v2→v3 migration, when Status was
 // hand-entered and MoveType did not exist.
 function statusForMoveType_(mt) {
-  if (mt === 'EXIT')  return 'Dispatched';
-  if (mt === 'WASTE') return 'Damaged';
+  if (mt === 'EXIT')   return 'Dispatched';
+  if (mt === 'WASTE')  return 'Damaged';
+  if (mt === 'ADJUST') return 'Adjusted';
   return 'In Stock';   // ENTRY, RETURN, TRANSFER
+}
+
+// ─── WHICH WAY AN ADJUSTMENT WENT ────────────────────────────────────────────
+// An ADJUST records a COUNT that disagreed with the record. It is not a move
+// between two places, so it has no second rack to travel to — and that free
+// column is where the direction is kept:
+//
+//     counted FEWER than the app said  →  rack in SRC_LOC   →  stock goes down
+//     counted MORE  than the app said  →  rack in DEST_LOC  →  stock goes up
+//
+// Nothing new is stored and no column was added. It is the same grammar every
+// other type already uses: ENTRY writes DEST, EXIT and WASTE write SRC,
+// TRANSFER writes both. "Where did it come from, where did it go" reads the
+// same on an adjust as on everything else in the archive.
+//
+// The alternative was a signed quantity, and it would have leaked a negative
+// number into every sum, badge, chart and CSV export in the app — each of
+// which would then need to know that this one type counts differently.
+//
+// Returns -1 (down), +1 (up), or 0 for a row that is neither, which is not a
+// direction but a malformed row and is refused on write.
+function adjustDirection_(srcKey, destKey) {
+  if (srcKey  && !destKey) return -1;
+  if (destKey && !srcKey)  return 1;
+  return 0;
 }
 
 // One-time cleanup for those legacy rows. Rewrites nothing but the Status cell,
@@ -7452,6 +7779,19 @@ function mergeLocationsLocked_(data, auth, into, from) {
   if (cfg) {
     var rows = cfg.getDataRange().getValues();
     var names = [], types = [], sawInto = false;
+    // The survivor's own group, remembered before its row can be dropped.
+    //
+    // Merging two spellings that differ only in case puts the SURVIVOR's
+    // uppercase form in `wanted` too, so its row is removed with the others and
+    // re-added below — and re-adding it as a bare 'RACK' would quietly move a
+    // location out of the group somebody had filed it under. Now it keeps it.
+    var intoType = '';
+    for (var r0 = 1; r0 < rows.length; r0++) {
+      if (String(rows[r0][3] || '').trim().toUpperCase() === into.toUpperCase()) {
+        intoType = String(rows[r0][4] || '').trim().toUpperCase();
+        break;
+      }
+    }
     for (var r = 1; r < rows.length; r++) {
       var nm = String(rows[r][3] || '').trim();
       if (!nm) continue;
@@ -7460,7 +7800,7 @@ function mergeLocationsLocked_(data, auth, into, from) {
       names.push(nm);
       types.push(String(rows[r][4] || 'RACK').trim().toUpperCase() || 'RACK');
     }
-    if (!sawInto) { names.push(into); types.push('RACK'); }
+    if (!sawInto) { names.push(into); types.push(intoType || 'RACK'); }
     writeConfigColumn_(cfg, 3, names);
     writeConfigColumn_(cfg, 4, types);
   }
@@ -7736,6 +8076,28 @@ function rewriteArchiveColumn_(sheet, col, decide) {
   return changed;
 }
 
+// The same rename, on the expected-deliveries sheet. Column C (index 2) — see
+// the column map above ensureIncomingSheet_.
+//
+// Its own function rather than a third call to renameCategoryColumn_ because
+// that one is written against the ARCHIVE's column map (AC.CATEGORY), and
+// pointing it at a sheet with a different shape is how the wrong column gets
+// rewritten one day.
+function renameIncomingCategory_(ss, oldVal, newValStored) {
+  var sheet = ss.getSheetByName('INCOMING_V3');
+  if (!sheet) return 0;
+  var last = sheet.getLastRow();
+  if (last < 2) return 0;
+  var want = String(oldVal || '').trim().toUpperCase();
+  var vals = sheet.getRange(2, 3, last - 1, 1).getValues();
+  var changed = 0;
+  for (var i = 0; i < vals.length; i++) {
+    if (String(vals[i][0] || '').trim().toUpperCase() === want) { vals[i][0] = newValStored; changed++; }
+  }
+  if (changed) sheet.getRange(2, 3, last - 1, 1).setValues(vals);
+  return changed;
+}
+
 function renameCategoryColumn_(sheet, oldVal, newValStored) {
   var want = String(oldVal || '').trim().toUpperCase();
   return rewriteArchiveColumn_(sheet, AC.CATEGORY, function (row) {
@@ -7865,6 +8227,20 @@ function updateConfig(data, auth) {
         // had hit it yet only because no installation has filled up.
         var n  = renameCategoryColumn_(ss.getSheetByName(SHEETS.ARCHIVE), val, nvStored);
         n     += renameCategoryColumn_(ensureArchiveHistorySheet_(ss), val, nvStored);
+
+        // And the expected deliveries, which were being left behind.
+        //
+        // Jose renamed a category to "IGU (ISOLATED GLASS UNIT)". The archive
+        // followed; INCOMING_V3 did not. Weeks later he opened one of those
+        // deliveries and the Category box was EMPTY — the row still said "IGU",
+        // no option on the dropdown said "IGU" any more, and a <select> given a
+        // value it does not have selects nothing, in silence. Saving would then
+        // have written that nothing back.
+        //
+        // Deliveries are not stock, so this changes no number. It is here
+        // because a rename has to reach every place the old word is stored, and
+        // this was the one place it did not.
+        renameIncomingCategory_(ss, val, nvStored);
 
         // LIVE_STOCK / SITE_STOCK / WASTED_STOCK are a cache of the archive,
         // and every screen in the app reads the cache, not the archive. Without
@@ -8130,6 +8506,21 @@ function incomingDateCell_(ymd) {
   return ymd ? new Date(String(ymd) + 'T12:00:00') : '';
 }
 
+// The three states the Status dropdown offers. add and update used to disagree:
+// addIncoming hard-coded 'Pending' and threw the form's value away, so a
+// delivery entered as already Arrived (or cancelled on the spot) came back
+// Pending and had to be edited a second time to stick. One function answers for
+// both now, and anything unrecognised falls back to Pending rather than writing
+// a status that no filter in the app matches.
+var INCOMING_STATUSES = ['Pending', 'Arrived', 'Cancelled'];
+function incomingStatus_(v) {
+  var s = String(v || '').trim().toLowerCase();
+  for (var i = 0; i < INCOMING_STATUSES.length; i++) {
+    if (INCOMING_STATUSES[i].toLowerCase() === s) return INCOMING_STATUSES[i];
+  }
+  return 'Pending';
+}
+
 function addIncoming(data) {
   var auth = getUserRole(data && data._sessionToken);
   if (auth.role !== 'ADMIN') throw new Error('Admin only.');
@@ -8150,7 +8541,7 @@ function addIncoming(data) {
     sheetSafe_(String(data.supplier || '')),
     sheetSafe_(String(data.po       || '')),
     sheetSafe_(String(data.notes    || '')),
-    'Pending',
+    incomingStatus_(data.status),
     auth.email,
     new Date(),
     sheetSafe_(String(data.pm       || '')),
@@ -8199,7 +8590,7 @@ function updateIncoming(data) {
         sheetSafe_(String(data.supplier || '')),
         sheetSafe_(String(data.po       || '')),
         sheetSafe_(String(data.notes    || '')),
-        sheetSafe_(String(data.status   || 'Pending')),
+        incomingStatus_(data.status),
         values[i][10],          // preserve addedBy
         values[i][11],          // preserve addedAt
         sheetSafe_(String(data.pm || '')),  // PM — Project Manager
@@ -8228,6 +8619,451 @@ function deleteIncoming(id, sessionToken) {
     }
   }
   throw new Error('Incoming item not found: ' + id);
+}
+
+// ═══ DATA QUALITY SWEEP ══════════════════════════════════════════════════════
+//
+// Jose asked why the app had stopped finding things to correct. The honest
+// answer was that it never started: the only checker that existed ran WHILE
+// SOMEBODY TYPED a material name, and nothing had ever looked at the rows
+// already saved.
+//
+// What he asked for: "revisar todos los nombres parecidos, los nombres de
+// proyectos parecidos, las destinations y sugerir que se las corrija, también
+// buscar palabras mal escritas, y arreglar movimientos según el id, porque si
+// tienen el mismo id es porque son el mismo material."
+//
+// Three decisions shape everything below.
+//
+// 1. **It runs when asked, and never on its own.** A sweep that interrupts a
+//    save is the kind of feature people turn off, and one that emails a daily
+//    digest becomes a daily thing to ignore. On demand also removes a whole
+//    subsystem: with no unsolicited nagging there is nothing to dismiss, so
+//    there is no "remind me later" state to store, get wrong, or lose in a
+//    restore.
+//
+// 2. **Nothing is ever applied on its own.** Merging two materials moves
+//    stock. Every finding is a proposal with the evidence attached — how many
+//    rows use each spelling, what the app is going on — and a person presses
+//    the button.
+//
+// 3. **Confidence is not uniform, and pretending otherwise is the trap.**
+//    "Written two ways" is nearly certain. "Looks similar" is a guess that gets
+//    JJF 109 and JJF 110 wrong. They are separate families here, and only the
+//    certain ones get an Apply button at all.
+
+var DQ_MAX_FINDINGS = 150;    // a first scan of an imported year would produce thousands
+var DQ_SIMILAR_CAP  = 300;    // pairwise comparison is O(n²); above this, skip that family
+
+// The key that decides whether two written forms are THE SAME THING.
+//
+// normalizeString() — the one MatID is built from — keeps spaces, so to the app
+// "BS10" and "BS 10" are two different materials. That is exactly what Jose
+// found in his own history: the same window received under one spelling and
+// transferred under the other, reading as two unrelated things.
+//
+// This key throws away everything that is not a letter or a digit. "BS10" and
+// "BS 10" collapse together. "JJF 109" and "JJF 110" do NOT, because their
+// digits differ — which is the trap that makes a naive similarity matcher
+// dangerous on real material names, and the reason this is a separate, safer
+// test than the one further down.
+function squashKey_(v) {
+  return normalizeString(v).replace(/[^A-Z0-9]/g, '');
+}
+
+// Read-only, and deliberately NOT ensureArchiveHistorySheet_: a scan that
+// creates a sheet as a side effect is a scan that changed the thing it was
+// asked to inspect.
+function dqReadRows_(ss) {
+  var out = [];
+  [ss.getSheetByName(SHEETS.ARCHIVE), ss.getSheetByName(SHEETS.ARCHIVE_HISTORY)].forEach(function (sheet) {
+    if (!sheet) return;
+    var last = sheet.getLastRow();
+    if (last < 2) return;
+    var width = Math.max(sheet.getLastColumn(), AC_WIDTH);
+    var vals  = sheet.getRange(2, 1, last - 1, width).getValues();
+    for (var i = 0; i < vals.length; i++) out.push(vals[i]);
+  });
+  return out;
+}
+
+// A stable id for a finding, so the client can send one back to be applied
+// without the server having to remember what it just said.
+function dqId_(parts) {
+  return parts.map(function (p) { return String(p == null ? '' : p); }).join('~');
+}
+
+function runDataQualityScan(data) {
+  var auth = requireAuth_('ADMIN');
+  var ss   = SpreadsheetApp.getActiveSpreadsheet();
+  var rows = dqReadRows_(ss);
+
+  var findings = [];
+
+  // ── Family 1: the same thing, written two ways ────────────────────────────
+  // Highest confidence in the whole sweep, and the one that fixes what Jose
+  // actually saw. Four columns get the same treatment, because the mistake is
+  // the same mistake in all four: somebody typed it slightly differently.
+  var SPELL = [
+    { field: 'material', label: 'material' },
+    { field: 'project',  label: 'project',  col: AC.PROJECT },
+    { field: 'supplier', label: 'supplier', col: AC.SUPPLIER },
+    { field: 'rack',     label: 'rack',     cols: [AC.SRC_LOC, AC.DEST_LOC] }
+  ];
+
+  SPELL.forEach(function (spec) {
+    var groups = {};   // squashKey → { cat, spellings: { storedText: count } }
+    rows.forEach(function (row) {
+      function add(rawVal, cat) {
+        var val = String(rawVal || '').trim();
+        if (!val) return;
+        // GENERIC is the app's own word for "unassigned", not a customer's
+        // project. Offering to merge real job names into it would be the
+        // GENERIC bug all over again, in bulk.
+        if (spec.field === 'project' && normalizeString(val) === 'GENERIC') return;
+        var sq = squashKey_(val);
+        if (!sq) return;
+        var gk = (cat ? normalizeString(cat) + '|||' : '') + sq;
+        var g  = groups[gk] || (groups[gk] = { cat: cat || '', spellings: {} });
+        g.spellings[val] = (g.spellings[val] || 0) + 1;
+      }
+      if (spec.field === 'material')      add(row[AC.NAME], row[AC.CATEGORY]);
+      else if (spec.cols)                 spec.cols.forEach(function (c) { add(row[c], ''); });
+      else                                add(row[spec.col], '');
+    });
+
+    Object.keys(groups).forEach(function (gk) {
+      var g     = groups[gk];
+      var texts = Object.keys(g.spellings);
+      if (texts.length < 2) return;
+      // Most-used spelling wins by default. The panel still lets the admin
+      // pick a different survivor — the app knows which is commonest, not
+      // which is right.
+      texts.sort(function (a, b) { return g.spellings[b] - g.spellings[a] || (a < b ? -1 : 1); });
+      findings.push({
+        id:        dqId_(['spelling', spec.field, gk]),
+        kind:      'spelling',
+        field:     spec.field,
+        label:     spec.label,
+        category:  g.cat,
+        keep:      texts[0],
+        spellings: texts.map(function (t) { return { text: t, rows: g.spellings[t] }; }),
+        rows:      texts.reduce(function (a, t) { return a + g.spellings[t]; }, 0)
+      });
+    });
+  });
+
+  // ── Family 2: a movement is missing what its siblings have ────────────────
+  // Grouped by MatID, which is Jose's own rule: "si tienen el mismo id es
+  // porque son el mismo material."
+  //
+  // ONLY supplier, and only when the material's whole history agrees on one.
+  // GC, PO and PM are deliberately excluded even though the same gap exists in
+  // them: a purchase order is a document for one specific delivery, and a
+  // general contractor and a project manager belong to a JOB. Copying any of
+  // them onto a transfer in bulk would have the app assert something nobody
+  // told it — the exact failure that produced GENERIC on Jose's transfers.
+  // They stay where they already are: offered one row at a time in the edit
+  // form (v11.17), where a person is looking at them.
+  var byMat = {};
+  rows.forEach(function (row) {
+    var cat  = String(row[AC.CATEGORY] || '').trim();
+    var name = String(row[AC.NAME]     || '').trim();
+    if (!cat || !name) return;
+    var matId = getMaterialId(normalizeString(cat), normalizeString(name));
+    var m = byMat[matId] || (byMat[matId] = {
+      category: cat, name: name,
+      suppliers: {}, blankSupplier: 0,
+      projects: {}, staleTransfer: 0
+    });
+    var sup = String(row[AC.SUPPLIER] || '').trim();
+    if (sup) m.suppliers[sup] = (m.suppliers[sup] || 0) + 1;
+    else m.blankSupplier++;
+
+    var proj = String(row[AC.PROJECT] || '').trim();
+    var mt   = String(row[AC.MOVETYPE] || '').toUpperCase().trim();
+    if (proj && normalizeString(proj) !== 'GENERIC') m.projects[proj] = (m.projects[proj] || 0) + 1;
+    // Only TRANSFER, matching what v11.16 fixed going forward. An EXIT with no
+    // project is a job nobody recorded, and no amount of history can recover
+    // which one it was.
+    if (mt === 'TRANSFER' && (!proj || normalizeString(proj) === 'GENERIC')) m.staleTransfer++;
+  });
+
+  Object.keys(byMat).forEach(function (matId) {
+    var m = byMat[matId];
+    var sups = Object.keys(m.suppliers);
+    if (sups.length === 1 && m.blankSupplier > 0) {
+      findings.push({
+        id: dqId_(['gap', 'supplier', matId]), kind: 'gap', field: 'supplier',
+        matId: matId, category: m.category, name: m.name,
+        value: sups[0], rows: m.blankSupplier
+      });
+    }
+    var projs = Object.keys(m.projects);
+    if (projs.length === 1 && m.staleTransfer > 0) {
+      findings.push({
+        id: dqId_(['gap', 'project', matId]), kind: 'gap', field: 'project',
+        matId: matId, category: m.category, name: m.name,
+        value: projs[0], rows: m.staleTransfer
+      });
+    }
+  });
+
+  // ── Family 3: one of these two is probably a typo ─────────────────────────
+  // Jose also asked for "palabras mal escritas". This is that, and it is a
+  // GUESS — labelled as one, with no Apply button anywhere on the family.
+  //
+  // What it looks for is a MISSPELLING, not a different name: two values whose
+  // squashed keys are within a character or two of each other. CLIFTONBUILDING
+  // and CLIFTONBULIDING are the same job typed twice. GE SILPRUF SEALANT and
+  // GE SILPRUF SEALER share most of their words and are three characters
+  // apart, and this deliberately does NOT raise them — sharing words is what
+  // product families do, and a checker that flags every one of them is a
+  // checker that gets scrolled past.
+  //
+  // Two guards do the real work:
+  //   * DIGITS MUST MATCH. JJF 109 and JJF 110 are one character apart and are
+  //     two different products. Nothing with differing digits is ever raised.
+  //   * SHORT KEYS ARE SKIPPED. Rack codes and three-letter names are legitimately
+  //     one character apart, all day long.
+  var SIMILAR_IN = [
+    { field: 'material', byCategory: true },
+    { field: 'project',  byCategory: false },
+    { field: 'supplier', byCategory: false }
+  ];
+  // Racks are deliberately absent: A1A and A1B are one character apart and are
+  // two different shelves. Family 1 still catches "A1A" vs "A 1 A", which is
+  // the rack mistake that actually happens.
+  var pools = { material: {}, project: {}, supplier: {} };
+  rows.forEach(function (row) {
+    var cat = normalizeString(row[AC.CATEGORY] || '');
+    var nm  = String(row[AC.NAME] || '').trim();
+    if (cat && nm) (pools.material[cat] || (pools.material[cat] = {}))[nm] = true;
+    var pj = String(row[AC.PROJECT] || '').trim();
+    if (pj && normalizeString(pj) !== 'GENERIC') (pools.project[''] || (pools.project[''] = {}))[pj] = true;
+    var sp = String(row[AC.SUPPLIER] || '').trim();
+    if (sp) (pools.supplier[''] || (pools.supplier[''] = {}))[sp] = true;
+  });
+
+  SIMILAR_IN.forEach(function (spec) {
+    var pool = pools[spec.field];
+    Object.keys(pool).forEach(function (bucket) {
+      var names = Object.keys(pool[bucket]);
+      // Pairwise is O(n²). Above the cap the sweep says nothing about this
+      // family rather than spending a customer's six-minute execution budget
+      // on it.
+      if (names.length > DQ_SIMILAR_CAP) return;
+      for (var i = 0; i < names.length; i++) {
+        for (var j = i + 1; j < names.length; j++) {
+          var a = names[i], b = names[j];
+          var ka = squashKey_(a), kb = squashKey_(b);
+          if (ka === kb) continue;                          // family 1 already has it
+          if (dqDigitsOf_(a) !== dqDigitsOf_(b)) continue;  // different part numbers
+          var shortest = Math.min(ka.length, kb.length);
+          if (shortest < 4) continue;                       // too short to judge
+          var allowed = shortest >= 8 ? 2 : 1;
+          if (Math.abs(ka.length - kb.length) > allowed) continue;
+          if (dqEditDistance_(ka, kb, allowed) > allowed) continue;
+          findings.push({
+            id: dqId_(['similar', spec.field, bucket, ka, kb]),
+            kind: 'similar', field: spec.field,
+            category: spec.byCategory ? bucket : '', a: a, b: b
+          });
+        }
+      }
+    });
+  });
+
+  // Biggest first: a spelling used across 40 rows matters more than one used
+  // twice, and an admin who only has ten minutes should spend them at the top.
+  findings.sort(function (x, y) {
+    var order = { spelling: 0, gap: 1, similar: 2 };
+    return (order[x.kind] - order[y.kind]) || ((y.rows || 0) - (x.rows || 0));
+  });
+
+  var total = findings.length;
+  auditLog_(ss, 'DATA_SCAN', auth.email, total + ' finding(s) over ' + rows.length + ' rows', '', '');
+
+  return {
+    status: 'success',
+    scannedRows: rows.length,
+    total: total,
+    findings: findings.slice(0, DQ_MAX_FINDINGS)
+  };
+}
+
+// The digits in a name, in order, as one string. "JJF 109" → "109".
+// Two names with different digits are different products, whatever else they
+// share.
+function dqDigitsOf_(v) {
+  return (String(v || '').match(/\d+/g) || []).join('.');
+}
+
+// Levenshtein distance, abandoned as soon as it is known to exceed `max`.
+//
+// The bail-out is not an optimisation detail: this runs over every pair of
+// names in a category, and Apps Script gives a script six minutes for the
+// whole request. Most pairs are wildly different and can be dismissed after a
+// couple of rows of the matrix.
+//
+// Two rows of the matrix rather than the whole thing, for the same reason —
+// nothing here needs to know HOW the two words differ, only whether it is by
+// more than a typo's worth.
+function dqEditDistance_(a, b, max) {
+  var la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > max) return max + 1;
+  var prev = new Array(lb + 1), cur = new Array(lb + 1), i, j;
+  for (j = 0; j <= lb; j++) prev[j] = j;
+  for (i = 1; i <= la; i++) {
+    cur[0] = i;
+    var best = cur[0];
+    for (j = 1; j <= lb; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+      cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+      if (cur[j] < best) best = cur[j];
+    }
+    // Every remaining path goes through this row, so nothing below it can end
+    // up smaller than the row's smallest value.
+    if (best > max) return max + 1;
+    for (j = 0; j <= lb; j++) prev[j] = cur[j];
+  }
+  return prev[lb];
+}
+
+// ─── APPLYING ONE FINDING ────────────────────────────────────────────────────
+// Every spelling fix goes through the merge function that already exists for
+// that kind of value — the same code the Settings screens call, already
+// locked, already rewriting BOTH archives, already refreshing the derived
+// sheets. Writing a second path would mean two ways to merge a material, and
+// the one used less often would be the one that was wrong.
+function applyDataQualityFix(data) {
+  var auth = requireAuth_('ADMIN');
+  return withStockLock_(function () { return applyDataQualityFixLocked_(data, auth); });
+}
+
+function applyDataQualityFixLocked_(data, auth) {
+  var ss   = SpreadsheetApp.getActiveSpreadsheet();
+  var kind = String(data.kind || '');
+
+  if (kind === 'spelling') {
+    var keep = String(data.keep || '').trim();
+    if (!keep) throw new Error('Pick which spelling to keep.');
+    // EXACT match, not case-insensitive — and that is the whole point.
+    //
+    // This filter used to uppercase both sides, copied from the Settings merge
+    // where it makes sense (you cannot merge a value into itself). Here it
+    // threw away the commonest finding of all: "SWEETWATER - SPRING CANYON 2"
+    // and "Sweetwater - SPRING CANYON 2" are the SAME letters in different
+    // case, so uppercasing made them equal, the list came out empty, and the
+    // sweep answered "nothing to merge — that is already the only spelling"
+    // about two spellings it had just found itself.
+    //
+    // A difference of case is a real difference in what is stored, and
+    // normalising it is a merge like any other. Only a byte-for-byte repeat of
+    // the survivor is dropped.
+    var from = (data.from || []).map(function (v) { return String(v || '').trim(); })
+                 .filter(function (v) { return v && v !== keep; });
+    if (!from.length) throw new Error('Nothing to merge — that is already the only spelling.');
+
+    if (data.field === 'material') {
+      var cat = String(data.category || '').trim();
+      if (!cat) throw new Error('Category is required to merge a material.');
+      var merged = 0;
+      from.forEach(function (spelling) {
+        var r = manageMaterialLocked_({ op: 'merge', category: cat, name: spelling, targetName: keep }, auth);
+        merged += (r && r.merged) || 0;
+      });
+      return { status: 'success', rows: merged };
+    }
+    if (data.field === 'project' || data.field === 'supplier') {
+      var type = data.field === 'project' ? 'projects' : 'suppliers';
+      var r2 = mergeConfigValuesLocked_({}, auth, type, keep, from);
+      return { status: 'success', rows: (r2 && r2.rowsChanged) || 0 };
+    }
+    if (data.field === 'rack') {
+      var r3 = mergeLocationsLocked_({}, auth, keep, from);
+      return { status: 'success', rows: (r3 && r3.rowsChanged) || 0 };
+    }
+    throw new Error('Unknown spelling field: ' + data.field);
+  }
+
+  if (kind === 'gap') {
+    return dqFillGapLocked_(ss, auth, data);
+  }
+
+  // 'similar' has no apply on purpose — see the comment on family 3.
+  throw new Error('This finding is a suggestion to look at, not something the app can apply.');
+}
+
+// Fills ONE blank column, on the rows of ONE material, with ONE value the
+// material's own history already agrees on.
+//
+// The narrowness is the safety. It never overwrites a cell that has something
+// in it, it never touches a material other than the one named, and it refuses
+// outright if the caller's value is not the value the archive actually says —
+// so a stale panel left open while somebody else edits cannot write yesterday's
+// answer into today's rows.
+function dqFillGapLocked_(ss, auth, data) {
+  var field = String(data.field || '');
+  var matId = String(data.matId || '').trim();
+  var value = String(data.value || '').trim();
+  if (!matId || !value) throw new Error('Nothing to fill in.');
+
+  var col, onlyTransfers = false;
+  if (field === 'supplier')     col = AC.SUPPLIER;
+  else if (field === 'project') { col = AC.PROJECT; onlyTransfers = true; }
+  else throw new Error('Unknown gap field: ' + field);
+
+  var parts = matId.split('|||');
+  var wantCat  = normalizeString(parts[0] || '');
+  var wantName = normalizeString(parts[1] || '');
+  if (!wantCat || !wantName) throw new Error('That material id is not readable.');
+
+  // Re-derive the agreed value from the archive rather than trusting the one
+  // the panel is holding. If the answer changed since the scan, this stops
+  // instead of writing something nobody proposed.
+  var seen = {};
+  dqReadRows_(ss).forEach(function (row) {
+    if (normalizeString(row[AC.CATEGORY]) !== wantCat) return;
+    if (normalizeString(row[AC.NAME])     !== wantName) return;
+    var v = String(row[col] || '').trim();
+    if (field === 'project' && normalizeString(v) === 'GENERIC') return;
+    if (v) seen[v] = true;
+  });
+  var distinct = Object.keys(seen);
+  if (distinct.length !== 1 || distinct[0] !== value) {
+    throw new Error('The data changed since this was found — ' +
+      (distinct.length ? 'the history now says ' + distinct.join(' / ') : 'there is no value to copy') +
+      '. Run the check again.');
+  }
+
+  var stored = sheetSafe_(value);
+  var filled = 0;
+  [ss.getSheetByName(SHEETS.ARCHIVE), ss.getSheetByName(SHEETS.ARCHIVE_HISTORY)].forEach(function (sheet) {
+    if (!sheet) return;
+    filled += rewriteArchiveColumn_(sheet, col, function (row) {
+      if (normalizeString(row[AC.CATEGORY]) !== wantCat) return null;
+      if (normalizeString(row[AC.NAME])     !== wantName) return null;
+      var cur = String(row[col] || '').trim();
+      if (onlyTransfers) {
+        if (String(row[AC.MOVETYPE] || '').toUpperCase().trim() !== 'TRANSFER') return null;
+        // Blank OR the placeholder — GENERIC on a transfer is the thing being
+        // corrected, not a value to preserve.
+        if (cur && normalizeString(cur) !== 'GENERIC') return null;
+      } else if (cur) {
+        return null;
+      }
+      return stored;
+    });
+  });
+
+  // Only the project column feeds anything the stock engine reads, but a
+  // refresh after either is cheap next to being wrong.
+  if (filled) refreshDerivedSheets_(ss);
+  auditLog_(ss, 'DATA_FIX', auth.email,
+    field + ' → "' + value + '" on ' + parts[0] + ' / ' + parts[1],
+    String(filled) + ' rows', '');
+  return { status: 'success', rows: filled };
 }
 
 // ─── READ AN EMAIL INTO EXPECTED DELIVERIES ──────────────────────────────────
@@ -8474,6 +9310,21 @@ function modifyMovementLocked_(data, auth) {
   });
 
   if (!changes.length) throw new Error('No changes detected — nothing to save.');
+
+  // An ADJUST keeps its direction in WHICH rack column is filled — see
+  // adjustDirection_. An edit that fills both, or empties both, leaves a row
+  // that no stock reader has a branch for: it would quietly stop counting
+  // toward stock, and no rebuild could recover what was meant, because the
+  // intent was only ever in the shape of the row. Refuse it here, while the
+  // person is still looking at the form and can say which way it went.
+  if (String(rowVals[AC.MOVETYPE] || '').toUpperCase() === 'ADJUST') {
+    var eSrc = normalizeString(String(rowVals[AC.SRC_LOC]  || ''));
+    var eDst = normalizeString(String(rowVals[AC.DEST_LOC] || ''));
+    if (!adjustDirection_(eSrc, eDst)) {
+      throw new Error('An adjustment needs exactly ONE rack: Source Loc if the count came up ' +
+        'short, Dest Loc if it came up long. Leave the other one empty.');
+    }
+  }
 
   // If category or name changed, the stored MatID must be recomputed too —
   // otherwise this row keeps pointing at the OLD material forever, silently

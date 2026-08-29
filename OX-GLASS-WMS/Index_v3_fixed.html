@@ -203,6 +203,7 @@
     tr.row-transfer td:first-child{border-left:3px solid var(--accent)}
     tr.row-return td:first-child{border-left:3px solid #9CA3AF}
     tr.row-waste td:first-child{border-left:3px solid #111827}
+    tr.row-adjust td:first-child{border-left:3px solid var(--steel)}
     /* ── BADGES ── */
     .badge{display:inline-block;padding:.15rem .55rem;border-radius:20px;font-size:.7rem;font-weight:600;white-space:nowrap}
     .badge-green{background:var(--green-bg);color:var(--green)}
@@ -213,6 +214,7 @@
     .badge-purple{background:var(--purple-bg);color:var(--purple)}
     .badge-gray{background:#F3F4F6;color:#6B7280}
     .badge-dark{background:#1F2937;color:#F9FAFB}
+    .badge-slate{background:#E2E8F0;color:var(--steel)}
     .badge-teal{background:#CCFBF1;color:#0F766E}
     .badge-pink{background:#FCE7F3;color:#BE185D}
     .badge-navy{background:#DBEAFE;color:#1E3A8A}
@@ -408,6 +410,11 @@
     .modal-type-bar button.active-transfer{background:#DBEAFE;color:var(--accent2)}
     .modal-type-bar button.active-return{background:var(--purple-bg);color:var(--purple)}
     .modal-type-bar button.active-waste{background:var(--yellow-bg);color:var(--yellow)}
+    /* ADJUST is slate on purpose, and the only tab that is not a warm or an
+       alarming colour. The other five are events in the warehouse; this one is
+       bookkeeping — a correction to the record, with no material gained or
+       lost — and it should not wear the colour of something going wrong. */
+    .modal-type-bar button.active-adjust{background:#E2E8F0;color:var(--steel)}
     /* ── FORM ── */
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
     .form-grid.full{grid-template-columns:1fr}
@@ -499,6 +506,8 @@
     .move-mat-box.mm-return .move-mat-total{background:#EDE9FE;color:var(--purple)}
         .move-mat-box.mm-waste .move-mat-lbl{color:var(--yellow)}
     .move-mat-box.mm-waste .move-mat-total{background:#FEF3C7;color:var(--yellow)}
+        .move-mat-box.mm-adjust .move-mat-lbl{color:var(--steel)}
+    .move-mat-box.mm-adjust .move-mat-total{background:#E2E8F0;color:var(--steel)}
     /* ── MULTI-MATERIAL ENTRY ── */
     .mat-line{background:#F8FAFC;border:1px solid var(--border);border-radius:8px;padding:.75rem;margin-bottom:.65rem;position:relative}
     .mat-line-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
@@ -602,6 +611,25 @@
                   box-shadow:inset 3px 0 0 #F59E0B}
     .em-gap-note{font-size:.76rem;background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;
                  border-radius:6px;padding:.5rem .7rem;margin-top:.75rem;line-height:1.5}
+    /* ── The data check's findings ──
+       One card per proposal. The kind is a chip at the top, colour-coded by
+       how much the app actually knows: blue for "written two ways" (near
+       certain), green for a value its own history agrees on, amber for a
+       guess it will not act on. The amber is the one carrying information —
+       it is the family with no button. */
+    .dq-list{margin-top:.75rem;display:flex;flex-direction:column;gap:.5rem;
+             max-height:420px;overflow-y:auto;padding-right:.25rem}
+    .dq-card{border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;background:var(--card)}
+    .dq-card.dq-done{opacity:.6}
+    .dq-kind{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.03em;
+             text-transform:uppercase;padding:.15rem .45rem;border-radius:999px;margin-bottom:.35rem}
+    .dq-kind.dq-spelling{background:#DBEAFE;color:var(--accent2)}
+    .dq-kind.dq-gap{background:var(--green-bg);color:var(--green)}
+    .dq-kind.dq-similar{background:var(--yellow-bg);color:var(--yellow)}
+    .dq-head{font-size:.86rem;margin-bottom:.2rem;word-break:break-word}
+    .dq-body{font-size:.78rem;color:var(--muted);line-height:1.45}
+    .dq-act{margin-top:.5rem}
+    [data-theme="dark"] .dq-card{background:#1a2640}
     .snap-ok{font-size:.73rem;color:var(--green);margin-top:.2rem}
     .snap-warn{font-size:.75rem;background:#FEF3C7;color:var(--yellow);font-weight:600;
                border-radius:6px;padding:.4rem .6rem;margin-top:.35rem;line-height:1.45}
@@ -623,6 +651,24 @@
     .mm-transfer .move-loc-box{background:#EFF6FF;border-color:#BFDBFE}
     .mm-return   .move-loc-box{background:var(--purple-bg);border-color:#DDD6FE}
     .mm-waste    .move-loc-box{background:var(--yellow-bg);border-color:#FDE68A}
+    .mm-adjust   .move-loc-box{background:#F1F5F9;border-color:#CBD5E1}
+    /* ── The count, inside the ADJUST location box ──
+       Three numbers on one line: what the app believes, what was counted, and
+       the difference between them. The difference is the only one that gets
+       saved, so it is the one that is loud. */
+    .adj-count{display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end}
+    .adj-count .field{flex:1;min-width:120px}
+    .adj-says{flex:1;min-width:120px}
+    .adj-says-lbl{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;
+                  letter-spacing:.03em;display:block;margin-bottom:.25rem}
+    .adj-says-val{font-size:1.35rem;font-weight:700;color:var(--steel);font-variant-numeric:tabular-nums;
+                  line-height:1.5}
+    .adj-delta{margin-top:.55rem;font-size:.85rem;font-weight:600;border-radius:6px;
+               padding:.45rem .65rem;line-height:1.45}
+    .adj-delta.down{background:var(--red-bg);color:var(--red)}
+    .adj-delta.up{background:var(--green-bg);color:var(--green)}
+    .adj-delta.same{background:#E2E8F0;color:var(--steel)}
+    .adj-delta.idle{background:#F1F5F9;color:var(--muted);font-weight:500}
     /* The header strip above the rows, same in all three. */
     .loc-box-hdr{display:flex;gap:.4rem;margin-bottom:.25rem}
     .loc-box-hdr span{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase}
@@ -960,9 +1006,34 @@
     .day-card.today{border-color:var(--accent);background:#EFF6FF}
     .day-card .day-label{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
     .day-card.today .day-label{color:var(--accent2)}
-    .day-item{font-size:.78rem;padding:.15rem 0;border-bottom:1px solid var(--border)}
-    .day-item:last-child{border-bottom:none}
     .day-empty{color:var(--muted);font-size:.78rem;font-style:italic}
+    /* ── One expected delivery ──
+       Jose's second sketch, the one with the arrows: the category full width on
+       top, then the NAME on the left with the QUANTITY across from it on the
+       right, and the state under the quantity.
+
+       Two columns rather than four stacked lines, because that is what makes
+       the right-hand edge a column you can read down: every quantity under
+       every other quantity, every status under every other status. You can see
+       what is left to do without reading a single material name.
+
+       Used by the week cards AND the morning popup, so the same delivery is
+       the same shape wherever it appears. */
+    .inc-item{padding:.5rem 0;border-bottom:1px solid var(--border)}
+    .inc-item:last-child{border-bottom:none}
+    .inc-item-cat{margin-bottom:.25rem}
+    .inc-item-body{display:flex;align-items:flex-start;gap:.6rem}
+    /* min-width:0 so a long material name wraps instead of shoving the
+       quantity column off the card. */
+    .inc-item-main{flex:1;min-width:0}
+    .inc-item-name{font-size:.82rem;line-height:1.35;color:var(--text);overflow-wrap:anywhere}
+    .inc-item-meta{color:var(--muted);font-size:.72rem;line-height:1.4;margin-top:.1rem;overflow-wrap:anywhere}
+    /* The right column never shrinks and never wraps its own contents: a
+       quantity broken across two lines is unreadable, and the whole reason it
+       is over here is to be scannable. */
+    .inc-item-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;
+                   gap:.25rem;text-align:right;white-space:nowrap}
+    .inc-item-qty{font-weight:700;font-size:.82rem;line-height:1.35}
     .inc-status-pending{background:#FEF3C7;color:#92400E;border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
     .inc-status-arrived{background:var(--green-bg);color:var(--green);border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
     /* Draft rows from an email — editable before anything is saved. */
@@ -983,7 +1054,18 @@
     .inc-group-note{font-size:.7rem;color:var(--muted);margin-left:.6rem;font-weight:400}
     .inc-status-cancelled{background:#F3F4F6;color:#6B7280;border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700;text-decoration:line-through}
     /* ── MORNING POPUP ── */
-    .morning-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    /* z-index 540 IS THE WHOLE FIX, and the number is not arbitrary.
+       It was 2000 — tied with the setup wizard and 1450 above every modal in
+       the app (.overlay is 550). So pressing "Mark arrived" inside this popup
+       opened Edit Expected Material BEHIND it, and the window shield, which
+       treats the highest open overlay as the front window, then made that
+       modal inert. Nothing could be touched but closing the popup.
+       This popup only ever OPENS modals; no modal opens it. The relationship
+       runs one way, so it belongs underneath: 540 sits above the page and the
+       top bar (500) and below every window it can launch (550, 1100, 1200,
+       2000). The shield needs no change — it was reading the stack correctly;
+       the stack was wrong. */
+    .morning-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:540;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
     .morning-overlay.show{opacity:1;pointer-events:all}
     .morning-popup{background:var(--card);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:520px;width:95%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(24px);transition:transform .25s}
     .morning-overlay.show .morning-popup{transform:translateY(0)}
@@ -994,13 +1076,9 @@
     .morning-today{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem}
     .morning-today-label{font-size:.7rem;font-weight:700;color:var(--accent2);text-transform:uppercase;margin-bottom:.4rem}
     .morning-week-label{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin:.75rem 0 .35rem}
-    .morning-item{display:flex;justify-content:space-between;align-items:flex-start;padding:.35rem 0;border-bottom:1px solid var(--border);font-size:.82rem}
-    .morning-item:last-child{border-bottom:none}
-    .morning-item-name{font-weight:600}
-    .morning-item-meta{color:var(--muted);font-size:.75rem}
-    /* Status and the shortcut stack on the right, so a long material name
-       cannot squeeze the button down to nothing. */
-    .morning-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0;margin-left:.5rem}
+    /* The popup's own item styles are gone: it now draws each delivery with
+       .inc-item, the same as the week cards, so one delivery looks the same
+       wherever it appears. */
     .morning-arrived{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:6px;
       padding:.2rem .5rem;font-size:.72rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
     .morning-arrived:hover{background:var(--accent);color:#fff}
@@ -1527,6 +1605,7 @@
     [data-theme="dark"] .badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
     [data-theme="dark"] .badge-orange{background:var(--orange-bg);color:var(--orange)}
     [data-theme="dark"] .badge-purple{background:var(--purple-bg);color:var(--purple)}
+    [data-theme="dark"] .badge-slate{background:#334155;color:#CBD5E1}
     [data-theme="dark"] .system-footer{background:#020617;border-color:var(--border)}
     [data-theme="dark"] .col-toggle-bar{background:#0F172A}
     [data-theme="dark"] .expandable-row:hover{background:#243044 !important}
@@ -1783,6 +1862,14 @@
           <div id="activeUsersList"><p class="presence-empty">Loading…</p></div>
         </div>
         <div class="acct-actions">
+          <!-- No role gate and no display:none. Jose: "el botón debería estar
+               en un lugar donde todos tengan acceso sin tener que ir a la
+               pantalla de incoming." What is arriving this week is the one
+               thing everybody in the warehouse needs, and it lives here so it
+               is reachable from whatever screen they happen to be on. The
+               "Mark arrived" buttons INSIDE it are still admin-only, so a
+               warehouse user reads the list and cannot change it. -->
+          <button class="acct-item" id="btnWeekSchedule" onclick="closeAccountMenu();openWeekSchedule()">☀️ <span>This week's arrivals</span></button>
           <button class="acct-item" id="btnSettings"  onclick="closeAccountMenu();openSettingsModal()" style="display:none">⚙️ <span>App Settings</span></button>
           <button class="acct-item" id="btnUsersMgmt" onclick="closeAccountMenu();openUsersModal()"    style="display:none">👥 <span>Manage Users</span></button>
           <button class="acct-item" id="btnReportIssue" onclick="closeAccountMenu();openReportIssueModal()">🐞 <span>Report a problem</span></button>
@@ -1970,6 +2057,7 @@
             <option value="TRANSFER">Transfer</option>
             <option value="RETURN">Return</option>
             <option value="WASTE">Waste</option>
+            <option value="ADJUST">Adjust (count fix)</option>
           </select>
           <select id="movCatFilter"><option value="">All Categories</option></select>
           <button id="btnExportCSV" class="btn btn-ghost btn-sm">⬇ CSV</button>
@@ -2179,7 +2267,7 @@
       </div>
       <div class="field">
         <label>Quantity</label>
-        <input type="number" id="incQty" min="1" value="1">
+        <input type="number" id="incQty" min="0" step="any" placeholder="How many">
       </div>
       <div class="field">
         <label>Unit</label>
@@ -2403,6 +2491,7 @@
       <button data-type="TRANSFER" onclick="_moveTypeBarClick('TRANSFER')">⇄ Transfer</button>
       <button data-type="RETURN"   onclick="_moveTypeBarClick('RETURN')">↩ Return</button>
       <button data-type="WASTE"    onclick="_moveTypeBarClick('WASTE')">✕ Waste</button>
+      <button data-type="ADJUST"   onclick="_moveTypeBarClick('ADJUST')">⚖ Adjust</button>
     </div>
 
     <!-- Stock Warning -->
@@ -2500,7 +2589,7 @@
     <div class="form-grid" id="singleLocGrid">
       <div class="field" id="mQtyField">
         <label>Quantity</label>
-        <input type="number" id="mQty" min="1" placeholder="Qty" oninput="_syncMoveMatTotal()">
+        <input type="number" id="mQty" min="0" step="any" placeholder="Qty" oninput="_syncMoveMatTotal()">
       </div>
       <div class="field" id="mSrcField" style="display:none">
         <label id="mSrcLabel">Source Rack</label>
@@ -2511,6 +2600,47 @@
         <label id="mDestLabel">Destination</label>
         <input type="text" id="mDest" list="rackListDest" placeholder="e.g. B2B">
         <datalist id="rackListDest"></datalist>
+      </div>
+    </div>
+
+    <!-- ── ADJUST: the count, not a move ──
+         You do not type how many to add or remove — you type what you COUNTED,
+         and the app works out the difference against what it believed. That is
+         the whole difference between this and every other screen: the number a
+         person has in their head standing at the rack is "38", not "minus 2",
+         and asking for the subtraction is asking them to do arithmetic they can
+         get backwards. The direction falls out of the two numbers. -->
+    <div id="adjustSection" style="display:none">
+      <div class="form-grid">
+        <div class="field">
+          <label>Rack you counted</label>
+          <input type="text" id="adjRack" list="rackList" placeholder="e.g. A1A"
+                 oninput="_syncAdjustCount()">
+        </div>
+      </div>
+      <div class="adj-count" style="margin-top:.5rem">
+        <div class="adj-says">
+          <span class="adj-says-lbl">The app says</span>
+          <span class="adj-says-val" id="adjSays">—</span>
+        </div>
+        <div class="field">
+          <label>You counted</label>
+          <input type="number" id="adjCounted" min="0" step="any" placeholder="Actual count"
+                 oninput="_syncAdjustCount()">
+        </div>
+      </div>
+      <div class="adj-delta idle" id="adjDelta">Pick the material and the rack, then type what you counted.</div>
+      <div class="form-grid" style="margin-top:.6rem">
+        <div class="field">
+          <label>Why was it off? (required)</label>
+          <select id="adjReason" onchange="_syncAdjustCount()">
+            <option value="">Choose a reason…</option>
+            <option value="Miscount">Miscount — the number in the app was wrong</option>
+            <option value="Movement never recorded">A movement was never recorded</option>
+            <option value="Found extra">Found more than the record said</option>
+            <option value="Other">Other — explain in Comments</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -2847,7 +2977,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.19';
+var APP_VERSION = '11.30';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -2859,7 +2989,7 @@ var APP_VERSION = '11.19';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'ed72e4b6';
+var APP_BUILD = 'cf18f3a9';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3113,7 +3243,7 @@ function _moveFormProblem(){
       var qty = 0;
       var lc  = document.getElementById('mat-locs-' + n);
       if (lc) lc.querySelectorAll('.loc-row').forEach(function(row){
-        qty += Math.max(0, parseInt((row.querySelector('.loc-qty') || {}).value, 10) || 0);
+        qty += Math.max(0, _qty((row.querySelector('.loc-qty') || {}).value));
       });
       if (qty <= 0) entryProblem = label + ' needs a location and quantity';
     });
@@ -3145,7 +3275,7 @@ function _moveFormProblem(){
       // much was typed in.
       var qty = 0;
       line.querySelectorAll('.exit-loc-row').forEach(function(row){
-        qty += Math.max(0, parseInt((row.querySelector('.el-qty') || {}).value, 10) || 0);
+        qty += Math.max(0, _qty((row.querySelector('.el-qty') || {}).value));
       });
       if (qty <= 0){ exitProblem = label + ' needs how many to take out'; return; }
       if (!sameDest){
@@ -3164,7 +3294,7 @@ function _moveFormProblem(){
     var nmEx = ((document.getElementById('mName') || {}).value || '').trim();
     if (!nmEx) return 'Enter the material name';
     var tot = 0;
-    exitRows.forEach(function(inp){ tot += Math.max(0, parseInt(inp.value, 10) || 0); });
+    exitRows.forEach(function(inp){ tot += Math.max(0, _qty(inp.value)); });
     if (tot <= 0) return 'Enter how many to take out';
     return '';
   }
@@ -3181,17 +3311,37 @@ function _moveFormProblem(){
     document.querySelectorAll('#transferRowsContainer .transfer-row').forEach(function(row){
       var src = ((row.querySelector('.tr-rack') || {}).value || '').trim();
       var dst = ((row.querySelector('.tr-dest') || {}).value || '').trim();
-      var q   = Math.max(0, parseInt((row.querySelector('.tr-qty') || {}).value, 10) || 0);
+      var q   = Math.max(0, _qty((row.querySelector('.tr-qty') || {}).value));
       if (src && dst && q > 0) pairs++;
     });
     if (!pairs) return 'Add a source rack, a destination rack and a quantity';
     return '';
   }
 
+  // ADJUST: the quantity it saves is a DIFFERENCE the app works out, so its own
+  // Qty box is hidden and always reads zero. Falling through to the
+  // single-material check below — which insists on that box — would leave Save
+  // dead however carefully the screen was filled in, exactly the way TRANSFER
+  // did before it got its own branch.
+  //
+  // Order matters: each message names the ONE thing to do next, and a count
+  // that matches is reported as its own outcome rather than as a missing field,
+  // because it is not a mistake. It is the answer you hope for.
+  if (_moveSectionVisible('adjustSection')){
+    var a = _readAdjust();
+    if (!a.name)     return 'Enter the material name';
+    if (!a.rack)     return 'Enter the rack you counted';
+    if (!a.hasCount) return 'Enter what you counted';
+    if (a.delta === 0) return 'The count matches — nothing to correct';
+    if (!a.reason)   return 'Choose why the count was off';
+    if (a.reason === 'Other' && !a.note) return 'Say what happened in Comments';
+    return '';
+  }
+
   // Single-material form
   var nm = ((document.getElementById('mName') || {}).value || '').trim();
   if (!nm) return 'Enter the material name';
-  var q = parseInt((document.getElementById('mQty') || {}).value, 10) || 0;
+  var q = _qty((document.getElementById('mQty') || {}).value);
   if (q <= 0) return 'Enter a quantity greater than zero';
   return '';
 }
@@ -3212,8 +3362,12 @@ function _updateMoveSubmitState(){
 
 // Delegated, because material and location rows are added and removed while the
 // form is open — binding per field would miss every row created later.
-document.addEventListener('input',  function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) _updateMoveSubmitState(); });
-document.addEventListener('change', function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) _updateMoveSubmitState(); });
+// _syncAdjustCount rides along for the same reason: on the Adjust screen the
+// material and the category live in shared boxes with their own handlers, and
+// changing either one changes what "the app says" — a per-field oninput on
+// those two would have to know about a screen they are shared with.
+document.addEventListener('input',  function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) { _syncAdjustCount(); _updateMoveSubmitState(); } });
+document.addEventListener('change', function(e){ if (e.target.closest && e.target.closest('#moveOverlay')) { _syncAdjustCount(); _updateMoveSubmitState(); } });
 // Clicks too, deferred by a tick so the handler has already run: adding or
 // removing a material or location row, and "Auto-fill Racks" writing
 // quantities in code, all change whether the form is complete without anyone
@@ -4424,7 +4578,8 @@ function locSummary(locs){
 
 // ── Badge helpers ─────────────────────────────────────────────────────────────
 
-// Move-type badge: ENTRY=green, EXIT=red, TRANSFER=purple, RETURN=gray, WASTE=black
+// Move-type badge: ENTRY=green, EXIT=red, TRANSFER=purple, RETURN=gray,
+// WASTE=black, ADJUST=slate
 function normMT(mt){
   var n = nt(mt);
   if (n === 'DISPATCH' || n === 'DISPATCHED' || n === 'DEL') return 'EXIT';
@@ -4439,9 +4594,19 @@ function moveBadge(mt){
     'EXIT':     '<span class="badge badge-red">↑ EXIT</span>',
     'TRANSFER': '<span class="badge badge-purple">⇄ TRANSFER</span>',
     'RETURN':   '<span class="badge badge-gray">↩ RETURN</span>',
-    'WASTE':    '<span class="badge badge-dark">✕ WASTE</span>'
+    'WASTE':    '<span class="badge badge-dark">✕ WASTE</span>',
+    'ADJUST':   '<span class="badge badge-slate">⚖ ADJUST</span>'
   };
   return map[norm] || '<span class="badge badge-gray">'+mt+'</span>';
+}
+
+// Which way an adjustment went, read back out of the row exactly the way the
+// server wrote it (adjustDirection_ in Code.gs): the rack sits in Source when
+// the count came up SHORT and in Destination when it came up LONG. Every screen
+// that shows a + or a − has to ask, because an ADJUST is the one type that is
+// not always the same sign.
+function adjustIsDown(m){
+  return !!(m && m.sourceLoc && !m.destLoc);
 }
 
 // Category badge: each material type has its own color
@@ -4458,10 +4623,19 @@ var CAT_BADGE = {
   'SCREWS':       'badge-gray',
   'IGU':          'badge-green'
 };
+// The category name goes into HTML here, and it went in RAW until v11.27 —
+// through seven different screens, because everything that shows a category
+// comes through this one function. A material category is typed by a person,
+// so it can contain anything a person can type: a `<` breaks the layout of
+// whatever screen it lands on, and worse is possible. nt() uppercases and
+// trims; it is not an escape.
+//
+// One fix, seven screens, which is exactly why this was worth finding as a
+// PATTERN rather than as seven separate bugs.
 function catBadge(cat){
   var c = nt(cat);
   var cls = CAT_BADGE[c] || 'badge-gray';
-  return '<span class="badge '+cls+'">'+( c || '—')+'</span>';
+  return '<span class="badge '+cls+'">'+ _he(c || '—') +'</span>';
 }
 
 function stockBadge(item){
@@ -4472,7 +4646,7 @@ function stockBadge(item){
 }
 
 function rowClass(mt){
-  var map = {ENTRY:'row-entry',EXIT:'row-exit',TRANSFER:'row-transfer',RETURN:'row-return',WASTE:'row-waste'};
+  var map = {ENTRY:'row-entry',EXIT:'row-exit',TRANSFER:'row-transfer',RETURN:'row-return',WASTE:'row-waste',ADJUST:'row-adjust'};
   return map[normMT(mt)] || '';
 }
 
@@ -4661,7 +4835,14 @@ function buildDocMap() {
         map[key].push({
           name:     docName,
           url:      url,
-          dateRec:  m.dateRec || (m.timestamp ? m.timestamp.substring(0, 10) : '') || '',
+          // Found while fixing the UTC dates, and it belongs to the same
+          // family: this fallback took the first ten characters of
+          // m.timestamp, which the backend formats as MM/dd/yyyy — so a
+          // document whose movement had no date recorded showed "08/28/2026"
+          // in a column where every other row said "2026-08-28". Same day,
+          // two shapes, sorted as text. _mdyToIso gives it the shape the rest
+          // of the list already uses.
+          dateRec:  m.dateRec || _mdyToIso(m.timestamp) || '',
           location: m.destLoc || m.sourceLoc || ''
         });
       }
@@ -5162,13 +5343,20 @@ function renderMovements(){
   _movRenderedRows = paged.map(function(m){ return m.archived ? null : m.rowIdx; });
   var rows = paged.map(function(m){
     var norm = normMT(m.moveType);
-    var isOut = (norm === 'EXIT' || norm === 'WASTE');
+    // ADJUST is the only type whose sign is not fixed: a count that came up
+    // short takes units away, a count that came up long adds them. Every other
+    // type always points the same direction, which is why they can be listed.
+    var isOut = (norm === 'EXIT' || norm === 'WASTE' ||
+                 (norm === 'ADJUST' && adjustIsDown(m)));
     // Src→Dest display rules:
     //   ENTRY    → just the destination rack (no source — came from outside)
     //   EXIT     → "Rack → Site/Project"
     //   TRANSFER → "Rack A → Rack B"
     //   RETURN   → "Site → Rack"
     //   WASTE    → "Rack → WASTE"
+    //   ADJUST   → "COUNT → Rack" or "Rack → COUNT", pointing the way the
+    //              correction went, so the row says at a glance whether the
+    //              shelf had more or less than the app thought.
     var locDisplay;
     if (norm === 'ENTRY') {
       locDisplay = m.destLoc || '—';
@@ -5182,6 +5370,10 @@ function renderMovements(){
       locDisplay = (m.sourceLoc || '—') + ' → ' + (m.destLoc || '—');
     } else if (norm === 'WASTE') {
       locDisplay = (m.sourceLoc || '—') + ' → WASTE';
+    } else if (norm === 'ADJUST') {
+      locDisplay = adjustIsDown(m)
+        ? (m.sourceLoc || '—') + ' → COUNT'
+        : 'COUNT → ' + (m.destLoc || '—');
     } else {
       locDisplay = m.sourceLoc || m.destLoc || '—';
     }
@@ -5337,7 +5529,14 @@ function renderProjectView(){
     var norm = normMT(m.moveType);
     if (!summary[name]) summary[name] = {name:name, category:nt(m.category), in:0, out:0, history:[]};
     var q = m.qty || 0;
-    var isOut = (norm === 'EXIT' || norm === 'WASTE');
+    // Same rule as the movements table — an ADJUST points either way. In
+    // practice no ADJUST reaches this loop at all, because the server refuses
+    // to stamp a project on one (see addMovementsBatch_), and this view filters
+    // by project. Written correctly anyway: the day somebody edits a project
+    // onto an old row by hand, "Total Received" must not quietly gain two units
+    // that were never received.
+    var isOut = (norm === 'EXIT' || norm === 'WASTE' ||
+                 (norm === 'ADJUST' && adjustIsDown(m)));
     if (isOut){ summary[name].out += q; totalOut += q; }
     else       { summary[name].in  += q; totalIn  += q; }
     // What this project actually consumed, in dollars: sum of what left for it
@@ -5421,7 +5620,7 @@ function addLocRow(rack, qty){
   var qtyVal  = (qty || qty === 0) ? qty : '';
   row.innerHTML =
     '<input type="text" class="loc-rack" list="rackList" placeholder="Rack / Location">' +
-    '<input type="number" class="loc-qty"  min="1" value="' + qtyVal + '" placeholder="Qty">' +
+    '<input type="number" class="loc-qty"  min="0" step="any" value="' + qtyVal + '" placeholder="Qty">' +
     '<button type="button" class="btn-remove-loc" onclick="removeLocRow(this)" title="Remove row">×</button>';
   if (rackVal) row.querySelector('.loc-rack').value = rackVal;
   row.querySelector('.loc-qty').addEventListener('input', updateLocTotal);
@@ -5443,9 +5642,9 @@ function removeLocRow(btn){
 function updateLocTotal(){
   var total = 0;
   document.querySelectorAll('#locRowsContainer .loc-qty').forEach(function(inp){
-    total += Math.max(0, parseInt(inp.value) || 0);
+    total += Math.max(0, _qty(inp.value));
   });
-  document.getElementById('locTotalDisplay').textContent = 'Total: ' + total;
+  document.getElementById('locTotalDisplay').textContent = 'Total: ' + _qtyText(total);
   // Mirrored into mQty for the notify preview — but a zero is written as
   // BLANK, because mQty is a visible box on RETURN/WASTE and a 0 sitting in
   // it is a number nobody entered.
@@ -5462,7 +5661,7 @@ function addExitRow(rack, qty){
   var qtyVal = (qty || qty === 0) ? qty : '';
   row.innerHTML =
     '<input type="text"   class="exit-rack" list="rackList" placeholder="Rack / Location">' +
-    '<input type="number" class="exit-qty"  min="1" value="' + qtyVal + '" placeholder="Qty">' +
+    '<input type="number" class="exit-qty"  min="0" step="any" value="' + qtyVal + '" placeholder="Qty">' +
     '<span  class="exit-avail neutral">—</span>' +
     '<button type="button" class="btn-remove-loc" onclick="removeExitRow(this)" title="Remove">×</button>';
   if (rack) row.querySelector('.exit-rack').value = rack;
@@ -5487,9 +5686,9 @@ function removeExitRow(btn){
 function updateExitTotal(){
   var total = 0;
   document.querySelectorAll('#exitRowsContainer .exit-qty').forEach(function(inp){
-    total += Math.max(0, parseInt(inp.value) || 0);
+    total += Math.max(0, _qty(inp.value));
   });
-  document.getElementById('exitTotalDisplay').textContent = 'Total: ' + total;
+  document.getElementById('exitTotalDisplay').textContent = 'Total: ' + _qtyText(total);
   document.getElementById('mQty').value = total ? total : '';
 }
 
@@ -5539,7 +5738,7 @@ function renderTransferLocPicker(){
 
 function addTransferRowFromChip(chip){
   var rack = chip.getAttribute('data-rack');
-  var qty  = parseInt(chip.getAttribute('data-qty'), 10) || 0;
+  var qty  = _qty(chip.getAttribute('data-qty'));
   addTransferRow(rack, qty, '');
   renderTransferLocPicker(); // refresh chips so this rack shows as "used"
 }
@@ -5550,7 +5749,7 @@ function addTransferRow(rack, qty, dest, silent){
   row.className = 'transfer-row';
   row.innerHTML =
     '<input type="text"   class="tr-rack" list="rackList"     placeholder="Source rack">' +
-    '<input type="number" class="tr-qty"  min="1"              placeholder="Qty">' +
+    '<input type="number" class="tr-qty"  min="0" step="any"   placeholder="Qty">' +
     '<span  class="exit-avail neutral">—</span>' +
     '<input type="text"   class="tr-dest" list="rackListDest" placeholder="Destination rack">' +
     '<button type="button" class="btn-remove-loc" onclick="removeTransferRow(this)" title="Remove">×</button>';
@@ -5600,7 +5799,7 @@ function validateTransferRows(){
   document.querySelectorAll('#transferRowsContainer .transfer-row').forEach(function(row){
     var rack = (row.querySelector('.tr-rack').value || '').trim().toUpperCase();
     var dest = (row.querySelector('.tr-dest').value || '').trim().toUpperCase();
-    var qty  = Math.max(0, parseInt(row.querySelector('.tr-qty').value) || 0);
+    var qty  = Math.max(0, _qty(row.querySelector('.tr-qty').value));
     var chip = row.querySelector('.exit-avail');
     // Available should show the moment a rack is picked — that's the whole
     // point of the tap-to-fill-qty shortcut, which needs a number to tap
@@ -5685,7 +5884,7 @@ function validateExitRows(){
 
   document.querySelectorAll('#exitRowsContainer .exit-row').forEach(function(row){
     var rack = (row.querySelector('.exit-rack').value || '').trim().toUpperCase();
-    var qty  = Math.max(0, parseInt(row.querySelector('.exit-qty').value) || 0);
+    var qty  = Math.max(0, _qty(row.querySelector('.exit-qty').value));
     var chip = row.querySelector('.exit-avail');
     if (!rack || qty <= 0){ chip.textContent = '—'; chip.className = 'exit-avail neutral'; return; }
     var avail = locs[rack] !== undefined ? locs[rack] : null;
@@ -5722,7 +5921,8 @@ function openMoveModal(type){
   // information the person never typed into this movement. Nothing here
   // should ever show data the user hasn't entered for this specific save.
   ['mName','mQty','mSrc','mDest','mExitDest','mSup','mGC','mPO','mProj','mResp','mPM','mComm',
-   'mNotifyEmails','mNotifyName','mNotifyMsg'].forEach(function(id){
+   'mNotifyEmails','mNotifyName','mNotifyMsg',
+   'adjRack','adjCounted','adjReason'].forEach(function(id){
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -5739,7 +5939,12 @@ function openMoveModal(type){
   if (tag) tag.style.display = 'none';
   addLocRow();
   addExitRow();
-  document.getElementById('mDateRec').value = new Date().toISOString().split('T')[0];
+  // THE ONE THAT MATTERED. This is the date every movement gets unless the
+  // person changes it, and it used to be computed in UTC — so from about 6pm
+  // Mountain onward the form opened already filled in with TOMORROW, and the
+  // evening shift filed its receipts a day late every single day. See
+  // _isoDate.
+  document.getElementById('mDateRec').value = _todayIso();
   document.getElementById('mStatus').value  = 'In Stock';
   document.getElementById('mUnit').value    = 'UNIT';
   // Reset document builder (creates one default "Document" group)
@@ -5770,7 +5975,7 @@ function setModalType(type){
   document.querySelectorAll('.modal-type-bar button').forEach(function(b){ b.className = ''; });
 
   // Activate the pressed button
-  var activeClass = { ENTRY:'active-entry', EXIT:'active-exit', TRANSFER:'active-transfer', RETURN:'active-return', WASTE:'active-waste' };
+  var activeClass = { ENTRY:'active-entry', EXIT:'active-exit', TRANSFER:'active-transfer', RETURN:'active-return', WASTE:'active-waste', ADJUST:'active-adjust' };
   document.querySelectorAll('.modal-type-bar button').forEach(function(b){
     if (b.dataset.type === type) b.className = activeClass[type] || '';
   });
@@ -5818,6 +6023,11 @@ function setModalType(type){
   // rendered as an empty grid taking up space inside the location box.
   var singleLocGrid = document.getElementById('singleLocGrid');
   if (singleLocGrid) singleLocGrid.style.display = '';
+  // ADJUST brings its own count panel and hides the shared Qty/Source/Dest grid
+  // entirely — the quantity it saves is a DIFFERENCE the app works out, not a
+  // number anyone types.
+  var adjustSection = document.getElementById('adjustSection');
+  if (adjustSection) adjustSection.style.display = 'none';
   // The TRANSFER/RETURN/WASTE material box. Shown and tinted by the three
   // branches that use it; ENTRY and EXIT leave it hidden because they bring
   // their own boxes. Every tint class is cleared here rather than in each
@@ -5848,7 +6058,8 @@ function setModalType(type){
   document.getElementById('moveTitle').textContent =
     { ENTRY:'Receive Material (ENTRY)', EXIT:'Dispatch Material (EXIT)',
       TRANSFER:'Transfer Between Racks', RETURN:'Return from Site (RETURN)',
-      WASTE:'Record Waste / Loss' }[type] || 'New Movement';
+      WASTE:'Record Waste / Loss',
+      ADJUST:'Correct the Count (ADJUST)' }[type] || 'New Movement';
 
   if (type === 'ENTRY'){
     // ENTRY: hide single-material fields — multi-mat section handles everything
@@ -5928,6 +6139,23 @@ function setModalType(type){
     mStatus.value = 'Damaged';
     if (moveMatBox){ moveMatBox.style.display = 'block'; moveMatBox.classList.add('mm-waste'); }
     _syncMoveMatTotal();
+
+  } else if (type === 'ADJUST'){
+    // No supplier, GC, PO or project: an adjustment is a statement about the
+    // record, not about a job or a purchase, and the server refuses to stamp a
+    // project on one. Boxes that get thrown away are worse than no boxes.
+    supField.style.display  = 'none';
+    gcField.style.display   = 'none';
+    poField.style.display   = 'none';
+    projField.style.display = 'none';
+    if (singleLocGrid) singleLocGrid.style.display = 'none';
+    if (adjustSection) adjustSection.style.display = 'block';
+    commLabel.textContent = 'Comments (what you saw, who was there…)';
+    dateLabel.textContent = 'Date Counted';
+    respLabel.textContent = 'Counted By';
+    mStatus.value = 'In Stock';
+    if (moveMatBox){ moveMatBox.style.display = 'block'; moveMatBox.classList.add('mm-adjust'); }
+    _syncAdjustCount();
   }
 
   updateMatList();
@@ -5952,6 +6180,11 @@ function _syncMoveMatTotal(){
       var q = row.querySelector('.tr-qty');
       n += Math.max(0, parseFloat(q && q.value) || 0);
     });
+  } else if (currentMoveType === 'ADJUST'){
+    // The badge shows the size of the correction, not the count. mQty is
+    // hidden on this screen and always reads 0, which would have parked a
+    // permanent zero at the top of the box while the form filled up.
+    n = Math.abs(_readAdjust().delta);
   } else {
     var qEl = document.getElementById('mQty');
     n = Math.max(0, parseFloat(qEl && qEl.value) || 0);
@@ -5959,6 +6192,86 @@ function _syncMoveMatTotal(){
   // Round the way every quantity is rounded on write, so the badge and the
   // saved row can never disagree by a floating-point tail.
   el.textContent = String(Math.round(n * 10000) / 10000);
+}
+
+// ── ADJUST: what the app believes, what was counted, and the gap ─────────────
+//
+// Every number on the Adjust screen comes out of two figures, so they are read
+// in one place and re-derived on each keystroke rather than kept in variables
+// that can fall out of step with the boxes.
+//
+// `says` is read from the same stockData the Rack Drawer reads. That is the
+// point, not an implementation detail: the figure being corrected has to be
+// the exact figure the person was looking at when they decided it was wrong.
+function _readAdjust(){
+  var cat  = ((document.getElementById('mType')      || {}).value || '').trim();
+  var name = ((document.getElementById('mName')      || {}).value || '').trim();
+  var rack = ((document.getElementById('adjRack')    || {}).value || '').trim();
+  var raw  = ((document.getElementById('adjCounted') || {}).value || '').trim();
+  // parseFloat, not _qty: this one has to tell "0" apart from "not counted
+  // yet", and _qty answers 0 to both. A cycle count of half a sheet is as real
+  // as a cycle count of two, and truncating it here would have produced an
+  // ADJUST for the wrong amount — the one movement type whose entire purpose
+  // is to make the number match what somebody physically counted.
+  var counted  = parseFloat(raw);
+  var hasCount = raw !== '' && isFinite(counted) && counted >= 0;
+
+  // Whether the app knows this material at this rack AT ALL is a different
+  // question from whether the number is zero, and the difference is worth
+  // showing: a rack the material has never been in also reads 0, and that is
+  // much more often a typo in the rack box than a genuine discovery.
+  var knownRack = false, says = 0;
+  if (name && rack){
+    var st   = stockData[_normKey(cat) + '|||' + _normKey(name)];
+    var locs = (st && st.warehouseLocs) || {};
+    var key  = rack.toUpperCase();
+    knownRack = Object.prototype.hasOwnProperty.call(locs, key);
+    says      = Math.max(0, Number(locs[key] || 0));
+  }
+  return {
+    cat: cat, name: name, rack: rack, says: says, knownRack: knownRack,
+    counted: hasCount ? counted : 0,
+    hasCount: hasCount,
+    delta: hasCount ? (counted - says) : 0,
+    reason: ((document.getElementById('adjReason') || {}).value || '').trim(),
+    note:   ((document.getElementById('mComm')     || {}).value || '').trim()
+  };
+}
+
+function _syncAdjustCount(){
+  if (currentMoveType !== 'ADJUST') return;
+  var a      = _readAdjust();
+  var saysEl = document.getElementById('adjSays');
+  var dEl    = document.getElementById('adjDelta');
+  if (saysEl) saysEl.textContent = (a.name && a.rack) ? String(a.says) : '—';
+  if (dEl){
+    var cls = 'idle';
+    var txt = 'Pick the material and the rack, then type what you counted.';
+    if (a.name && a.rack && a.hasCount){
+      if (a.delta === 0){
+        cls = 'same';
+        txt = '✓ The count matches. There is nothing to correct — close this window.';
+      } else if (a.delta < 0){
+        cls = 'down';
+        // Saying what this is NOT is the whole reason the type exists. Someone
+        // who reaches for Adjust when they mean Waste has to be able to notice
+        // it here, before the row is written.
+        txt = '− ' + Math.abs(a.delta) + ' will be removed from ' + a.rack.toUpperCase() +
+              '  (' + a.says + ' → ' + a.counted + '). No cost is recorded: this says the ' +
+              'record was wrong, not that material was lost. If it broke, use Waste.';
+      } else {
+        cls = 'up';
+        txt = '+ ' + a.delta + ' will be added to ' + a.rack.toUpperCase() +
+              '  (' + a.says + ' → ' + a.counted + ').' +
+              (a.knownRack ? '' :
+                '  ⚠ The app has no ' + a.name.toUpperCase() + ' at that rack at all — ' +
+                'check the rack before saving.');
+      }
+    }
+    dEl.className   = 'adj-delta ' + cls;
+    dEl.textContent = txt;
+  }
+  _syncMoveMatTotal();
 }
 
 // ── Stock Check (live warning while typing in EXIT modal) ─────────────────────
@@ -6037,10 +6350,10 @@ function updateNotifyPreview(){
       var racks = [];
       var lc = document.getElementById('mat-locs-' + n);
       if (lc) {
-        lc.querySelectorAll('.loc-qty').forEach(function(i){ total += Math.max(0, parseInt(i.value)||0); });
+        lc.querySelectorAll('.loc-qty').forEach(function(i){ total += Math.max(0, _qty(i.value)); });
         lc.querySelectorAll('.loc-rack').forEach(function(i){ var v=(i.value||'').trim(); if(v) racks.push(v); });
       }
-      matLines += '\n  • ' + total + ' ' + unit + '(s) of ' + (cat ? cat + ' — ' : '') + matName + (racks.length ? ' → ' + racks.join(', ') : '');
+      matLines += '\n  • ' + _qtyText(total) + ' ' + unit + '(s) of ' + (cat ? cat + ' — ' : '') + matName + (racks.length ? ' → ' + racks.join(', ') : '');
     });
     if (!matLines) matLines = '\n  • [materials not yet filled]';
   } else {
@@ -6073,7 +6386,7 @@ async function submitMovement(){
   if (currentMoveType === 'ENTRY'){
     document.querySelectorAll('#locRowsContainer .loc-row').forEach(function(row){
       var loc = (row.querySelector('.loc-rack').value || '').trim();
-      var q   = Math.max(0, parseInt(row.querySelector('.loc-qty').value) || 0);
+      var q   = Math.max(0, _qty(row.querySelector('.loc-qty').value));
       if (q > 0) entryLocations.push({ loc: loc, qty: q });
     });
     if (!entryLocations.length){
@@ -6086,7 +6399,7 @@ async function submitMovement(){
   if (currentMoveType === 'EXIT'){
     document.querySelectorAll('#exitRowsContainer .exit-row').forEach(function(row){
       var loc = (row.querySelector('.exit-rack').value || '').trim();
-      var q   = Math.max(0, parseInt(row.querySelector('.exit-qty').value) || 0);
+      var q   = Math.max(0, _qty(row.querySelector('.exit-qty').value));
       if (q > 0) exitLocations.push({ loc: loc, qty: q });
     });
     if (!exitLocations.length){
@@ -6114,7 +6427,7 @@ async function submitMovement(){
     document.querySelectorAll('#transferRowsContainer .transfer-row').forEach(function(row){
       var src = (row.querySelector('.tr-rack').value || '').trim();
       var dst = (row.querySelector('.tr-dest').value || '').trim();
-      var q   = Math.max(0, parseInt(row.querySelector('.tr-qty').value) || 0);
+      var q   = Math.max(0, _qty(row.querySelector('.tr-qty').value));
       if (src && dst && q > 0) transferLocations.push({ sourceLoc: src, destLoc: dst, qty: q });
     });
     if (!transferLocations.length){
@@ -6133,12 +6446,36 @@ async function submitMovement(){
     }
   }
 
-  var qty = parseInt(document.getElementById('mQty').value) || 0;
+  // ── ADJUST: the difference between the count and the record ───────────────
+  // Read once, here, so the number that is validated is the same number that
+  // is sent. Its sign becomes the direction (which rack column gets filled in)
+  // and its size becomes the quantity.
+  var adjust = null;
+  if (currentMoveType === 'ADJUST'){
+    adjust = _readAdjust();
+    if (!adjust.rack){ alert('Enter the rack you counted.'); return; }
+    if (!adjust.hasCount){ alert('Enter what you counted.'); return; }
+    if (adjust.delta === 0){
+      showToast('The count matches what the app already says — nothing to correct.', 'ok', 5000);
+      return;
+    }
+    if (!adjust.reason){ alert('Choose why the count was off.'); return; }
+    if (adjust.reason === 'Other' && !adjust.note){
+      alert('You picked "Other" — say what happened in the Comments box.'); return;
+    }
+  }
+
+  var qty = _qty(document.getElementById('mQty').value);
   if (currentMoveType === 'TRANSFER'){
     qty = transferLocations.reduce(function(a,tl){ return a + tl.qty; }, 0);
+  } else if (currentMoveType === 'ADJUST'){
+    qty = Math.abs(adjust.delta);
   }
-  // For ENTRY/EXIT/TRANSFER, qty is driven by the multi-row widgets
-  if (currentMoveType !== 'ENTRY' && currentMoveType !== 'EXIT' && currentMoveType !== 'TRANSFER' && qty <= 0){
+  // For ENTRY/EXIT/TRANSFER/ADJUST, qty is driven by something other than the
+  // Quantity box — multi-row widgets for the first three, the counted-minus-
+  // recorded difference for the last.
+  if (currentMoveType !== 'ENTRY' && currentMoveType !== 'EXIT' &&
+      currentMoveType !== 'TRANSFER' && currentMoveType !== 'ADJUST' && qty <= 0){
     alert('Quantity must be greater than 0'); return;
   }
 
@@ -6163,6 +6500,12 @@ async function submitMovement(){
   } else if (currentMoveType === 'WASTE'){
     sourceLoc = srcVal;
     destLoc   = '';
+  } else if (currentMoveType === 'ADJUST'){
+    // The rack goes in ONE column, and which one is the direction — the server
+    // reads it back the same way (adjustDirection_ in Code.gs). Nothing else in
+    // the app has to learn a new field for this.
+    sourceLoc = adjust.delta < 0 ? adjust.rack : '';
+    destLoc   = adjust.delta > 0 ? adjust.rack : '';
   }
 
   // Validation: source required for WASTE (TRANSFER uses transferLocations[], EXIT uses exitLocations[])
@@ -6178,6 +6521,15 @@ async function submitMovement(){
   // WASTE requires comments
   var comments = (document.getElementById('mComm').value || '').trim();
   if (currentMoveType === 'WASTE' && !comments){ alert('Waste movements require a reason in the Comments field'); return; }
+
+  // ADJUST stores its reason in the same Comments column every other type uses,
+  // rather than adding a column to the archive for one movement type. The
+  // dropdown and the free note are joined into one line — the dropdown first,
+  // so a filtered history reads down a column of reasons instead of a column of
+  // paragraphs that each begin differently.
+  if (currentMoveType === 'ADJUST'){
+    comments = adjust.reason + (adjust.note ? ' — ' + adjust.note : '');
+  }
 
   // Advisory total-stock check for WASTE (TRANSFER is already validated per-row above)
   if (currentMoveType === 'WASTE'){
@@ -6247,6 +6599,7 @@ async function submitMovement(){
         var savedType = currentMoveType; // capture before modal closes
         var savedName = name;
         var savedQty  = qty;
+        var savedAdj  = adjust;          // null for every other type
         // The tick sits on the button for a moment before the window goes. A
         // window that vanishes the instant you click Save looks exactly like a
         // window that closed without saving, and the toast arrives afterwards,
@@ -6263,6 +6616,12 @@ async function submitMovement(){
             if (res.fileError)    msgs.push('📎 File not attached: ' + res.fileError);
             if (res.refreshError) msgs.push('⚠ ' + res.refreshError);
             showToast('Saved ✓ — but note: ' + msgs.join(' | '), 'warn', res.refreshError ? 12000 : 6000);
+          } else if (savedType === 'ADJUST' && savedAdj) {
+            // Says what the number IS now, not what was subtracted. The count
+            // was the point; the difference was only how it got there.
+            showToast('⚖ Count corrected: ' + savedAdj.rack.toUpperCase() + ' now shows ' +
+              savedAdj.counted + ' ' + savedName + ' (was ' + savedAdj.says + '). ' +
+              'No cost recorded — this is a record fix, not waste.', 'ok', 7000);
           } else if (savedType === 'WASTE') {
             var remaining = (res && res.availableAfter != null) ? res.availableAfter : '—';
             showToast('✕ WASTE recorded: ' + savedQty + ' unit(s) of ' + savedName +
@@ -6746,7 +7105,7 @@ function addLocRowMat(n, silent){
   row.className = 'loc-row';
   row.innerHTML =
     '<input type="text" class="loc-rack" list="rackList" placeholder="Rack / Location" autocomplete="off">' +
-    '<input type="number" class="loc-qty" min="1" placeholder="Qty">' +
+    '<input type="number" class="loc-qty" min="0" step="any" placeholder="Qty">' +
     '<button type="button" class="btn-remove-loc" onclick="removeLocRowMat(' + n + ', this)" title="Remove">×</button>';
   lc.appendChild(row);
   _attachMatLocQtyListener(row, n);
@@ -6766,10 +7125,10 @@ function syncMatLineQty(n){
   if (!lc) return;
   var total = 0;
   lc.querySelectorAll('.loc-qty').forEach(function(inp){
-    total += Math.max(0, parseInt(inp.value) || 0);
+    total += Math.max(0, _qty(inp.value));
   });
   var el = document.getElementById('mat-total-' + n);
-  if (el) el.textContent = total + ' unit' + (total === 1 ? '' : 's');
+  if (el) el.textContent = _qtyText(total) + ' unit' + (total === 1 ? '' : 's');
   updateMultiMatTotal();
   if (typeof updateNotifyPreview === 'function') updateNotifyPreview();
 }
@@ -6778,11 +7137,11 @@ function updateMultiMatTotal(){
   var total = 0;
   document.querySelectorAll('#multiMatContainer .mat-locs-container').forEach(function(lc){
     lc.querySelectorAll('.loc-qty').forEach(function(inp){
-      total += Math.max(0, parseInt(inp.value) || 0);
+      total += Math.max(0, _qty(inp.value));
     });
   });
   var el = document.getElementById('multiMatTotal');
-  if (el) el.textContent = 'Total: ' + total;
+  if (el) el.textContent = 'Total: ' + _qtyText(total);
 }
 
 function updateMatLineNameList(n){
@@ -6908,7 +7267,9 @@ function _checkIncomingSuggest(n, inputEl){
         var safeId   = _escAttr(item.id);
         var safeName = _escAttr(item.name);
         var safeCat  = _escAttr(item.category || '?');
-        var safeMeta = item.qty + ' ' + item.unit + (item.supplier ? ' · ' + _escAttr(item.supplier) : '') + ' — ' + item.estDate;
+        // estDate was the one field in this line still going in raw — the two
+        // beside it were escaped, which is how a gap like this hides.
+        var safeMeta = _escAttr(_incQtyText(item)) + (item.supplier ? ' · ' + _escAttr(item.supplier) : '') + ' — ' + _escAttr(item.estDate);
         return '<div class="inc-suggest-item" data-n="' + n + '" data-inc-id="' + safeId + '"' +
           ' onmousedown="_clickIncomingSuggest(this);return false;">' +
           '<span class="inc-tag">' + safeCat + '</span>' +
@@ -7149,7 +7510,7 @@ function addExitLocRowMat(n, rack, qty, silent){
   row.className = 'exit-loc-row';
   row.innerHTML =
     '<input type="text"   class="el-rack" list="rackList" placeholder="Rack / Location" value="'+_escAttr(rack||'')+'">'+
-    '<input type="number" class="el-qty"  min="1" placeholder="Qty" value="'+(qty||'')+'">'+
+    '<input type="number" class="el-qty"  min="0" step="any" placeholder="Qty" value="'+(qty||'')+'">'+
     '<span  class="el-avail neutral">—</span>'+
     '<button type="button" class="el-rm" onclick="removeExitLocRowMat('+n+',this)" title="Remove">×</button>';
   row.querySelector('.el-rack').addEventListener('input', function(){ syncExitRackAvail(n); syncExitMatTotal(n); });
@@ -7178,19 +7539,19 @@ function syncExitMatTotal(n){
   var locsDiv = document.getElementById('exit-locs-' + n);
   if (!locsDiv) return;
   var total = 0;
-  locsDiv.querySelectorAll('.el-qty').forEach(function(inp){ total += Math.max(0, parseInt(inp.value)||0); });
+  locsDiv.querySelectorAll('.el-qty').forEach(function(inp){ total += Math.max(0, _qty(inp.value)); });
   var badge = document.getElementById('exit-mat-total-' + n);
-  if (badge) badge.textContent = total;
+  if (badge) badge.textContent = _qtyText(total);
   updateMultiExitTotal();
 }
 
 function updateMultiExitTotal(){
   var total = 0;
   document.querySelectorAll('[id^="exit-mat-total-"]').forEach(function(badge){
-    total += parseInt(badge.textContent) || 0;
+    total += _qty(badge.textContent);
   });
   var el = document.getElementById('multiExitTotal');
-  if (el) el.textContent = 'Total: ' + total;
+  if (el) el.textContent = 'Total: ' + _qtyText(total);
 }
 
 function syncExitRackAvail(n){
@@ -7202,7 +7563,7 @@ function syncExitRackAvail(n){
   if (!locsDiv) return;
   locsDiv.querySelectorAll('.exit-loc-row').forEach(function(row){
     var rack  = (row.querySelector('.el-rack').value || '').trim().toUpperCase();
-    var qty   = Math.max(0, parseInt(row.querySelector('.el-qty').value) || 0);
+    var qty   = Math.max(0, _qty(row.querySelector('.el-qty').value));
     var avail = locs[rack];
     var chip  = row.querySelector('.el-avail');
     if (!rack || avail === undefined){ chip.className='el-avail neutral'; chip.textContent='—'; return; }
@@ -7381,7 +7742,7 @@ function submitMultiExit(){
     var locRows = [];
     line.querySelectorAll('.exit-loc-row').forEach(function(row){
       var rack = (row.querySelector('.el-rack').value||'').trim().toUpperCase();
-      var qty  = Math.max(0, parseInt(row.querySelector('.el-qty').value)||0);
+      var qty  = Math.max(0, _qty(row.querySelector('.el-qty').value));
       if (qty > 0) locRows.push({ loc: rack, qty: qty });
     });
     if (!locRows.length){ showToast('Material '+(i+1)+' ('+name+'): add at least one location with qty > 0.','warn'); return; }
@@ -7498,7 +7859,7 @@ function submitMultiEntry(){
     if (lc){
       lc.querySelectorAll('.loc-row').forEach(function(row){
         var loc = (row.querySelector('.loc-rack').value || '').trim();
-        var qty = Math.max(0, parseInt(row.querySelector('.loc-qty').value) || 0);
+        var qty = Math.max(0, _qty(row.querySelector('.loc-qty').value));
         if (qty > 0){ locs.push({ loc: loc, qty: qty }); totalQty += qty; }
       });
     }
@@ -8098,6 +8459,17 @@ function _renderSystemTab() {
       '</label>' +
       '<div id="aiBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Checking…</div>' +
     '</div>' +
+    '<div class="field" style="margin-bottom:1.25rem">' +
+      '<label style="display:flex;align-items:center;gap:.4rem">Check my data ' +
+        _infoIc('Looks over everything already saved for the same thing written two ways, and for movements missing something the rest of that material\'s history agrees on. It only ever proposes — nothing changes until you press a button.') +
+      '</label>' +
+      '<div id="dqBox">' +
+        '<button id="btnDataCheck" class="btn btn-ghost btn-sm" onclick="_runDataCheck()">🔍 Check my data</button>' +
+        '<div style="font-size:.76rem;color:var(--muted);margin-top:.4rem">' +
+          'Runs only when you press it. Nothing is changed without you.' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
     '<div class="field">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Stock totals ' +
         _infoIc('Recalculates every stock total from the current movement history. Use this if a deleted or edited movement left stale numbers behind.') +
@@ -8110,6 +8482,156 @@ function _renderSystemTab() {
   _loadBackupStatus();
   _loadSpaceUsage();
   _loadAiStatus();
+}
+
+// ── The data check ───────────────────────────────────────────────────────────
+//
+// Jose: "la app debe hacer su trabajo, revisar todos los nombres parecidos, los
+// nombres de proyectos parecidos, las destinations y sugerir que se las
+// corrija… y arreglar movimientos según el id, porque si tienen el mismo id es
+// porque son el mismo material."
+//
+// It runs when pressed and never on its own, and every finding is a proposal.
+// The DATA QUALITY SWEEP section in Code.gs says why both of those are the
+// design rather than timidity.
+var _dqFindings = [];
+
+function _runDataCheck(){
+  var btn = document.getElementById('btnDataCheck');
+  if (btn && btn.disabled) return;
+  _btnBusy(btn, 'Looking…');
+  google.script.run
+    .withSuccessHandler(function(res){
+      _btnReset(btn);
+      _dqFindings = (res && res.findings) || [];
+      _drawDataCheck(res || {});
+    })
+    .withFailureHandler(function(err){
+      _btnReset(btn);
+      showToast('Could not check: ' + ((err && err.message) || err), 'err', 6000);
+    })
+    .processMovement('runDataQualityScan', _h({}));
+}
+
+// One card per finding, with the evidence ON the card — how many rows use each
+// spelling, what the app is going on. "Trust me, merge these" is not something
+// anybody should be asked to press.
+function _dqCard(f, i){
+  var head, body, action = '';
+  if (f.kind === 'spelling'){
+    var opts = f.spellings.map(function(s){
+      return '<option value="' + _escAttr(s.text) + '"' + (s.text === f.keep ? ' selected' : '') + '>' +
+             _he(s.text) + ' — ' + s.rows + ' row' + (s.rows === 1 ? '' : 's') + '</option>';
+    }).join('');
+    head = '<strong>' + _he(f.spellings.map(function(s){ return s.text; }).join('  ·  ')) + '</strong>';
+    body = 'The same ' + _he(f.label) + (f.category ? ' in ' + _he(f.category) : '') +
+           ', written ' + f.spellings.length + ' ways across ' + f.rows + ' rows.';
+    // The app knows which spelling is commonest. It does not know which is
+    // right, so the survivor is a choice, not a verdict.
+    action =
+      '<label style="font-size:.74rem;color:var(--muted);display:block;margin-bottom:.2rem">Keep this spelling</label>' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">' +
+        '<select id="dq-keep-' + i + '" style="padding:.35rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.8rem">' + opts + '</select>' +
+        '<button class="btn btn-primary btn-sm" onclick="_dqApply(' + i + ')">Merge them</button>' +
+      '</div>';
+
+  } else if (f.kind === 'gap'){
+    head = '<strong>' + _he(f.name) + '</strong> <span style="color:var(--muted);font-size:.78rem">' + _he(f.category) + '</span>';
+    body = f.rows + ' movement' + (f.rows === 1 ? '' : 's') + ' of this material ' +
+           (f.field === 'project'
+             ? 'were transferred with no job on them, and every other row for it says '
+             : 'have no supplier, and every row that has one says ') +
+           '<strong>' + _he(f.value) + '</strong>.';
+    action = '<button class="btn btn-primary btn-sm" onclick="_dqApply(' + i + ')">Fill them in</button>';
+
+  } else {
+    // No Apply button, on purpose. The app is not confident enough to offer
+    // one, and saying so is worth more than a button that is wrong one time in
+    // five — the first bad merge is the last time anybody presses it.
+    head = '<strong>' + _he(f.a) + '</strong> &nbsp;vs&nbsp; <strong>' + _he(f.b) + '</strong>';
+    body = 'These two look alike in ' + _he(f.category) + '. They may be the same material written ' +
+           'differently, or two real products. <em>The app cannot tell.</em> If they are the same, ' +
+           'merge them in Settings → Materials.';
+  }
+
+  return '<div class="dq-card" id="dq-card-' + i + '">' +
+      '<div class="dq-kind dq-' + f.kind + '">' +
+        (f.kind === 'spelling' ? 'Written two ways' : f.kind === 'gap' ? 'Missing a value' : 'Have a look') +
+      '</div>' +
+      '<div class="dq-head">' + head + '</div>' +
+      '<div class="dq-body">' + body + '</div>' +
+      (action ? '<div class="dq-act">' + action + '</div>' : '') +
+    '</div>';
+}
+
+function _drawDataCheck(res){
+  var box = document.getElementById('dqBox');
+  if (!box) return;
+  var again = '<button id="btnDataCheck" class="btn btn-ghost btn-sm" onclick="_runDataCheck()">🔍 Check again</button>';
+
+  if (!_dqFindings.length){
+    box.innerHTML = again +
+      '<div style="font-size:.8rem;color:var(--green);margin-top:.5rem">' +
+        '✓ Nothing to correct across ' + (res.scannedRows || 0).toLocaleString() + ' movements.' +
+      '</div>';
+    return;
+  }
+
+  // The cap exists because a first check on an imported year of history can
+  // produce thousands. Saying how many were left out is the difference between
+  // a short list and a lie.
+  var capped = (res.total || 0) > _dqFindings.length
+    ? '<div style="font-size:.76rem;color:var(--muted);margin-top:.35rem">Showing the ' +
+      _dqFindings.length + ' biggest of ' + res.total + '. Fix these and check again for the rest.</div>'
+    : '';
+
+  box.innerHTML = again +
+    '<div style="font-size:.8rem;margin-top:.5rem">Found <strong>' + (res.total || 0) + '</strong> thing' +
+      ((res.total === 1) ? '' : 's') + ' worth a look across ' + (res.scannedRows || 0).toLocaleString() + ' movements.</div>' +
+    capped +
+    '<div class="dq-list">' + _dqFindings.map(_dqCard).join('') + '</div>';
+}
+
+function _dqApply(i){
+  var f = _dqFindings[i];
+  if (!f) return;
+  var card = document.getElementById('dq-card-' + i);
+  var btn  = card && card.querySelector('.dq-act button');
+  if (btn && btn.disabled) return;
+
+  var payload = { kind: f.kind, field: f.field };
+  if (f.kind === 'spelling'){
+    var sel  = document.getElementById('dq-keep-' + i);
+    var keep = sel ? sel.value : f.keep;
+    payload.category = f.category;
+    payload.keep     = keep;
+    payload.from     = f.spellings.map(function(s){ return s.text; })
+                        .filter(function(t){ return t !== keep; });
+  } else {
+    payload.matId = f.matId;
+    payload.value = f.value;
+  }
+
+  _btnBusy(btn, 'Applying…');
+  google.script.run
+    .withSuccessHandler(function(r){
+      var n = (r && r.rows) || 0;
+      _btnDone(btn, true, function(){
+        if (card){
+          card.classList.add('dq-done');
+          var act = card.querySelector('.dq-act');
+          if (act) act.innerHTML = '<span style="color:var(--green);font-weight:600;font-size:.82rem">✓ Done — ' +
+            n + ' row' + (n === 1 ? '' : 's') + ' updated</span>';
+        }
+      });
+      // Stock can move: merging two materials joins two stock lines into one.
+      loadDataFromGoogle(true);
+    })
+    .withFailureHandler(function(err){
+      _btnReset(btn);
+      showToast('Could not apply: ' + ((err && err.message) || err), 'err', 8000);
+    })
+    .processMovement('applyDataQualityFix', _h(payload));
 }
 
 // ── The AI key, set from inside the app ─────────────────────────────────────
@@ -10538,7 +11060,8 @@ function _handlePhotoFiles(uid, files) {
         ? '<img src="data:' + mime + ';base64,' + b64 + '" alt="photo">' +
           '<button class="remove-photo" onclick="this.closest(\'.doc-photo-thumb\').remove();_updateDocPhotoCount()" title="Remove">✕</button>'
         : '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:1.4rem;flex-direction:column;gap:2px">📄' +
-          '<span style="font-size:.5rem;color:#555;padding:0 3px;text-align:center;overflow:hidden;max-width:50px;word-break:break-all">' + file.name.substring(0,10) + '</span></div>' +
+          // A file name comes from the person's own disk and lands in innerHTML.
+          '<span style="font-size:.5rem;color:#555;padding:0 3px;text-align:center;overflow:hidden;max-width:50px;word-break:break-all">' + _he(file.name.substring(0,10)) + '</span></div>' +
           '<button class="remove-photo" onclick="this.closest(\'.doc-photo-thumb\').remove();_updateDocPhotoCount()" title="Remove">✕</button>';
       strip.appendChild(thumb);
       _updateDocPhotoCount();
@@ -11482,7 +12005,10 @@ function exportMovementsCSV(){
   var csv = [headers.join(',')].concat(rows).join('\n');
   var a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download = 'OX_Movements_'+new Date().toISOString().split('T')[0]+'.csv';
+  // The filename is the only date on an exported file, so an export made at
+  // 7pm used to be stamped tomorrow — a small thing that makes a folder of
+  // exports impossible to trust a year later. See _isoDate.
+  a.download = 'OX_Movements_'+_todayIso()+'.csv';
   a.click();
 }
 
@@ -11499,7 +12025,7 @@ function exportProjectCSV(){
   var csv = [headers.join(',')].concat(rows).join('\n');
   var a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download = 'OX_'+proj.replace(/[^a-z0-9]/gi,'_')+'_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.download = 'OX_'+proj.replace(/[^a-z0-9]/gi,'_')+'_'+_todayIso()+'.csv';   // local day, see _isoDate
   a.click();
 }
 
@@ -11724,7 +12250,7 @@ function openRackDrawer(rackName) {
           '<div class="rdw-item">'+
             '<span class="rack-cat-dot" style="background:'+col+';width:10px;height:10px;flex-shrink:0"></span>'+
             '<span class="rdw-name" data-action="toggle-rdw" data-idx="'+idx+'" title="'+_he(item.name)+'">'+_he(item.name)+'</span>'+
-            '<span class="rdw-rack-qty">'+item.qty+' '+item.unit+'</span>'+
+            '<span class="rdw-rack-qty">'+_he(item.qty)+' '+_he(item.unit)+'</span>'+
             '<span class="rdw-total-qty" title="Total in warehouse">('+item.warehouseTotal+' total)</span>'+
             lockBtn +
           '</div>'+
@@ -11732,6 +12258,7 @@ function openRackDrawer(rackName) {
             '<button type="button" class="btn btn-danger btn-sm" data-action="rdw-move" data-type="EXIT" data-idx="'+idx+'">↑ Exit</button>'+
             '<button type="button" class="btn btn-ghost btn-sm" data-action="rdw-move" data-type="TRANSFER" data-idx="'+idx+'">⇄ Transfer</button>'+
             '<button type="button" class="btn btn-ghost btn-sm" data-action="rdw-move" data-type="WASTE" data-idx="'+idx+'">✕ Waste</button>'+
+            '<button type="button" class="btn btn-ghost btn-sm" data-action="rdw-move" data-type="ADJUST" data-idx="'+idx+'">⚖ Adjust</button>'+
           '</div>'+
         '</div>';
       }).join('');
@@ -11804,6 +12331,10 @@ function _syncMoveTypeBarForRdw(){
   var restrict = !!_rdwPrefillActive;
   bar.querySelectorAll('button').forEach(function(b){
     var t = b.getAttribute('data-type');
+    // ADJUST stays visible: correcting the count AT a rack is the most natural
+    // thing there is to do from a rack, and the drawer hands it every field it
+    // needs. ENTRY and RETURN are the two with no "from this exact rack"
+    // reading at all.
     b.style.display = (restrict && (t === 'ENTRY' || t === 'RETURN')) ? 'none' : '';
   });
 }
@@ -11860,6 +12391,13 @@ function _readMoveMaterial(){
   if (currentMoveType === 'TRANSFER'){
     return { cat: val('mType'), name: val('mName'), qty: sum('#transferRowsContainer .tr-qty') };
   }
+  // ADJUST carries its material but never its number, in either direction. On
+  // the other five screens the quantity means "how many to move"; here it means
+  // "how many I counted on the shelf". They are different claims about the
+  // world, and copying one into the other would put words in somebody's mouth.
+  if (currentMoveType === 'ADJUST'){
+    return { cat: val('mType'), name: val('mName'), qty: 0 };
+  }
   return { cat: val('mType'), name: val('mName'), qty: Math.max(0, parseFloat(val('mQty')) || 0) };
 }
 
@@ -11888,6 +12426,10 @@ function _applyMoveMaterial(m){
     var tq = document.querySelector('#transferRowsContainer .tr-qty');
     if (tq && q) tq.value = q;
     validateTransferRows(); checkStock();
+  } else if (currentMoveType === 'ADJUST'){
+    // Material only — see _readMoveMaterial for why the quantity stays behind.
+    set('mType', m.cat); set('mName', name);
+    _syncAdjustCount();
   } else {
     set('mType', m.cat); set('mName', name);
     if (q) set('mQty', q);
@@ -11904,6 +12446,18 @@ function _applyMoveMaterial(m){
 function _moveNameEl(){
   if (currentMoveType === 'ENTRY') return document.getElementById('mat-name-1');
   if (currentMoveType === 'EXIT')  return document.getElementById('exit-name-1');
+  // ADJUST lands in the first box that is still EMPTY. Opened from the
+  // Movements screen that is Name, same as everywhere else; opened from the
+  // Rack Drawer the material and the rack arrive already filled in and the only
+  // thing left to type is the count. Dropping the cursor into a name that is
+  // already right invites typing over it.
+  if (currentMoveType === 'ADJUST'){
+    var nm = document.getElementById('mName');
+    if (nm && !(nm.value || '').trim()) return nm;
+    var rk = document.getElementById('adjRack');
+    if (rk && !(rk.value || '').trim()) return rk;
+    return document.getElementById('adjCounted');
+  }
   return document.getElementById('mName');
 }
 function _focusMoveName(){
@@ -11953,6 +12507,22 @@ function _prefillMoveModalMaterial(type, cat, name, rack){
     if (seeded){ seeded.value = rack; validateTransferRows(); }
     else addTransferRow(rack, '', '');   // qty and destination left blank
     renderTransferLocPicker();
+  } else if (type === 'ADJUST'){
+    // The one screen where the Rack Drawer supplies almost everything: the
+    // material, the rack, AND the figure being corrected — which is exactly
+    // the number the drawer was showing when the person decided it was wrong.
+    // What is left to type is the count itself, which is the only thing the
+    // app cannot know.
+    var catSelA  = document.getElementById('mType');
+    var nameInpA = document.getElementById('mName');
+    var rackInpA = document.getElementById('adjRack');
+    var cntInpA  = document.getElementById('adjCounted');
+    if (catSelA)  catSelA.value  = cat;
+    if (nameInpA) nameInpA.value = name;
+    if (rackInpA) rackInpA.value = rack;
+    if (cntInpA)  cntInpA.value  = '';
+    _syncAdjustCount();
+
   } else if (type === 'EXIT'){
     // openMoveModal(EXIT) already seeded Material 1 with one empty loc row —
     // fill that one in rather than adding a second.
@@ -12369,7 +12939,7 @@ function _monItemHtml(st){
     '<span class="monitor-item-name" title="' + _he(st.name) + '">' + _he(st.name) + '</span>' +
     '<div class="monitor-item-min">' +
       '<label>Min</label>' +
-      '<input type="number" class="mon-min-inp" min="0" placeholder="—" data-name="' + esc + '"' +
+      '<input type="number" class="mon-min-inp" min="0" step="any" placeholder="—" data-name="' + esc + '"' +
         (minv !== '' ? ' value="' + _escAttr(minv) + '"' : '') + (on ? '' : ' disabled') +
         ' onclick="event.stopPropagation()"' +
         ' title="' + (on ? 'Alert when available stock drops below this' : 'Tick the box first') + '">' +
@@ -12522,7 +13092,7 @@ function saveMonitorSettings() {
   var minUpdates = [];
   if (!config.minStock) config.minStock = {};
   Object.keys(_monMin).forEach(function(nm){
-    var qty     = parseInt(_monMin[nm], 10) || 0;
+    var qty     = _qty(_monMin[nm]);
     var current = config.minStock[nm] || 0;
     if (qty !== current) minUpdates.push({ name: nm, qty: qty });
     config.minStock[nm] = qty;
@@ -12555,6 +13125,9 @@ function saveMonitorSettings() {
 function renderIncoming() {
   renderIncomingWeekGrid();
   renderIncomingTable();
+  // If the week popup is open behind an edit window, it is looking at the data
+  // that just changed. A no-op when it is closed.
+  _refreshMorningPopup();
 }
 
 function renderIncomingWeekGrid() {
@@ -12583,17 +13156,11 @@ function renderIncomingWeekGrid() {
 
   grid.innerHTML = days.map(function(day) {
     var isToday = day.date === todayStr;
+    // Same renderer as the morning popup — and it now carries "Mark arrived"
+    // on every material, which is what Jose asked for: the popup shows once a
+    // day and these cards are on screen all the time.
     var content = day.items.length
-      ? day.items.map(function(item) {
-          return '<div class="day-item">' +
-            catBadge(item.category) + ' ' +
-            '<span style="font-weight:600">' + item.qty + ' ' + item.unit + '</span> ' +
-            '<span>' + _he(item.name) + '</span>' +
-            (item.docLink ? ' <a href="javascript:void(0)" data-action="preview-media" data-url="'+_he(_incFirstDocUrl(item.docLink))+'" data-label="'+_he(item.name)+'" title="Attached document" onclick="event.stopPropagation()">📎</a>' : '') +
-            (item.notes ? '<div style="color:var(--muted);font-size:.7rem;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + _he(item.notes) + '</div>' : '') +
-            ' <span class="inc-status-' + (item.status||'pending').toLowerCase() + '">' + item.status + '</span>' +
-          '</div>';
-        }).join('')
+      ? day.items.map(function(item){ return _incItemHtml(item, { showDate: false }); }).join('')
       : '<div class="day-empty">Nothing scheduled</div>';
     return '<div class="day-card' + (isToday ? ' today' : '') + '">' +
       '<div class="day-label">' + day.label + ' <small style="font-weight:400;opacity:.7">' + day.date.substring(5) + '</small></div>' +
@@ -12679,7 +13246,7 @@ function _incRowHtml(item){
       '<td>' + statusBadge + '</td>' +
       '<td>' + catBadge(item.category) + '</td>' +
       '<td><strong>' + _he(item.name) + '</strong></td>' +
-      '<td style="font-weight:700">' + item.qty + '</td>' +
+      '<td style="font-weight:700">' + (Number(item.qty) > 0 ? item.qty : '—') + '</td>' +
       '<td style="color:var(--muted);font-size:.78rem">' + _he(item.unit) + '</td>' +
       '<td>' + (function(){
         var du = _incFirstDocUrl(item.docLink);
@@ -12706,9 +13273,12 @@ function openIncomingModal(id) {
     document.getElementById('incDateNote').value = item.dateNote || '';
     _incSyncDateMode();
     document.getElementById('incStatus').value   = item.status  || 'Pending';
-    document.getElementById('incCategory').value = item.category|| '';
+    _incSetCategory(item.category);
     document.getElementById('incName').value     = item.name    || '';
-    document.getElementById('incQty').value      = item.qty     || 1;
+    // No `|| 1`: a delivery booked with no quantity is stored as 0, and
+    // showing it as 1 would put a number in front of somebody that the record
+    // does not contain — which is how they save it back as a real 1.
+    document.getElementById('incQty').value      = (Number(item.qty) > 0) ? item.qty : '';
     document.getElementById('incUnit').value     = item.unit    || 'UNIT';
     document.getElementById('incSupplier').value = item.supplier|| '';
     document.getElementById('incPO').value       = item.po      || '';
@@ -12724,7 +13294,12 @@ function openIncomingModal(id) {
     document.getElementById('incStatus').value   = 'Pending';
     document.getElementById('incCategory').value = '';
     document.getElementById('incName').value     = '';
-    document.getElementById('incQty').value      = 1;
+    // Blank, like every other window in the app since v11.7. Jose's rule: "al
+    // abrir la ventana no debe haber ningún dato escrito, ni siquiera '0' en
+    // qty." This window was the one left out of that pass — and a "1" nobody
+    // typed is worse here than elsewhere, because an expected delivery booked
+    // from an attached load sheet often genuinely has no count yet.
+    document.getElementById('incQty').value      = '';
     document.getElementById('incUnit').value     = 'UNIT';
     document.getElementById('incSupplier').value = '';
     document.getElementById('incPO').value       = '';
@@ -12856,6 +13431,118 @@ function saveIncomingItem() {
   }
 }
 
+// ── One expected delivery, drawn one way ─────────────────────────────────────
+//
+// The week cards and the morning popup were drawing the same delivery in two
+// different shapes, and neither was the shape Jose wanted. He drew it twice —
+// this is the second drawing, the one with the arrows:
+//
+//     IGU (ISOLATED GLASS UNIT)                        ← category, full width
+//     IGU-SR-BF2-TT                          1 UNIT    ← what it is · how many
+//     1@ 33 1/4 W X 55 3/8 H X 3/4 T         Arrived   ← the note · the state
+//                                     [Mark arrived →]
+//
+// Two columns, not four stacked lines: "la cantidad justo del otro lado
+// (derecha) del nombre y el estado abajo de la cantidad." The numbers line up
+// down the right-hand edge, which is the point — a column of quantities can be
+// read at a glance and a column of statuses tells you what is left to do
+// without reading a single material name.
+//
+// One function for both screens, because two of them is how they drifted apart
+// in the first place.
+//
+// The category keeps its coloured pill rather than becoming the plain text of
+// the sketch: that colour is the same colour the category has on every other
+// screen in the app, and it is doing work — you find MIRROR in a card by its
+// colour before you have read a word.
+function _incItemHtml(item, opts){
+  opts = opts || {};
+  var status = item.status || 'Pending';
+  var done   = String(status).toLowerCase() === 'arrived';
+  // Same gate as the Incoming table's edit pencil: only an ADMIN can change an
+  // expected delivery, so only an ADMIN is offered the shortcut to it.
+  var canMark = (userRole === 'ADMIN') && !done;
+
+  var doc = item.docLink
+    ? ' <a href="javascript:void(0)" data-action="preview-media" data-url="' + _he(_incFirstDocUrl(item.docLink)) +
+      '" data-label="' + _he(item.name) + '" title="Attached document" onclick="event.stopPropagation()">📎</a>'
+    : '';
+
+  // The date only earns a line when the row is not about today — inside a day
+  // card, or in the popup's "arriving today" block, it would be the same date
+  // written on every row.
+  var when = opts.showDate ? _he(_incDateLabel(item)) : '';
+  var meta = [when, item.notes ? _he(item.notes) : ''].filter(Boolean).join(' · ');
+
+  return '<div class="inc-item">' +
+      '<div class="inc-item-cat">' + catBadge(item.category) + '</div>' +
+      '<div class="inc-item-body">' +
+        '<div class="inc-item-main">' +
+          '<div class="inc-item-name">' + _he(item.name) + doc + '</div>' +
+          (meta ? '<div class="inc-item-meta">' + meta + '</div>' : '') +
+        '</div>' +
+        '<div class="inc-item-side">' +
+          '<div class="inc-item-qty">' + _he(_incQtyText(item)) + '</div>' +
+          '<div><span class="inc-status-' + String(status).toLowerCase() + '">' + _he(status) + '</span></div>' +
+          (canMark
+            ? '<div><button class="morning-arrived" data-action="morning-arrived" data-id="' + _escAttr(item.id) + '">Mark arrived →</button></div>'
+            : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ── Showing a category the dropdown does not have ───────────────────────────
+//
+// Jose opened an IGU delivery from the morning popup and the Category box was
+// EMPTY, on a record whose badge said IGU one line above.
+//
+// Setting `select.value` to something no <option> matches selects nothing, in
+// silence. That alone is only cosmetic — but Save sends whatever the box holds,
+// so opening the window to change a date would have written the category away.
+// The record's own category is the last thing that window should be able to
+// lose.
+//
+// Two ways a stored category can miss the list. It was renamed or removed from
+// Settings since the delivery was booked; or the casing differs — every write
+// to the ARCHIVE uppercases, while the CONFIG "add" path stores the value as it
+// is handed over, and the same mismatch has bitten this codebase before (see
+// the note on `op === 'rename'` in Code.gs).
+//
+// So: match without caring about case, and if it genuinely is not on the list,
+// put it on the list rather than dropping it. Labelled, because a category
+// nobody can pick from Settings is worth knowing about.
+function _incSetCategory(cat){
+  var sel = document.getElementById('incCategory');
+  if (!sel) return;
+  var want = String(cat || '').trim();
+  if (!want){ sel.value = ''; return; }
+  var found = '';
+  for (var i = 0; i < sel.options.length; i++){
+    if (sel.options[i].value.toUpperCase() === want.toUpperCase()){ found = sel.options[i].value; break; }
+  }
+  if (!found){
+    var o = document.createElement('option');
+    o.value = want;
+    o.textContent = want + ' (not on your list)';
+    sel.appendChild(o);
+    found = want;
+  }
+  sel.value = found;
+}
+
+// A quantity of zero on an expected delivery means "nobody has said how many
+// yet" — not "none are coming". Since v11.24 the Quantity box opens blank, and
+// a delivery booked from an attached load sheet very often has no count at
+// all until the truck is there.
+//
+// So it is never printed as a number. "0 UNIT" states something nobody
+// claimed, and it is the kind of wrong figure people plan around.
+function _incQtyText(item){
+  var q = Number(item && item.qty) || 0;
+  return q > 0 ? (q + ' ' + (item && item.unit ? item.unit : 'UNIT')) : 'qty not stated';
+}
+
 // ── Incoming attachment helpers ───────────────────────────────────────────────
 function _incFirstDocUrl(docLink){ return docLink ? String(docLink).split('\n')[0].trim() : ''; }
 function _onIncFileChange(){
@@ -12884,14 +13571,33 @@ function deleteIncomingItem() {
     onConfirm: function(){ _doDeleteIncomingItem(id); }
   });
 }
+// The window stays open while the row is being deleted, so the Delete button is
+// still under the finger that just pressed it — and with no spinner there was
+// nothing on screen to say the first press had done anything. The second press
+// then hit a row the server had already removed and reported "Incoming item not
+// found", which reads as a failure for a delete that worked.
 function _doDeleteIncomingItem(id){
+  var btn = document.getElementById('btnDeleteIncoming');
+  if (btn && btn.disabled) return;   // already in flight
+  _btnBusy(btn, 'Deleting…');
   google.script.run
-    .withSuccessHandler(function(){
-      closeModal('incomingOverlay');
-      loadDataFromGoogle(true); // skipCache
+    .withSuccessHandler(function(){ _incomingDeleted(btn); })
+    .withFailureHandler(function(err){
+      var msg = (err && err.message) ? String(err.message) : String(err || '');
+      // The row is gone — a second press, or somebody else deleted it first.
+      // That is the state that was asked for, so report it as done.
+      if (msg.indexOf('Incoming item not found') !== -1){ _incomingDeleted(btn); return; }
+      _btnReset(btn);
+      showToast('Error: ' + msg, 'err', 5000);
     })
-    .withFailureHandler(function(err){ showToast('Error: ' + err.message, 'err', 5000); })
     .processMovement('deleteIncoming', _h({ id: id }));
+}
+function _incomingDeleted(btn){
+  _btnDone(btn, true, function(){
+    closeModal('incomingOverlay');
+    showToast('Expected delivery deleted.', 'ok');
+  });
+  loadDataFromGoogle(true); // skipCache
 }
 
 // ── Read an email into expected deliveries ──────────────────────────────────
@@ -12980,7 +13686,7 @@ function _renderEmailDrafts(){
       '<div class="ei-grid">' +
         '<div class="field full"><label>What is arriving</label><input id="ei-name-' + i + '" value="' + _escAttr(d.name) + '"></div>' +
         '<div class="field"><label>Category</label><select id="ei-cat-' + i + '">' + catOpts + '</select></div>' +
-        '<div class="field"><label>Qty</label><input type="number" id="ei-qty-' + i + '" value="' + (d.qty || '') + '" min="0"></div>' +
+        '<div class="field"><label>Qty</label><input type="number" id="ei-qty-' + i + '" value="' + (d.qty || '') + '" min="0" step="any"></div>' +
         '<div class="field"><label>Supplier</label><input id="ei-sup-' + i + '" value="' + _escAttr(d.supplier) + '"></div>' +
         '<div class="field"><label>PO #</label><input id="ei-po-' + i + '" value="' + _escAttr(d.po) + '"></div>' +
         '<div class="field"><label>When</label><select id="ei-mode-' + i + '" onchange="_eiSyncMode(' + i + ')">' + modeOpts + '</select></div>' +
@@ -13080,10 +13786,97 @@ function _emailSaveAll(){
   })();
 }
 
-// ── Morning Popup ─────────────────────────────────────────────────────────────
+// ── Dates ─────────────────────────────────────────────────────────────────────
+// THE CALENDAR DAY THE PERSON IS STANDING IN — not the UTC instant.
+//
+// This used to be `dt.toISOString().substring(0, 10)`, and that is wrong in a
+// way that never shows an error and never looks broken. toISOString converts
+// to UTC first. Utah is UTC−6 in summer and UTC−7 in winter, so from about
+// 18:00 local onwards the UTC clock has already rolled over to tomorrow, and
+// every date this produced was the NEXT DAY.
+//
+// What that meant in the warehouse: a delivery received at 6:30pm on the 14th
+// was recorded as the 15th. Not flagged, not rejected — just filed one day
+// late, by the app, on every evening shift. The month-end totals were off by
+// whatever crossed the dock after six, and the only way to catch it was to
+// remember what time you were standing there.
+//
+// getFullYear/getMonth/getDate read the browser's LOCAL clock, which is the
+// clock the person is actually looking at. padStart keeps the yyyy-mm-dd shape
+// the rest of the app matches on, and Google Sheets stores.
+//
+// The backend does not have this bug: it formats dates with
+// Utilities.formatDate(..., Session.getScriptTimeZone(), 'yyyy-MM-dd'), which
+// has been correct all along. This was a browser-side bug only — which is also
+// why it survived: the two halves disagreed and neither one complained.
 function _isoDate(dt) {
-  return dt.toISOString().substring(0, 10);
+  var d = (dt instanceof Date) ? dt : new Date(dt);
+  if (isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' +
+         String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
 }
+
+// Today, as the calendar says it here. Every place that used to write
+// `new Date().toISOString().split('T')[0]` inline now calls this, so there is
+// one definition of "today" in the app instead of four.
+function _todayIso() {
+  return _isoDate(new Date());
+}
+
+// The backend sends `timestamp` as MM/dd/yyyy HH:mm and `dateRec` as
+// yyyy-MM-dd — two shapes, both correct for what they are. Anywhere the first
+// stands in for the second, it has to be converted rather than sliced, or the
+// column ends up holding both shapes and sorting them as text. Returns '' on
+// anything that is not the expected shape, so a caller's `||` fallback still
+// works.
+function _mdyToIso(ts) {
+  var m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(ts || ''));
+  return m ? (m[3] + '-' + m[1] + '-' + m[2]) : '';
+}
+
+// ── Quantities ────────────────────────────────────────────────────────────────
+// A QUANTITY IS NOT AN INTEGER, and this app has been offering units that
+// prove it since the day it shipped: SQ FT, LN FT, SHEET, ROLL. Half a sheet
+// is a real thing. 2.5 linear feet is a real thing.
+//
+// Every quantity in the entry forms was read with parseInt, which does not
+// round — it TRUNCATES at the first non-digit. 2.5 became 2. 0.75 became 0.
+// No warning, no red border, nothing in the log: the person typed the number
+// they counted, pressed save, and the app wrote a different number.
+//
+// It survived because the app disagreed with itself about it in three places
+// and never compared notes:
+//
+//   the entry form      parseInt   → 2.5 becomes 2
+//   the edit modal      parseFloat → 2.5 stays 2.5   (em_qty, step="any")
+//   the backend         Number()   → 2.5 stays 2.5   (it always accepted them)
+//
+// So the sheet could already hold 2.5, the editor could already show and save
+// 2.5, and only the form where the number is FIRST typed threw the fraction
+// away. Nothing was inconsistent enough to break; it was just quietly lossy at
+// the one point where the truth enters the building.
+//
+// Two halves to the fix, and both are needed: this reader, and `step="any"` on
+// the inputs themselves — an <input type="number"> with no step attribute
+// defaults to step=1, so the browser marks 2.5 invalid before any script gets
+// to see it.
+function _qty(v) {
+  var n = parseFloat(v);
+  return isFinite(n) ? n : 0;
+}
+
+// Adding floats gives 0.1 + 0.2 === 0.30000000000000004, and a running total
+// on screen is exactly where that surfaces. Three decimals is past anything a
+// warehouse counts in and short of where the noise starts. Integers keep
+// printing as integers — 12, not 12.000 — because that is still what most of
+// these numbers are.
+function _qtyText(n) {
+  var r = Math.round((Number(n) || 0) * 1000) / 1000;
+  return String(r);
+}
+
+// ── Morning Popup ─────────────────────────────────────────────────────────────
 
 function _dayLabel(dt, offset) {
   if (offset === 0) return '🌟 Today';
@@ -13109,55 +13902,61 @@ function checkMorningPopup() {
 
   if (!todayPending.length) return; // nothing pending today → skip
 
-  // Build weekly view for context (pending items up to end of week)
-  var dayOfWeek = today.getDay();
-  var endOfWeek = new Date(today);
-  endOfWeek.setDate(today.getDate() + (6 - dayOfWeek));
-  var endStr = _isoDate(endOfWeek);
+  _popupShownThisLoad = true; // mark as shown — won't fire again until next F5 / new tab
+  showMorningPopup(_thisWeeksDeliveries(todayStr), todayStr);
+}
 
+// What is left of this week, deliveries only. Pulled out of checkMorningPopup
+// so the button that reopens the popup and the refresh after a save both ask
+// the same question — three copies of "which week is it" is three chances to
+// disagree about Sunday.
+function _thisWeeksDeliveries(todayStr){
+  var today     = new Date(todayStr + 'T12:00:00');
+  var endOfWeek = new Date(today);
+  endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+  var endStr = _isoDate(endOfWeek);
   // A window counts if any part of it falls in what is left of the week, not
   // only if it starts there.
-  var thisWeek = incoming.filter(function(item) {
+  return incoming.filter(function(item) {
     if ((item.status || '').toLowerCase() === 'received') return false;
     if (!item.estDate) return false;                       // no date — not part of a week's plan
     var from = item.estDate;
     var to   = (item.dateMode === 'window' && item.estDateEnd) ? item.estDateEnd : item.estDate;
     return to >= todayStr && from <= endStr;
   });
+}
 
-  _popupShownThisLoad = true; // mark as shown — won't fire again until next F5 / new tab
-  showMorningPopup(thisWeek, todayStr);
+// The way back in. Until now the popup appeared once per page load and, once
+// closed, could only be brought back by reloading the whole app — which is
+// exactly what Jose ran into after marking the first delivery of the morning.
+function openWeekSchedule(){
+  var todayStr = _isoDate(new Date());
+  var items = _thisWeeksDeliveries(todayStr);
+  if (!items.length){
+    showToast('Nothing expected for the rest of this week.', 'ok');
+    return;
+  }
+  showMorningPopup(items, todayStr);
+}
+
+// Redraw it in place if it is open. Called after an expected delivery is saved,
+// so the row you just marked Arrived says Arrived instead of sitting there
+// still saying Pending with a button that no longer applies.
+function _refreshMorningPopup(){
+  var ov = document.getElementById('morningOverlay');
+  if (!ov || !ov.classList.contains('show')) return;
+  var todayStr = _isoDate(new Date());
+  showMorningPopup(_thisWeeksDeliveries(todayStr), todayStr);
 }
 
 function showMorningPopup(items, todayStr) {
   var todayItems = items.filter(function(i){ return _incOnDay(i, todayStr); });
   var restItems  = items.filter(function(i){ return !_incOnDay(i, todayStr); });
 
-  // Same rule as the Incoming table's own edit pencil (_incRowHtml): only an
-  // ADMIN gets to change an expected delivery, so only an ADMIN is offered the
-  // shortcut to it. Anything already marked Arrived has nothing left to do.
-  var canMarkArrived = (userRole === 'ADMIN');
-
+  // The same renderer the week cards use. The only difference between the two
+  // screens is whether a row needs to say WHICH day it is for.
   function itemRow(item) {
-    var done = String(item.status || '').toLowerCase() === 'arrived';
-    return '<div class="morning-item">' +
-      '<div style="flex:1;min-width:0">' +
-        '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.15rem">' +
-          catBadge(item.category) +
-          '<span class="morning-item-name">' + item.qty + ' ' + _he(item.unit) + ' — ' + _he(item.name) + '</span>' +
-        '</div>' +
-        '<div class="morning-item-meta">' +
-          (!_incOnDay(item, todayStr) ? _he(_incDateLabel(item)) + (item.notes ? ' · ' : '') : '') +
-          (item.notes ? _he(item.notes) : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="morning-item-right">' +
-        '<span class="inc-status-' + (item.status||'pending').toLowerCase() + '">' + (item.status||'Pending') + '</span>' +
-        (canMarkArrived && !done
-          ? '<button class="morning-arrived" data-action="morning-arrived" data-id="' + _escAttr(item.id) + '">Mark arrived →</button>'
-          : '') +
-      '</div>' +
-    '</div>';
+    return _incItemHtml(item, { showDate: !_incOnDay(item, todayStr) });
   }
 
   var body = document.getElementById('morningPopupBody');
@@ -13190,8 +13989,15 @@ function _markArrivedFromPopup(id){
   if (userRole !== 'ADMIN') return;              // same gate as the button itself
   var item = incoming.find(function(i){ return i.id === id; });
   if (!item) { showToast('That expected delivery is no longer on the list.', 'warn'); return; }
-  closeMorningPopup();
-  // The Incoming tab has to be the one on screen behind the modal: closing the
+  // The popup is NOT closed any more. Jose: "luego de seleccionar el primer
+  // material y dar clic en recibido, la ventana se cierra y no hay otra forma
+  // de reabrirla más que actualizar la página completa." It is a list you work
+  // down — three deliveries this morning means three trips through it — and
+  // closing it after the first one meant reloading the app to get back to the
+  // second. The edit window opens on top; the overlays are independent, and
+  // the popup refreshes itself once the save lands (see _refreshMorningPopup).
+  //
+  // The Incoming tab still has to be the one behind the modal: closing the
   // window and landing on the Dashboard would leave no trace of what just
   // happened.
   showTab('incoming', 'btn-incoming');
@@ -13857,8 +14663,22 @@ function _refreshOpenRackDrawer(){
 
 // Pushes the admin's custom WAREHOUSE-role label into the one place it's baked
 // into static HTML (the Add/Edit User role dropdown) rather than built by JS.
-// Everywhere else (badges, account tag) reads the `warehouseRoleLabel` global
-// directly at render time via _displayRole(), so nothing else needs patching.
+//
+// This paragraph used to end "Everywhere else (badges, account tag) reads the
+// `warehouseRoleLabel` global directly at render time via _displayRole(), so
+// nothing else needs patching." That was not true, and it stayed untrue for
+// four versions because it READ true: renderActiveUsers printed the raw role,
+// so Jose's own account panel showed SUPERVISOR on the profile card and
+// WAREHOUSE in the Active Users row directly beneath it.
+//
+// A comment asserting completeness is the same shape of mistake as the header
+// list of public entry points that went five names stale (v11.27): a sentence
+// cannot fail a build. tools/test-role-label.js now counts the render paths,
+// which can.
+//
+// The setup wizard's own row builder (_wizDrawUsers) still says "Warehouse"
+// literally, and that is deliberate — it runs before setup finishes, when
+// there is no custom label to use yet and the global still holds its default.
 function _applyWarehouseRoleLabel(){
   var opt = document.querySelector('#uRole option[value="WAREHOUSE"]');
   if (opt) opt.textContent = warehouseRoleLabel + ' — Record movements';
@@ -14394,7 +15214,7 @@ setInterval(function(){
 
 // ── Privacy Policy / Terms of Service ────────────────────────────────────────
 var LEGAL_DOCS = {
-  privacy: { title: 'Privacy Policy',   html: `<p><strong>Last updated:</strong> 21 August 2026</p>
+  privacy: { title: 'Privacy Policy',   html: `<p><strong>Last updated:</strong> 27 August 2026</p>
 <p>Acopio is warehouse-management software provided by Jose Castro ("we", "us"). This policy explains what happens to data when you use it.</p>
 <p>Read the first section before anything else — it is the part that makes the rest of this document short.</p>
 <hr>
@@ -14427,21 +15247,24 @@ var LEGAL_DOCS = {
 <li>Every permission above is granted by you, to software running in your own account. None of it grants us access.</li>
 </ul>
 <h3>3. What we collect</h3>
-<p><strong>We never receive your inventory data.</strong> Three things can send us something else, and they are listed here in full.</p>
+<p><strong>We never receive your inventory data.</strong> Four things can send us something else, and they are listed here in full.</p>
 <ul>
 <li><strong>"Report a problem" (the 🐞 button).</strong> When you submit a report, the message you typed, any screenshots you attach, your email address and your app version are emailed to your own administrator. If you send it on to us for support, we receive whatever you chose to include. Do not attach screenshots containing information you would rather we did not see.</li>
 <li><strong>Support you initiate.</strong> If you email us for help and include a file, a screenshot or spreadsheet access, we see what you send us. We use it to resolve your issue and nothing else, and we do not retain copies afterwards.</li>
 <li><strong>The setup check-in — the one thing that sends without you asking.</strong> If, and only if, your installation was configured with a support address, the software emails us once at 3 days and once at 7 days after setup <strong>when no inventory movement has been recorded at all</strong>. It is there so a customer who got stuck during setup hears from us instead of quietly giving up.
 <br><br>That email contains exactly four things: <strong>your company name, your administrator's email address, how many users are registered, and how many days it has been since setup.</strong> Nothing else — no inventory, no materials, no suppliers, no prices, no documents.
 <br><br>It stops permanently as soon as a single movement is recorded, and it never sends more than those two messages. If your installation has no support address configured, it never sends at all.</li>
+<li><strong>Paying us.</strong> Your billing details — name, email, company, billing address — reach us through Stripe so we know who paid for what. <strong>Your card number does not</strong>: it goes to Stripe and stays there. See section 5.</li>
 </ul>
 <p>We do not use analytics, tracking pixels, advertising identifiers or session recording. We do not sell, rent or share data — we have none to sell.</p>
 <h3>4. The optional AI add-on</h3>
 <p>If you enable the document-reading feature, the contents of the documents you choose to scan are sent to <strong>Google's Gemini API</strong> for processing, using an API key that <strong>you</strong> supply from your own Google account. The request goes from your Google account to Google. It does not pass through us.</p>
 <p>This feature is off unless you turn it on.</p>
 <h3>5. Sub-processors</h3>
-<p>We use none for your business data, because we do not process it.</p>
+<p><strong>For your business data: none, because we do not process it.</strong></p>
 <p>Google is not our sub-processor — Google is <strong>your</strong> provider, under your own agreement with them.</p>
+<p><strong>For billing: Stripe.</strong> Paying us means Stripe processes your billing details — the name and email on the account, your company name and billing address, and your card. <strong>Your card number goes to Stripe and is held by Stripe; it never reaches us.</strong> Stripe is a payment processor under its own privacy policy at <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</p>
+<p>This is the one place a third party sees anything of yours because of us, and it sees only what is needed to take a payment. <strong>It has nothing to do with your inventory</strong>, which stays in your Google account and is never sent anywhere.</p>
 <h3>6. Retention and deletion</h3>
 <p>You control retention entirely:</p>
 <ul>
@@ -14463,7 +15286,7 @@ var LEGAL_DOCS = {
 <p>Material changes to this policy will be communicated to active customers by email before they take effect. The date at the top always reflects the current version.</p>
 <h3>11. Contact</h3>
 <p>Jose Castro — joseisrael5101@gmail.com</p>` },
-  terms:   { title: 'Terms of Service', html: `<p><strong>Last updated:</strong> 26 August 2026</p>
+  terms:   { title: 'Terms of Service', html: `<p><strong>Last updated:</strong> 27 August 2026</p>
 <p>These terms govern your use of Acopio, warehouse-management software provided by Jose Castro ("we", "us"). By installing or using it, you agree to them. If you are agreeing on behalf of a company, you confirm you are authorised to do so.</p>
 <hr>
 <h3>1. What you are buying</h3>
@@ -14554,6 +15377,27 @@ var LEGAL_DOCS = {
 <p>Refunds are issued by the method you paid with, within 10 business days of being agreed.</p>
 <h4>Add-ons</h4>
 <p>Add-ons follow the subscription: cancel one and it stops at the end of the current period, under the same rules as above.</p>
+<h4>How you are billed</h4>
+<p>Payment is taken by card through <strong>Stripe</strong>, our payment processor.</p>
+<ul>
+<li><strong>Your card details go to Stripe, not to us.</strong> They are stored by Stripe under Stripe's own terms and security. We never see, hold or store your card number.</li>
+<li><strong>The setup fee</strong> is charged once, when the installation is booked.</li>
+<li><strong>The subscription</strong> is then charged <strong>automatically on each renewal date</strong> — monthly or annually, whichever you chose — until you cancel. Stripe emails you a receipt for every charge.</li>
+<li><strong>Prices are in US dollars</strong> and do not include any tax that may apply where you are; if tax applies, it is added to the charge.</li>
+<li><strong>If your company cannot pay by card</strong>, tell us before the installation and we will agree an alternative in writing.</li>
+</ul>
+<h4>If a payment does not go through</h4>
+<p>Nothing is switched off, at any point. We could not do it if we wanted to — the software is in your Google account.</p>
+<p>Card payments fail for boring reasons — an expired card, a bank declining a recurring charge. What actually happens:</p>
+<ol>
+<li><strong>Stripe retries the charge automatically</strong> over the following days and emails you each time. This is usually the end of it.</li>
+<li><strong>Day 10 after the first failed charge</strong> — if it is still unpaid, we email you personally, so it does not come down to you noticing a receipt that never arrived.</li>
+<li><strong>Day 30</strong> — if it is still unpaid, support and new versions <strong>pause</strong> until the account is settled. You keep using the software and you keep every bit of your data.</li>
+<li><strong>We never withhold your data to get paid.</strong> It is not ours to withhold, and export stays available whatever the state of your account.</li>
+</ol>
+<p>Settle the account and support and updates resume immediately, with no reconnection fee.</p>
+<h4>Coming back after leaving</h4>
+<p>If you cancel and later want to return, you are treated as a new customer: current prices, and any promotional or founding rate you previously had does not come back. That includes the setup fee if the installation has to be done again.</p>
 <h3>10. Termination</h3>
 <p>We may terminate your licence if you materially breach these terms and do not fix it within 30 days of written notice. On termination your right to support and updates ends. <strong>Your installation and your data are unaffected</strong> — we have no mechanism to remove them, and would not use one if we had it.</p>
 <h3>11. Changes to these terms</h3>
@@ -14704,7 +15548,12 @@ function renderActiveUsers(users){
       '<span class="presence-email ' + (isYou ? 'presence-you' : '') + '" title="' + _he(u.email) + '">' +
         _he(display) + (isYou ? ' (you)' : '') +
       '</span>' +
-      '<span class="presence-role">' + _he(u.role || '—') + '</span>' +
+      // v11.29 — this said WAREHOUSE while the profile card two lines above it
+      // said SUPERVISOR, for the same person, in the same panel. An admin who
+      // renames the role expects the app to use the name everywhere; using it
+      // in one place and not the neighbouring one reads worse than not
+      // offering the rename at all.
+      '<span class="presence-role">' + _he(u.role ? _displayRole(u.role) : '—') + '</span>' +
       '<span class="presence-time">' + ageStr + '</span>' +
       '</div>';
   }).join('');
@@ -14895,7 +15744,7 @@ function openEditMovModal(rowIdx) {
   document.getElementById('em_rowIdx').value            = rowIdx;
 
   // Move type tag
-  var typeColors = {ENTRY:'var(--green)',EXIT:'var(--red)',TRANSFER:'var(--accent)',RETURN:'#9CA3AF',WASTE:'#111827'};
+  var typeColors = {ENTRY:'var(--green)',EXIT:'var(--red)',TRANSFER:'var(--accent)',RETURN:'#9CA3AF',WASTE:'#111827',ADJUST:'var(--steel)'};
   var tc = typeColors[mov.moveType] || 'var(--muted)';
   document.getElementById('editMovTypeTag').innerHTML =
     '<span style="font-size:.78rem;font-weight:700;padding:2px 10px;border-radius:10px;background:'+tc+'22;color:'+tc+'">' +
