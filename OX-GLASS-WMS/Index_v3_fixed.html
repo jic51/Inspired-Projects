@@ -110,6 +110,18 @@
        every pixel it loses is a pixel of clearance from the blue edge it was
        crossing. It is a signature, not a heading — smaller suits it anyway. */
     .author-badge{background:rgba(0,0,0,.2);padding:3px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.1);font-size:.66rem;color:#a1b0cb;display:inline-flex;align-items:center;gap:5px}
+    /* El nombre del producto, enlazado a la landing. En reposo se ve
+       exactamente igual que antes de ser enlace —misma letra, mismo color, sin
+       subrayado— y sólo se subraya al pasar por encima. Es una firma en una
+       esquina, no una llamada a hacer clic. #a1b0cb es el color que ya tenía
+       en el header; en el menú de la cuenta hay que repetirlo porque ahí el
+       fondo es blanco y no hay de quién heredarlo. */
+    .product-link{color:inherit;text-decoration:none}
+    .product-link:hover,.product-link:focus-visible{text-decoration:underline}
+    .acct-brand{color:#a1b0cb}
+    /* Renombrado por el cliente: deja de ser enlace y vuelve a ser texto. El
+       cursor lo dice antes de que nadie lo intente. */
+    .product-link.no-link{cursor:default;text-decoration:none}
     /* Left-aligned identity stack — logo, company name, the Acopio badge
        right under it, tight. Jose: this reads as a lockup, not three
        separate things scattered in a row, and (v9.89, emphatic) Acopio has
@@ -151,7 +163,22 @@
          --brand-h is measured by _syncBrandWidth from the real block, so the
          bar fits whatever this customer's logo turned out to be, plus room to
          breathe above and below. */
-      .topbar.merged{position:relative;min-height:max(78px, calc(var(--brand-h, 60px) + 26px));gap:.4rem 1.25rem}
+      /* `sticky`, NO `relative`. Éste es el arreglo del header que se iba con
+         el scroll y que Jose fotografió (v11.44).
+
+         .topbar ya declara position:sticky;top:0;z-index:100 — pero
+         `.topbar.merged` es más específico, así que el `position:relative` que
+         estaba aquí lo pisaba, y sólo por encima de 769px: en el teléfono el
+         header se quedaba arriba y en la computadora no. Nadie lo vio en el
+         código porque las dos reglas, leídas por separado, están bien; lo que
+         falla es cuál gana, y eso no se lee, se mide.
+
+         El `relative` no estaba puesto por sí mismo: sólo servía de ancla para
+         el `position:absolute` de .topbar-row1 de la línea siguiente. `sticky`
+         también establece bloque contenedor para descendientes absolutos, así
+         que la fusión del header sigue intacta. El top:0 y el z-index se
+         heredan de .topbar. Lo mide test-topbar-sticky.js haciendo scroll. */
+      .topbar.merged{position:sticky;min-height:max(78px, calc(var(--brand-h, 60px) + 26px));gap:.4rem 1.25rem}
       .topbar.merged .topbar-row1{position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);z-index:1}
       /* row2 itself stays full-width (unpadded) so its centring math is
          still exactly "middle of the page" — the fix isn't in row2's box,
@@ -832,7 +859,11 @@
     .acct-menu{display:none;position:absolute;right:0;top:calc(100% + 12px);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.26);width:320px;max-width:calc(100vw - 24px);z-index:600;overflow:hidden;animation:acct-in .16s ease}
     .acct-menu.open{display:block}
     @keyframes acct-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-    .acct-head{padding:1.15rem 1rem .9rem;text-align:center;border-bottom:1px solid var(--border)}
+    .acct-head{padding:1.15rem 1rem .9rem;text-align:center;border-bottom:1px solid var(--border);position:relative}
+    /* La marca dentro del menú de la cuenta, en la esquina que Jose marcó.
+       Absoluta a propósito: el bloque de abajo (avatar, nombre, correo, roles)
+       está centrado, y meter una palabra en el flujo lo descentraría. */
+    .acct-brand{position:absolute;left:.85rem;top:.7rem;font-size:.66rem;font-weight:600;letter-spacing:.01em}
     .acct-avatar{width:62px;height:62px;border-radius:50%;margin:0 auto .6rem;display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:800;color:#fff;background:var(--accent)}
     .acct-name{font-size:.96rem;font-weight:700;color:var(--text);line-height:1.3}
     .acct-email{font-size:.76rem;color:var(--muted);margin-top:.15rem;word-break:break-all}
@@ -1059,13 +1090,65 @@
     .alert-banner-actions{display:flex;gap:.5rem;align-items:center;margin-left:auto;flex-shrink:0}
     .alert-banner-actions button{background:rgba(0,0,0,.15);border:none;color:inherit;border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;font-weight:600;white-space:nowrap}
     .alert-banner-actions button:hover{background:rgba(0,0,0,.28)}
+    /* La oferta de crear el Entry, dentro de la ventana de la entrega. Se
+       muestra sólo cuando el estado es Arrived: ofrecerla sobre algo que
+       todavía no ha llegado sería ofrecer registrar una entrada falsa. */
+    .entry-offer{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;
+      font-size:.8rem;color:var(--text);cursor:pointer;text-transform:none;
+      font-weight:400;letter-spacing:0;
+      background:#EFF6FF;border:1px solid var(--accent);border-radius:6px;
+      padding:.5rem .6rem}
+    .entry-offer input{margin:0;flex:none}
+    /* La tarjeta de entrada pendiente NO se define aquí: sus reglas viven
+       junto a .sys-card, después de .deck-card. Estuvieron aquí desde la v11.42
+       y ese sitio era el fallo — ver el comentario largo allí. */
     /* ── INCOMING SECTION ── */
     .incoming-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1.5rem}
-    .incoming-week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem;padding:1rem 1.25rem}
-    .day-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem}
+    /* Jose lo dibujó encima de una captura: CUATRO arriba y TRES abajo, y las
+       tarjetas "estables, como en Google Calendar, son siempre del mismo
+       tamaño, pero al hacer scroll se pueden ver los que están más abajo".
+
+       Antes era repeat(auto-fill,minmax(200px,1fr)): el número de columnas lo
+       decidía el ancho de la ventana, así que la semana se partía donde cayera
+       —en su captura, seis arriba y el miércoles solo en una segunda fila— y
+       cada tarjeta crecía con su contenido. El día con dos entregas era el
+       doble de alto que los vacíos, y la fila de abajo empezaba a una altura
+       distinta según el día. Una semana que cambia de forma según lo que haya
+       dentro no se puede leer de un vistazo, que es lo único para lo que
+       sirve esta vista.
+
+       Cuatro columnas fijas dan 4 + 3, que es exactamente el reparto de una
+       semana de siete días sin dejar huecos raros. Y la altura fija es lo que
+       hace que la segunda fila empiece siempre en el mismo sitio. */
+    .incoming-week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;padding:1rem 1.25rem}
+    /* La altura de la tarjeta y el scroll de dentro son la misma decisión: sin
+       altura fija no hay nada que desbordar, y sin desbordar no hay scroll. */
+    .day-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      padding:.65rem .9rem;height:14rem;display:flex;flex-direction:column;overflow:hidden}
     .day-card.today{border-color:var(--accent);background:#EFF6FF}
-    .day-card .day-label{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
+    /* El día NO se va con el scroll: es lo que te dice qué estás mirando. */
+    .day-card .day-label{font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--muted);
+      margin-bottom:.35rem;flex:none}
     .day-card.today .day-label{color:var(--accent2)}
+    /* min-height:0 no es adorno: sin él un hijo flex se niega a encogerse por
+       debajo de su contenido, la tarjeta crece igual y el overflow nunca llega
+       a existir. Es el motivo habitual de que "puse overflow y no hace nada". */
+    .day-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+    /* Que se vea que hay más abajo. Una tarjeta cortada sin señal se lee como
+       una tarjeta vacía a partir de ahí. */
+    .day-body::-webkit-scrollbar{width:6px}
+    .day-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .day-card:hover .day-body::-webkit-scrollbar-thumb{background:var(--muted)}
+    /* Cuatro columnas necesitan sitio. Por debajo se reparte en dos y luego en
+       una, y ahí la altura fija estorba más que ayuda: en el móvil se lee un
+       día tras otro, no la semana de un vistazo. */
+    @media (max-width:1000px){
+      .incoming-week-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:600px){
+      .incoming-week-grid{grid-template-columns:1fr}
+      .day-card{height:auto;max-height:16rem}
+    }
     .day-empty{color:var(--muted);font-size:.78rem;font-style:italic}
     /* ── One expected delivery ──
        Jose's second sketch, the one with the arrows: the category full width on
@@ -1302,6 +1385,79 @@
        list above it does it over time rather than in one frame. */
     .deck-card.leaving{opacity:0;transform:translateX(150%) scale(.9);margin-bottom:calc(-1 * (var(--card-h) + .45rem));pointer-events:none;transition-delay:0s!important}
     .sys-card{--card-h:112px;--card-w:352px;cursor:pointer}
+
+    /* ── LA TARJETA DE ENTRADA PENDIENTE ──────────────────────────────────────
+     *
+     * TIENE QUE ESTAR AQUÍ, DESPUÉS DE .deck-card. Estuvo 250 líneas más
+     * arriba desde la v11.42, y ése era el fallo que Jose fotografió con los
+     * botones saliéndose por debajo del borde.
+     *
+     * .deck-card declara `--card-h:96px` y .todo-card declaraba `--card-h:160px`.
+     * Las dos tienen la misma especificidad —una clase— así que gana la que
+     * viene después en el archivo, y la que venía después era .deck-card. La
+     * tarjeta midió 96px todo el tiempo, mientras el archivo decía 160 y yo
+     * decía que la había subido. El contenido pide 106px, así que los botones
+     * caían fuera. .sys-card no tiene ese problema por una sola razón: está
+     * escrita justo debajo de .deck-card, que es donde ahora está ésta.
+     *
+     * Es el mismo fallo que el header de la v11.44: dos reglas que se leen bien
+     * por separado, y el error está en cuál gana.
+     *
+     * EL ALTO NO SE ADIVINA. 190px sale de medir el contenido real —etiqueta,
+     * nombre, cantidad, hora y la fila de botones, más el relleno— y dejar aire
+     * en vez de justo lo necesario, porque un nombre de material más largo
+     * envuelve a dos líneas. test-arrived-to-entry.js mide que nada se salga.
+     *
+     * NARANJA ENTERA, no una banda. Jose: "la tarjeta hay que hacerla naranja
+     * toda, así las letras dentro serán blancas y grises, y se verán sin
+     * problemas al hacerse transparentes". Y tiene razón en el motivo: el
+     * estado de reposo desvanece la tarjeta, y un texto gris oscuro sobre un
+     * blanco desvanecido se lee peor que uno blanco sobre naranja desvanecido.
+     * Por eso el reposo aquí NO usa --card-ghost (que es blanco translúcido):
+     * usa el mismo naranja con menos opacidad, para que el texto blanco siga
+     * teniendo detrás algo oscuro.
+     */
+    .todo-card{--card-h:150px;--card-w:352px;
+      background:var(--orange);color:#fff;
+      border:1px solid rgba(0,0,0,.12);
+      box-shadow:0 6px 20px rgba(154,52,18,.32);
+      /* Columna con los botones empujados abajo. Sin esto el contenido se
+         amontona arriba y el aire de más queda todo en un hueco al pie, que es
+         lo que hace que una tarjeta con sitio de sobra parezca mal cortada. Y
+         de paso el alto deja de ser un número que hay que clavar: sobre o
+         falte un poco, los botones siguen apoyados en el borde de abajo. */
+      display:flex;flex-direction:column;padding:.7rem .85rem}
+    .todo-card .cfg-card-acts{margin-top:auto}
+    .deck.dim:not(.open) .todo-card{background:rgba(234,88,12,.66);
+      border-color:rgba(0,0,0,.05);
+      box-shadow:0 2px 10px rgba(154,52,18,.16)}
+    .todo-card-lbl{font-size:.62rem;font-weight:800;text-transform:uppercase;
+      letter-spacing:.05em;color:rgba(255,255,255,.92);margin-bottom:.2rem}
+    .todo-card-val{font-weight:800;font-size:.9rem;line-height:1.25;color:#fff;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* Una línea, igual que el nombre. Sin este corte el alto de la tarjeta
+       depende de lo largo que sea el nombre del proveedor, y entonces ningún
+       --card-h es correcto para todos los proveedores: es lo que convierte
+       "cabe" en "cabe hoy". Con el corte, el contenido mide lo mismo pase lo
+       que pase, y el alto se puede fijar de verdad. */
+    .todo-card-sub{font-size:.76rem;color:rgba(255,255,255,.92);margin-top:.15rem;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* El gris que pidió Jose: el mismo blanco bajado de intensidad, no un gris
+       de la paleta. Un #9CA3AF sobre naranja se ensucia; el blanco al 72% se
+       lee como gris y conserva el contraste. */
+    .todo-card-when{font-size:.7rem;color:rgba(255,255,255,.72);
+      margin-top:.15rem;margin-bottom:.55rem}
+    /* Los botones, releídos para fondo naranja: el azul de .cfg-card-add
+       desaparecía encima. Blanco sólido para el que hace algo, contorno para
+       el que aplaza. */
+    .todo-card .cfg-card-add{background:#fff;color:#9A3412}
+    .todo-card .cfg-card-add:hover{background:#FFF7ED}
+    .todo-card .cfg-card-skip{background:rgba(255,255,255,.16);color:#fff;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+    .todo-card .cfg-card-skip:hover{background:rgba(255,255,255,.26)}
+    /* La ✕ del pico también: navy sobre naranja se lee como una mancha. */
+    .todo-card .sys-card-x{background:#9A3412;border-color:#fff}
+    .todo-card .sys-card-x:hover{background:var(--red)}
     .deck-card + .deck-card{margin-top:.45rem}
     /* --deck-in already governs margin/transform unconditionally, from the
        base rule above, so it needs no separate re-statement here for opening —
@@ -1439,8 +1595,27 @@
     .btn:disabled{opacity:.5;cursor:not-allowed}
     /* Settings → Company */
     .co-form{max-width:460px}
+    /* La pestaña Company pasó de una .co-form suelta a dos áreas con recuadro
+       (v11.46). Conservan el ancho legible de la forma original — un campo de
+       texto de 900px de ancho no se lee mejor, sólo se ve descuidado — y el
+       primer .co-label de cada área no lleva el margen de arriba, que ahora es
+       trabajo del recuadro. */
+    #settingsTabContent > .field.co-area{max-width:520px}
+    /* Los interruptores de permisos, ya dentro de un área con nombre y no cada
+       uno en su propia caja azul. La línea de separación se queda: son cosas
+       distintas dentro de la misma lista. */
+    .perm-row{padding:.55rem 0;border-bottom:1px solid var(--border)}
+    .perm-row:last-child{border-bottom:none;padding-bottom:0}
     .co-label{display:block;font-size:.78rem;font-weight:700;color:var(--text);margin:1rem 0 .3rem}
     .co-form .co-label:first-child{margin-top:0}
+    .co-area .co-label:first-of-type{margin-top:.2rem}
+    /* Y hay que devolverles su forma: `.field label` (0,1,1) le gana a
+       `.co-label` (0,1,0), así que al meter estos campos dentro de un .field
+       los nombres se volvían MAYÚSCULAS grises de rótulo. El único label que
+       debe verse así es el del recuadro. */
+    #settingsTabContent > .field.co-area .co-label{
+      text-transform:none;letter-spacing:0;
+      color:var(--text);font-size:.78rem;font-weight:700}
     .co-opt{font-weight:400;color:var(--muted)}
     .co-input{width:100%;padding:.5rem .6rem;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:.86rem;font-family:inherit}
     .co-input:focus{outline:none;border-color:var(--accent)}
@@ -1902,7 +2077,11 @@
     <div class="brand-mark">
       <div class="author-badge">
         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        <span id="poweredByBadge">Acopio</span>
+        <!-- El enlace envuelve al span, no lo reemplaza: el nombre lo sigue
+             escribiendo _applyCompanyBranding en #poweredByBadge, y quien lo
+             escribe no tiene que saber que ahora está dentro de un enlace.
+             _syncProductLinks decide si el enlace vive o no. -->
+        <a class="product-link" href="https://www.acopio.net" target="_blank" rel="noopener noreferrer"><span id="poweredByBadge">Acopio</span></a>
       </div>
       <!-- Starts loud on purpose: if the script never runs, this is the only
            thing on the page that says so. The moment it does run it is
@@ -1933,6 +2112,13 @@
       </button>
       <div class="acct-menu" id="acctMenu">
         <div class="acct-head">
+          <!-- Jose lo marcó en rojo sobre la captura: la marca arriba a la
+               izquierda del recuadro blanco. Va posicionada en la esquina, no
+               en el flujo, para no empujar el avatar ni el nombre fuera de su
+               centro — que es lo que da forma a este bloque. El texto lo
+               escribe _syncProductLinks junto con el del header, de una sola
+               vez, para que los dos no puedan decir cosas distintas. -->
+          <a class="product-link acct-brand" href="https://www.acopio.net" target="_blank" rel="noopener noreferrer">Acopio</a>
           <div class="acct-avatar" id="acctAvatar">·</div>
           <div class="acct-name"  id="acctName">Loading…</div>
           <div class="acct-email" id="acctEmail"></div>
@@ -2332,11 +2518,30 @@
       </div>
       <div class="field">
         <label>Status</label>
-        <select id="incStatus">
+        <select id="incStatus" onchange="_syncEntryOffer()">
           <option value="Pending">Pending</option>
           <option value="Arrived">Arrived</option>
           <option value="Cancelled">Cancelled</option>
         </select>
+        <!-- Jose (v11.29): "quiero poder pasar del 'Mark arrived' a Entry"
+             sin volver a escribir lo que la app ya sabe.
+
+             La pregunta va AQUÍ DENTRO, no en un popup después de guardar. Los
+             dos motivos:
+
+             Un popup encima de otro popup es el apilamiento que costó la
+             v11.29 — la ventana de edición saliendo detrás del aviso de la
+             mañana. No hace falta repetirlo para aprenderlo.
+
+             Y preguntar ANTES de guardar es mejor que interrumpir después: se
+             decide mientras se está mirando la entrega, no cuando ya se dio
+             por terminada. Marcada por defecto porque registrar la entrada es
+             lo que se hace el 95% de las veces; quien no quiera, la desmarca y
+             se lleva una tarjeta al mazo para no olvidarlo. -->
+        <label id="entryOfferRow" class="entry-offer" style="display:none">
+          <input type="checkbox" id="incMakeEntry" checked>
+          <span>Record the Entry for this material after saving</span>
+        </label>
       </div>
       <div class="field">
         <label>Category</label>
@@ -3058,7 +3263,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.39';
+var APP_VERSION = '11.47';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -3070,7 +3275,7 @@ var APP_VERSION = '11.39';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'ae5491e2';
+var APP_BUILD = '4d6bc259';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -4330,6 +4535,11 @@ function wizFinish(){
       document.body.style.overflow = '';
       btn.disabled = false; btn.textContent = '✓ Start using ' + PRODUCT;
       _wizJustFinished = true;
+      // RUIDOSO A PROPÓSITO, y es uno de los dos sitios donde lo es. El
+      // asistente acaba de terminar: no hay caché, no hay nada en pantalla, y
+      // esta primera carga es la que de verdad puede tardar los 10-20 segundos
+      // que anuncia. Aquí los esqueletos no son un parpadeo, son la única señal
+      // de que algo está pasando.
       loadDataFromGoogle(true);
       showToast('Setup complete — welcome to ' + PRODUCT + '.', 'ok');
     })
@@ -4482,6 +4692,7 @@ function applyCompanyBranding(c){
   }
   var badge = document.getElementById('poweredByBadge');
   if (badge) badge.textContent = c.productName || PRODUCT;
+  _syncProductLinks(c.productName);
 
   // Remembered for the NEXT load's splash screen, which paints long before the
   // server has answered and so has nothing else to go on. See the splash markup.
@@ -4528,6 +4739,50 @@ function applyCompanyBranding(c){
 function _setFavicon(href){
   var link = document.getElementById('appFavicon');
   if (link && href) link.href = href;
+}
+
+/* ── El nombre del producto, enlazado a la landing ────────────────────────────
+ *
+ * Jose (v11.44): que el "Acopio" de debajo del nombre de la empresa lleve al
+ * sitio, y que aparezca también arriba a la izquierda del menú de la cuenta.
+ *
+ * EL ENLACE NO ES INCONDICIONAL, y ésa es la única decisión de peso aquí. Ese
+ * texto no siempre dice Acopio: `_applyCompanyBranding` lo reescribe con
+ * `c.productName`, que es la marca blanca. Si un cliente renombra el producto,
+ * un enlace fijo a acopio.net mandaría a su gente a un sitio que no se llama
+ * como lo que están usando — y desde una palabra que ya no es nuestra.
+ *
+ * Así que el enlace vive sólo mientras el nombre siga siendo el de fábrica. En
+ * cuanto hay `productName` propio, el <a> pierde el href y se queda como el
+ * texto que siempre fue. Se hace por los dos sitios a la vez, con una sola
+ * consulta a `.product-link`, para que el header y el menú no puedan acabar
+ * diciendo cosas distintas — que es lo que pasa cuando cada copia se sincroniza
+ * por su cuenta.
+ */
+var PRODUCT_SITE = 'https://www.acopio.net';
+
+function _syncProductLinks(productName){
+  var custom = String(productName || '').trim();
+  var renamed = !!custom && custom !== PRODUCT;
+  var label = renamed ? custom : PRODUCT;
+  var links = document.querySelectorAll('.product-link');
+  Array.prototype.forEach.call(links, function(a){
+    // El del header envuelve a #poweredByBadge, que ya escribió el nombre; el
+    // del menú es el propio texto. Se distinguen por tener hijo o no, no por
+    // un id — así un tercer sitio hereda esto sin tocar nada.
+    if (!a.querySelector('span')) a.textContent = label;
+    if (renamed){
+      a.removeAttribute('href');
+      a.removeAttribute('target');
+      a.removeAttribute('rel');
+      a.classList.add('no-link');
+    } else {
+      a.setAttribute('href', PRODUCT_SITE);
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+      a.classList.remove('no-link');
+    }
+  });
 }
 
 // The header-merge layout (≥769px) takes the brand block out of flow with
@@ -5609,7 +5864,9 @@ function _doDeleteMovementRow(rowIdx){
   google.script.run
     .withSuccessHandler(function(){
       showToast('Movement deleted.', 'ok');
-      loadDataFromGoogle(true); // skipCache — show fresh data
+      // Silencioso: la fila desaparece de la tabla y el aviso lo dice. Desarmar
+      // el tablero para volver a montarlo no añade nada.
+      loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(err){
       showToast('Delete failed: ' + (err.message || err), 'err', 6000);
@@ -6026,6 +6283,13 @@ function openMoveModal(type){
   // Drawer flow (_rdwMoveFromDrawer) re-arms this right after this call
   // returns, once it has its own material to prefill.
   _rdwPrefillActive = null;
+
+  // Y sin tarjeta pendiente colgando de la apertura anterior. Mismo motivo que
+  // la línea de arriba, y aquí importa más: si alguien abre la entrada desde
+  // una tarjeta, la cierra sin guardar y más tarde registra OTRA entrada
+  // cualquiera, el id viejo borraría una tarjeta que sigue haciendo falta.
+  // _entryFromIncoming lo vuelve a poner después de llamar aquí.
+  _entryTodoId = null;
   _syncMoveTypeBarForRdw();
 
   // Reset form
@@ -6484,6 +6748,102 @@ function updateNotifyPreview(){
   document.getElementById('mNotifyMsg').value = msg;
 }
 
+/* ── "OCUPADO" NO ES UN ERROR DE QUIEN GUARDA ────────────────────────────────
+ *
+ * Jose, prueba con tres cuentas (2026-09-04): tres salidas del mismo estante
+ * que sumaban exactamente lo que había (142 = 42 + 50 + 50). Una pasó, dos
+ * vieron un error rojo. Sus palabras, y son la especificación de esto:
+ *
+ *   "no debemos dejar que la app muestre un error cuando los movimientos sí
+ *    están hechos correctamente, pero es el sistema el que no lo está haciendo
+ *    bien. debemos poner en cola los movimientos o reintentar hacerlos otra
+ *    vez, si todo está correcto."
+ *
+ * El servidor ya hacía lo correcto: serializa las escrituras con un candado
+ * para que dos personas no se pisen. Lo que estaba mal es lo que pasa cuando
+ * te toca esperar — el candado se rinde a los 8 segundos y devuelve un error,
+ * y el navegador enseñaba ese error igual que enseñaría "no hay suficiente
+ * material". Dos cosas opuestas con la misma cara: una dice QUE NO, la otra
+ * dice TODAVÍA NO.
+ *
+ * Ahora el servidor marca la segunda con SYSTEM_BUSY| y aquí se reintenta sola.
+ *
+ * POR QUÉ CON ESPERA CRECIENTE Y AL AZAR, que es la parte que parece un adorno
+ * y no lo es: si los tres navegadores reintentaran a los mismos milisegundos,
+ * volverían a chocar los tres en cada ronda, y la tercera persona podría no
+ * pasar nunca. La parte al azar es lo que los desordena. Es la misma razón por
+ * la que dos coches en un cruce estrecho se desatascan cuando uno duda un
+ * momento más que el otro.
+ *
+ * REINTENTAR AQUÍ ES SEGURO porque el error de ocupado significa que el candado
+ * NO se llegó a tomar, o sea que no se escribió absolutamente nada. No es un
+ * "no sé si se guardó": es un "no se guardó". Un reintento no puede duplicar.
+ * Si algún día el servidor marcara con SYSTEM_BUSY| un fallo posterior a la
+ * escritura, esto duplicaría movimientos — por eso la marca sólo se pone donde
+ * se pide el candado, y en ningún otro sitio.
+ */
+var BUSY_MAX_RETRIES = 4;
+var BUSY_BASE_MS     = 900;
+var BUSY_JITTER_MS   = 700;
+
+function _isBusyError(err){
+  var msg = (err && err.message) ? err.message : String(err || '');
+  return msg.indexOf('SYSTEM_BUSY|') !== -1;
+}
+
+/** El texto legible, sin la marca — para cuando hay que enseñarlo de verdad. */
+function _busyText(err){
+  var msg = (err && err.message) ? err.message : String(err || '');
+  var i = msg.indexOf('SYSTEM_BUSY|');
+  return i === -1 ? msg : msg.slice(i + 'SYSTEM_BUSY|'.length);
+}
+
+/** Cuánto esperar antes del intento número `attempt` (1 = el primer reintento). */
+function _busyDelay(attempt){
+  return BUSY_BASE_MS * Math.pow(2, attempt - 1) +
+         Math.floor(Math.random() * BUSY_JITTER_MS);
+}
+
+/* Reintento compartido por los TRES caminos de guardado.
+ *
+ * Escrito una vez a propósito. Hay tres funciones que mandan movimientos
+ * —submitMovement para los sueltos, addMultiExit para las salidas y
+ * submitMultiEntry para las entradas— y este archivo ya tiene dos comentarios
+ * que dicen "addMultiExit never got it wired up" y "addMultiEntry never got it
+ * wired up" sobre el aviso de duplicado, que se escribió tres veces y sólo
+ * llegó a una. Copiar el reintento tres veces sería repetir esa historia.
+ *
+ * Devuelve true cuando se ha ocupado del error — sea porque ha programado un
+ * reintento, sea porque se agotaron y ya ha avisado. En los dos casos quien
+ * llama debe salir sin enseñar nada más. Devuelve false si no era un "ocupado",
+ * y entonces el error sigue su camino normal.
+ *
+ * `state` es un objeto con `tries`, propio de cada guardado: el contador tiene
+ * que morir con la ventana, no vivir en una variable global que arrastre los
+ * intentos de un guardado al siguiente.
+ */
+function _busyRetry(err, opts){
+  if (!_isBusyError(err)) return false;
+  var btn = opts.btn, state = opts.state;
+  if (state.tries < BUSY_MAX_RETRIES){
+    state.tries++;
+    // La ventana se queda ocupada a propósito: devolverle el botón a la persona
+    // la invitaría a pulsar otra vez, y el guardado no ha fallado — está en
+    // cola. El texto del botón es el aviso, que es donde Jose está mirando.
+    _btnBusy(btn, 'Waiting its turn…');
+    setTimeout(opts.retry, _busyDelay(state.tries));
+    return true;
+  }
+  // Agotados. Aquí sí hay que hablar, pero diciendo de quién es el problema:
+  // no se guardó nada y lo que se escribió está bien.
+  _btnReset(btn);
+  if (opts.overlay) _setModalBusy(opts.overlay, false);
+  showToast('The system stayed busy through ' + (BUSY_MAX_RETRIES + 1) +
+    ' tries. Nothing was saved and nothing is wrong with what you entered — ' +
+    'press Save again in a few seconds.', 'warn', 9000);
+  return true;
+}
+
 // ── Modal: Submit ─────────────────────────────────────────────────────────────
 async function submitMovement(){
  try {
@@ -6702,9 +7062,14 @@ async function submitMovement(){
     forceSubmit:      false
   };
 
+  // Cuántas veces se ha tenido que esperar turno para ESTE guardado. Vive
+  // fuera de _doSubmit porque el reintento vuelve a entrar en ella, y muere con
+  // ella para que los intentos de un guardado no cuenten en el siguiente.
+  var _busyState = { tries: 0 };
+
   function _doSubmit(force) {
     payload.forceSubmit = !!force;
-    _btnBusy(btn, 'Saving…');
+    _btnBusy(btn, _busyState.tries ? 'Waiting its turn…' : 'Saving…');
     _setModalBusy('moveOverlay', true);
     google.script.run
       .withSuccessHandler(function(res){
@@ -6713,6 +7078,10 @@ async function submitMovement(){
         var savedName = name;
         var savedQty  = qty;
         var savedAdj  = adjust;          // null for every other type
+        // La entrada existe. Si este formulario venía de una tarjeta de "llegó
+        // y falta su entrada", ya no hace falta. Éste es el ÚNICO sitio donde
+        // esa tarjeta se borra sin que nadie la descarte a mano.
+        _entryTodoResolve(savedType);
         // The tick sits on the button for a moment before the window goes. A
         // window that vanishes the instant you click Save looks exactly like a
         // window that closed without saving, and the toast arrives afterwards,
@@ -6747,6 +7116,11 @@ async function submitMovement(){
       })
       .withFailureHandler(function(err){
         var msg = err.message || String(err);
+        // ── Otro guardado tenía el turno ───────────────────────────────────
+        // Lo primero, antes de soltar el botón: si toca esperar, el botón no
+        // debe volver a ser pulsable.
+        if (_busyRetry(err, { btn: btn, overlay: 'moveOverlay', state: _busyState,
+                              retry: function(){ _doSubmit(force); } })) return;
         // ── Duplicate detected by backend ──────────────────────────────────
         // GAS wraps errors with "Error: " prefix, so we search anywhere in msg
         var dupIdx = msg.indexOf('DUPLICATE_MOVEMENT|');
@@ -6767,7 +7141,7 @@ async function submitMovement(){
           return;
         }
         // ── Any other error ────────────────────────────────────────────────
-        showToast('Error: ' + msg, 'err', 6000);
+        showToast('Error: ' + _busyText(err), 'err', 6000);
         _btnReset(btn);
         _setModalBusy('moveOverlay', false);
       })
@@ -7351,7 +7725,7 @@ function _checkIncomingSuggest(n, inputEl){
   var today = _isoDate(new Date());
   // Match incoming items arriving today/recently (within 3 days) that are not yet Received
   var incMatches = (incoming || []).filter(function(item){
-    return (item.status || '').toLowerCase() !== 'received' &&
+    return _incStillPending(item) &&
            item.name && item.name.toLowerCase().indexOf(typed) !== -1 &&
            (!item.estDate || item.estDate >= today);   // today, later, or not yet dated
   }).slice(0, 6);
@@ -7876,6 +8250,8 @@ function submitMultiExit(){
     });
   });
 
+  var _busyState = { tries: 0 };
+
   var doSubmit = function(force){
     // BUGFIX: this used to look up 'moveSaveBtn', an id that doesn't exist anywhere
     // in the HTML (the button is 'moveSubmit') — so `btn` was always null and NO
@@ -7896,6 +8272,11 @@ function submitMultiExit(){
         loadDataFromGoogle(false); // cached numbers show instantly, fresh ones catch up quietly
       })
       .withFailureHandler(function(err){
+        // ANTES de soltar el botón: mientras se espera turno no debe poder
+        // volver a pulsarse. Éste es el camino que Jose reventó en la prueba
+        // —tres salidas del mismo estante— así que es el que más importa.
+        if (_busyRetry(err, { btn: btn, overlay: 'moveOverlay', state: _busyState,
+                              retry: function(){ doSubmit(force); } })) return;
         if (btn){ btn.disabled=false; btn.textContent='Save to System'; }
         _setModalBusy('moveOverlay', false);
         var msg = err.message || String(err);
@@ -8038,10 +8419,11 @@ function submitMultiEntry(){
   };
 
   var btn = document.getElementById('moveSubmit');
+  var _busyState = { tries: 0 };
 
   function _doMultiSubmit(force){
     payload.forceSubmit = !!force;
-    _btnBusy(btn, 'Saving…');
+    _btnBusy(btn, _busyState.tries ? 'Waiting its turn…' : 'Saving…');
     _setModalBusy('moveOverlay', true);
     google.script.run
       .withSuccessHandler(function(res){
@@ -8064,6 +8446,9 @@ function submitMultiEntry(){
         }, 400);
       })
       .withFailureHandler(function(err){
+        // Antes de soltar el botón, por el mismo motivo que en los otros dos.
+        if (_busyRetry(err, { btn: btn, overlay: 'moveOverlay', state: _busyState,
+                              retry: function(){ _doMultiSubmit(force); } })) return;
         var msg = err.message || String(err);
         btn.textContent = 'Save to System'; btn.disabled = false;
         _setModalBusy('moveOverlay', false);
@@ -8291,7 +8676,9 @@ function _rebuildStockNow() {
     .withSuccessHandler(function(res){
       btn.disabled = false; btn.textContent = '🔧 Rebuild Stock Totals Now';
       showToast('✓ ' + (res && res.message ? res.message : 'Stock totals rebuilt.'), 'ok');
-      loadDataFromGoogle(true);
+      // Silencioso: esto se pulsa desde Ajustes, con su propio botón ocupado y
+      // su propio aviso. La pantalla de carga taparía las dos cosas.
+      loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(e){
       btn.disabled = false; btn.textContent = '🔧 Rebuild Stock Totals Now';
@@ -8350,7 +8737,13 @@ function _renderPermissionsTab(){
   var perms = rolePerms || {};
   var rows = PERM_DEFS.map(function(d){
     var on = !!perms[d.key];
-    return '<div class="field" style="margin-bottom:1.1rem;padding-bottom:1.1rem;border-bottom:1px solid var(--border)">' +
+    // `perm-row`, NO `.field`. Cada interruptor era su propio `.field`, y desde
+    // que los .field de esta pantalla llevan recuadro (v11.38) eso dibujaba
+    // cuatro cajas azules SIN NOMBRE, una por interruptor. El recuadro está
+    // para separar áreas; cuatro recuadros alrededor de cuatro renglones de la
+    // misma lista separan una lista de sí misma. Van todos dentro de un área
+    // con nombre, más abajo.
+    return '<div class="perm-row">' +
       '<div style="display:flex;align-items:center;gap:.4rem">' +
         '<label class="sw">' +
           '<input type="checkbox" class="perm-sw" data-perm="' + d.key + '"' + (on ? ' checked' : '') + '>' +
@@ -8363,23 +8756,24 @@ function _renderPermissionsTab(){
   }).join('');
 
   document.getElementById('settingsTabContent').innerHTML =
-    '<div class="field" style="margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border)">' +
-      '<label class="co-label" for="warehouseRoleLabelInput" style="display:flex;align-items:center;gap:.4rem">' +
-        'What you call this role ' + _infoIc('Shown as this name everywhere in the app: the user list, the account ' +
-          'menu, the Add User form. Use whatever your team already calls this person, e.g. "Supervisor" or "Manager". ' +
-          'It never changes what they can actually do.') +
-      '</label>' +
+    '<div class="field">' +
+      '<label>What you call this role ' + _infoIc('Shown as this name everywhere in the app: the user list, the account ' +
+        'menu, the Add User form. Use whatever your team already calls this person, e.g. "Supervisor" or "Manager". ' +
+        'It never changes what they can actually do.') + '</label>' +
       '<div style="display:flex;gap:.5rem;align-items:center;max-width:320px">' +
         '<input type="text" id="warehouseRoleLabelInput" class="co-input" maxlength="30" ' +
           'value="' + _escAttr(warehouseRoleLabel) + '" placeholder="Warehouse">' +
         '<button type="button" class="btn btn-ghost btn-sm" id="btnSaveRoleLabel" onclick="_saveWarehouseRoleLabel()">Save</button>' +
       '</div>' +
     '</div>' +
-    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:1rem">' +
-      'What the ' + _he(warehouseRoleLabel) + ' role can do, beyond recording movements and viewing stock. ' +
-      'Admins can already do all of this — these switches only ever widen ' + _he(warehouseRoleLabel) + ', never narrow an admin. ' +
-      'Viewers stay read-only no matter what is on here.</p>' +
-    rows;
+    '<div class="field">' +
+      '<label>What this role can do</label>' +
+      '<p style="font-size:.8rem;color:var(--muted);margin:0 0 .9rem">' +
+        'What the ' + _he(warehouseRoleLabel) + ' role can do, beyond recording movements and viewing stock. ' +
+        'Admins can already do all of this — these switches only ever widen ' + _he(warehouseRoleLabel) + ', never narrow an admin. ' +
+        'Viewers stay read-only no matter what is on here.</p>' +
+      rows +
+    '</div>';
 
   document.querySelectorAll('.perm-sw').forEach(function(sw){
     sw.addEventListener('change', function(){ _savePermSwitch(sw); });
@@ -8426,8 +8820,15 @@ function _savePermSwitch(sw){
 
 function _renderCompanyTab(){
   var c = (_settingsData && _settingsData.company) || {};
+  // Dos áreas nombradas en vez de una columna de campos: quién es la empresa, y
+  // con qué imagen aparece. Los recuadros son los mismos que System y
+  // Permissions ya usan — `.field` como HIJO DIRECTO de #settingsTabContent,
+  // que es lo único que hace que la regla los alcance. Envolverlo todo en
+  // .co-form como estaba dejaba los `.field` un nivel por debajo y el recuadro
+  // no aparecía.
   document.getElementById('settingsTabContent').innerHTML =
-    '<div class="co-form">' +
+    '<div class="field co-area">' +
+      '<label>Who this company is</label>' +
       '<label class="co-label" for="coName" style="display:flex;align-items:center;gap:.4rem">Company name ' +
         _infoIc('Shown in the header, on the browser tab, on the loading screen, and as the sender name on every email this system sends.') +
       '</label>' +
@@ -8438,8 +8839,11 @@ function _renderCompanyTab(){
         _infoIc('People with an email at this domain are recognised as staff. Everyone still has to be on the user list to get in — this only saves them the extra sign-in step. Leave it blank if your team uses personal Gmail accounts.') +
       '</label>' +
       '<input type="text" id="coDomain" class="co-input" maxlength="60" placeholder="yourcompany.com" value="' + _escAttr(c.domain || '') + '">' +
+    '</div>' +
 
-      '<label class="co-label" style="display:flex;align-items:center;gap:.4rem">Logo ' +
+    '<div class="field co-area">' +
+      '<label>Logo</label>' +
+      '<label class="co-label" style="display:flex;align-items:center;gap:.4rem">Image ' +
         _infoIc('Any size or shape works — it is resized automatically. Appears beside the company name in the header and on the loading screen.') +
       '</label>' +
       '<div id="coLogoWrap">' + _coLogoBoxHtml() + '</div>' +
@@ -8452,9 +8856,11 @@ function _renderCompanyTab(){
         (_coLogoRemove || _coLogo
           ? '<button type="button" class="btn btn-ghost btn-sm" onclick="_coUndoLogo()">Undo</button>' : '') +
       '</div>' +
+    '</div>' +
 
-      '<div class="co-save"><button type="button" class="btn btn-primary" id="coSave" onclick="_saveCompanyProfile()">Save changes</button></div>' +
-    '</div>';
+    // Fuera de los recuadros a propósito: guardar no es un área de ajustes, es
+    // lo que se hace con las dos de arriba.
+    '<div class="co-save"><button type="button" class="btn btn-primary" id="coSave" onclick="_saveCompanyProfile()">Save changes</button></div>';
 }
 
 function _coLogoPick(inp){
@@ -9050,7 +9456,9 @@ function _dqApply(i){
         }
       });
       // Stock can move: merging two materials joins two stock lines into one.
-      loadDataFromGoogle(true);
+      // Silencioso: la tarjeta de "Check my data" ya dice ahí mismo cuántas
+      // filas cambió. Ese texto es el acuse de recibo.
+      loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(err){
       _btnReset(btn);
@@ -9416,16 +9824,25 @@ var _importParsedRows = [];
 
 function _renderImportTab() {
   var content = document.getElementById('settingsTabContent');
+  // Dos áreas: de dónde sale el archivo, y qué se va a guardar. La vista previa
+  // va en su propio recuadro porque es lo que se mira antes de decidir — y
+  // separarla es lo que hace evidente que todavía no se ha guardado nada.
   content.innerHTML =
-    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">' +
-      'Bulk-import an existing inventory from an Excel (.xlsx) or CSV file — useful for the first setup, or catching up after counting on paper. ' +
-      'Every row becomes a real ENTRY movement, reviewed here before anything is saved. Multi-sheet workbooks: the right sheet is detected automatically, and you can switch sheets after loading.' +
-    '</p>' +
-    '<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem">' +
-      '<button class="btn btn-ghost btn-sm" onclick="_downloadImportTemplate()">⬇ Download CSV Template</button>' +
-      '<input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="font-size:.82rem">' +
+    '<div class="field">' +
+      '<label>Bring in a file</label>' +
+      '<p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">' +
+        'Bulk-import an existing inventory from an Excel (.xlsx) or CSV file — useful for the first setup, or catching up after counting on paper. ' +
+        'Every row becomes a real ENTRY movement, reviewed here before anything is saved. Multi-sheet workbooks: the right sheet is detected automatically, and you can switch sheets after loading.' +
+      '</p>' +
+      '<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">' +
+        '<button class="btn btn-ghost btn-sm" onclick="_downloadImportTemplate()">⬇ Download CSV Template</button>' +
+        '<input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="font-size:.82rem">' +
+      '</div>' +
     '</div>' +
-    '<div id="importPreviewBox"></div>';
+    '<div class="field">' +
+      '<label>What will be saved</label>' +
+      '<div id="importPreviewBox"></div>' +
+    '</div>';
   document.getElementById('importFileInput').addEventListener('change', _onImportFileChange);
   _importParsedRows = [];
 }
@@ -9553,7 +9970,10 @@ function _commitImport(){
       _importParsedRows = [];
       var box = document.getElementById('importPreviewBox'); if (box) box.innerHTML = '';
       var fi  = document.getElementById('importFileInput');  if (fi)  fi.value = '';
-      loadDataFromGoogle(true);
+      // Silencioso aunque una importación cambie mucho: sigue siendo el
+      // resultado de algo que se acaba de pulsar, y el aviso dice cuántas filas
+      // entraron.
+      loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(err){
       btn.disabled = false; btn.innerHTML = '✓ Import ' + validRows.length + ' Valid Row(s)';
@@ -9705,33 +10125,42 @@ function _renderLocationsTab(){
   _locLayout = names.map(function(n){ return { name: n, type: (types[n] || LOC_DEFAULT_GROUP) }; });
   _locExtraGroups = [];
 
+  // Dos áreas: cómo funciona esta pantalla, y la lista en sí. La explicación y
+  // el botón de crear van juntos arriba; los estantes, dentro de su propio
+  // recuadro, que es lo que separa "leer las reglas" de "moverlos".
   content.innerHTML =
-    '<div class="loc-toolbar">' +
-      '<p style="font-size:.8rem;color:var(--muted);margin:0;flex:1">' +
-        'Drag a location into a group to file it there. Grouping is for organising only — every location still counts toward stock, ' +
-        'and the Warehouse Map shows these same groups.' +
-        // Said here for the same reason it is said on the other catalog tabs:
-        // where a thing WAS is a fact about the past, and renaming the rack
-        // today cannot make January's material have sat somewhere else.
-        '<br>Renaming a location updates the list only — existing movements keep the name they were recorded with.' +
-        '<br><b>Dragging needs a mouse</b> — on a phone this list is read-only for now.' +
-      '</p>' +
-      '<div class="loc-plus-wrap">' +
-        '<button class="loc-plus" id="locPlusBtn" title="Add">+</button>' +
-        '<div class="loc-plus-menu">' +
-          '<button onclick="_locShowNew(\'location\')">📍 Create location</button>' +
-          '<button onclick="_locShowNew(\'group\')">🗂 Create group</button>' +
+    '<div class="field">' +
+      '<label>How this works</label>' +
+      '<div class="loc-toolbar">' +
+        '<p style="font-size:.8rem;color:var(--muted);margin:0;flex:1">' +
+          'Drag a location into a group to file it there. Grouping is for organising only — every location still counts toward stock, ' +
+          'and the Warehouse Map shows these same groups.' +
+          // Said here for the same reason it is said on the other catalog tabs:
+          // where a thing WAS is a fact about the past, and renaming the rack
+          // today cannot make January's material have sat somewhere else.
+          '<br>Renaming a location updates the list only — existing movements keep the name they were recorded with.' +
+          '<br><b>Dragging needs a mouse</b> — on a phone this list is read-only for now.' +
+        '</p>' +
+        '<div class="loc-plus-wrap">' +
+          '<button class="loc-plus" id="locPlusBtn" title="Add">+</button>' +
+          '<div class="loc-plus-menu">' +
+            '<button onclick="_locShowNew(\'location\')">📍 Create location</button>' +
+            '<button onclick="_locShowNew(\'group\')">🗂 Create group</button>' +
+          '</div>' +
         '</div>' +
       '</div>' +
+      '<div id="locNewRow" class="cfg-add-row" style="display:none">' +
+        '<input type="text" id="locNewVal" placeholder="Name…" onkeydown="if(event.key===\'Enter\')_locCreate()">' +
+        '<button class="btn btn-primary btn-sm" onclick="_locCreate()">Create</button>' +
+        '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'locNewRow\').style.display=\'none\'">Cancel</button>' +
+      '</div>' +
     '</div>' +
-    '<div id="locNewRow" class="cfg-add-row" style="display:none">' +
-      '<input type="text" id="locNewVal" placeholder="Name…" onkeydown="if(event.key===\'Enter\')_locCreate()">' +
-      '<button class="btn btn-primary btn-sm" onclick="_locCreate()">Create</button>' +
-      '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'locNewRow\').style.display=\'none\'">Cancel</button>' +
+    '<div class="field">' +
+      '<label>Locations and groups</label>' +
+      '<div id="locMergeBar" class="cfg-pickbar"></div>' +
+      _rowModeBarHtml('loc') +
+      '<div class="loc-groups" id="locGroups" data-rowscope="loc"></div>' +
     '</div>' +
-    '<div id="locMergeBar" class="cfg-pickbar"></div>' +
-    _rowModeBarHtml('loc') +
-    '<div class="loc-groups" id="locGroups" data-rowscope="loc"></div>' +
     '<div id="locSaveBar" class="loc-savebar"></div>';
   _redrawLocGroups();
 }
@@ -11987,6 +12416,17 @@ function _unqueueCfgAdd(type, value){
 // the whole thing on screen in one write — which it has to be, because setting
 // innerHTML a second time would throw away the handlers wired after the first.
 var _cfgDeckHtml = '', _sysDeckHtml = '', _cfgDeckTotal = 0, _sysDeckTotal = 0;
+// La TERCERA clase de tarjeta, y es distinta de las otras dos en el único
+// sentido que importa para el orden del mazo:
+//
+//   sys  — algo que la app YA hizo. No espera nada de nadie.
+//   cfg  — una sugerencia. Se puede ignorar sin consecuencia.
+//   todo — una entrega que llegó y cuya entrada NO se ha registrado. El
+//          inventario está mal hasta que alguien la haga.
+//
+// Por eso va encima de las otras dos: _paintDeck ya dice que "lo que espera por
+// ti va arriba", y hasta ahora eso eran las sugerencias.
+var _todoDeckHtml = '', _todoDeckTotal = 0;
 
 // Cards already shown at least once, so a background refresh cannot make the
 // whole pile fly in from the right again.
@@ -12009,7 +12449,8 @@ function _paintDeck(){
   // Notifications sit deeper in the pile than suggestions: one reports
   // something already done, the other is waiting on an answer, and the thing
   // waiting on you belongs on top.
-  deck.innerHTML = _sysDeckHtml + _cfgDeckHtml;
+  // Más tarde en el DOM = más arriba en la pila.
+  deck.innerHTML = _sysDeckHtml + _cfgDeckHtml + _todoDeckHtml;
   if (!deck.innerHTML){
     deck.classList.remove('open', 'stack-2', 'stack-3');
     return;
@@ -12057,6 +12498,22 @@ function _paintDeck(){
     btn.addEventListener('click', function(e){
       e.stopPropagation();
       _dismissSysCard(btn.getAttribute('data-sys-x'));
+    });
+  });
+  // Las de "entrada pendiente". Se enganchan aquí, donde ya se enganchan las
+  // otras dos clases, en vez de dentro de su propio renderizador: _paintDeck
+  // reescribe el mazo entero cada vez, así que unos oyentes puestos en otro
+  // sitio se perderían en el siguiente repintado de cualquiera de las tres.
+  deck.querySelectorAll('[data-todo-x]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      _todoDrop(btn.getAttribute('data-todo-x'));
+    });
+  });
+  deck.querySelectorAll('[data-todo-do]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      _todoDo(btn.getAttribute('data-todo-do'));
     });
   });
   // The card itself opens the full record. Admin only — Settings is.
@@ -12208,7 +12665,9 @@ function _syncCfgBell(){
   var btn = document.getElementById('cfgBellBtn');
   var cnt = document.getElementById('cfgBellCount');
   if (!btn || !cnt) return;
-  var total = _pendingCfgAdds.length + _sysCards.length;
+  // Las entradas pendientes cuentan también. Una campana que dice "2" con tres
+  // tarjetas en el mazo es peor que ninguna campana: enseña a no creerle.
+  var total = _pendingCfgAdds.length + _sysCards.length + _todoDeckTotal;
   cnt.textContent = total;
   btn.style.visibility = total ? '' : 'hidden';
   if (!total){
@@ -13673,7 +14132,11 @@ function renderIncomingWeekGrid() {
       : '<div class="day-empty">Nothing scheduled</div>';
     return '<div class="day-card' + (isToday ? ' today' : '') + '">' +
       '<div class="day-label">' + day.label + ' <small style="font-weight:400;opacity:.7">' + day.date.substring(5) + '</small></div>' +
-      content +
+      // Las entregas van dentro de su propio contenedor porque es ESE el que
+      // hace scroll. Meterlas sueltas en la tarjeta haría scrollear también la
+      // etiqueta del día, y perder de vista qué día estás mirando es justo lo
+      // que no puede pasar en una vista de semana.
+      '<div class="day-body">' + content + '</div>' +
     '</div>';
   }).join('');
 }
@@ -13828,6 +14291,12 @@ function openIncomingModal(id) {
         '<div style="font-size:.72rem;color:var(--accent);margin-top:.2rem">📎 Current document (uploading another replaces it)</div></a>';
     } else { prev.innerHTML = ''; }
   }
+  // Una sola llamada, aquí, en vez de una detrás de cada sitio que escribe el
+  // estado — hay tres, y el cuarto que se añada la heredaría en vez de tener
+  // que acordarse. Mismo razonamiento que _btnReset en closeModal.
+  _syncEntryOffer();
+  var mk = document.getElementById('incMakeEntry');
+  if (mk) mk.checked = true;   // cada apertura empieza donde la anterior no la dejó
   document.getElementById('incomingOverlay').classList.add('show');
 }
 
@@ -13876,6 +14345,76 @@ function _incIsOverdue(item, today){
          item.estDate && item.estDate < today;
 }
 
+/* ═══ DE "MARK ARRIVED" A ENTRY ══════════════════════════════════════════════
+ *
+ * Jose (v11.29): al marcar una entrega como llegada, la app ya sabe qué es,
+ * cuánto, de qué proveedor y con qué PO. Volver a teclear todo eso en la
+ * pantalla de Entry es escribir dos veces lo mismo, y es donde se cuelan las
+ * diferencias entre lo que se esperaba y lo que se registró.
+ *
+ * La oferta va dentro de la ventana de la entrega y sólo cuando el estado es
+ * Arrived — ofrecerla sobre algo que todavía no ha llegado sería ofrecer
+ * registrar una entrada falsa.
+ */
+function _syncEntryOffer(){
+  var row = document.getElementById('entryOfferRow');
+  var sel = document.getElementById('incStatus');
+  if (!row || !sel) return;
+  row.style.display = (sel.value === 'Arrived') ? 'flex' : 'none';
+}
+
+/** Abre el formulario de movimiento en ENTRY con lo que la app ya sabía. */
+function _entryFromIncoming(item, todoId){
+  if (!item) return;
+  showTab('movements', 'btn-movements');
+  openMoveModal('ENTRY');
+  // DESPUÉS de openMoveModal, que lo pone a null. La tarjeta que hay detrás de
+  // este formulario, para poder borrarla si la entrada llega a guardarse — y
+  // sólo entonces.
+  _entryTodoId = todoId || null;
+
+  var set = function(id, v){
+    var e = document.getElementById(id);
+    if (e && v !== '' && v != null) e.value = v;
+  };
+  // La línea 1 ya viene sembrada por openMoveModal('ENTRY') — se rellena esa,
+  // no se añade una segunda dejando la primera en blanco encima.
+  set('mat-cat-1',  nt(item.category));
+  set('mat-name-1', item.name);
+  set('mat-unit-1', item.unit);
+  // La cantidad va en la fila de ubicación, que es donde ENTRY la lleva.
+  //
+  // El ESTANTE se deja vacío A PROPÓSITO, y es la decisión que importa de toda
+  // esta función: la app sabe cuánto llegó, pero no dónde lo pusieron. Ponerle
+  // un estante de relleno —el último usado, el primero de la lista— produciría
+  // inventario que dice estar en un sitio donde nadie miró. Que lo escriba
+  // quien lo cargó.
+  var lq = document.querySelector('#mat-locs-1 .loc-qty');
+  if (lq && item.qty > 0) lq.value = item.qty;
+
+  set('mSup',  item.supplier);
+  set('mPO',   item.po);
+  set('mPM',   item.pm);
+  set('mResp', (typeof userName === 'string' && userName) ? userName : '');
+
+  try { updateMatLineNameList(1); syncMatLineQty(1); updateMultiMatTotal(); } catch (e) {}
+  try { _updateMoveSubmitState(); } catch (e) {}
+
+  // El foco va al estante, que es lo único que falta por escribir. Llevar a
+  // alguien a un formulario lleno sin decirle dónde continuar es hacerle
+  // buscar el hueco.
+  setTimeout(function(){
+    var rack = document.querySelector('#mat-locs-1 .loc-rack');
+    if (rack){
+      rack.focus();
+      rack.classList.add('field-flagged');
+      setTimeout(function(){ rack.classList.remove('field-flagged'); }, 2600);
+    }
+  }, 120);
+
+  showToast('Everything the delivery already knew is filled in — say which rack it went to.', 'info', 6000);
+}
+
 function saveIncomingItem() {
   var id       = document.getElementById('incId').value;
   var dateMode = document.getElementById('incDateMode').value || 'exact';
@@ -13914,12 +14453,38 @@ function saveIncomingItem() {
   };
 
   var btn = document.getElementById('incomingOverlay').querySelector('.btn-primary');
+  // Se decide ANTES de mandar: después de guardar, la ventana se cierra y sus
+  // campos dejan de existir.
+  var arrived   = payload.status === 'Arrived';
+  var wantEntry = arrived && !!(document.getElementById('incMakeEntry') || {}).checked;
+
   function _send(){
     var action = id ? 'updateIncoming' : 'addIncoming';
     _btnBusy(btn, 'Saving…');
     google.script.run
       .withSuccessHandler(function(){
-        _btnDone(btn, true, function(){ closeModal('incomingOverlay'); });
+        _btnDone(btn, true, function(){
+          closeModal('incomingOverlay');
+          // LA TARJETA SE CREA SIEMPRE QUE LA ENTREGA PASA A ARRIVED, marque o
+          // no la casilla. La v11.42 la creaba sólo al NO marcarla, y ese era
+          // el hueco que Jose encontró: con la casilla marcada —que viene
+          // marcada por defecto— se abría el formulario de entrada y no
+          // quedaba nada; quien lo cerrara sin guardar se quedaba con la
+          // entrega marcada como llegada, sin entrada, y sin nada que se lo
+          // recordara. Justo lo que la tarjeta existe para evitar.
+          //
+          // Ahora la tarjeta es el registro de "llegó y falta su entrada", y se
+          // borra en un solo sitio: cuando la entrada se guarda de verdad (ver
+          // _entryTodoResolve en submitMovement). Abrir el formulario no la
+          // borra; guardarlo sí.
+          if (arrived){
+            // Sin aviso cuando el formulario se abre acto seguido: el aviso
+            // dice "está en la esquina hasta que hagas la entrada" y la entrada
+            // está justo delante. Sólo estorba.
+            var todoId = _todoAdd(payload, wantEntry);
+            if (wantEntry) _entryFromIncoming(payload, todoId);
+          }
+        });
         loadDataFromGoogle(false);
       })
       .withFailureHandler(function(err){
@@ -14106,7 +14671,8 @@ function _incomingDeleted(btn){
     closeModal('incomingOverlay');
     showToast('Expected delivery deleted.', 'ok');
   });
-  loadDataFromGoogle(true); // skipCache
+  // Silencioso: la ventana se cierra con su tick y el aviso lo confirma.
+  loadDataFromGoogle(true, true);
 }
 
 // ── Read an email into expected deliveries ──────────────────────────────────
@@ -14403,10 +14969,9 @@ function checkMorningPopup() {
   // Respect "don't show again today" if user clicked it
   if (localStorage.getItem('oxwms_popup_noshow_' + todayStr)) return;
 
-  // Only show if there are pending deliveries today (status ≠ 'Received')
+  // Sólo se abre si queda algo por atender hoy.
   var todayPending = incoming.filter(function(item) {
-    return _incOnDay(item, todayStr) &&
-           (item.status || '').toLowerCase() !== 'received';
+    return _incOnDay(item, todayStr) && _incStillPending(item);
   });
 
   if (!todayPending.length) return; // nothing pending today → skip
@@ -14419,6 +14984,42 @@ function checkMorningPopup() {
 // so the button that reopens the popup and the refresh after a save both ask
 // the same question — three copies of "which week is it" is three chances to
 // disagree about Sunday.
+/* ¿Esta entrega sigue esperando a alguien?
+ *
+ * TRES SITIOS PREGUNTABAN ESTO Y LOS TRES PREGUNTABAN MAL. Comparaban el estado
+ * contra 'received' — un valor que la app NUNCA produce. El menú ofrece
+ * Pending, Arrived y Cancelled, y el servidor lo dice sin ambigüedad:
+ * INCOMING_STATUSES = ['Pending', 'Arrived', 'Cancelled'].
+ *
+ * O sea que esos tres filtros no descartaron nada nunca. La consecuencia
+ * visible es la que Jose fotografió: marcas la entrega como llegada, registras
+ * su entrada, y el aviso de la mañana sigue enseñándotela como si no hubiera
+ * pasado — porque para él nunca pasó nada.
+ *
+ * Es la misma clase de fallo que el comentario que decía una cosa mientras el
+ * código hacía otra: alguien escribió 'received' pensando en el estado que la
+ * app iba a tener, el estado acabó llamándose 'Arrived', y la comparación se
+ * quedó ahí, verde y muerta.
+ *
+ * Una función, tres llamadas. La cuarta que haga falta la hereda.
+ */
+function _incStillPending(item){
+  var st = String((item && item.status) || 'Pending').toLowerCase().trim();
+  // Cancelled tampoco espera a nadie: recordarle a alguien una entrega que él
+  // mismo canceló es ruido, y del que hace que se deje de mirar el aviso.
+  //
+  // Y 'received' SIGUE RECONOCIÉNDOSE, que es lo contrario de lo que parece
+  // después de todo lo anterior. El servidor normaliza al ESCRIBIR —cualquier
+  // cosa que no sea uno de los tres cae a Pending— pero al LEER devuelve la
+  // celda tal cual: `status: String(row[9] || 'Pending')`. Una fila editada a
+  // mano en la hoja, o anterior al normalizador, puede decir "Received" de
+  // verdad. Tratarla como pendiente la dejaría para siempre en el aviso de la
+  // mañana, que es el fallo que se está arreglando, sólo que por el otro lado.
+  //
+  // Lo que estaba mal no era reconocer 'received'. Era reconocer SÓLO 'received'.
+  return st !== 'arrived' && st !== 'cancelled' && st !== 'received';
+}
+
 function _thisWeeksDeliveries(todayStr){
   var today     = new Date(todayStr + 'T12:00:00');
   var endOfWeek = new Date(today);
@@ -14427,7 +15028,7 @@ function _thisWeeksDeliveries(todayStr){
   // A window counts if any part of it falls in what is left of the week, not
   // only if it starts there.
   return incoming.filter(function(item) {
-    if ((item.status || '').toLowerCase() === 'received') return false;
+    if (!_incStillPending(item)) return false;
     if (!item.estDate) return false;                       // no date — not part of a week's plan
     var from = item.estDate;
     var to   = (item.dateMode === 'window' && item.estDateEnd) ? item.estDateEnd : item.estDate;
@@ -14455,7 +15056,24 @@ function _refreshMorningPopup(){
   var ov = document.getElementById('morningOverlay');
   if (!ov || !ov.classList.contains('show')) return;
   var todayStr = _isoDate(new Date());
-  showMorningPopup(_thisWeeksDeliveries(todayStr), todayStr);
+  var quedan = _thisWeeksDeliveries(todayStr);
+
+  /* Jose: "si hay solo un material y ya fue aceptado, la ventana desaparece; si
+     hay más de uno, la ventana no desaparece, sólo desaparece si ya todos los
+     materiales fueron recibidos."
+
+     Que son la misma regla dicha desde los dos lados: se cierra cuando no queda
+     nada por atender. Uno o cinco da igual — lo que decide es la lista vacía,
+     no cuántos había al empezar. Escribirlo como "si había uno…" habría metido
+     un contador que se puede desincronizar; esto no tiene nada que contar.
+
+     Y sin _incStillPending arreglado esto no habría servido de nada: la lista
+     nunca se vaciaba, porque el filtro descartaba un estado que no existe. */
+  if (!quedan.length){
+    ov.classList.remove('show');
+    return;
+  }
+  showMorningPopup(quedan, todayStr);
 }
 
 function showMorningPopup(items, todayStr) {
@@ -14514,6 +15132,7 @@ function _markArrivedFromPopup(id){
   var sel = document.getElementById('incStatus');
   if (sel){
     sel.value = 'Arrived';
+    _syncEntryOffer();          // el estado lo puso el código, no un onchange
     sel.classList.add('field-flagged');
     sel.focus();
     setTimeout(function(){ sel.classList.remove('field-flagged'); }, 2600);
@@ -14963,6 +15582,9 @@ function _startGoogleLogin() {
 function _signOut() {
   try { localStorage.removeItem(_SESSION_KEY); } catch(e) {}
   _sessionToken = '';
+  // RUIDOSO A PROPÓSITO, el otro sitio. Al cerrar sesión la pantalla TIENE que
+  // vaciarse: dejar el inventario de la empresa a la vista mientras se vuelve a
+  // la pantalla de acceso sería enseñar datos a quien acaba de salir.
   loadDataFromGoogle(true);
 }
 
@@ -15013,9 +15635,29 @@ function loadDataFromGoogle(skipCache, quiet){
   lastLoadTime = null;
   if (!quiet) setConnStatus('loading');
 
-  // ── Show cached data instantly while fresh data loads in background ──────
-  // skipCache=true is passed after a save/delete so user sees loading state
-  // rather than stale data that doesn't include their new movement yet.
+  // ── LOS TRES MODOS DE ESTA FUNCIÓN, Y CUÁNDO USAR CADA UNO ───────────────
+  //
+  // El comentario que había aquí decía que skipCache=true se pasa "después de
+  // guardar o borrar, para que el usuario vea el estado de carga en vez de
+  // datos viejos". Era verdad cuando se escribió y dejó de serlo: ver la
+  // pantalla de carga después de guardar es exactamente lo que Jose fotografió
+  // y pidió quitar (v11.47). Los dos argumentos son independientes:
+  //
+  //   ()            → usa la caché. Pinta lo conocido al instante y lo
+  //                   reemplaza cuando llega lo fresco. El arranque normal.
+  //   (true)        → sin caché Y CON pantalla de carga: esqueletos y el aviso
+  //                   de los 10-20 segundos. Sólo para cuando de verdad no hay
+  //                   nada que enseñar — el primer arranque tras el asistente,
+  //                   y cerrar sesión.
+  //   (true, true)  → sin caché y EN SILENCIO. Lo de antes se queda en pantalla
+  //                   hasta que llega lo nuevo. Éste es el que va después de
+  //                   guardar, borrar o editar: quien acaba de pulsar un botón
+  //                   ya sabe que algo está pasando —lo dice el botón— y no
+  //                   necesita que la pantalla se desarme para creérselo.
+  //
+  // Un fallo sí se enseña aunque el modo sea silencioso: el manejador de error
+  // de abajo escribe en statsRow igualmente. Silencioso significa sin
+  // parpadeo, no sin noticias.
   var cached = skipCache ? null : _loadCache();
   if (cached && cached.userRole) {
     _applyData(cached);
@@ -15311,6 +15953,159 @@ function _announceSystemActivity(){
     return { id: a.at + '|' + a.action, label: a.label, at: a.at, detail: a.detail, extra: a.extra };
   });
   _renderSysDeck();
+  // Las pendientes se repintan aquí también: viven en localStorage y sobreviven
+  // a una recarga, así que si sólo se dibujaran al crearlas, un F5 las
+  // escondería hasta la siguiente — que es exactamente cuando dejarían de
+  // servir para lo que existen.
+  _renderTodoDeck();
+}
+
+/* ═══ LA TARJETA QUE ESPERA POR TI ═══════════════════════════════════════════
+ *
+ * Jose: si no quiere hacer la entrada en ese momento, "se crea una tarjeta del
+ * tamaño de las del sistema que diga 'XXX' MATERIAL ARRIVED 'DATE' — MAKE THE
+ * ENTRY / LATER".
+ *
+ * DÓNDE VIVE, y por qué no es obvio. La lista está en localStorage, no en la
+ * hoja, y eso tiene una consecuencia que hay que decir en voz alta: **es por
+ * navegador**. Quien marque la llegada en el teléfono y por la tarde abra el
+ * escritorio no verá la tarjeta allí.
+ *
+ * Se eligió así a sabiendas, frente a las dos alternativas:
+ *
+ *   Guardarlo en la hoja significa una columna nueva en INCOMING, un endpoint
+ *   nuevo y un viaje al servidor por cada "más tarde" — para un recordatorio
+ *   que la mayoría de las veces se atiende en los dos minutos siguientes.
+ *
+ *   Deducirlo —"toda entrega Arrived sin su Entry"— sería lo mejor, y no se
+ *   puede todavía: emparejar una entrega con un movimiento es adivinar por
+ *   nombre y cantidad, y adivinar mal aquí significa decirle a alguien que le
+ *   falta una entrada que ya hizo. Cuando el rediseño del modelo de
+ *   movimientos ate las dos cosas, esto se vuelve derivable y localStorage
+ *   sobra. Anotado en docs/BACKLOG.md.
+ *
+ * Mientras tanto: por navegador, y dicho.
+ */
+var _TODO_KEY = 'acopio_pending_entries';
+var _todoItems = [];
+
+// La tarjeta que hay detrás del formulario de entrada abierto ahora mismo, si
+// es que salió de una. La pone _entryFromIncoming, la limpia openMoveModal en
+// cada apertura, y la cobra _entryTodoResolve cuando la entrada se guarda.
+//
+// ES LA PIEZA QUE HACE QUE ABRIR NO SEA LO MISMO QUE HACER. Hasta la v11.43 la
+// tarjeta desaparecía al abrir el formulario —o no llegaba a existir— y cerrar
+// sin guardar dejaba el trabajo sin hacer y sin rastro.
+var _entryTodoId = null;
+
+function _todoLoad(){
+  try {
+    var raw = localStorage.getItem(_TODO_KEY);
+    _todoItems = raw ? (JSON.parse(raw) || []) : [];
+  } catch (e) {
+    // Un localStorage que lanza —modo privado, almacenamiento bloqueado— no
+    // puede impedir que la app arranque. Sin recordatorios es peor que con
+    // ellos; sin app es inservible.
+    _todoItems = [];
+  }
+  if (!Array.isArray(_todoItems)) _todoItems = [];
+}
+
+function _todoSave(){
+  try { localStorage.setItem(_TODO_KEY, JSON.stringify(_todoItems.slice(0, 20))); }
+  catch (e) {}
+}
+
+/** Deja la tarjeta y devuelve su id. `quiet` calla el aviso cuando quien llama
+ *  va a abrir el formulario de entrada acto seguido. */
+function _todoAdd(item, quiet){
+  if (!item) return null;
+  _todoLoad();
+  var entry = {
+    id:       'todo-' + Date.now() + '-' + Math.round(Math.random() * 1e6),
+    name:     item.name || '',
+    category: item.category || '',
+    qty:      item.qty || 0,
+    unit:     item.unit || '',
+    supplier: item.supplier || '',
+    po:       item.po || '',
+    pm:       item.pm || '',
+    at:       new Date().toISOString()
+  };
+  // La entrega más reciente primero — es la que se acaba de marcar y la que la
+  // persona tiene en la cabeza.
+  _todoItems.unshift(entry);
+  _todoSave();
+  _renderTodoDeck();
+  if (!quiet) showToast('Noted — the reminder is in the corner until you make the entry.', 'info', 5000);
+  return entry.id;
+}
+
+/** Cobra la tarjeta que estaba detrás de la entrada recién guardada.
+ *
+ *  Se llama desde el handler de éxito de submitMovement, y sólo borra si el
+ *  movimiento guardado fue un ENTRY: la persona pudo haber cambiado el tipo de
+ *  formulario después de abrirlo, y una salida no salda una entrada pendiente.
+ */
+function _entryTodoResolve(savedType){
+  if (!_entryTodoId) return;
+  var id = _entryTodoId;
+  _entryTodoId = null;
+  if (String(savedType || '').toUpperCase() !== 'ENTRY') return;
+  _todoDrop(id);
+}
+
+function _todoDrop(id){
+  _todoLoad();
+  _todoItems = _todoItems.filter(function(t){ return t.id !== id; });
+  _todoSave();
+  _renderTodoDeck();
+}
+
+function _todoDo(id){
+  _todoLoad();
+  var t = _todoItems.find(function(x){ return x.id === id; });
+  if (!t){ _renderTodoDeck(); return; }
+  // La tarjeta SE QUEDA mientras el formulario está abierto, y se va sola
+  // cuando la entrada se guarda (_entryTodoResolve).
+  //
+  // Hasta la v11.43 se quitaba aquí, antes de abrir, y el comentario que había
+  // en su lugar defendía esa decisión: "si no se hace la entrada, se puede
+  // volver a marcar la entrega". Era verdad y era caro — obligaba a volver al
+  // Incoming, editar la entrega y marcarla otra vez para recuperar un
+  // recordatorio que nunca debió perderse. Ahora abrir no cuesta nada: si se
+  // cierra sin guardar, la tarjeta sigue donde estaba.
+  _entryFromIncoming(t, id);
+}
+
+function _renderTodoDeck(){
+  var deck = document.getElementById('cornerDeck');
+  if (!deck) return;
+  _todoLoad();
+  _todoDeckTotal = _todoItems.length;
+  try { _syncCfgBell(); } catch (e) {}
+  if (!_todoItems.length){ _todoDeckHtml = ''; _paintDeck(); return; }
+
+  // Como las otras dos: sólo un puñado en el DOM, y pintadas al revés para que
+  // la más nueva quede la última y por tanto encima.
+  _todoDeckHtml = _todoItems.slice(0, 5).slice().reverse().map(function(t){
+    var qty = t.qty > 0 ? (_qtyText(t.qty) + ' ' + (t.unit || 'UNIT')) : 'qty not stated';
+    return '<div class="deck-card todo-card" data-todo-id="' + _he(t.id) + '">' +
+      '<button class="sys-card-x" data-todo-x="' + _he(t.id) + '" title="Dismiss">✕</button>' +
+      '<div class="todo-card-lbl">Arrived · entry not made</div>' +
+      '<div class="todo-card-val" title="' + _he(t.name) + '">' + _he(t.name) + '</div>' +
+      '<div class="todo-card-sub">' + _he(qty) +
+        (t.supplier ? ' · ' + _he(t.supplier) : '') + '</div>' +
+      '<div class="todo-card-when">' + _he(_fmtWhen(t.at)) + '</div>' +
+      '<div class="cfg-card-acts">' +
+        '<button type="button" class="cfg-card-add" data-todo-do="' + _he(t.id) + '">Make the entry</button>' +
+        '<button type="button" class="cfg-card-skip" data-todo-x="' + _he(t.id) + '">Later</button>' +
+      '</div></div>';
+  }).join('');
+  _paintDeck();
+
+  if (deck.matches(':hover') || deck.classList.contains('open')) _cfgWake();
+  else { deck.classList.remove('dim'); _cfgScheduleDim(_CFG_SOLID_MS); }
 }
 
 function _renderSysDeck(){
@@ -15510,10 +16305,17 @@ function toggleDarkMode() {
 var _splashTimer = null, _splashPct = 8;
 
 // A single "almost there" message read the same whether the load takes 3
-// seconds or 20 — a real wait deserves more than one sentence. Rotates every
-// 3.5s (Jose: 2.5s read as too fast) — the last one stays up and stops
-// rotating rather than looping, since repeating "taking longer than
-// expected" over and over reads as broken, not as still trying.
+// seconds or 20 — a real wait deserves more than one sentence. Rotates cada
+// 4s — el último se queda quieto y deja de rotar en vez de dar la vuelta,
+// porque repetir "taking longer than expected" una y otra vez se lee como
+// averiado, no como que sigue intentándolo.
+//
+// El intervalo ha subido dos veces por la misma razón, y las dos veces lo
+// pidió Jose leyéndolo de verdad: 2.5s → 3.5s (v9.x, "demasiado rápido") y
+// 3.5s → 4s (v11.45, "0.5 segundos más cada una"). Se anota el histórico
+// porque el número parece arbitrario y no lo es: es lo que tarda alguien en
+// leer la frase más larga de la lista sin sentirse apurado.
+var SPLASH_NOTE_MS = 4000;
 var SPLASH_NOTES = [
   'Connecting to your spreadsheet…',
   'Reading your inventory…',
@@ -15546,7 +16348,7 @@ var _splashNoteTimer = null, _splashNoteIdx = 0;
       return;
     }
     if (n) n.textContent = SPLASH_NOTES[_splashNoteIdx];
-  }, 3500);
+  }, SPLASH_NOTE_MS);
 })();
 
 function _showSplashReload(){
@@ -15779,6 +16581,9 @@ setInterval(function(){
 }, 60000);
 
 // ── Privacy Policy / Terms of Service ────────────────────────────────────────
+/* ─── BEGIN GENERATED LEGAL HTML — node tools/sync-legal.js ─── */
+// Source of truth: legal/TERMS-OF-SERVICE.md and legal/PRIVACY-POLICY.md.
+// DO NOT EDIT THIS BLOCK BY HAND — edit the .md and re-run the generator.
 var LEGAL_DOCS = {
   privacy: { title: 'Privacy Policy',   html: `<p><strong>Last updated:</strong> 27 August 2026</p>
 <p>Acopio is warehouse-management software provided by Jose Castro ("we", "us"). This policy explains what happens to data when you use it.</p>
@@ -15798,15 +16603,7 @@ var LEGAL_DOCS = {
 <p>Your data is governed by <strong>your</strong> agreement with Google (Google Workspace Terms or the Google Terms of Service, as applicable to your account).</p>
 <h3>2. What the software accesses, and why</h3>
 <p>When you first install Acopio, Google asks you to authorise it. Each permission exists for a specific feature:</p>
-<table class="lg-table"><tr><th>Permission</th><th>Why it is needed</th></tr>
-<tr><td>See, edit and delete your Google Drive files</td><td>Store the photos and documents you attach to movements, and create nightly backup copies of your spreadsheet.</td></tr>
-<tr><td>View and manage the spreadsheet this app is installed in</td><td>The spreadsheet is the application's database.</td></tr>
-<tr><td>Send email as you</td><td>Delivery notifications to your project managers, and system alerts to your administrator. <strong>It cannot read your email.</strong></td></tr>
-<tr><td>Create and edit Google Docs</td><td>Assemble multiple photos into a single PDF document.</td></tr>
-<tr><td>Connect to an external service</td><td>Version checks and, if you enable it, the optional AI document-reading add-on.</td></tr>
-<tr><td>Run when you are not present</td><td>The nightly automatic backup.</td></tr>
-<tr><td>See your primary email address and basic profile</td><td>Identify who is signed in, so the app knows which permissions to apply.</td></tr>
-</table>
+<p>| Permission | Why it is needed | |---|---| | See, edit and delete your Google Drive files | Store the photos and documents you attach to movements, and create nightly backup copies of your spreadsheet. | | View and manage the spreadsheet this app is installed in | The spreadsheet is the application's database. | | Send email as you | Delivery notifications to your project managers, and system alerts to your administrator. <strong>It cannot read your email.</strong> | | Create and edit Google Docs | Assemble multiple photos into a single PDF document. | | Connect to an external service | Version checks and, if you enable it, the optional AI document-reading add-on. | | Run when you are not present | The nightly automatic backup. | | See your primary email address and basic profile | Identify who is signed in, so the app knows which permissions to apply. |</p>
 <p>Two notes on scope:</p>
 <ul>
 <li><strong>Full Gmail access is NOT part of the base product.</strong> It is required only by the optional paid Gmail delivery-scanner add-on. If you have not bought that add-on, Acopio never requests it and cannot read your mail.</li>
@@ -15814,14 +16611,10 @@ var LEGAL_DOCS = {
 </ul>
 <h3>3. What we collect</h3>
 <p><strong>We never receive your inventory data.</strong> Four things can send us something else, and they are listed here in full.</p>
-<ul>
-<li><strong>"Report a problem" (the 🐞 button).</strong> When you submit a report, the message you typed, any screenshots you attach, your email address and your app version are emailed to your own administrator. If you send it on to us for support, we receive whatever you chose to include. Do not attach screenshots containing information you would rather we did not see.</li>
-<li><strong>Support you initiate.</strong> If you email us for help and include a file, a screenshot or spreadsheet access, we see what you send us. We use it to resolve your issue and nothing else, and we do not retain copies afterwards.</li>
-<li><strong>The setup check-in — the one thing that sends without you asking.</strong> If, and only if, your installation was configured with a support address, the software emails us once at 3 days and once at 7 days after setup <strong>when no inventory movement has been recorded at all</strong>. It is there so a customer who got stuck during setup hears from us instead of quietly giving up.
-<br><br>That email contains exactly four things: <strong>your company name, your administrator's email address, how many users are registered, and how many days it has been since setup.</strong> Nothing else — no inventory, no materials, no suppliers, no prices, no documents.
-<br><br>It stops permanently as soon as a single movement is recorded, and it never sends more than those two messages. If your installation has no support address configured, it never sends at all.</li>
-<li><strong>Paying us.</strong> Your billing details — name, email, company, billing address — reach us through Stripe so we know who paid for what. <strong>Your card number does not</strong>: it goes to Stripe and stays there. See section 5.</li>
-</ul>
+<p>1. <strong>"Report a problem" (the 🐞 button).</strong> When you submit a report, the message you typed, any screenshots you attach, your email address and your app version are emailed to your own administrator. If you send it on to us for support, we receive whatever you chose to include. Do not attach screenshots containing information you would rather we did not see. 2. <strong>Support you initiate.</strong> If you email us for help and include a file, a screenshot or spreadsheet access, we see what you send us. We use it to resolve your issue and nothing else, and we do not retain copies afterwards. 3. <strong>The setup check-in — the one thing that sends without you asking.</strong> If, and only if, your installation was configured with a support address, the software emails us once at 3 days and once at 7 days after setup <strong>when no inventory movement has been recorded at all</strong>. It is there so a customer who got stuck during setup hears from us instead of quietly giving up.</p>
+<p>That email contains exactly four things: <strong>your company name, your administrator's email address, how many users are registered, and how many days it has been since setup.</strong> Nothing else — no inventory, no materials, no suppliers, no prices, no documents.</p>
+<p>It stops permanently as soon as a single movement is recorded, and it never sends more than those two messages. If your installation has no support address configured, it never sends at all.</p>
+<p>4. <strong>Paying us.</strong> Your billing details — name, email, company, billing address — reach us through Stripe so we know who paid for what. <strong>Your card number does not</strong>: it goes to Stripe and stays there. See section 5.</p>
 <p>We do not use analytics, tracking pixels, advertising identifiers or session recording. We do not sell, rent or share data — we have none to sell.</p>
 <h3>4. The optional AI add-on</h3>
 <p>If you enable the document-reading feature, the contents of the documents you choose to scan are sent to <strong>Google's Gemini API</strong> for processing, using an API key that <strong>you</strong> supply from your own Google account. The request goes from your Google account to Google. It does not pass through us.</p>
@@ -15829,7 +16622,7 @@ var LEGAL_DOCS = {
 <h3>5. Sub-processors</h3>
 <p><strong>For your business data: none, because we do not process it.</strong></p>
 <p>Google is not our sub-processor — Google is <strong>your</strong> provider, under your own agreement with them.</p>
-<p><strong>For billing: Stripe.</strong> Paying us means Stripe processes your billing details — the name and email on the account, your company name and billing address, and your card. <strong>Your card number goes to Stripe and is held by Stripe; it never reaches us.</strong> Stripe is a payment processor under its own privacy policy at <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</p>
+<p><strong>For billing: Stripe.</strong> Paying us means Stripe processes your billing details — the name and email on the account, your company name and billing address, and your card. <strong>Your card number goes to Stripe and is held by Stripe; it never reaches us.</strong> Stripe is a payment processor under its own privacy policy at <a href="https://stripe.com/privacy">stripe.com/privacy</a>.</p>
 <p>This is the one place a third party sees anything of yours because of us, and it sees only what is needed to take a payment. <strong>It has nothing to do with your inventory</strong>, which stays in your Google account and is never sent anywhere.</p>
 <h3>6. Retention and deletion</h3>
 <p>You control retention entirely:</p>
@@ -15839,7 +16632,7 @@ var LEGAL_DOCS = {
 <li>Nightly backups are deleted automatically after 30 days.</li>
 </ul>
 <p><strong>To delete everything:</strong> delete the spreadsheet and the app's Drive folder. That is complete deletion — there is no second copy anywhere for us to purge, and no request to us is required.</p>
-<p>To revoke the software's access at any time, without deleting anything, go to <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+<p>To revoke the software's access at any time, without deleting anything, go to <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
 <h3>7. Your rights (GDPR, CCPA and similar)</h3>
 <p>Because your data never leaves your Google account, <strong>you are the data controller</strong> for it and we are not a processor of it. Access, correction, export and deletion are all things you perform directly, in your own spreadsheet, without asking us.</p>
 <p>For the limited personal data we hold as a business — your name, billing email and support correspondence — write to the address below and we will act on your request within 30 days.</p>
@@ -15940,7 +16733,7 @@ var LEGAL_DOCS = {
 <li><strong>Annual:</strong> whole months you have not yet used are refunded. Months already begun are not.</li>
 <li><strong>If the fault is ours:</strong> if a defect makes the software unusable for its purpose and we have not fixed it within 30 days of you reporting it, the current period is refunded in full whatever the dates say. You should not pay for a month in which it did not work.</li>
 </ul>
-<p>Refunds are issued by the method you paid with, within 10 business days of being agreed.</p>
+<p>Refunds are issued by the method you paid with, <strong>within 5 to 10 business days</strong> of being agreed.</p>
 <h4>Add-ons</h4>
 <p>Add-ons follow the subscription: cancel one and it stops at the end of the current period, under the same rules as above.</p>
 <h4>How you are billed</h4>
@@ -15955,15 +16748,18 @@ var LEGAL_DOCS = {
 <h4>If a payment does not go through</h4>
 <p>Nothing is switched off, at any point. We could not do it if we wanted to — the software is in your Google account.</p>
 <p>Card payments fail for boring reasons — an expired card, a bank declining a recurring charge. What actually happens:</p>
-<ol>
-<li><strong>Stripe retries the charge automatically</strong> over the following days and emails you each time. This is usually the end of it.</li>
-<li><strong>Day 10 after the first failed charge</strong> — if it is still unpaid, we email you personally, so it does not come down to you noticing a receipt that never arrived.</li>
-<li><strong>Day 30</strong> — if it is still unpaid, support and new versions <strong>pause</strong> until the account is settled. You keep using the software and you keep every bit of your data.</li>
-<li><strong>We never withhold your data to get paid.</strong> It is not ours to withhold, and export stays available whatever the state of your account.</li>
-</ol>
-<p>Settle the account and support and updates resume immediately, with no reconnection fee.</p>
-<h4>Coming back after leaving</h4>
-<p>If you cancel and later want to return, you are treated as a new customer: current prices, and any promotional or founding rate you previously had does not come back. That includes the setup fee if the installation has to be done again.</p>
+<p>1. <strong>Stripe retries the charge automatically</strong> over the following days and emails you each time. This is usually the end of it. 2. <strong>Day 10 after the first failed charge</strong> — if it is still unpaid, we email you personally, so it does not come down to you noticing a receipt that never arrived. 3. <strong>Day 30</strong> — if it is still unpaid, support and new versions <strong>pause</strong> until the account is settled. You keep using the software and you keep every bit of your data. 4. <strong>We never withhold your data to get paid.</strong> It is not ours to withhold, and export stays available whatever the state of your account.</p>
+<p>Settle the account and support and updates resume immediately. What that costs depends only on how long the account was unpaid — see the next section.</p>
+<h4>Coming back after a pause, or after leaving</h4>
+<p>Support and updates can be paused for two reasons: an unpaid account, or you cancelling. What it takes to start again is the same either way, and it depends on one thing only — <strong>how long you were away</strong>:</p>
+<ul>
+<li><strong>Up to 2 months away</strong> — you pay the months you owe. Nothing extra.</li>
+<li><strong>More than 2 months away</strong> — the months you owe, plus <strong>$150</strong> to bring the installation up to date.</li>
+<li><strong>More than 12 months away</strong> — treated as a new installation, at current prices.</li>
+</ul>
+<p>The $150 is not a penalty for leaving. While an account is paused you stop receiving the fixes and new versions everyone else gets, so an installation that has been paused for months has to be brought forward before it is supportable again — and that is real work. Under two months there is normally none of it, which is why there is no charge.</p>
+<p><strong>No promotional or founding rate comes back with you</strong>, in any of the three cases.</p>
+<p><strong>Nothing about your data changes while an account is paused.</strong> The software keeps running in your own Google account, your records stay yours, and export stays available. See section 5.</p>
 <h3>10. Termination</h3>
 <p>We may terminate your licence if you materially breach these terms and do not fix it within 30 days of written notice. On termination your right to support and updates ends. <strong>Your installation and your data are unaffected</strong> — we have no mechanism to remove them, and would not use one if we had it.</p>
 <h3>11. Changes to these terms</h3>
@@ -15973,6 +16769,7 @@ var LEGAL_DOCS = {
 <h3>13. Contact</h3>
 <p>Jose Castro — joseisrael5101@gmail.com</p>` }
 };
+/* ─── END GENERATED LEGAL HTML ─── */
 
 function openLegal(which){
   var doc = LEGAL_DOCS[which];
@@ -16396,7 +17193,8 @@ function saveEditMov() {
       _setModalBusy('editMovOverlay', false);
       closeModal('editMovOverlay');
       showToast('Movement updated — ' + res.changes + ' field(s) changed. Email sent.', 'ok');
-      loadDataFromGoogle(true);
+      // Silencioso: mismo caso que borrar un movimiento.
+      loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(err) {
       btn.disabled = false; btn.textContent = '💾 Save Changes';

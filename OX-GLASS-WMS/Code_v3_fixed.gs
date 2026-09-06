@@ -46,7 +46,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '11.39';
+var APP_VERSION = '11.47';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -58,7 +58,7 @@ var APP_VERSION = '11.39';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'ae5491e2';
+var APP_BUILD = '4d6bc259';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -2291,10 +2291,33 @@ function processMovementInner_(ss, action, data, auth) {
 // Apps Script releases a script lock when the execution ends, so even a bug
 // that skipped releaseLock could only hold others up until this request
 // finishes, never permanently.
+// SYSTEM_BUSY| ES UNA MARCA PARA EL NAVEGADOR, NO UN TEXTO PARA LEER.
+//
+// Jose, tras la prueba con tres cuentas: tres salidas que sumaban exactamente
+// lo que había en el estante (142 = 42 + 50 + 50). Una pasó y dos vieron un
+// error. Sus palabras: "no debemos dejar que la app muestre un error cuando los
+// movimientos sí están hechos correctamente, pero es el sistema el que no lo
+// está haciendo bien. debemos poner en cola los movimientos o reintentar".
+//
+// Tiene razón, y la distinción es la que importa: "no cabe" es un NO, y "estoy
+// ocupado" es un TODAVÍA NO. Los dos llegaban al navegador como texto rojo de
+// la misma forma, así que la app no podía tratarlos distinto — y quien se
+// llevaba el "todavía no" leía un fallo suyo.
+//
+// El prefijo lo arregla sin cambiar nada más: el navegador reconoce la marca y
+// reintenta solo (ver _isBusyError en Index). Es el mismo recurso que ya usa
+// DUPLICATE_MOVEMENT|, y por el mismo motivo — Apps Script entrega los errores
+// al cliente como texto, así que un código DENTRO del texto es la única forma
+// de distinguir una causa de otra sin adivinar por el idioma del mensaje.
+//
+// El texto que va detrás se sigue enseñando cuando los reintentos se agotan,
+// así que tiene que seguir leyéndose bien por sí solo.
+var BUSY_PREFIX = 'SYSTEM_BUSY|';
+
 function withStockLock_(fn) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) {
-    throw new Error('System busy — someone else is saving right now. Please try again in a moment.');
+    throw new Error(BUSY_PREFIX + 'System busy — someone else is saving right now. Please try again in a moment.');
   }
   try { return fn(); }
   finally { try { lock.releaseLock(); } catch (e) {} }
@@ -2306,7 +2329,7 @@ function addMovementsBatch_(ss, archive, movements, auth) {
 
   var lock = LockService.getScriptLock();
   try { lock.waitLock(8000); }
-  catch (e) { throw new Error('System busy — another save is in progress. Please retry in a moment.'); }
+  catch (e) { throw new Error(BUSY_PREFIX + 'System busy — another save is in progress. Please retry in a moment.'); }
 
   try {
     // ── ONE read of the whole archive ────────────────────────────────────────
@@ -6689,7 +6712,7 @@ var LEGAL_SHEET_TEXT = {
     ["li","•   If the fault is ours: if a defect makes the software unusable for its"],
     ["p","  purpose and we have not fixed it within 30 days of you reporting it, the current period is refunded in full whatever the dates say. You should not pay for a month in which it did not work."],
     ["p",""],
-    ["p","Refunds are issued by the method you paid with, within 10 business days of being agreed."],
+    ["p","Refunds are issued by the method you paid with, **within 5 to 10 business days** of being agreed."],
     ["p",""],
     ["sub","Add-ons"],
     ["p",""],
@@ -6717,11 +6740,21 @@ var LEGAL_SHEET_TEXT = {
     ["p",""],
     ["p","1. Stripe retries the charge automatically over the following days and emails you each time. This is usually the end of it. 2. Day 10 after the first failed charge — if it is still unpaid, we email you personally, so it does not come down to you noticing a receipt that never arrived. 3. Day 30 — if it is still unpaid, support and new versions pause until the account is settled. You keep using the software and you keep every bit of your data. 4. We never withhold your data to get paid. It is not ours to withhold, and export stays available whatever the state of your account."],
     ["p",""],
-    ["p","Settle the account and support and updates resume immediately, with no reconnection fee."],
+    ["p","Settle the account and support and updates resume immediately. What that costs depends only on how long the account was unpaid — see the next section."],
     ["p",""],
-    ["sub","Coming back after leaving"],
+    ["sub","Coming back after a pause, or after leaving"],
     ["p",""],
-    ["p","If you cancel and later want to return, you are treated as a new customer: current prices, and any promotional or founding rate you previously had does not come back. That includes the setup fee if the installation has to be done again."],
+    ["p","Support and updates can be paused for two reasons: an unpaid account, or you cancelling. What it takes to start again is the same either way, and it depends on one thing only — how long you were away:"],
+    ["p",""],
+    ["li","•   Up to 2 months away — you pay the months you owe. Nothing extra."],
+    ["li","•   More than 2 months away — the months you owe, plus $150 to bring the installation up to date."],
+    ["li","•   More than 12 months away — treated as a new installation, at current prices."],
+    ["p",""],
+    ["p","The $150 is not a penalty for leaving. While an account is paused you stop receiving the fixes and new versions everyone else gets, so an installation that has been paused for months has to be brought forward before it is supportable again — and that is real work. Under two months there is normally none of it, which is why there is no charge."],
+    ["p",""],
+    ["p","No promotional or founding rate comes back with you, in any of the three cases."],
+    ["p",""],
+    ["p","Nothing about your data changes while an account is paused. The software keeps running in your own Google account, your records stay yours, and export stays available. See section 5."],
     ["p",""],
     ["head","10. Termination"],
     ["p",""],
