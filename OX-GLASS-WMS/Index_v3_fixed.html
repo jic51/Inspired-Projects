@@ -619,7 +619,7 @@
        it would be clipped by the modal's own scroll edge. */
     /* La regla que volteaba ESTE tooltip hacia arriba se quitó: usaba
        bottom:calc(100% + 8px), que con position:fixed sería relativo a la
-       ventana y no al icono. Ahora _positionTip voltea cualquier tooltip que
+       ventana y no al icono. Ahora _tipPlace voltea cualquier tooltip que
        no tenga sitio debajo, así que este caso lo hereda en vez de ser una
        excepción escrita a mano — y lo hereda también el siguiente. */
     /* A cost of 0 is accepted, but it is not the way to say "we don't know".
@@ -1719,43 +1719,37 @@
     /* Own tooltip instead of the browser's title bubble: that one cannot be
        styled at all — its shape, delay, colours and single-line wrapping are
        decided by the operating system, not by the page. */
+    /* .tip ya NO dibuja nada. Sigue existiendo como la marca que dice "esto
+       lleva ayuda", y `position:relative` se queda porque hay elementos con
+       hijos posicionados dentro — quitarlo movería cosas que no tienen que ver
+       con esto. La burbuja la pinta #acTip, colgado del <body>. */
     .tip{position:relative}
-    /* FIXED, not absolute — and that is the whole fix, not a preference.
-       Jose photographed the Settings tooltips cut off mid-sentence and drawn
-       through the text under them. An absolutely positioned bubble is clipped
-       by the nearest scrolling ancestor, and the settings panel is exactly
-       that: .settings-content has overflow-y:auto. So every tooltip near the
-       bottom of that panel was sliced at the panel's edge, and no z-index
-       could have helped — clipping is not stacking.
-       position:fixed takes the bubble out of every overflow in the page. It
-       costs coordinates: a fixed box cannot be placed relative to its anchor
-       by CSS alone, so _positionTip measures the anchor and writes --tip-x /
-       --tip-y. That is also what lets it flip above and clamp to the window,
-       which the old .tip-edge-l/-r classes only approximated. */
-    .tip::after{content:attr(data-tip);position:fixed;left:var(--tip-x,-9999px);top:var(--tip-y,-9999px);
-      transform:translateX(-50%) translateY(-4px);
-      background:var(--navy);color:#fff;font-size:.74rem;font-weight:600;line-height:1.45;letter-spacing:0;text-transform:none;
-      padding:.55rem .7rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.28);white-space:pre-line;width:max-content;max-width:240px;
-      opacity:0;pointer-events:none;transition:opacity .15s ease,transform .15s ease;z-index:9999}
-    .tip:hover::after,.tip:focus-visible::after{opacity:1;transform:translateX(-50%) translateY(0)}
-    /* Sin sitio debajo: la burbuja se pone encima del icono. --tip-y es
-       entonces el BORDE SUPERIOR del ancla, y el -100% la sube entera. */
-    .tip.tip-above::after{transform:translateX(-50%) translateY(calc(-100% + 4px))}
-    .tip.tip-above:hover::after,.tip.tip-above:focus-visible::after{transform:translateX(-50%) translateY(-100%)}
-    /* The account button's own tooltip (name + role) waits 4s before showing
-       — Jose: unlike the info icons, this one is meant for someone who
-       lingers, not a quick glance, so it should not compete with the
-       instant tooltips everywhere else. Delay only on the way IN: leaving
-       still uses the base .tip::after transition above (no delay), so
-       dismissing it stays snappy. */
-    #acctBtn.tip:hover::after,#acctBtn.tip:focus-visible::after{transition-delay:4s}
-    /* Las clases .tip-edge-l / .tip-edge-r se retiraron aquí. Anclaban la
-       burbuja al borde IZQUIERDO o DERECHO DEL ICONO, que es una aproximación
-       a "que no se salga de la pantalla" y sólo funcionaba porque el icono
-       estaba cerca del borde de la ventana. Con position:fixed el JS puede
-       hacer lo que aquellas imitaban: mover el centro de la burbuja lo justo
-       para que quepa. _positionTip ya no las pone, y nada más las lee —
-       comprobado antes de quitarlas. */
+
+    /* LA BURBUJA, UNA SOLA PARA TODA LA APP.
+       Vive en el <body> por una razón concreta y medida: un `::after` dentro
+       del icono queda a merced de sus ancestros. El <label> de un recuadro de
+       Ajustes lleva transform:translateY(-50%) para subirse a la línea del
+       borde, y eso convierte al label en el marco de referencia de todo
+       position:fixed que tenga dentro — la burbuja se iba dos centímetros
+       abajo y se pintaba detrás de los recuadros de al lado. Ver _tipPlace.
+       Aquí arriba no hay más que el body: ningún overflow la recorta y ningún
+       transform la mueve. */
+    #acTip{position:fixed;left:-9999px;top:-9999px;
+      background:var(--navy);color:#fff;font-size:.74rem;font-weight:600;line-height:1.45;
+      letter-spacing:0;text-transform:none;text-align:left;
+      padding:.55rem .7rem;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.28);
+      white-space:pre-line;width:max-content;max-width:min(280px,88vw);
+      opacity:0;pointer-events:none;visibility:hidden;
+      transition:opacity .15s ease,transform .15s ease;transform:translateY(-4px);
+      /* Por encima de todo lo que la app dibuja: el overlay está en 550, el
+         cajón en 500, y el aviso de versión en 99999. Una ayuda que se lee
+         detrás de la ventana que explica no sirve de nada. */
+      z-index:2147483000}
+    /* `ready` la hace medible sin enseñarla: _tipPlace necesita su tamaño real
+       antes de colocarla, y medir algo con display:none devuelve ceros. */
+    #acTip.ready{visibility:visible}
+    #acTip.show{opacity:1;transform:translateY(0)}
+
     /* The small "i" badge that replaces a paragraph of always-visible help text —
        same explanation, available on demand instead of taking up the window. */
     .info-ic{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
@@ -3366,7 +3360,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.62';
+var APP_VERSION = '11.67';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -3378,7 +3372,7 @@ var APP_VERSION = '11.62';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'c06e632d';
+var APP_BUILD = '2b44734f';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3497,7 +3491,21 @@ var monitoredMaterials = null; // null = all; array of names = filtered
 // a window is one unit and will never appear in here.
 var materialPacks = {};
 var rackPhotos = {}; // { LOCATION_UPPER: { url, uploadedBy, uploadedAt } }
-var _stockSelection = {}; // { matId: stockData[matId] } — checked rows in Stock Dashboard, for "Exit Selected"
+/* SÓLO LOS NOMBRES, NUNCA LAS FILAS.
+ *
+ * Guardaba { matId: stockData[matId] } — o sea, una COPIA de la fila del
+ * momento en que se marcó la casilla. Y `stockData` se reemplaza entero en cada
+ * carga (`stockData = data.stock || {}`), así que la cesta se quedaba con
+ * objetos huérfanos de una foto vieja.
+ *
+ * Consecuencia real: alguien marca cinco materiales, otra persona guarda una
+ * salida, y "Exit Selected" abre el formulario con las cantidades de ANTES. La
+ * cesta se veía igual de bien y ya no era verdad.
+ *
+ * Con sólo el nombre, la fila se busca en el momento de usarla y siempre es la
+ * de ahora. Y un material que ya no existe —fusionado, renombrado— simplemente
+ * deja de estar en la cesta en vez de aparecer con datos de un pasado. */
+var _stockSelection = {}; // { matId: true } — casillas marcadas en el Stock Dashboard
 var materialLocks = []; // [{id, matId, category, name, rack, allowedDest:[...], reason, lockedBy, lockedAt}]
 var _locksByKey = {}; // 'MATID|||RACK' -> lock object, rebuilt whenever materialLocks changes (fast lookup for row rendering)
 function _rebuildLocksIndex(){
@@ -4958,7 +4966,7 @@ function _syncProductLinks(productName){
 // media query alone: forcing it on and then checking whether the tabs
 // wrapped is the only way to know it really fits, for the same reason a
 // fixed pixel breakpoint keeps being wrong — this is a measure-then-verify
-// pass, not a guess, exactly like _positionTip's edge avoidance elsewhere
+// pass, not a guess, exactly like _tipPlace's edge avoidance elsewhere
 // in this file.
 function _syncBrandWidth(){
   var brandEl = document.querySelector('.topbar-brand');
@@ -5167,6 +5175,12 @@ function _activeTab() {
 
 function showTab(tab, btnId){
   _clearRowModes();     // Edit / Delete never survive leaving the screen they were armed on
+  // Y la selección de movimientos tampoco, por el mismo motivo y con las mismas
+  // palabras. Es la línea que faltaba: en la v11.59 las casillas SUSTITUYERON a
+  // los modos de fila en Movements, y este limpiado se quedó hablando sólo de
+  // los modos — así que la selección era lo único de la pantalla que sobrevivía
+  // a irse de ella.
+  _clearMovSelection();
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(tab).classList.add('active');
   document.querySelectorAll('.nav button').forEach(function(b){ b.classList.remove('active'); });
@@ -5355,19 +5369,29 @@ function toggleStockDetail(rowId) {
 // ── Stock Selection → bulk "Exit Selected" ──────────────────────────────────
 function toggleStockSelect(cb){
   var matId = cb.getAttribute('data-matid');
-  if (cb.checked) {
-    var s = stockData[matId];
-    if (s) _stockSelection[matId] = s;
-  } else {
-    delete _stockSelection[matId];
-  }
+  if (cb.checked) { if (stockData[matId]) _stockSelection[matId] = true; }
+  else delete _stockSelection[matId];
   _updateStockSelectBar();
+}
+
+/* Las filas de la cesta, TAL COMO ESTÁN AHORA. Se intersecta con stockData en
+ * cada llamada: lo que ya no existe no viaja, y lo que sigue existiendo viaja
+ * con sus números de este momento, no con los de cuando se marcó. */
+function _selectedStockRows(){
+  var out = [];
+  for (var id in _stockSelection) {
+    if (!_stockSelection.hasOwnProperty(id)) continue;
+    if (stockData[id]) out.push(stockData[id]);
+    else delete _stockSelection[id];   // se fusionó, se renombró o se acabó
+  }
+  return out;
 }
 
 function _updateStockSelectBar(){
   var bar = document.getElementById('stockSelectBar');
   if (!bar) return;
-  var count = Object.keys(_stockSelection).length;
+  // Se cuenta lo que de verdad sigue ahí, no lo que se marcó alguna vez.
+  var count = _selectedStockRows().length;
   if (count > 0) {
     bar.style.display = 'flex';
     document.getElementById('stockSelectCount').textContent =
@@ -5387,7 +5411,7 @@ function clearStockSelection(){
 // racks auto-filled — same engine as the "↗ Auto-fill Racks" button, just applied
 // to each selection instead of typed one at a time.
 function exitSelectedStock(){
-  var mats = Object.values(_stockSelection);
+  var mats = _selectedStockRows();
   if (!mats.length) return;
 
   openMoveModal('EXIT'); // synchronous — modal + multi-exit section are ready after this returns
@@ -5426,7 +5450,7 @@ function _fillExitLinesFrom(mats){
 // The materials the dashboard handed to this form, still selected. Used to
 // rebuild every line when the type goes back to one that holds several.
 function _liveStockSelection(){
-  return Object.values(_stockSelection || {});
+  return _selectedStockRows();
 }
 
 // How many material lines the form is holding RIGHT NOW. ENTRY and EXIT keep one
@@ -6066,7 +6090,25 @@ function _movCanAct(){
          (userRole === 'WAREHOUSE' && !!(rolePerms || {}).canEditMovements);
 }
 
-function _clearMovSelection(){ _movSelection = {}; }
+/* SE VA LA MARCA Y SE VAN LAS CASILLAS, LAS DOS COSAS.
+ *
+ * Jose: "una vez que se selecciona un movimiento, se lo edita y se guarda, el
+ * check debe desaparecer. Si cambio de página, el check debe desaparecer. El
+ * check debe mantenerse solo si estoy en la misma página."
+ *
+ * Vaciar el mapa no basta: las casillas ya dibujadas siguen marcadas en la
+ * pantalla, así que quedaría una selección que se VE pero no EXISTE — que es
+ * peor que cualquiera de las dos cosas por separado, porque Edit y Delete
+ * estarían apagados encima de tres filas con el check puesto.
+ */
+function _clearMovSelection(){
+  _movSelection = {};
+  document.querySelectorAll('#tableContainer .mov-select-cb').forEach(function(cb){
+    cb.checked = false;
+  });
+  _syncMovSelectAll();
+  _updateMovActionBar();
+}
 
 function toggleMovSelect(cb){
   var id = cb.getAttribute('data-movid');
@@ -7236,8 +7278,22 @@ function updateNotifyPreview(){
 // al lado — ver .modal-actions. El `wrap` de allí evita que se pisen; esto evita
 // que llegue a hacer falta.
 var BUSY_LABEL = 'Waiting…';
-var BUSY_MAX_RETRIES = 4;
+// OCHO INTENTOS, NO CUATRO. Jose, 2026-09-09, después de que "Check my data"
+// le fallara dos veces seguidas: "no tiene sentido poner una cola si la cola
+// solo puede con 3 o 4 cosas a la vez. Debemos hacer que el sistema los maneje
+// todos, los mantenga en la cola hasta que se puedan realizar".
+//
+// Con cuatro y sin tope, las esperas eran 0.9s, 1.8s, 3.6s y 7.2s: unos TRECE
+// SEGUNDOS antes de rendirse. Trece segundos es poco para un almacén donde tres
+// personas guardan a la vez. Con ocho y el tope en 8s son unos 45 — que es una
+// espera que una persona aguanta sin pensar que se rompió algo, y para la que
+// el botón ya dice "Waiting…".
+//
+// El tope importa tanto como el número: sin él, el octavo intento esperaría dos
+// minutos él solo y la app parecería colgada justo cuando ya iba a funcionar.
+var BUSY_MAX_RETRIES = 8;
 var BUSY_BASE_MS     = 900;
+var BUSY_MAX_MS      = 8000;
 var BUSY_JITTER_MS   = 700;
 
 function _isBusyError(err){
@@ -7353,10 +7409,178 @@ function _shortStockFix(err){
   return true;
 }
 
+/* Las tres fusiones —locaciones, catálogo desde la barra, y catálogo desde los
+ * parecidos— fallaban con el mismo texto escrito tres veces, y ninguna de las
+ * tres distinguía "ocupado" de "no se pudo". Reescribir miles de filas es
+ * justo lo que más tarda, así que son de las que MÁS se topan con el candado.
+ *
+ * No van por la cola: una fusión es una decisión que la persona acaba de
+ * confirmar mirando la pantalla, y encolarla detrás de otra cosa la dejaría
+ * ejecutándose minutos después, sobre unos datos que ya no son los que vio.
+ * Aquí lo que hacía falta era decir la verdad, no reintentar a ciegas.
+ */
+function _mergeFailed(btn, label){
+  return function(e){
+    _btnLabel(btn, label);
+    showToast(_isBusyError(e)
+      ? 'The system is busy right now — nothing was merged. Try again in a few seconds.'
+      : 'Merge failed: ' + _humanErr(e),
+      _isBusyError(e) ? 'warn' : 'err', 6000);
+  };
+}
+
 /** Cuánto esperar antes del intento número `attempt` (1 = el primer reintento). */
 function _busyDelay(attempt){
-  return BUSY_BASE_MS * Math.pow(2, attempt - 1) +
+  return Math.min(BUSY_BASE_MS * Math.pow(2, attempt - 1), BUSY_MAX_MS) +
          Math.floor(Math.random() * BUSY_JITTER_MS);
+}
+
+/* ── LO QUE SE LE ENSEÑA A UNA PERSONA CUANDO ALGO FALLA ─────────────────────
+ *
+ * Jose vio esto en pantalla:
+ *
+ *   Could not apply: Error: SYSTEM_BUSY|System busy — someone else is saving
+ *   right now. Please try again in a moment. [ID: 3da14230]
+ *
+ * Y dijo lo que había que decir: "estos mensajes no le ayudan al usuario. A mí
+ * me dicen algo, pero al usuario no."
+ *
+ * Tres cosas sobran ahí y ninguna es el mensaje:
+ *   - `SYSTEM_BUSY|` es una marca para el código, no una palabra.
+ *   - `Error:` lo añade Apps Script y no informa de nada.
+ *   - `[ID: 3da14230]` es la referencia del registro del servidor. Sirve para
+ *     el soporte, no para quien está de pie en el almacén — así que va a la
+ *     consola, que es donde el soporte la puede buscar.
+ *
+ * _stripTags ya quitaba las dos primeras. La tercera no la quitaba nadie.
+ */
+function _humanErr(err){
+  var msg = _stripTags(err);
+  var m = msg.match(/\s*\[ID:\s*([0-9a-zA-Z]+)\]\s*$/);
+  if (m){
+    try { console.warn('Acopio — request id for support:', m[1]); } catch (e) {}
+    msg = msg.slice(0, m.index);
+  }
+  msg = msg.trim();
+  // Un Error sin texto vuelve de Apps Script como la palabra "Error" a secas —
+  // sin dos puntos, así que el replace de _stripTags no la toca. Enseñar eso es
+  // peor que no enseñar nada: ocupa el sitio de una explicación y no es una.
+  if (!msg || /^error\.?$/i.test(msg)) return 'Something went wrong, and nothing was saved.';
+  return msg;
+}
+
+/* ── UNA SOLA COLA PARA TODO LO QUE ESCRIBE ──────────────────────────────────
+ *
+ * Ocho funciones del servidor toman el candado del stock y pueden contestar
+ * "ocupado": guardar movimientos, editar uno, borrarlo, restaurarlo, renombrar
+ * o fusionar un material, fusionar locaciones o valores del catálogo, rellenar
+ * los IDs de movimiento, y aplicar un arreglo de "Check my data".
+ *
+ * Hasta la v11.64 sólo DOS estaban protegidas en el navegador, y cada una a su
+ * manera: guardar tenía reintento sin cola, borrar tenía cola con reintento, y
+ * las otras seis no tenían nada. Por eso el error crudo del servidor le llegó
+ * entero a Jose: _dqApply no lo intercepta nadie.
+ *
+ * Esto es una cola, no sólo un reintento, y la diferencia importa: DOS PESTAÑAS
+ * DE LA MISMA PERSONA YA NO COMPITEN ENTRE SÍ. El reintento resuelve el choque
+ * con OTRA persona; la cola quita el que uno se hace a sí mismo pulsando dos
+ * botones seguidos, que es el más frecuente y el más tonto.
+ *
+ * EL LÍMITE, DICHO AQUÍ PARA QUE NO SE PROMETA DE MÁS: esta cola vive en el
+ * navegador y MUERE CON LA PESTAÑA. "Mantenerlos hasta que se puedan realizar"
+ * llega hasta ahí. Una cola que sobreviva a cerrar la ventana tiene que vivir
+ * en el servidor con un disparador, y eso gasta cuota de Apps Script — que es
+ * del DUEÑO de la copia, no de cada usuario. Es una decisión de negocio, no
+ * técnica, y está anotada como tal.
+ */
+var _wq     = [];      // trabajos esperando turno
+var _wqBusy = false;   // hay uno en el aire
+
+/* UNA RECARGA AL FINAL, NO UNA POR ARREGLO.
+ *
+ * Jose aplicó unos veinte arreglos de "Check my data" seguidos. Cada uno pedía
+ * por su cuenta una recarga COMPLETA de todos los datos del almacén: veinte
+ * barridos del archivo para un trabajo que sólo necesitaba uno.
+ *
+ * Eso es cuota suya tirada —la de Apps Script es del DUEÑO de la copia, no de
+ * cada usuario— y además es lo que le hizo pensar que el caché de la v11.58
+ * había dejado de funcionar: cada recarga cambia el sello de los datos, y el
+ * sello es justo lo que invalida el caché. El caché estaba haciendo su trabajo
+ * correctamente sobre veinte cambios que no tenían por qué haber sido veinte.
+ *
+ * Espera a que la cola esté vacía y recarga una vez. Cada arreglo nuevo empuja
+ * la espera hacia adelante, así que veinte seguidos siguen siendo una recarga.
+ */
+var _reloadTimer = null;
+function _reloadWhenIdle(){
+  if (_reloadTimer) clearTimeout(_reloadTimer);
+  _reloadTimer = setTimeout(function(){
+    _reloadTimer = null;
+    // Todavía hay trabajo en la cola: recargar ahora daría una foto a medias
+    // y habría que repetirla igual. Se vuelve a esperar.
+    if (_wq.length || _wqBusy) { _reloadWhenIdle(); return; }
+    loadDataFromGoogle(true, true);   // skipCache, silencioso
+  }, 700);
+}
+
+function _wqPump(){
+  if (_wqBusy || !_wq.length) return;
+  _wqBusy = true;
+  var job = _wq.shift();
+  job(function(){ _wqBusy = false; _wqPump(); });
+}
+
+/* Una escritura, encolada y con reintento.
+ *
+ *   fn       nombre del método del servidor (por defecto processMovement)
+ *   args     lo que se le pasa, tal cual
+ *   btn      el botón que la lanzó, para dejarlo en "Waiting…" mientras espera
+ *   ok(res)  qué hacer cuando funcione
+ *   fail(e)  opcional; si no se pasa, se enseña _humanErr con un aviso
+ *   what     de qué se trata, para el aviso final ("Could not apply", …)
+ */
+function _acWrite(o){
+  _wq.push(function(done){
+    var tries = 0;
+
+    function attempt(){
+      var run = google.script.run
+        .withSuccessHandler(function(res){
+          done();
+          try { if (o.ok) o.ok(res); } catch (e) {}
+        })
+        .withFailureHandler(function(err){
+          // OCUPADO NO ES UN FALLO, ES UN TODAVÍA NO. El botón se queda
+          // esperando: devolvérselo a la persona la invitaría a pulsar otra
+          // vez, y no ha pasado nada malo.
+          if (_isBusyError(err) && tries < BUSY_MAX_RETRIES){
+            tries++;
+            if (o.btn) _btnBusy(o.btn, BUSY_LABEL);
+            setTimeout(attempt, _busyDelay(tries));
+            return;
+          }
+          done();
+          if (o.btn) _btnReset(o.btn);
+          if (o.fail) { try { o.fail(err, _isBusyError(err)); } catch (e) {} return; }
+
+          // Se agotó la espera, o fue otra cosa. Se dicen cosas distintas
+          // porque SON distintas: una es "el sistema está lleno", la otra es
+          // "esto que pediste no se puede", y confundirlas deja a la persona
+          // sin saber si volver a intentarlo sirve de algo.
+          if (_isBusyError(err)){
+            showToast('The system has been busy for a while, so this is still ' +
+              'waiting. Nothing was lost and nothing you did is wrong — try ' +
+              'again in a few seconds.', 'warn', 9000);
+          } else {
+            showToast((o.what ? o.what + ': ' : '') + _humanErr(err), 'err', 8000);
+          }
+        });
+      run[o.fn || 'processMovement'].apply(run, o.args || []);
+    }
+
+    attempt();
+  });
+  _wqPump();
 }
 
 /* Reintento compartido por los TRES caminos de guardado.
@@ -9848,6 +10072,20 @@ function _renderSystemTab() {
   _loadAiStatus();
   _loadMovIdStatus();
   _loadTrash();
+
+  // LO QUE YA SE ENCONTRÓ SIGUE AHÍ, Y HAY QUE VOLVER A PINTARLO.
+  //
+  // Jose, 2026-09-09: revisó "Check my data", aplicó unos veinte arreglos,
+  // cerró la ventana y al volver "ya no hay ningún dato en la ventana en la
+  // parte de data". Tenía razón y no era lo que yo suponía: _dqFindings NUNCA
+  // se perdió — sigue en memoria toda la sesión. Lo que pasaba es que este
+  // render reconstruía el recuadro con sólo el botón y no volvía a dibujar lo
+  // que todavía tenía guardado.
+  //
+  // O sea: los datos estaban, la pantalla no los pintaba. Volver a escanear
+  // habría sido la respuesta fácil y la equivocada — cuesta un barrido entero
+  // del archivo para enseñar algo que ya se sabe.
+  if (_dqFindings.length) _drawDataCheck(_dqLast || {});
 }
 
 /* ── The trash: undo for a deleted movement ─────────────────────────────────
@@ -9909,8 +10147,12 @@ function _paintTrash(items){
           // El id va en un atributo, no dentro de las comillas de un onclick.
           // Lo que hay en la hoja lo puede haber escrito una persona a mano, y
           // una comilla ahí dentro rompería el botón — o algo peor.
-          '<button class="btn btn-ghost btn-sm" data-movid="' + _escAttr(it.movId) +
-            '" onclick="_restoreMovement(this)">↩ Put back</button>' +
+          // Un repintado NO puede olvidar lo que está en camino. Sin esto, el
+          // primer "Done" rearmaba todos los demás botones — ver _trashPending.
+          '<button class="btn btn-ghost btn-sm"' + (_trashPending[it.movId] ? ' disabled' : '') +
+            ' data-movid="' + _escAttr(it.movId) +
+            '" onclick="_restoreMovement(this)">' +
+            (_trashPending[it.movId] ? '⏳ Restoring…' : '↩ Put back') + '</button>' +
         '</div>';
       }).join('') +
     '</div>';
@@ -9930,42 +10172,79 @@ function _emptyTrash(){
     confirmText: 'Empty it',
     onConfirm: function(){
       _btnBusy(btn, 'Emptying…');
-      google.script.run
-        .withSuccessHandler(function(res){
+      _acWrite({
+        args: ['manageMaterial', _h({ op: 'emptyTrash' })],
+        btn:  btn,
+        what: 'Could not empty the trash',
+        ok: function(res){
           _btnReset(btn);
           var n = (res && res.removed) || 0;
           showToast('✓ ' + n + ' deleted movement' + (n === 1 ? '' : 's') + ' discarded.', 'ok');
           _sysCacheDrop('trash');
           _loadTrash();
-        })
-        .withFailureHandler(function(e){
-          _btnReset(btn);
-          showToast('⚠ ' + _stripTags(e), 'err', 8000);
-        })
-        .processMovement('manageMaterial', _h({ op: 'emptyTrash' }));
+        }
+      });
     }
   });
 }
 
+/* QUÉ MOVIMIENTOS ESTÁN VOLVIENDO AHORA MISMO.
+ *
+ * Jose lo grabó: pulsó "Put back" en varios seguidos, y AL LLEGAR EL PRIMER
+ * "Done" en verde todos los demás botones volvieron a su estado inicial, como
+ * si nadie los hubiera tocado.
+ *
+ * La causa: cada restauración que funcionaba pedía la lista otra vez al
+ * servidor y repintaba el cuadro ENTERO. Los botones que seguían esperando su
+ * turno en la cola se rehacían desde cero — el trabajo seguía en marcha, pero
+ * la pantalla decía que no.
+ *
+ * Es exactamente el mismo fallo que ya tuvo borrar, y se arregla igual: la
+ * pantalla se dibuja desde una lista de "estos están en camino", así que un
+ * repintado los sigue enseñando esperando en vez de olvidarlos. */
+var _trashPending = {};   // movId → true
+
 function _restoreMovement(btn){
   var movId = btn ? (btn.getAttribute('data-movid') || '') : '';
+  if (!movId || _trashPending[movId]) return;   // pulsarlo dos veces no encola dos
+  _trashPending[movId] = true;
   _btnBusy(btn, 'Restoring…');
-  google.script.run
-    .withSuccessHandler(function(){
+  _acWrite({
+    args: ['manageMaterial', _h({ op: 'restoreMovement', movId: movId })],
+    btn:  btn,
+    ok: function(){
+      delete _trashPending[movId];
       showToast('✓ Movement restored.', 'ok');
-      _sysCacheDrop('trash');         // uno menos, y lo sabemos ya
-      _loadTrash();
-      loadDataFromGoogle(true, true);
-    })
-    .withFailureHandler(function(e){
+      // AL INSTANTE Y EN LOCAL. El servidor YA lo hizo — esto es el manejador
+      // de ÉXITO — así que volver a pedirle la lista para enterarnos de algo
+      // que ya sabemos es lo que borraba el "Restoring…" de los demás.
+      _trashDrop(movId);
+      // Y UNA sola recarga del almacén al final de la ráfaga, no una por
+      // movimiento. Misma razón que en "Check my data".
+      _reloadWhenIdle();
+    },
+    fail: function(e, ocupado){
+      delete _trashPending[movId];
       _btnReset(btn);
-      showToast('⚠ ' + _stripTags(e), 'err', 8000);
+      showToast(ocupado
+        ? 'The system has been busy for a while — nothing was lost. Try again in a few seconds.'
+        : '⚠ ' + _humanErr(e), ocupado ? 'warn' : 'err', 8000);
       // Somebody else may have put it back already, in which case the list on
       // screen is out of date and saying so is not enough — show the truth.
       _sysCacheDrop('trash');
       _loadTrash();
-    })
-    .processMovement('manageMaterial', _h({ op: 'restoreMovement', movId: movId }));
+    }
+  });
+}
+
+/* Quita uno de la lista que ya tenemos y repinta, sin ir al servidor. Si no la
+ * tenemos (caché caducado), entonces sí hay que pedirla. */
+function _trashDrop(movId){
+  var items = _sysCacheGet('trash');
+  if (!items) { _sysCacheDrop('trash'); _loadTrash(); return; }
+  items = items.filter(function(it){ return it.movId !== movId; });
+  _sysCachePut('trash', items);
+  _paintTrash(items);
 }
 
 /* ── Giving every existing movement a name ──────────────────────────────────
@@ -10062,18 +10341,17 @@ function _fillMovIds(){
     confirmText: 'Continue',
     onConfirm: function(){
       _btnBusy(btn, 'Working…');
-      google.script.run
-        .withSuccessHandler(function(res){
-              _btnReset(btn);
+      _acWrite({
+        args: ['adminAction', _h({ action: 'backfillMovementIds' })],
+        btn:  btn,
+        what: 'Could not finish',
+        ok: function(res){
+          _btnReset(btn);
           showToast('✓ ' + ((res && res.message) || 'Done.'), 'ok', 6000);
           _sysCacheDrop('movId');     // acabamos de cambiar lo que cuenta
           _loadMovIdStatus();
-        })
-        .withFailureHandler(function(e){
-          _btnReset(btn);
-          showToast('⚠ ' + _stripTags(e), 'err', 8000);
-        })
-        .processMovement('adminAction', _h({ action: 'backfillMovementIds' }));
+        }
+      });
     }
   });
 }
@@ -10211,6 +10489,10 @@ function _sendDailyReportNow(){
 // The DATA QUALITY SWEEP section in Code.gs says why both of those are the
 // design rather than timidity.
 var _dqFindings = [];
+// El resultado entero del último barrido, no sólo los hallazgos: _drawDataCheck
+// necesita `total` y `scannedRows` para decir "los N mayores de M". Sin esto,
+// repintar al reabrir la ventana perdía justo la frase que dice que hay más.
+var _dqLast = null;
 
 function _runDataCheck(){
   var btn = document.getElementById('btnDataCheck');
@@ -10220,11 +10502,12 @@ function _runDataCheck(){
     .withSuccessHandler(function(res){
       _btnReset(btn);
       _dqFindings = (res && res.findings) || [];
-      _drawDataCheck(res || {});
+      _dqLast     = res || {};
+      _drawDataCheck(_dqLast);
     })
     .withFailureHandler(function(err){
       _btnReset(btn);
-      showToast('Could not check: ' + ((err && err.message) || err), 'err', 6000);
+      showToast('Could not check: ' + _humanErr(err), 'err', 6000);
     })
     .processMovement('runDataQualityScan', _h({}));
 }
@@ -10328,9 +10611,15 @@ function _dqApply(i){
     payload.value = f.value;
   }
 
+  // ÉSTE ES EL QUE LE FALLÓ A JOSE, y era el único de los ocho caminos con
+  // candado que no tenía ni cola ni reintento: el error del servidor le llegaba
+  // crudo a la pantalla, con marca e ID incluidos.
   _btnBusy(btn, 'Applying…');
-  google.script.run
-    .withSuccessHandler(function(r){
+  _acWrite({
+    args: ['applyDataQualityFix', _h(payload)],
+    btn:  btn,
+    what: 'Could not apply',
+    ok: function(r){
       var n = (r && r.rows) || 0;
       _btnDone(btn, true, function(){
         if (card){
@@ -10343,13 +10632,12 @@ function _dqApply(i){
       // Stock can move: merging two materials joins two stock lines into one.
       // Silencioso: la tarjeta de "Check my data" ya dice ahí mismo cuántas
       // filas cambió. Ese texto es el acuse de recibo.
-      loadDataFromGoogle(true, true);
-    })
-    .withFailureHandler(function(err){
-      _btnReset(btn);
-      showToast('Could not apply: ' + ((err && err.message) || err), 'err', 8000);
-    })
-    .processMovement('applyDataQualityFix', _h(payload));
+      //
+      // Y UNA sola vez al final: veinte arreglos seguidos son veinte cambios,
+      // pero una sola foto nueva. Ver _reloadWhenIdle.
+      _reloadWhenIdle();
+    }
+  });
 }
 
 // ── The AI key, set from inside the app ─────────────────────────────────────
@@ -11397,10 +11685,7 @@ function _wireLocMerge(){
               // v10.2.
               loadDataFromGoogle(true, true);   // skipCache, quiet
             })
-            .withFailureHandler(function(e){
-              _btnLabel(btn, 'Merge');
-              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
-            })
+            .withFailureHandler(_mergeFailed(btn, 'Merge'))
             .processMovement('mergeLocations', _h({ from: from, into: into }));
         }
       });
@@ -11552,10 +11837,7 @@ function _wireManualMerge(tab, label){
               // rebuild in the browser.
               loadDataFromGoogle(true, true);   // skipCache, quiet
             })
-            .withFailureHandler(function(e){
-              _btnLabel(btn, 'Merge');
-              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
-            })
+            .withFailureHandler(_mergeFailed(btn, 'Merge'))
             .processMovement('mergeConfigValues', _h({ type: tab, from: from, into: into }));
         }
       });
@@ -11714,10 +11996,7 @@ function _wireSimilarGroups(tab){
               if (g) g.remove();
               _refreshSimHeader();
             })
-            .withFailureHandler(function(e){
-              _btnLabel(btn, 'Merge into selected');
-              showToast('Merge failed: ' + (e.message || e), 'err', 6000);
-            })
+            .withFailureHandler(_mergeFailed(btn, 'Merge into selected'))
             .processMovement('mergeConfigValues', _h({ type: tab, from: from, into: into }));
         }
       });
@@ -12041,7 +12320,12 @@ function _cfgCall(payload, onDone) {
       // A duplicate is not a failure worth a red banner — the value is on the
       // list, which is what was asked for.
       if (/already exists/i.test(msg)) { if (onDone) onDone(); _applyCfgChangeLocally(payload); return; }
-      _settingMsg('Error: ' + msg, 'error');
+      // Renombrar una categoría reescribe el archivo entero, así que este
+      // camino también puede contestar "ocupado" — y decía "Error: SYSTEM_BUSY|…"
+      // en el mismo banner rojo que un fallo de verdad.
+      _settingMsg(_isBusyError(e)
+        ? 'The system is busy right now. Nothing changed — try again in a few seconds.'
+        : _humanErr(e), _isBusyError(e) ? 'info' : 'error');
     })
     .processMovement('updateConfig', _h(payload));
 }
@@ -12358,18 +12642,21 @@ function _matMergeConfirm(name, cat, nvTrimmed){
 function _matCall(payload) {
   if (_matBusy) return;
   _matSetBusy(true);
-  google.script.run
-    .withSuccessHandler(function(res) {
+  _acWrite({
+    args: ['manageMaterial', _h(payload)],
+    ok: function(res) {
       _matSetBusy(false);
       _applyMatChangeLocally(payload);
       showToast('Done ✓ — ' + (res.updated || res.merged || 1) + ' row(s) updated.', 'ok');
       loadDataFromGoogle(true, true);   // skipCache, quiet
-    })
-    .withFailureHandler(function(e){
+    },
+    fail: function(e, ocupado){
       _matSetBusy(false);
-      _settingMsg('Error: '+(e.message||e), 'error');
-    })
-    .processMovement('manageMaterial', _h(payload));
+      _settingMsg(ocupado
+        ? 'The system has been busy for a while. Nothing changed — try again in a few seconds.'
+        : _humanErr(e), 'error');
+    }
+  });
 }
 
 var _matBusy = false;
@@ -12448,46 +12735,158 @@ function _statLabel(text, tip){
   return '<label style="display:flex;align-items:center;gap:.32rem">' + _infoIc(tip) + text + '</label>';
 }
 
-// ── Tooltip edge avoidance ────────────────────────────────────────────────────
-// .tip's default centers its bubble on the anchor, which is wrong the instant
-// the anchor sits near the left or right edge of the window — a stat tile's
-// info icon at the end of the row, for instance. Delegated on mouseenter
-// (capture, since it doesn't bubble) and focusin so it works for every .tip
-// added anywhere, including ones rendered long after this file loaded.
-var TIP_MAX_WIDTH = 240, TIP_EDGE_MARGIN = 8;
-// Alto que se le reserva a la burbuja debajo del icono antes de decidir que
-// no cabe. 140 es holgado a propósito: los textos de estos iconos llegan a
-// cuatro renglones, y voltear de más sólo mueve la burbuja, mientras que
-// voltear de menos la vuelve a cortar — que es el fallo que se está arreglando.
-var TIP_FLIP_ROOM = 140;
-function _positionTip(el){
-  var r = el.getBoundingClientRect();
-  var half = TIP_MAX_WIDTH / 2;
+// ── LA BURBUJA VIVE EN EL <body>, NO DENTRO DEL ICONO ────────────────────────
+//
+// Hasta la v11.65 el tooltip era un `::after` del propio icono, colocado con
+// position:fixed. Jose fotografió los de Ajustes saliendo un par de centímetros
+// por debajo de su icono y dibujados DETRÁS de los recuadros, y su queja fue
+// exacta: "deben salir en la parte legible de la ventana… debe aparecer sobre
+// todo y donde se lo pueda leer completo".
+//
+// LA CAUSA, MEDIDA EN UN NAVEGADOR DE VERDAD Y NO DEDUCIDA:
+//
+//   #settingsTabContent > .field > label:first-child lleva
+//   transform: translateY(-50%) — es lo que sube el título encima de la línea
+//   del recuadro. Y en CSS un elemento con `transform` PASA A SER EL MARCO DE
+//   REFERENCIA de todo position:fixed que tenga dentro, además de crear su
+//   propia capa de apilado.
+//
+// Así que la burbuja, que calcula sus coordenadas contra la VENTANA, las
+// aplicaba contra ese <label>. Las dos cosas que Jose ve —desplazada y
+// detrás— resultan ser una sola.
+//
+// POR QUÉ NO SE ARREGLA QUITANDO ESE transform, que era lo obvio: porque deja
+// la trampa puesta. `transform`, `filter`, `will-change`, `contain` y
+// `perspective` hacen todos lo mismo, y el día que alguien anime cualquier otro
+// recuadro vuelve el fallo, en otro sitio y sin relación aparente.
+//
+// UN SOLO div COLGADO DEL <body> no lo puede sufrir nunca: no tiene encima más
+// que el body, así que ningún overflow lo recorta y ningún transform lo mueve.
+// Es literalmente lo que Jose pidió, y quita la clase entera de fallos en vez
+// de este caso.
+//
+// Y POR QUÉ NO SE VIO ANTES, que es la parte que más importa: tools/test-tooltip-edge.js
+// SE FABRICA SUS PROPIOS ICONOS en un div suelto y los mide ahí. Nunca tocó el
+// panel de Ajustes. Es el mismo error de siempre — una prueba que se construye
+// su propio entorno mide ese entorno, no el producto.
+var TIP_EDGE_MARGIN = 8;   // lo que se le deja al borde de la ventana
+var TIP_GAP         = 8;   // separación entre el icono y la burbuja
+var TIP_SLOW_MS     = 4000;// la del botón de cuenta: para quien se detiene, no para un vistazo
 
-  // El centro de la burbuja, corrido lo justo para que no se salga por los
-  // lados. Con la ventana más estrecha que la burbuja los dos límites se
-  // cruzan y Math.min/Math.max devolverían el equivocado, así que ahí se
-  // centra en la pantalla y se acabó.
-  var lo = TIP_EDGE_MARGIN + half, hi = window.innerWidth - TIP_EDGE_MARGIN - half;
-  var cx = (lo > hi) ? window.innerWidth / 2
-                     : Math.min(Math.max(r.left + r.width / 2, lo), hi);
+var _tipEl = null, _tipFor = null, _tipTimer = null;
 
-  // Debajo por defecto. Si no cabe, encima — que es lo que la regla suelta de
-  // .pack-math hacía para un solo caso y ahora vale para todos.
-  var above = (window.innerHeight - r.bottom) < TIP_FLIP_ROOM;
-  el.classList.toggle('tip-above', above);
-
-  el.style.setProperty('--tip-x', Math.round(cx) + 'px');
-  el.style.setProperty('--tip-y', Math.round(above ? (r.top - 8) : (r.bottom + 8)) + 'px');
+function _tipNode(){
+  if (!_tipEl){
+    _tipEl = document.createElement('div');
+    _tipEl.id = 'acTip';
+    _tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(_tipEl);
+  }
+  return _tipEl;
 }
+
+/* Debajo si cabe, encima si no, y si no cabe en ninguno de los dos, donde más
+ * sitio haya — nunca fuera. El de antes no tenía ese tercer caso: en una
+ * ventana baja la burbuja se salía por abajo y nadie la volvía a meter.
+ *
+ * Se mide la burbuja DE VERDAD en vez de dar por hecho un ancho máximo de 240,
+ * que es lo que hacía el anterior. Un texto corto ocupa 120 y se le empujaba
+ * como si ocupara 240, así que se descentraba sin necesidad. */
+function _tipPlace(anchor){
+  var t = _tipNode();
+  var a = anchor.getBoundingClientRect();
+  var b = t.getBoundingClientRect();
+  var M = TIP_EDGE_MARGIN;
+
+  var left = a.left + a.width / 2 - b.width / 2;
+  left = Math.min(Math.max(left, M), Math.max(M, window.innerWidth - M - b.width));
+
+  var debajo = a.bottom + TIP_GAP;
+  var encima = a.top - TIP_GAP - b.height;
+  var top;
+  if (debajo + b.height <= window.innerHeight - M)      top = debajo;
+  else if (encima >= M)                                 top = encima;
+  else top = Math.max(M, Math.min(debajo, window.innerHeight - M - b.height));
+
+  t.style.left = Math.round(left) + 'px';
+  t.style.top  = Math.round(top)  + 'px';
+}
+
+function _tipShow(el){
+  var txt = el.getAttribute('data-tip');
+  if (!txt) return;
+  var t = _tipNode();
+  // textContent, nunca innerHTML: el texto de un tooltip sale de data-tip, y
+  // data-tip sale a veces de un nombre de material que escribió una persona.
+  t.textContent = txt;
+  _tipFor = el;
+  // Se coloca con la burbuja ya medible pero todavía invisible, para que no se
+  // vea el salto desde la posición anterior.
+  t.classList.add('ready');
+  _tipPlace(el);
+  t.classList.add('show');
+}
+
+function _tipHide(){
+  if (_tipTimer){ clearTimeout(_tipTimer); _tipTimer = null; }
+  _tipFor = null;
+  if (_tipEl) _tipEl.classList.remove('show', 'ready');
+}
+
+function _tipEnter(el){
+  if (_tipTimer){ clearTimeout(_tipTimer); _tipTimer = null; }
+  // El botón de cuenta espera cuatro segundos: es para quien se detiene encima,
+  // no para un vistazo, y no debe competir con los iconos de información que
+  // salen al instante.
+  var lento = (el.id === 'acctBtn');
+  if (lento) _tipTimer = setTimeout(function(){ _tipTimer = null; _tipShow(el); }, TIP_SLOW_MS);
+  else _tipShow(el);
+}
+
 document.addEventListener('mouseenter', function(e){
   var el = e.target && e.target.closest && e.target.closest('.tip');
-  if (el) _positionTip(el);
+  if (el) _tipEnter(el);
+}, true);
+document.addEventListener('mouseleave', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.tip');
+  if (el && el === _tipFor) _tipHide();
+  else if (el) _tipHide();          // salió de otro .tip mientras se esperaba el retardo
 }, true);
 document.addEventListener('focusin', function(e){
   var el = e.target && e.target.closest && e.target.closest('.tip');
-  if (el) _positionTip(el);
+  if (el) _tipEnter(el);
 });
+document.addEventListener('focusout', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.tip');
+  if (el) _tipHide();
+});
+/* AL HACER SCROLL LA BURBUJA SIGUE A SU ICONO, no desaparece.
+ *
+ * Es fixed y el icono no, así que sin hacer nada se quedaba flotando en mitad
+ * de la pantalla mientras su icono se iba — un fallo que el ::after de antes
+ * también tenía y que nadie había mirado.
+ *
+ * Esconderla era la respuesta fácil y resultó ser la peor, y lo enseñó la
+ * prueba: al llegar al icono con el teclado o con page.hover(), el navegador
+ * DESPLAZA LA PÁGINA para enseñarlo — y la ayuda se iba en el mismo instante en
+ * que se acababa de pedir. Seguirla es además lo que una persona espera.
+ *
+ * Si el icono se sale de la ventana, entonces sí: una explicación sin nada que
+ * explicar sobra. */
+function _tipFollow(){
+  if (!_tipFor || !_tipEl) return;
+  var r = _tipFor.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth){
+    _tipHide(); return;
+  }
+  _tipPlace(_tipFor);
+}
+window.addEventListener('scroll', _tipFollow, true);
+window.addEventListener('resize', _tipFollow);
+// Y pulsar algo la cierra: si el clic abre una ventana, la burbuja se quedaría
+// encima de ella.
+document.addEventListener('click', _tipHide, true);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _tipHide(); });
 
 // ── Event delegation ──────────────────────────────────────────────────────────
 // Buttons inside dynamically-rendered lists carry  data-action + data-* payload
@@ -18444,21 +18843,32 @@ function saveEditMov() {
   _btnBusy(btn, 'Saving…');
   _setModalBusy('editMovOverlay', true);
 
-  google.script.run
-    .withSuccessHandler(function(res) {
+  _acWrite({
+    args: ['modifyMovement', _h(payload)],
+    btn:  btn,
+    what: 'Could not save',
+    ok: function(res) {
       _setModalBusy('editMovOverlay', false);
       closeModal('editMovOverlay');
+      // EL CHECK SE VA AQUÍ. Jose: "una vez que se selecciona un movimiento, se
+      // lo edita y se guarda, el check debe desaparecer". Tenía razón — la
+      // selección sólo se limpiaba desde los tres filtros, así que después de
+      // guardar la fila seguía marcada y la barra seguía ofreciendo Edit y
+      // Delete sobre algo que la persona ya había terminado de tocar.
+      _clearMovSelection();
       showToast('Movement updated — ' + res.changes + ' field(s) changed. Email sent.', 'ok');
       // Silencioso: mismo caso que borrar un movimiento.
       loadDataFromGoogle(true, true);
-    })
-    .withFailureHandler(function(err) {
+    },
+    fail: function(err, ocupado) {
       _btnLabel(btn, '💾 Save Changes');
       _setModalBusy('editMovOverlay', false);
-      var msg = (err.message || String(err)).replace(/^Error:\s*/i, '');
-      showToast('Error: ' + msg, 'err', 6000);
-    })
-    .processMovement('modifyMovement', _h(payload));
+      showToast(ocupado
+        ? 'The system has been busy for a while. Nothing was saved and nothing ' +
+          'you typed is wrong — press Save again in a few seconds.'
+        : _humanErr(err), ocupado ? 'warn' : 'err', 8000);
+    }
+  });
 }
 
 // The Gmail delivery scanner used to live here. It is out of the product: it
