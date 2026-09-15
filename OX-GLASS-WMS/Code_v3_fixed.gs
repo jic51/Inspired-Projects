@@ -46,7 +46,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '11.67';
+var APP_VERSION = '11.79';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -58,7 +58,7 @@ var APP_VERSION = '11.67';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '2b44734f';
+var APP_BUILD = '4651f018';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -1793,6 +1793,8 @@ function getInitialData(sessionToken) {
     if (auth.role === 'ADMIN') {
       try { users = getUsers(auth); } catch(e) {}
     }
+    // El directorio de nombres, en cambio, va a TODOS. Ver userDirectory_.
+    var userNames = userDirectory_(ss);
 
     var rackPhotos = {};
     try { rackPhotos = getRackPhotos(); } catch(e) { Logger.log('getRackPhotos: ' + e.message); }
@@ -1905,6 +1907,7 @@ function getInitialData(sessionToken) {
       warehouseRoleLabel: warehouseRoleLabel_(),
       userName:           auth.name || '',
       userEmail:          auth.email,
+      userNames:          userNames,
       activeUsers:        activeUsers,
       incoming:           incoming,
       monitoredMaterials: monitoredMaterials,
@@ -2541,6 +2544,25 @@ function processMovementInner_(ss, action, data, auth) {
 // así que tiene que seguir leyéndose bien por sí solo.
 var BUSY_PREFIX = 'SYSTEM_BUSY|';
 
+// GONE| — "no está, y devolverla a la pantalla sería mentir". La tercera marca,
+// por el mismo motivo que las otras dos y para un caso concreto.
+//
+// Desde la v11.75 la fila se va de la pantalla AL PULSAR la papelera, sin
+// esperar al servidor, y vuelve a su sitio si el servidor dice que no. Eso es
+// lo correcto para un "estoy ocupado" o un "no tienes permiso": no se borró
+// nada, la fila sigue existiendo.
+//
+// Pero hay dos noes que significan lo contrario —"ya lo borró otro" y "ese
+// movimiento ya no está ahí"— y devolver la fila en esos casos sería PEOR que
+// no haberla quitado nunca: enseñaría un movimiento que ya no existe, en una
+// pantalla que acaba de dar a entender que sí. La prueba de la papelera avisaba
+// exactamente de esto, y con estas palabras: "un 'ya lo borró otro' dejaría la
+// fila desaparecida en una cuenta y presente en la otra".
+//
+// Reconocerlo mirando el texto del mensaje habría funcionado hoy y se habría
+// roto el día que alguien le cambiara una palabra. La marca no.
+var GONE_PREFIX = 'GONE|';
+
 function withStockLock_(fn) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(15000)) {
@@ -2642,13 +2664,27 @@ var DATA_STAMP_KEY = 'WMS_DATA_STAMP';
  *                                          no cuánto hay. (Que el candado se
  *                                          vea al momento es una petición
  *                                          aparte, anotada en el backlog.)
- *   addIncoming, deleteIncoming          — entregas ESPERADAS. Discutible, y
- *                                          anotado: no son existencias, y la
- *                                          regla de Jose enumera movimientos.
  *   todo lo que empieza por get…         — no escriben nada
  *
- * La regla al añadir una acción nueva: si después de ejecutarla el número de
- * AVAILABLE de algún material puede ser distinto, va en la lista. Si no, no.
+ * LA REGLA CAMBIÓ EL 2026-09-11, y la que había estaba mal escrita. Decía: "si
+ * después de ejecutarla el número de AVAILABLE de algún material puede ser
+ * distinto, va en la lista". Por eso las entregas esperadas quedaron fuera, con
+ * esta nota: "Discutible, y anotado: no son existencias".
+ *
+ * Jose encontró lo que eso costaba, con dos ventanas abiertas y dos cuentas:
+ * marcó una entrega como llegada en una, y la otra siguió enseñándola como
+ * Pending. No se enteraba nunca, porque el sello no se había movido.
+ *
+ * AVAILABLE nunca fue la pregunta. La pregunta es si alguna PANTALLA enseña lo
+ * que acaba de cambiar — y las entregas esperadas salen en la pestaña de
+ * Incoming, en la ventana de la semana y en la tarjeta de la esquina. Escrita
+ * bien, la regla es: SI ALGUIEN QUE TIENE LA APP ABIERTA VERÍA ALGO DISTINTO
+ * DESPUÉS DE ESTA ACCIÓN, VA EN LA LISTA.
+ *
+ * Y el coste es el que hay que mirar antes de meter algo aquí: cada sello nuevo
+ * hace que TODAS las demás sesiones se traigan los datos enteros. Para las
+ * entregas está bien —se tocan unas pocas veces al día— y para el catálogo o
+ * los permisos seguiría sin estarlo.
  */
 var DATA_STAMP_ACTIONS = {
   addMovement:         true,
@@ -2657,7 +2693,14 @@ var DATA_STAMP_ACTIONS = {
   modifyMovement:      true,
   manageMaterial:      true,
   applyDataQualityFix: true,
-  commitImport:        true
+  commitImport:        true,
+  // Las tres de las entregas esperadas. updateIncoming es la que Jose vio
+  // fallar —es la que marca una entrega como llegada— pero las tres cambian lo
+  // mismo: lo que otra persona tiene delante en la pestaña de Incoming y en la
+  // ventana de la semana.
+  addIncoming:         true,
+  updateIncoming:      true,
+  deleteIncoming:      true
 };
 
 function bumpDataStamp_() {
@@ -4891,7 +4934,26 @@ function refreshDerivedSheets_(ss) {
   var history = ensureArchiveHistorySheet_(ss);
 
   var archiveData = archive.getDataRange().getValues();
-  var historyData = history.getDataRange().getValues();
+
+  /* NO SE LEE UNA HOJA VACÍA. Medido en la hoja de Jose el 2026-09-10, tres
+   * corridas seguidas:
+   *
+   *     leer ARCHIVE_HISTORY (0 filas):      1043 / 426 / 422 ms
+   *     leer MASTER_ARCHIVE_V3 (1061 × 23):   964 / 983 / 643 ms
+   *
+   * Leer veinticuatro mil celdas cuesta lo mismo que leer NADA. Lo que se paga
+   * no son los datos: es el viaje a Sheets, unos 400 ms lleve lo que lleve. Y
+   * este viaje se hacía en cada guardado y en cada borrado para traerse una
+   * hoja con la cabecera y nada debajo.
+   *
+   * getLastRow es un viaje también, pero de los baratos, y en una instalación
+   * donde el histórico SÍ tiene filas no cambia nada: se lee igual. Lo que se
+   * quita es pagar por lo que no hay — que es el caso de toda instalación
+   * nueva, y el de Jose después de un año de uso.
+   */
+  var historyData = (history && history.getLastRow() > 1)
+    ? history.getDataRange().getValues()
+    : [[]];
   var data  = archiveData.concat(historyData.slice(1));
   var stock = {};
   // Self-healing MatID: any row whose stored MatID doesn't match what it should
@@ -8800,6 +8862,57 @@ function ensureUsersSheet_(ss) {
   return sheet;
 }
 
+/* EL DIRECTORIO DE NOMBRES: correo → nombre, y NADA MÁS.
+ *
+ * Jose, con captura: "quiero que en lugar del email que aparece en User,
+ * aparezca el nombre de la persona, y el correo en gris abajo pero más
+ * pequeño."
+ *
+ * El nombre vive en USERS_V3 y NO viaja con los movimientos: el archivo guarda
+ * el correo de quien guardó cada fila y nada más. Así que hay dos formas de que
+ * la tabla sepa el nombre, y la diferencia importa:
+ *
+ *   ESCRIBIRLO EN CADA MOVIMIENTO. Las filas viejas se quedan con el correo
+ *   para siempre, y el día que alguien cambie de apellido o se corrija un
+ *   typo, el nombre viejo queda escrito en miles de filas.
+ *
+ *   MANDAR EL DIRECTORIO Y RESOLVERLO AL DIBUJAR. Un cambio en Manage Users
+ *   corrige el pasado entero de golpe, porque no hay pasado que corregir: el
+ *   nombre es un dato de la PERSONA, no del movimiento.
+ *
+ * Es la segunda. El coste son unos cientos de bytes por carga.
+ *
+ * VA A TODOS LOS ROLES, y por eso lleva sólo estas dos columnas. getUsers()
+ * —la lista completa: rol, quién lo añadió, activo o no— sigue siendo sólo de
+ * ADMIN, y esto NO es una puerta trasera a ella: quien ve la columna User ya
+ * está viendo el correo de esa persona, así que el nombre no enseña a nadie
+ * nada que no tuviera delante.
+ *
+ * Se incluyen los DESACTIVADOS a propósito. Un movimiento que guardó alguien
+ * que ya no trabaja aquí sigue siendo suyo, y volver a enseñar su correo pelado
+ * el día que se le da de baja sería perder información por un cambio que no
+ * tiene nada que ver.
+ */
+function userDirectory_(ss) {
+  var out = {};
+  try {
+    var sheet = (ss || SpreadsheetApp.getActiveSpreadsheet()).getSheetByName('USERS_V3');
+    if (!sheet || sheet.getLastRow() < 2) return out;
+    // B=Email, C=Name. Sólo esas dos columnas salen de la hoja.
+    var rows = sheet.getRange(2, 2, sheet.getLastRow() - 1, 2).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      var mail = String(rows[i][0] || '').toLowerCase().trim();
+      var name = String(rows[i][1] || '').trim();
+      if (mail && name) out[mail] = name;
+    }
+  } catch (e) {
+    // Un directorio que falla deja la columna como estaba —el correo— y ya.
+    // Que no se pueda leer una hoja no puede tumbar la carga de la app.
+    Logger.log('userDirectory_: ' + e.message);
+  }
+  return out;
+}
+
 function getUsers(auth) {
   auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -9782,10 +9895,10 @@ function manageMaterialLocked_(data, auth) {
         var when = gone.row[TR.DELETED_AT] instanceof Date
           ? Utilities.formatDate(gone.row[TR.DELETED_AT], Session.getScriptTimeZone(), 'MMM d, h:mm a')
           : String(gone.row[TR.DELETED_AT] || '');
-        throw new Error('Already deleted by ' + who + (when ? ' on ' + when : '') +
+        throw new Error(GONE_PREFIX + 'Already deleted by ' + who + (when ? ' on ' + when : '') +
           '. It is in the trash — you can put it back from there.');
       }
-      throw new Error('This movement is no longer there. Refresh and take another look.');
+      throw new Error(GONE_PREFIX + 'This movement is no longer there. Refresh and take another look.');
     }
 
     // Into the trash BEFORE the row goes, so a failure here leaves the movement
@@ -10022,25 +10135,44 @@ function addIncoming(data) {
   var estDate = incomingDateCell_(mode === 'unknown' ? '' : data.estDate);
   var estEnd  = incomingDateCell_(mode === 'window'  ? data.estDateEnd : '');
   var docLink = uploadIncomingDoc_(data.docFile, data.name, data.po);
-  sheet.appendRow([
+  /* textSafeRow_, NO sheetSafe_. Jose, 2026-09-11, con cuatro capturas: escribió
+   * el PO "08-4885" en una entrega esperada, guardó, volvió a abrirla y el
+   * campo estaba VACÍO.
+   *
+   * sheetSafe_ sólo protege lo que empieza por = + - @, o sea las fórmulas.
+   * "08-4885" empieza por un cero, así que pasaba sin comilla, y Sheets lo leía
+   * como "mes 08, año 4885" y guardaba una fecha. Al leerlo de vuelta,
+   * safeStr_ ve un Date y devuelve '' — las dos mitades del fallo que Jose ya
+   * describió en septiembre: "está dando un dato que no existe y borrando uno
+   * que sí".
+   *
+   * ES EL MISMO FALLO DE LA v11.63, EN UN SITIO DONDE NO SE CABLEÓ. Allí se
+   * arreglaron el archivo, la papelera, el histórico y CONFIG; addIncoming y
+   * updateIncoming se quedaron fuera, y son justo las dos donde una persona
+   * teclea un PO a mano. Tercera vez que muerde el mismo patrón en este
+   * archivo: escrito para un camino, conectado a uno solo.
+   *
+   * textCell_ además sustituye a sheetSafe_ sin perder nada: una comilla
+   * delante hace la celda literal, así que también neutraliza las fórmulas. */
+  sheet.appendRow(textSafeRow_([
     id,
     estDate,
-    sheetSafe_(String(data.category || '').toUpperCase().trim()),
-    sheetSafe_(String(data.name     || '').trim()),
+    String(data.category || '').toUpperCase().trim(),
+    String(data.name     || '').trim(),
     Number(data.qty      || 0),
-    sheetSafe_(String(data.unit     || 'UNIT')),
-    sheetSafe_(String(data.supplier || '')),
-    sheetSafe_(String(data.po       || '')),
-    sheetSafe_(String(data.notes    || '')),
+    String(data.unit     || 'UNIT'),
+    String(data.supplier || ''),
+    String(data.po       || ''),
+    String(data.notes    || ''),
     incomingStatus_(data.status),
     auth.email,
     new Date(),
-    sheetSafe_(String(data.pm       || '')),
+    String(data.pm       || ''),
     docLink,
     mode,
     estEnd,
-    sheetSafe_(String(data.dateNote || ''))
-  ]);
+    String(data.dateNote || '')
+  ]));
   return { status: 'success', id: id, docLink: docLink };
 }
 
@@ -10071,25 +10203,27 @@ function updateIncoming(data) {
       var docLink = data.docFile && data.docFile.fileData
         ? uploadIncomingDoc_(data.docFile, data.name, data.po)
         : (values[i][13] || '');
-      sheet.getRange(i + 1, 1, 1, 17).setValues([[
+      // textSafeRow_ por el mismo motivo que en addIncoming: sin él, un PO con
+      // forma de fecha —"08-4885"— se guarda como fecha y vuelve vacío.
+      sheet.getRange(i + 1, 1, 1, 17).setValues([textSafeRow_([
         data.id,
         estDate,
-        sheetSafe_(String(data.category || '').toUpperCase().trim()),
-        sheetSafe_(String(data.name     || '').trim()),
+        String(data.category || '').toUpperCase().trim(),
+        String(data.name     || '').trim(),
         Number(data.qty      || 0),
-        sheetSafe_(String(data.unit     || 'UNIT')),
-        sheetSafe_(String(data.supplier || '')),
-        sheetSafe_(String(data.po       || '')),
-        sheetSafe_(String(data.notes    || '')),
+        String(data.unit     || 'UNIT'),
+        String(data.supplier || ''),
+        String(data.po       || ''),
+        String(data.notes    || ''),
         incomingStatus_(data.status),
         values[i][10],          // preserve addedBy
         values[i][11],          // preserve addedAt
-        sheetSafe_(String(data.pm || '')),  // PM — Project Manager
+        String(data.pm || ''),  // PM — Project Manager
         docLink,
         mode,
         estEnd,
-        sheetSafe_(String(data.dateNote || ''))
-      ]]);
+        String(data.dateNote || '')
+      ])]);
       return { status: 'success', docLink: docLink };
     }
   }

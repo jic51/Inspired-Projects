@@ -1046,6 +1046,45 @@
     tr.row-deleting{opacity:.4}
     tr.row-deleting .btn-icon{pointer-events:none}
     @media (prefers-reduced-motion:reduce){ tr.row-deleting{opacity:.45} }
+
+    /* ── LA FORMA DE IRSE DE UNA FILA. UNA SOLA, PARA TODA LA APP ───────────
+       Jose, 2026-09-09: "quiero esta animación en cada lugar donde se borre
+       algo, ya sea que se corrija, restaure, elimine, haga merge, etc. Debe ser
+       estándar en la app."
+       Así que no es "la animación de borrar movimientos": es CÓMO SE VA UNA
+       FILA, escrito una vez. Los ocho sitios donde algo desaparece la usan por
+       _rowLeave.
+       Se encoge además de desvanecerse, y eso no es adorno: una fila que se
+       desvanece deja su hueco y las de abajo saltan de golpe cuando el hueco se
+       cierra. Encogiéndose, las de abajo SUBEN, y ese movimiento es lo que se
+       lee como "esto está pasando" en vez de como un parpadeo. Es lo que Jose
+       describía cuando decía que no lo veía con la velocidad que quería. */
+    tr.row-leaving > td{
+      padding-top:0!important;padding-bottom:0!important;
+      line-height:0!important;font-size:0!important;
+      border-bottom-width:0!important;opacity:0;
+      transition:opacity .13s ease,padding .2s ease .03s,line-height .2s ease .03s,
+                 font-size .2s ease .03s,border-bottom-width .2s ease .03s}
+    /* El contenido se va ANTES que el hueco: si se encogen a la vez, el texto
+       se ve aplastado un instante antes de desaparecer. */
+    tr.row-leaving > td > *{opacity:0;transition:opacity .12s ease}
+    /* Lo mismo para lo que no es una fila de tabla: tarjetas del mazo, filas de
+       la papelera, entradas de un catálogo. El desplazamiento lateral dice "se
+       va" sin necesidad de leer nada, y en una tabla no se puede usar porque un
+       <td> no acepta transform. */
+    .card-leaving{
+      opacity:0;transform:translateX(-16px);
+      max-height:0!important;margin-top:0!important;margin-bottom:0!important;
+      padding-top:0!important;padding-bottom:0!important;border-width:0!important;
+      overflow:hidden;
+      transition:opacity .14s ease,transform .18s ease,max-height .22s ease .03s,
+                 margin .22s ease .03s,padding .22s ease .03s,border-width .22s ease .03s}
+    /* Quien pidió menos movimiento no lo recibe. _rowLeave lo respeta aparte,
+       llamando a su callback en el acto; esto es sólo por si alguna regla se
+       aplicara igual. */
+    @media (prefers-reduced-motion:reduce){
+      tr.row-leaving > td,tr.row-leaving > td > *,.card-leaving{transition-duration:.01s!important}
+    }
     /* A quarter of the dialog, not a fixed 210px. On a narrow window that
        fixed width was eating half the screen and the settings themselves were
        reading through a slot. */
@@ -1232,6 +1271,56 @@
     .inc-item-qty{font-weight:700;font-size:.82rem;line-height:1.35}
     .inc-status-pending{background:#FEF3C7;color:#92400E;border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
     .inc-status-arrived{background:var(--green-bg);color:var(--green);border-radius:20px;padding:.1rem .5rem;font-size:.68rem;font-weight:700}
+    /* Dónde se puso: sólo aparece cuando la entrada existe de verdad. Ver
+       _incEntryWhere — si no hay entrada, esta línea NO se dibuja, y ese hueco
+       es la señal de que llegó material que todavía nadie registró.
+       En texto normal, NO en verde. Nació verde y en la captura de Jose era la
+       tercera cosa verde de la misma tarjeta, encima sobre fondo verde. El
+       verde de aquí dice "llegó", y eso ya lo dice la etiqueta justo encima;
+       repetirlo en el estante no añade nada y le quita fuerza al sitio donde sí
+       significa algo. El estante es un dato que se lee, no un estado. */
+    .inc-item-where{font-size:.72rem;line-height:1.35;color:var(--text);font-weight:600}
+    /* EL "ARRIVED" MÁS GRANDE, Y SÓLO EN EL POPUP. Jose: "no quiero más grande
+       el arrived aquí en incomings, sino más grande el arrived en el popup".
+       En la pestaña de Incoming la etiqueta va en una tabla de muchas filas y
+       crecer allí es ruido; en el popup son tres o cuatro renglones que se
+       miran una vez, de pie, con el teléfono en la mano. Es la misma etiqueta
+       leída en dos sitios distintos, no dos etiquetas. */
+    #morningPopupBody .inc-status-arrived{font-size:.82rem;padding:.18rem .7rem}
+    #morningPopupBody .inc-item-where{font-size:.78rem}
+    /* EL RECUADRO ES GRIS Y EL COLOR SE GUARDA PARA LO QUE LO NECESITA.
+       Jose, con la captura: "no me gusta que todo esté en verde, y las letras
+       verdes sobre verde no quedan bien. Haz el color de la tarjeta gris y que
+       sólo el arrived today y el arrived de cada tarjeta sean de fondo verde y
+       color verde."
+       Tenía razón por dos motivos distintos: el verde sobre verde apenas se
+       leía, y un recuadro entero teñido gasta el color en el fondo, que es lo
+       que menos hay que mirar. Sobre gris, el rótulo y la etiqueta se ven MÁS
+       verdes que cuando todo lo era. */
+    .morning-done{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+                  padding:.75rem 1rem;margin-bottom:.75rem}
+    .morning-done-label{font-size:.7rem;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:.4rem}
+    /* Lo que se esperaba antes de hoy y sigue sin marcar. Va arriba del todo, y
+       con la misma receta: recuadro gris y el ámbar sólo en el rótulo. No es
+       una alarma roja —puede que sólo falte marcarla— pero es lo primero que
+       alguien tiene que mirar por la mañana. */
+    .morning-late{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+                  padding:.75rem 1rem;margin-bottom:.75rem}
+    .morning-late-label{font-size:.7rem;font-weight:700;color:#B45309;text-transform:uppercase;margin-bottom:.4rem}
+    /* "¿También llegó esto?" — una fila por entrega, con su casilla.
+       La casilla arriba y no centrada: una entrega con nombre largo ocupa dos
+       renglones, y una casilla centrada contra dos renglones queda flotando
+       lejos de la primera palabra, que es donde va el ojo. */
+    #alsoArrivedList{margin-top:.6rem;max-height:min(46vh,320px);overflow:auto;text-align:left}
+    .also-row{display:flex;align-items:flex-start;gap:.55rem;padding:.5rem .15rem;
+      border-bottom:1px solid var(--border);cursor:pointer}
+    .also-row:last-child{border-bottom:none}
+    .also-row input{margin-top:.2rem;flex:none;width:16px;height:16px;cursor:pointer}
+    .also-body{display:flex;flex-direction:column;min-width:0}
+    .also-name{font-size:.82rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+    .also-sub{font-size:.72rem;color:var(--muted);line-height:1.35;margin-top:.1rem;
+      overflow-wrap:anywhere}
+
     /* Draft rows from an email — editable before anything is saved. */
     .ei-card{border:1px solid var(--border);border-radius:9px;padding:.7rem .8rem;margin-bottom:.6rem;background:var(--card)}
     .ei-card.saved{border-color:var(--green);background:var(--green-bg)}
@@ -1750,6 +1839,44 @@
     #acTip.ready{visibility:visible}
     #acTip.show{opacity:1;transform:translateY(0)}
 
+    /* ── La celda "User" y la ficha de la persona ────────────────────────────
+       Jose: el nombre arriba, el correo en gris debajo y más pequeño. Es la
+       misma forma que .mc-when y .mc-what desde la v11.61 — por eso el correo
+       reutiliza .mc-sub en vez de estrenar un gris propio que luego se
+       desincroniza. */
+    td.mc-user{vertical-align:top}
+    .mc-who{display:inline-block;cursor:default;border-radius:6px;padding:.1rem .2rem;margin:-.1rem -.2rem}
+    .mc-who:hover,.mc-who:focus-visible{background:var(--bg);outline:none}
+    .mc-who-name{display:block;font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap}
+    /* El correo, sin nombre por encima, se queda exactamente como estaba antes
+       de la v11.73: pequeño y gris. Nada empeora para quien no tenga su nombre
+       escrito en Manage Users. */
+    .mc-who-mail{font-size:.7rem;color:var(--muted);white-space:nowrap}
+    .mc-who .mc-sub{margin-top:0}
+
+    /* NO es un tooltip: lleva botones, así que tiene que dejarse pulsar y
+       aguantar el viaje del ratón desde el nombre. De ahí pointer-events:auto y
+       la pausa de PERSON_GRACE_MS en el JS. Cuelga de <body> por lo mismo que
+       #acTip: un transform en cualquier antepasado se lleva a un fixed con él. */
+    #acPerson{position:fixed;left:-9999px;top:-9999px;
+      background:var(--card);color:var(--text);border:1px solid var(--border);
+      border-radius:10px;padding:.6rem .7rem;box-shadow:0 8px 24px rgba(0,0,0,.18);
+      width:max-content;max-width:min(300px,90vw);text-align:left;
+      opacity:0;visibility:hidden;
+      transition:opacity .13s ease,transform .13s ease;transform:translateY(-4px);
+      z-index:2147483000}
+    #acPerson.ready{visibility:visible}
+    #acPerson.show{opacity:1;transform:translateY(0)}
+    .ap-name{font-size:.86rem;font-weight:700;line-height:1.3}
+    .ap-mail{font-size:.74rem;color:var(--muted);line-height:1.35;margin-top:.1rem;
+      overflow-wrap:anywhere}
+    .ap-acts{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.55rem}
+    .ap-btn{display:inline-flex;align-items:center;gap:.25rem;text-decoration:none;
+      font-size:.72rem;font-weight:600;color:var(--accent);
+      border:1px solid var(--border);border-radius:7px;padding:.25rem .5rem;
+      background:var(--bg);white-space:nowrap}
+    .ap-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
     /* The small "i" badge that replaces a paragraph of always-visible help text —
        same explanation, available on demand instead of taking up the window. */
     .info-ic{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
@@ -1765,6 +1892,39 @@
        is a positioned value, so it anchors the bubble just as well as relative
        did. */
     thead th.tip{position:sticky;top:0}
+    /* La categoría que se quitó de la tabla, dicha una sola vez en el título.
+       Va pegada al h2 y no en la barra de columnas: es lo que la lista ES, no
+       una opción sobre cómo mirarla. */
+    /* ── LA BARRA DE EXISTENCIAS ──
+       Cuatro trozos que suman lo que hoy tenemos contado de este material. Los
+       colores dicen QUÉ SE PUEDE HACER con cada parte, que es la pregunta:
+         verde  — se puede tomar ahora
+         ámbar  — está aquí pero apartado para alguien
+         azul   — salió a una obra
+         rojo   — se dio de baja
+       Los cuatro salen de las variables del tema, así que el modo oscuro los
+       ajusta solo en vez de tener su propia lista que se queda vieja. */
+    td.sc-levels{white-space:nowrap;vertical-align:middle}
+    .lv-wrap{display:inline-block;min-width:104px;cursor:help}
+    .lv-wrap:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    .lv-top{display:flex;align-items:baseline;gap:.3rem;line-height:1.1}
+    .lv-num{font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+    .lv-num.lv-zero{color:var(--red)}
+    .lv-of{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+    .lv-bar{display:flex;height:7px;margin-top:.28rem;border-radius:999px;overflow:hidden;
+      background:var(--border)}
+    /* Sin nada registrado no hay reparto que enseñar: se ve la pista vacía, que
+       dice "cero" mejor que una barra llena de un solo color. */
+    .lv-bar.lv-empty{opacity:.5}
+    .lv-bar i{display:block;height:100%;min-width:2px}
+    .lv-avail{background:var(--green)}
+    .lv-resv {background:var(--yellow)}
+    .lv-used {background:var(--accent)}
+    .lv-waste{background:var(--red)}
+
+    .cat-badge{display:inline-block;margin-left:.6rem;font-size:.72rem;font-weight:700;
+      letter-spacing:.03em;vertical-align:middle;
+      background:var(--accent2, #1E52A0);color:#fff;border-radius:999px;padding:.2rem .6rem}
     .cfg-pick{margin-right:.5rem;flex-shrink:0;cursor:pointer}
     .cfg-pickbar{display:none;gap:.5rem;align-items:center;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:8px;padding:.5rem .7rem;margin-bottom:.75rem}
     .cfg-pickbar.show{display:flex}
@@ -2074,6 +2234,97 @@
          a los dos lados: se desbordaba aunque la posición fuera correcta. */
       .toast{max-width:100%;min-width:0}
     }
+
+    /* ══ ETIQUETAS DE 4"×6" ═══════════════════════════════════════════════════
+       Jose, 2026-09-11: imprime en una Jadens JD-268BT, térmica, papel de
+       4"×6" (101.6 × 152.4 mm). "Nombre del material, cantidad, locación, PO y
+       un lugar donde podamos poner el QR o código de barras."
+
+       LAS MEDIDAS VAN EN MILÍMETROS, NO EN rem NI EN px. Una etiqueta no es una
+       pantalla: el papel mide lo que mide, y un tamaño relativo al navegador
+       saldría distinto en cada ordenador desde el que se imprima. Es la única
+       parte de esta app donde una medida absoluta es lo correcto.
+
+       Y el @page con margin:0 es lo que hace que una térmica no meta los
+       márgenes de una impresora de oficina: sin él, Chrome reserva un centímetro
+       por lado y la etiqueta sale encogida y corrida hacia una esquina.
+       ═══════════════════════════════════════════════════════════════════════*/
+    #labelSheet{display:none}
+
+    .lbl{width:101.6mm;height:152.4mm;box-sizing:border-box;padding:7mm 6mm;
+      display:flex;flex-direction:column;color:#000;background:#fff;
+      font-family:Inter,Arial,Helvetica,sans-serif;
+      /* Una etiqueta por página. El último no lleva salto o sale una página en
+         blanco al final de cada tanda. */
+      page-break-after:always;break-after:page;overflow:hidden}
+    .lbl:last-child{page-break-after:auto;break-after:auto}
+
+    .lbl-top{display:flex;justify-content:space-between;align-items:baseline;
+      font-size:3.4mm;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .lbl-top .lbl-when{font-weight:600;letter-spacing:.02em}
+    /* EL NOMBRE ES LO QUE SE LEE DESDE LEJOS, así que se lleva el sitio. Tres
+       líneas como mucho: un nombre de cuatro líneas empuja la cantidad fuera de
+       la etiqueta, y la cantidad es lo segundo que se busca. */
+    .lbl-name{font-size:8.5mm;font-weight:800;line-height:1.1;margin-top:3mm;
+      overflow-wrap:anywhere;max-height:29mm;overflow:hidden}
+    /* Cantidad y locación, del mismo tamaño y lado a lado: son las dos
+       preguntas que se hacen con el bulto en la mano — cuánto hay, y a dónde
+       vuelve. */
+    .lbl-pair{display:flex;gap:5mm;margin-top:5mm}
+    .lbl-cell{flex:1;min-width:0;border:.4mm solid #000;border-radius:2mm;padding:3mm}
+    .lbl-cell-lbl{font-size:3mm;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .lbl-cell-val{font-size:10mm;font-weight:800;line-height:1.05;margin-top:1mm;
+      overflow-wrap:anywhere}
+    .lbl-cell-val.sm{font-size:7mm}
+    .lbl-meta{margin-top:5mm;font-size:4.2mm;line-height:1.45;overflow-wrap:anywhere}
+    .lbl-meta b{font-weight:800}
+    .lbl-meta .lbl-dim{color:#444;font-size:3.8mm}
+    /* EL HUECO DEL CÓDIGO. Jose pidió "un lugar donde podamos poner el QR o
+       código de barras" — un LUGAR, y eso es lo que hay: espacio reservado, sin
+       nada dentro. En pantalla se dibuja su contorno para que se vea que está
+       ahí; en el papel no se imprime ninguna línea, porque una etiqueta con un
+       recuadro vacío parece una etiqueta a medio hacer.
+       Qué se codifica ahí es una decisión aparte y más grande que el hueco: lo
+       que lleve dentro decide PARA QUÉ sirve escanearlo. */
+    .lbl-code{margin-top:auto;height:34mm;border:.3mm dashed #bbb;border-radius:2mm;
+      display:flex;align-items:center;justify-content:center;
+      font-size:3.2mm;color:#bbb;letter-spacing:.1em;text-transform:uppercase}
+
+    @media print{
+      /* El papel, tal cual. Sin esto Chrome asume Letter con márgenes. */
+      @page{size:101.6mm 152.4mm;margin:0}
+      html,body{margin:0;padding:0;background:#fff}
+      /* TODO LO DEMÁS DESAPARECE. Hermanos directos de <body>: la app entera
+         cuelga de unos pocos, así que esconderlos por ahí es una regla y no
+         una lista que se queda vieja cada vez que se añade una ventana. */
+      body > *{display:none !important}
+      #labelSheet{display:block !important}
+      .lbl{page-break-inside:avoid;break-inside:avoid}
+      /* En papel el hueco del código no lleva contorno ni texto: es espacio. */
+      .lbl-code{border:none;color:transparent}
+    }
+
+    /* La vista previa dentro del cuadro: la etiqueta de verdad, encogida, para
+       que se vea lo que va a salir antes de gastar papel. */
+    #labelPreview{display:flex;gap:.6rem;overflow-x:auto;padding:.5rem 0 .2rem}
+    #labelPreview .lbl{flex:none;transform:scale(.42);transform-origin:top left;
+      width:101.6mm;height:152.4mm;border:1px solid var(--border);border-radius:3mm;
+      page-break-after:auto}
+    /* scale() no cambia el sitio que ocupa el elemento, así que sin esto la
+       vista previa reserva el alto entero de una etiqueta de 15 cm y deja medio
+       cuadro en blanco debajo. */
+    #labelPreview{height:calc(152.4mm * .42 + .7rem)}
+    #labelPreview .lbl-wrap{flex:none;width:calc(101.6mm * .42);height:calc(152.4mm * .42)}
+    .lbl-row{display:flex;align-items:center;gap:.55rem;padding:.5rem .15rem;
+      border-bottom:1px solid var(--border)}
+    .lbl-row:last-child{border-bottom:none}
+    .lbl-row input[type=checkbox]{flex:none;width:16px;height:16px;cursor:pointer}
+    .lbl-row-body{flex:1;min-width:0}
+    .lbl-row-name{font-size:.82rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+    .lbl-row-sub{font-size:.72rem;color:var(--muted);line-height:1.35}
+    .lbl-row-n{flex:none;display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--muted)}
+    .lbl-row-n input{width:3.4rem;padding:.25rem .35rem;font-size:.8rem;
+      border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text)}
   </style>
 </head>
 <body>
@@ -2342,7 +2593,9 @@
     <div class="stats" id="statsRow"></div>
     <div class="card">
       <div class="card-header">
-        <h2>Live Inventory Stock</h2>
+        <!-- La categoría elegida va aquí, en el título, porque es donde se lee
+             UNA vez en lugar de repetirse en cada fila. Ver _colSuppressed. -->
+        <h2>Live Inventory Stock<span id="stockCatBadge" class="cat-badge" hidden></span></h2>
         <div class="toolbar">
           <input type="text" id="stockSearch" placeholder="Search name or comment...">
           <select id="stockFilter"><option value="">All Categories</option></select>
@@ -2712,6 +2965,70 @@
     <div class="cconfirm-footer">
       <button class="cconfirm-cancel" id="confirmCancelBtn" onclick="_confirmCancel()">Cancel</button>
       <button class="btn-primary btn" id="confirmOkBtn" onclick="_confirmOk()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ETIQUETAS ══════════════════════════════════════════════════════════════
+     Jose, 2026-09-11: "lo que me hace falta por ahora" — crear e imprimir las
+     etiquetas al hacer los entries. Jadens JD-268BT, térmica, 4"×6".
+
+     Dos piezas separadas a propósito:
+
+     #labelSheet es lo que SE IMPRIME. Vive fuera de todo, oculto en pantalla,
+     y en @media print es lo único que queda visible. Nada de abrir una ventana
+     nueva: la app corre dentro del iframe de Apps Script y un window.open ahí
+     se lo come el bloqueador de ventanas emergentes la mitad de las veces.
+
+     #labelsOverlay es donde se ELIGE. Jose: "debo poder seleccionar los
+     materiales que necesitan una etiqueta, porque no todos la necesitan, y
+     también la cantidad de impresiones por cada etiqueta, aunque 1 debe ser el
+     default." ═══════════════════════════════════════════════════════════════-->
+<div id="labelSheet"></div>
+
+<div class="cconfirm-overlay" id="labelsOverlay">
+  <div class="cconfirm-dialog" style="max-width:560px">
+    <div class="cconfirm-icon-row">🏷️</div>
+    <div class="cconfirm-body">
+      <h3>Print labels</h3>
+      <p id="labelsLead"></p>
+      <div style="display:flex;gap:.4rem;justify-content:flex-end;margin-top:.4rem">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="_labelsAll(true)">Select all</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="_labelsAll(false)">Select none</button>
+      </div>
+      <div id="labelsList" style="max-height:min(38vh,260px);overflow:auto;text-align:left;margin-top:.3rem"></div>
+      <div id="labelPreview"></div>
+    </div>
+    <div class="cconfirm-footer">
+      <button class="cconfirm-cancel" id="labelsSkip" onclick="_labelsClose()">Not now</button>
+      <button class="btn-primary btn" id="labelsPrintBtn" onclick="_labelsPrint()">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ¿TAMBIÉN LLEGÓ ESTO? ═══════════════════════════════════════════════════
+     Jose, 2026-09-11: marcó UNA entrega como llegada, y al abrirse el
+     formulario de entrada metió también los demás materiales del camión,
+     porque tenía los papeles en la mano. Los movimientos se guardaron; las
+     otras entregas se quedaron en Pending para siempre, porque nadie se lo
+     dijo a la app.
+
+     NO ES UN TOOLTIP NI UN _showConfirm: ése escribe su mensaje con
+     textContent, así que no puede llevar una casilla. Y las casillas son el
+     punto entero — la app EMPAREJA por nombre y fecha, y emparejar es adivinar.
+     Marcar sola una entrega que sigue en la carretera es el error caro. Así que
+     propone y la persona confirma. ═══════════════════════════════════════════-->
+<div class="cconfirm-overlay" id="alsoArrivedOverlay">
+  <div class="cconfirm-dialog">
+    <div class="cconfirm-icon-row">📦</div>
+    <div class="cconfirm-body">
+      <h3>Did these arrive too?</h3>
+      <p id="alsoArrivedLead"></p>
+      <div id="alsoArrivedList"></div>
+    </div>
+    <div class="cconfirm-footer">
+      <button class="cconfirm-cancel" id="alsoArrivedSkip" onclick="_alsoArrivedClose()">Not now</button>
+      <button class="btn-primary btn" id="alsoArrivedOk" onclick="_alsoArrivedSave()">Mark as arrived</button>
     </div>
   </div>
 </div>
@@ -3360,7 +3677,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.67';
+var APP_VERSION = '11.79';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -3372,7 +3689,7 @@ var APP_VERSION = '11.67';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '2b44734f';
+var APP_BUILD = '4651f018';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3392,6 +3709,10 @@ function _canSeeCosts(){
 }
 var userEmail = '';
 var _lastUserName = '';    // display name on file, so the account menu can be repainted without it
+/* correo → nombre, para toda la app. Lo llena getInitialData (userDirectory_) y
+   se resuelve AL DIBUJAR, nunca se copia dentro de un movimiento: así un cambio
+   de nombre en Manage Users corrige el pasado entero de golpe. */
+var userNames = {};
 // Company identity, filled from getInitialData on every load (including the
 // unauthenticated paths, so the sign-in screen is branded too).
 var _companyName = '', _companyDomain = '';
@@ -3865,11 +4186,16 @@ function _mountRowMode(scope){ _applyRowMode(scope); }
 var STOCK_COLS = [
   { key:'category',     def:'Category',         lock:true  },   // the row is unreadable without it
   { key:'name',         def:'Name / Description', lock:true },   // the row would be meaningless without it
-  { key:'inWarehouse',  def:'In Warehouse',     lock:false },
-  { key:'atSite',       def:'Used / Del',       lock:false },
-  { key:'available',    def:'Available',        lock:false },
-  { key:'wasted',       def:'Wasted',           lock:false },
-  { key:'reserved',     def:'Reserved',         lock:false },
+  // CINCO COLUMNAS EN UNA BARRA. Idea de Jose, 2026-09-09:
+  //
+  //   "una barra de 2 colores que muestra la cantidad que hay con la cantidad
+  //    que ya se fue, y si hay reservas también metemos esa cantidad ahí…
+  //    así unimos IN WAREHOUSE, USED, AVAILABLE, WASTE y RESERVED."
+  //
+  // Cinco números sueltos obligan al ojo a sumarlos para entender la situación
+  // de un material. La barra dice de un vistazo cuánto había en total y qué
+  // proporción queda — y la proporción es la pregunta de verdad.
+  { key:'levels',       def:'Stock',            lock:false },
   { key:'location',     def:'Location',         lock:false },
   { key:'status',       def:'Status',           lock:false },
   { key:'dateReceived', def:'Date Received',    lock:false },
@@ -3917,10 +4243,9 @@ var MOV_COLS = [
 ];
 
 var STOCK_COL_TIPS = {
-  inWarehouse:  'Units on hand in the warehouse',
-  atSite:       'Sent out to a job — used or delivered',
-  available:    'In warehouse, minus what is reserved',
-  wasted:       'Recorded as damaged or scrapped',
+  levels:       'Everything this material is accounted for as today, in one bar: ' +
+                'what you can take, what is spoken for, what has gone out to a job, ' +
+                'and what was written off. Hover a row to see the numbers.',
   location:     'Where this material is stored',
   dateReceived: 'Date of the most recent entry'
 };
@@ -3992,7 +4317,14 @@ function _defaultColOrder(t){ return _colCfg(t).cols.map(function(c){ return c.k
 //
 // La vieja de arriba se queda con el sitio, la de abajo desaparece: es lo que
 // significa "type SOBRE date".
-var COL_MERGES = { mov: { type: 'when', date: null, category: 'what', name: null } };
+var COL_MERGES = {
+  mov:   { type: 'when', date: null, category: 'what', name: null },
+  // La barra se queda con el sitio que tenía "In Warehouse", que es la primera
+  // de las cinco en el orden de fábrica. Las otras cuatro desaparecen del orden
+  // guardado de cada persona sin que tenga que tocar nada.
+  stock: { inWarehouse: 'levels', atSite: null, available: null,
+           wasted: null, reserved: null }
+};
 
 function _colOrder(t){
   var cfg = _colCfg(t);
@@ -4020,11 +4352,86 @@ function _colOrder(t){
   return out;
 }
 
+/* UNA COLUMNA DONDE TODAS LAS FILAS DICEN LO MISMO NO ES INFORMACIÓN, ES MARGEN.
+ *
+ * Idea de Jose, 2026-09-09:
+ *
+ *   "si al seleccionar un material en 'All Categories' en específico ya sabemos
+ *    que solo nos mostrará ese material… solo en ese caso podemos eliminar la
+ *    columna de category y poner la category arriba donde se vea bien, y
+ *    eliminamos ese espacio haciendo la lista más pequeña horizontalmente."
+ *
+ * Es el mismo razonamiento que la v11.61 aplicó a Movements. Con el filtro en
+ * una categoría concreta, la columna Category repite el mismo texto en TODAS
+ * las filas: se va, y su valor pasa al encabezado, donde se lee una vez.
+ *
+ * ESCONDIDA NO ES LO MISMO QUE OCULTA, y la diferencia importa:
+ *
+ *   - No se toca el orden guardado de nadie. La columna sigue en el modelo y
+ *     vuelve sola en cuanto el filtro vuelve a "All Categories" — nadie tiene
+ *     que ir a Columns a recuperarla.
+ *   - En MODO EDICIÓN se ve siempre. No se puede reordenar lo que no está, y
+ *     alguien que abra el editor con un filtro puesto tiene que ver su tabla
+ *     entera, no la de este momento.
+ */
+function _colSuppressed(t){
+  if (t !== 'stock' || _colEdit[t]) return {};
+  var el = document.getElementById('stockFilter');
+  return (el && el.value) ? { category: 1 } : {};
+}
+
 function _colHidden(t){
   var raw = null;
   try { raw = localStorage.getItem(_colCfg(t).hiddenKey); } catch (e) {}
-  if (raw === null || raw === undefined) return _migratedHidden(t);
-  try { return JSON.parse(raw) || []; } catch (e) { return []; }
+  var lista;
+  if (raw === null || raw === undefined) lista = _migratedHidden(t);
+  else { try { lista = JSON.parse(raw) || []; } catch (e) { lista = []; } }
+  return _mergedHidden(t, lista);
+}
+
+/* CUÁNDO HEREDA LA BARRA EL "ESCONDIDO" DE LAS CINCO QUE SUSTITUYE.
+ *
+ * Sólo si estaban escondidas LAS CINCO. Es la única lectura que no le quita a
+ * nadie algo que estaba usando:
+ *
+ *   - Quien escondió las cinco no quería ver cantidades. La barra tampoco.
+ *   - Quien escondió cuatro y dejó "Available" SÍ quería ver una cantidad.
+ *     Heredar el escondido de las otras cuatro le quitaría la que le
+ *     importaba, y ésa es la peor de las dos equivocaciones posibles.
+ *
+ * Las claves viejas que quedan en la lista guardada no molestan: ya no
+ * corresponden a ninguna columna y nadie las lee. */
+function _mergedHidden(t, lista){
+  var merge = COL_MERGES[t];
+  if (!merge) return lista;
+  var viejas = Object.keys(merge);
+  if (!viejas.length) return lista;
+
+  var escondidas = {};
+  lista.forEach(function(k){ escondidas[k] = 1; });
+
+  // Por cada columna nueva, ¿estaban TODAS sus antiguas escondidas?
+  var destinos = {};
+  viejas.forEach(function(v){ if (merge[v]) destinos[merge[v]] = true; });
+
+  Object.keys(destinos).forEach(function(nueva){
+    if (escondidas[nueva]) return;                       // ya lo decidió la persona
+    var suyas = viejas.filter(function(v){
+      return merge[v] === nueva || (merge[v] === null && _eraDeLaMisma(t, v, nueva));
+    });
+    if (suyas.length && suyas.every(function(v){ return escondidas[v]; })) lista = lista.concat(nueva);
+  });
+  return lista;
+}
+
+// Las que se fusionaron en `nueva` son las que apuntan a ella MÁS las que la
+// fusión mandó a null en el mismo grupo. Como sólo hay un grupo por tabla, un
+// null pertenece al único destino que hay.
+function _eraDeLaMisma(t, vieja, nueva){
+  var merge = COL_MERGES[t] || {};
+  var destinos = {};
+  Object.keys(merge).forEach(function(k){ if (merge[k]) destinos[merge[k]] = 1; });
+  return Object.keys(destinos).length === 1 && merge[vieja] === null;
 }
 
 // Read the pre-v9.41 Movements checkboxes once, the first time this browser
@@ -4055,6 +4462,9 @@ function _visibleColCount(t){
   if (_colEdit[t]) return _colOrder(t).length;      // edit mode shows every column
   var hidden = {};
   _colHidden(t).forEach(function(k){ hidden[k] = 1; });
+  // Las quitadas por el filtro cuentan igual que las ocultas: si no, el
+  // colspan del "no hay resultados" sobra una columna y la fila se descuadra.
+  Object.keys(_colSuppressed(t)).forEach(function(k){ hidden[k] = 1; });
   return _colOrder(t).filter(function(k){ return !hidden[k]; }).length;
 }
 
@@ -4087,6 +4497,8 @@ function _colHeadRowHtml(t){
   var editing = _colEdit[t];
   var hidden = {};
   _colHidden(t).forEach(function(k){ hidden[k] = 1; });
+  var quitadas = _colSuppressed(t);
+  Object.keys(quitadas).forEach(function(k){ hidden[k] = 1; });
   var isAdmin = userRole === 'ADMIN';
 
   var html = cfg.lead();
@@ -4256,6 +4668,47 @@ function _wireColEdit(t){
 
 function displayName(m){
   return (m.name||'').trim() || (m.comments||'').substring(0,60) || 'Unnamed';
+}
+
+/* ═══ QUIÉN GUARDÓ LA FILA ══════════════════════════════════════════════════
+ *
+ * Jose, con captura: "quiero que en lugar del email que aparece en User,
+ * aparezca el nombre de la persona, y el correo en gris abajo pero más
+ * pequeño, y al hacer hover aparezcan las opciones de enviar email o llamar
+ * por Google Meet."
+ *
+ * El nombre NO está en el movimiento y no se mete ahí: se busca en userNames
+ * cada vez que se dibuja. Ver userDirectory_ en Code.gs para por qué.
+ */
+function _personName(email){
+  var e = String(email || '').toLowerCase().trim();
+  if (!e) return '';
+  return userNames[e] || '';
+}
+
+/** El nombre si se sabe, y si no el correo. Para los sitios de una sola línea,
+ *  donde no cabe la celda de dos. */
+function _personLabel(email){
+  return _personName(email) || String(email || '');
+}
+
+/* SIN NOMBRE SE ENSEÑA EL CORREO, TAL CUAL, y no se inventa nada.
+ *
+ * La tentación evidente es partir el correo por el punto y capitalizar —
+ * "j.castro@" → "J Castro". No se hace: "info@", "compras@" y "jc@" darían
+ * nombres que no son de nadie, y un nombre inventado en la columna de quién
+ * hizo un movimiento es peor que un correo, porque el correo al menos es
+ * verdad. Quien quiera ver nombres, que los escriba en Manage Users. */
+function _userCellHtml(email){
+  var mail = String(email || '').trim();
+  if (!mail) return '<span class="mc-who-mail">—</span>';
+  var nombre = _personName(mail);
+  var dentro = nombre
+    ? '<span class="mc-who-name">' + _he(nombre) + '</span>' +
+      '<span class="mc-sub mc-who-mail">' + _he(mail) + '</span>'
+    : '<span class="mc-who-mail">' + _he(mail) + '</span>';
+  return '<span class="mc-who" data-person="' + _escAttr(mail) + '" tabindex="0">' +
+         dentro + '</span>';
 }
 
 function getBase64(file){
@@ -5464,13 +5917,130 @@ function _countMoveMaterialLines(){
   return (el && String(el.value || '').trim()) ? 1 : 0;
 }
 
+/* El nombre de la categoría TAL COMO SE ESCRIBIÓ, no como se normaliza.
+ * El valor del filtro viene de nt() —minúsculas, sin acentos— y enseñar eso en
+ * el título sería enseñar la forma interna de un dato en lugar del dato. */
+function _catLabelFor(cfNorm){
+  var found = '';
+  (config.categories || []).forEach(function(c){
+    if (!found && nt(c) === cfNorm) found = c;
+  });
+  if (!found) {
+    for (var k in stockData) {
+      if (!stockData.hasOwnProperty(k)) continue;
+      if (nt(stockData[k].category) === cfNorm) { found = stockData[k].category; break; }
+    }
+  }
+  return found || String(cfNorm).toUpperCase();
+}
+
+/* ── LA BARRA: CINCO NÚMEROS EN UN REPARTO ──────────────────────────────────
+ *
+ * Idea de Jose. Lo primero que se hizo fue COMPROBAR QUE LAS PARTES SUMAN, y
+ * no sumaban como él las describió. Las dos cosas que salieron, y que están
+ * aquí porque son la diferencia entre una barra verdadera y una que lo parece:
+ *
+ * 1. RESERVED ESTÁ DENTRO DE IN WAREHOUSE. El motor de stock hace
+ *    `availableQty = warehouseQty − reservedQty`. Así que dibujar
+ *    [In Warehouse][Used][Reserved] contaría lo reservado DOS VECES y la barra
+ *    saldría más larga que la realidad. El reparto que no se pisa es
+ *    [Available | Reserved | Used | Wasted], donde Available + Reserved ES In
+ *    Warehouse.
+ *
+ * 2. EL TOTAL NO PUEDE LLAMARSE "lo que el almacén recibió". ADJUST sube o baja
+ *    warehouseQty SIN CONTRAPARTIDA — a propósito, porque un recuento corregido
+ *    no es material recibido ni desperdiciado. Eso rompe la identidad:
+ *    Warehouse + Used + Wasted sólo es igual a lo recibido si nunca hubo un
+ *    ajuste, y en un almacén de verdad siempre lo hay.
+ *
+ *    Lo que SÍ cierra siempre, porque cada unidad está hoy en exactamente uno
+ *    de esos sitios, es la suma de los cuatro trozos. Por eso el total se llama
+ *    "accounted for" y no "received": es una promesa que la app puede cumplir.
+ *
+ * Jose eligió las dos: total = lo que hoy tenemos contado, y Waste dentro.
+ *
+ * EL NÚMERO SIGUE ESTANDO. Una barra sin cifras es más bonita y menos útil: en
+ * un almacén la pregunta es "¿me alcanza para 40?", y eso no se contesta
+ * mirando una proporción. Va delante, y es el DISPONIBLE — el único de los
+ * cinco sobre el que se puede actuar ahora mismo.
+ */
+var LV_PARTES = [
+  { k:'avail', clase:'lv-avail', etiqueta:'Available',   campo:'availableQty' },
+  { k:'resv',  clase:'lv-resv',  etiqueta:'Reserved',    campo:'reservedQty'  },
+  { k:'used',  clase:'lv-used',  etiqueta:'Out on a job',campo:'siteQty'      },
+  { k:'waste', clase:'lv-waste', etiqueta:'Written off', campo:'wastedQty'    }
+];
+
+function _levelsOf(s){
+  var partes = LV_PARTES.map(function(p){
+    return { k:p.k, clase:p.clase, etiqueta:p.etiqueta, qty: Math.max(0, Number(s[p.campo]) || 0) };
+  });
+  var total = partes.reduce(function(a, p){ return a + p.qty; }, 0);
+  return { partes: partes, total: total };
+}
+
+/* Por qué está reservado, con las palabras de quien lo reservó. Jose:
+ * "al hacer hover podemos mostrar datos o detalles… como el detalle de por qué
+ * se reservó". Los datos ya viajan al navegador; sólo había que enseñarlos. */
+function _lvReasons(s){
+  var out = [];
+  (reservations || []).forEach(function(r){
+    if (String(r.status || 'Active').toLowerCase() !== 'active') return;
+    if (nt(r.category) !== nt(s.category) || nt(r.name) !== nt(s.name)) return;
+    var quien = r.by ? (' · ' + r.by) : '';
+    out.push('  ' + r.qty + ' for ' + (r.project || 'a job') + quien);
+  });
+  return out;
+}
+
+function _levelsCell(s){
+  var lv = _levelsOf(s), total = lv.total;
+  var disponible = Math.max(0, Number(s.availableQty) || 0);
+
+  // El texto de la ayuda: los números que la barra reparte, y el total que
+  // suman. Se escriben todos, incluidos los ceros que no se dibujan — un cero
+  // es una respuesta y la ausencia de una línea no lo es.
+  var lineas = lv.partes.map(function(p){ return p.etiqueta + ': ' + p.qty; });
+  lineas.push('Accounted for: ' + total + ' ' + (s.unit || 'UNIT'));
+  var porque = _lvReasons(s);
+  if (porque.length) lineas.push('', 'Reserved for:', porque.join('\n'));
+  if (!total) lineas = ['Nothing recorded for this material yet.'];
+
+  var barra = total > 0
+    ? lv.partes.filter(function(p){ return p.qty > 0; }).map(function(p){
+        return '<i class="' + p.clase + '" style="width:' + (p.qty / total * 100) + '%"></i>';
+      }).join('')
+    : '';
+
+  return '<td class="sc-levels">' +
+    '<div class="lv-wrap tip" tabindex="0" data-tip="' + _escAttr(lineas.join('\n')) + '">' +
+      '<div class="lv-top">' +
+        '<b class="lv-num' + (disponible <= 0 ? ' lv-zero' : '') + '">' + disponible + '</b>' +
+        '<span class="lv-of">of ' + total + '</span>' +
+      '</div>' +
+      '<div class="lv-bar' + (total ? '' : ' lv-empty') + '">' + barra + '</div>' +
+    '</div></td>';
+}
+
 // ── Dashboard: Stock Table ────────────────────────────────────────────────────
 function renderStock(){
   // Header and body are drawn from the same order on every pass — rendering one
   // without the other is how a column ends up under the wrong heading.
-  renderColHead('stock');
   var q  = (document.getElementById('stockSearch').value || '').toLowerCase();
   var cf = document.getElementById('stockFilter').value;
+
+  // El título dice la categoría elegida — el mismo dato que se acaba de quitar
+  // de la tabla, y en el sitio donde se lee una vez. Con el filtro en "All
+  // Categories" no hay nada que decir y la insignia no está.
+  var badge = document.getElementById('stockCatBadge');
+  if (badge){
+    badge.textContent = cf ? _catLabelFor(cf) : '';
+    badge.hidden = !cf;
+  }
+
+  // DESPUÉS de leer el filtro, porque la cabecera depende de él: con una
+  // categoría elegida, la columna Category no se dibuja.
+  renderColHead('stock');
   var sf = document.getElementById('stockStatusFilter').value;
 
   var items = Object.values(stockData).filter(function(s){
@@ -5518,6 +6088,12 @@ function renderStock(){
   }
   var canUpload  = userRole !== 'VIEWER';
   var canSelect  = userRole !== 'VIEWER'; // EXIT requires write access, same gate as elsewhere
+
+  // UNA vez por tabla, no una por fila: se leía localStorage y se reconstruía
+  // este mapa para cada material de la lista.
+  var hiddenNow = {};
+  _colHidden('stock').forEach(function(k){ hiddenNow[k] = 1; });
+  Object.keys(_colSuppressed('stock')).forEach(function(k){ hiddenNow[k] = 1; });
 
   document.getElementById('stockBody').innerHTML = items.map(function(s, idx){
     var zero    = s.warehouseQty <= 0 && s.siteQty <= 0;
@@ -5615,19 +6191,13 @@ function renderStock(){
     var cells = {
       category:     '<td class="sc-category">'+catBadge(s.category)+'</td>',
       name:         '<td class="sc-name"><strong>'+_he(s.name)+'</strong>'+(s.project&&s.project!=='GENERIC'?'<br><span style="font-size:.72rem;color:var(--muted)">'+_he(s.project)+'</span>':'')+'</td>',
-      inWarehouse:  '<td class="sc-inWarehouse" style="color:var(--green);font-weight:600">'+Math.max(0,s.warehouseQty)+'</td>',
-      atSite:       '<td class="sc-atSite" style="color:var(--orange);font-weight:600">'+Math.max(0,s.siteQty)+'</td>',
-      available:    '<td class="sc-available"><strong style="font-size:1.05rem;color:'+(s.availableQty<=0?'var(--red)':'inherit')+'">'+Math.max(0,s.availableQty)+'</strong></td>',
-      wasted:       '<td class="sc-wasted" style="color:'+(s.wastedQty>0?'var(--red)':'var(--muted)')+';font-size:.82rem;font-weight:'+(s.wastedQty>0?'600':'400')+'">'+(s.wastedQty>0?'✕ '+s.wastedQty:'—')+'</td>',
-      reserved:     '<td class="sc-reserved" style="color:var(--muted);font-size:.8rem">'+(s.reservedQty>0?'<span class="badge badge-orange">'+s.reservedQty+' reserved</span>':'—')+'</td>',
+      levels:       _levelsCell(s),
       location:     '<td class="sc-location" style="color:var(--muted);font-size:.78rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(locSummary(s.warehouseLocs))+'">'+_he(locSummary(s.warehouseLocs))+'</td>',
       status:       '<td class="sc-status">'+stockBadge(s)+'</td>',
       dateReceived: '<td class="sc-dateReceived">'+dateCell+'</td>',
       lastNote:     '<td class="sc-lastNote">'+noteCell+'</td>',
       docs:         '<td class="sc-docs" style="text-align:center">'+summaryCell+'</td>'
     };
-    var hiddenNow = {};
-    _colHidden('stock').forEach(function(k){ hiddenNow[k] = 1; });
     var body = _colOrder('stock').map(function(k){
       if (hiddenNow[k] && !_colEdit.stock) return '';
       return cells[k] || '';
@@ -5955,7 +6525,7 @@ function renderMovements(){
       comment:  '<td class="mc-comment" style="font-size:.78rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(m.comments||'')+'">'+_he(m.comments||'—')+'</td>',
       pm:       '<td class="mc-pm" style="font-size:.78rem">'+_he(m.pm||'—')+'</td>',
       sysDate:  '<td class="mc-sysDate" style="font-size:.72rem;color:var(--muted)">'+_he(m.timestamp||'—')+'</td>',
-      user:     '<td class="mc-user" style="font-size:.7rem;color:var(--muted)">'+_he(m.userEmail||'—')+'</td>',
+      user:     '<td class="mc-user">'+_userCellHtml(m.userEmail)+'</td>',
       doc:      '<td class="mc-doc" style="min-width:44px"><div style="display:flex;align-items:center;gap:3px">'+docBtn+attachBtn+'</div></td>'
     };
 
@@ -5985,7 +6555,12 @@ function renderMovements(){
     // because it has NOT been deleted yet — dimming it is the truth, and it
     // stops the same bin being pressed twice.
     var pendCls = (m.movId && _delPending[m.movId]) ? ' row-deleting' : '';
-    return '<tr class="'+rowClass(m.moveType)+pendCls+'">' + selCell + body + adminCell + '</tr>';
+    // data-mov: para poder encontrar ESTA fila y animar su salida sin repintar
+    // la tabla. Va el movId y no el rowIdx a propósito — el rowIdx se mueve
+    // cuando alguien borra una fila de más arriba, y animaríamos la equivocada.
+    return '<tr class="'+rowClass(m.moveType)+pendCls+'"' +
+           (m.movId ? ' data-mov="'+_escAttr(m.movId)+'"' : '') + '>' +
+           selCell + body + adminCell + '</tr>';
   }).join('');
 
   var span = _visibleColCount('mov') + (isAdmin ? 2 : 0);   // casilla + acciones
@@ -6264,7 +6839,31 @@ function _doDeleteMovementRow(rowIdx){
   // Pulsar dos veces la misma papelera no encola dos borrados. El segundo
   // recibiría "ya lo borró jose@…", que es verdad y no ayuda a nadie.
   if (mov.movId && _delPending[mov.movId]) return;
-  if (mov.movId) { _delPending[mov.movId] = true; renderAll(); }
+  if (mov.movId) _delPending[mov.movId] = true;
+
+  /* LA FILA SE VA AL PULSAR, NO CUANDO EL SERVIDOR CONTESTA.
+   *
+   * Jose: "cuando elimino lo que sea que elimine, debe moverse y desaparecer
+   * con la animación en el mismo segundo que el toast."
+   *
+   * Y medido el 2026-09-11 en su hoja, ese segundo son CUATRO: cada borrado
+   * hace que el servidor reconstruya los totales del almacén desde el archivo
+   * entero. Eso no se arregla animando — se arregla no haciendo esperar mirando.
+   *
+   * Se guarda DÓNDE estaba, no sólo que estaba: si el servidor dice que no, la
+   * fila vuelve a su sitio, no al final de la lista. Volver al final sería
+   * decirle a alguien que su movimiento es el más reciente cuando es de hace un
+   * mes.
+   *
+   * El repintado va DENTRO del callback, nunca antes: repintar la tabla borra
+   * la fila que se está animando y no se ve nada (la lección de la v11.66).
+   */
+  var donde = movements.indexOf(mov);
+  _rowLeave(_movRowEl(mov), function(){
+    var at = movements.indexOf(mov);
+    if (at !== -1) movements.splice(at, 1);
+    renderAll();
+  });
 
   _delEnqueue(function(done){
     var state = { tries: 0 };
@@ -6273,15 +6872,15 @@ function _doDeleteMovementRow(rowIdx){
       google.script.run
         .withSuccessHandler(function(){
           if (mov.movId) delete _delPending[mov.movId];
-          // AL INSTANTE. El servidor YA lo hizo — este manejador es el de
-          // ÉXITO — así que esperar a que una recarga entera nos lo repita es
-          // hacer esperar a alguien por algo que ya se sabe. Jose: "el
-          // feedback visual no debe demorar nunca". Y es seguro desde la
-          // v11.53: quitar una fila ya no desplaza los números de las demás,
-          // porque nada se identifica por su número.
+          // La fila ya se fue al pulsar, hace unos cuatro segundos. Esto es el
+          // seguro por si la animación no llegó a correr —pestaña en segundo
+          // plano, movimiento reducido, una fila que no estaba pintada— y
+          // entonces sí hay que quitarla de la lista aquí.
+          //
+          // Es seguro desde la v11.53: quitar una fila ya no desplaza los
+          // números de las demás, porque nada se identifica por su número.
           var at = movements.indexOf(mov);
-          if (at !== -1) movements.splice(at, 1);
-          renderAll();
+          if (at !== -1) { movements.splice(at, 1); renderAll(); }
           _sysCacheDrop('trash');
           showToast('Movement deleted. It is in the trash.', 'ok');
           done();
@@ -6299,11 +6898,36 @@ function _doDeleteMovementRow(rowIdx){
             setTimeout(attempt, _busyDelay(state.tries));
             return;
           }
-          if (mov.movId) { delete _delPending[mov.movId]; renderAll(); }
+          if (mov.movId) delete _delPending[mov.movId];
+
+          /* LA VUELTA ATRÁS, Y EL "NO" QUE NO LA MERECE.
+             La fila se fue al pulsar dando por hecho que el servidor diría que
+             sí. Si dice que no, vuelve — Y A SU SITIO, no al final: ponerla al
+             final sería decirle a alguien que su movimiento es el más reciente
+             cuando es de hace un mes.
+
+             PERO HAY DOS NOES QUE SIGNIFICAN LO CONTRARIO: "ya lo borró otro" y
+             "ese movimiento ya no está ahí". Devolver la fila ahí sería peor
+             que no haberla quitado nunca — enseñaría un movimiento que ya no
+             existe. El servidor los marca con GONE| desde la v11.75, y avisó de
+             esto la prueba de la papelera, con estas palabras: "un 'ya lo borró
+             otro' dejaría la fila desaparecida en una cuenta y presente en la
+             otra". */
+          var siguePuesto = !_isGoneError(err);
+          if (siguePuesto && movements.indexOf(mov) === -1){
+            movements.splice(Math.max(0, Math.min(donde, movements.length)), 0, mov);
+          } else if (!siguePuesto){
+            // No está: si la animación no llegó a correr, se quita aquí.
+            var yaAt = movements.indexOf(mov);
+            if (yaAt !== -1) movements.splice(yaAt, 1);
+            _sysCacheDrop('trash');
+          }
+          renderAll();
           showToast(_isBusyError(err)
             ? ('The system stayed busy through ' + (BUSY_MAX_RETRIES + 1) +
-               ' tries. Nothing was deleted — try that one again in a moment.')
-            : _stripTags(err), 'err', 8000);
+               ' tries. Nothing was deleted — the row is back where it was.')
+            : (_stripTags(err) + (siguePuesto ? ' — the row is back where it was.' : '')),
+            'err', 8000);
           done();
         })
         .processMovement('manageMaterial', _h({
@@ -6382,7 +7006,7 @@ function renderProjectView(){
         s.history.map(function(h){ return '• '+_he(h.date)+': <span style="color:'+(h.isOut?'var(--red)':'var(--green)')+'">'+
           (h.isOut?'−':'+')+h.qty+'</span> @ '+_he(h.loc)+(h.comment?' — '+_he(h.comment):''); }).join('<br>')+
         '</div><div><strong>Last location:</strong> '+_he(s.history[s.history.length-1].loc)+'<br>'+
-        '<strong>Last user:</strong> '+_he(s.history[s.history.length-1].user)+'</div>'+
+        '<strong>Last user:</strong> '+_he(_personLabel(s.history[s.history.length-1].user))+'</div>'+
       '</div></td></tr>';
   }).join('');
 
@@ -6771,6 +7395,7 @@ function openMoveModal(type){
   // cualquiera, el id viejo borraría una tarjeta que sigue haciendo falta.
   // _entryFromIncoming lo vuelve a poner después de llamar aquí.
   _entryTodoId = null;
+  _entryFromIncId = null;
   _syncMoveTypeBarForRdw();
 
   // Reset form
@@ -7301,6 +7926,19 @@ function _isBusyError(err){
   return msg.indexOf('SYSTEM_BUSY|') !== -1;
 }
 
+/* ¿El servidor dice que eso YA NO ESTÁ?
+ *
+ * La diferencia con cualquier otro "no" es qué hacer con la fila que se quitó
+ * de la pantalla al pulsar: con un "estoy ocupado" o un "no tienes permiso" no
+ * se borró nada y la fila VUELVE; con un "ya lo borró otro" la fila NO vuelve,
+ * porque devolverla enseñaría un movimiento que ya no existe — y lo enseñaría
+ * en la pantalla que acaba de dar a entender que sí. Ver GONE_PREFIX en
+ * Code.gs. */
+function _isGoneError(err){
+  var msg = (err && err.message) ? err.message : String(err || '');
+  return msg.indexOf('GONE|') !== -1;
+}
+
 /** El texto legible, sin la marca — para cuando hay que enseñarlo de verdad. */
 function _busyText(err){
   var msg = (err && err.message) ? err.message : String(err || '');
@@ -7346,7 +7984,10 @@ function _stripTags(err){
   var msg = (err && err.message) ? err.message : String(err || '');
   var i = msg.indexOf(SHORT_PREFIX);
   if (i !== -1) msg = msg.slice(0, i);
-  return msg.replace('SYSTEM_BUSY|', '').replace(/^Error:\s*/i, '').trim();
+  // Las marcas se quitan TODAS aquí. Una marca que se cuela en un toast es la
+  // app enseñándole al usuario su propio cableado.
+  return msg.replace('SYSTEM_BUSY|', '').replace('GONE|', '')
+            .replace(/^Error:\s*/i, '').trim();
 }
 
 /**
@@ -9124,6 +9765,13 @@ function submitMultiExit(){
     google.script.run
       .withSuccessHandler(function(res){
         _setModalBusy('moveOverlay', false);
+        // Una salida NO salda una entrada pendiente, y _entryTodoResolve lo
+        // sabe: con 'EXIT' suelta el id y deja la tarjeta donde estaba. Se
+        // llama igual para que los tres caminos de guardado dejen el mismo
+        // rastro —ninguno se va con un id de tarjeta colgando— en vez de que
+        // uno lo limpie y los otros dos dependan de que la próxima apertura
+        // del formulario lo haga por ellos.
+        _entryTodoResolve('EXIT');
         closeModal('moveOverlay');
         if (res && res.refreshError) {
           showToast('✓ '+res.rowCount+' movement record(s) saved — but ⚠ '+res.refreshError, 'warn', 12000);
@@ -9293,6 +9941,24 @@ function submitMultiEntry(){
     google.script.run
       .withSuccessHandler(function(res){
         _setModalBusy('moveOverlay', false);
+        // La entrada existe. Si este formulario venía de una tarjeta de "llegó
+        // y falta su entrada", queda saldada aquí.
+        //
+        // ESTA LÍNEA FALTABA HASTA LA v11.70 y es la que Jose vio fallar. La
+        // tarjeta seguía ahí después de guardar, y con ella su botón "Make the
+        // entry", que volvía a abrir el formulario relleno con lo mismo:
+        // guardar otra vez creaba el mismo movimiento otra vez, y otra, sin
+        // límite. La llamada SÍ estaba escrita —en submitMovement, en el
+        // camino de TRANSFER/RETURN/WASTE/ADJUST— pero ENTRY sale de
+        // submitMovement en su primera línea y nunca llegaba hasta ella: lo
+        // escrito para un camino no estaba conectado a los otros. Es el mismo
+        // fallo que este archivo ya avisa dos veces por su nombre:
+        // "addMultiEntry never got it wired up".
+        _entryTodoResolve('ENTRY');
+        // De qué entrega venía ESTE formulario, leído antes de que la próxima
+        // apertura lo borre. Se usa sólo para no ofrecer marcar la que ya se
+        // marcó — ver _entryFromIncId.
+        var deLaEntrega = _entryFromIncId;
         closeModal('moveOverlay');
         loadDataFromGoogle(false); // cached numbers show instantly, fresh ones catch up quietly
         setTimeout(function(){
@@ -9308,6 +9974,18 @@ function submitMultiEntry(){
           } else {
             showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' + (rows===1?'':'s') + ')', 'ok', 5000);
           }
+          /* DOS COSAS DESPUÉS DE GUARDAR, Y EN ESTE ORDEN.
+             Las dos van al final y no antes: los movimientos ya están
+             guardados. Preguntar por entregas —o imprimir una etiqueta— de algo
+             que todavía podía fallar sería peor que no preguntar.
+             LAS ETIQUETAS PRIMERO, porque son la parte física: quien acaba de
+             registrar un camión tiene los bultos delante y necesita pegarles
+             algo AHORA. Lo de las entregas es papeleo y aguanta treinta
+             segundos. Y encadenadas, no las dos a la vez: dos ventanas
+             apiladas es el error que costó la v11.29. */
+          _openLabels(_labelsFromEntry(materials, payload), function(){
+            _offerAlsoArrived(materials, dateRec, po, deLaEntrega);
+          });
         }, 400);
       })
       .withFailureHandler(function(err){
@@ -10134,7 +10812,10 @@ function _paintTrash(items){
     '<div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px">' +
       items.map(function(it){
         var where = it.destLoc || it.srcLoc || '';
-        return '<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem .65rem;border-bottom:1px solid var(--border)">' +
+        // data-trash: para encontrar ESTA fila y animar su salida sin repintar
+        // la lista entera. Ver _trashDrop.
+        return '<div data-trash="' + _escAttr(it.movId) + '" ' +
+               'style="display:flex;align-items:center;gap:.6rem;padding:.5rem .65rem;border-bottom:1px solid var(--border)">' +
           '<div style="flex:1;min-width:0">' +
             '<div style="font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
               _he(it.name) + ' <span style="font-weight:400;color:var(--muted)">· ' +
@@ -10242,9 +10923,17 @@ function _restoreMovement(btn){
 function _trashDrop(movId){
   var items = _sysCacheGet('trash');
   if (!items) { _sysCacheDrop('trash'); _loadTrash(); return; }
-  items = items.filter(function(it){ return it.movId !== movId; });
-  _sysCachePut('trash', items);
-  _paintTrash(items);
+  // La fila se encoge y se va, y SÓLO DESPUÉS se repinta la lista. Al revés
+  // —repintar y luego animar— no se ve nada, porque el repintado se lleva por
+  // delante el elemento que se estaba animando. Es la misma trampa de la v11.66.
+  var fila = null;
+  try { fila = document.querySelector('#trashBox [data-trash="' + _escAttr(movId) + '"]'); }
+  catch (e) {}
+  _rowLeave(fila, function(){
+    var quedan = items.filter(function(it){ return it.movId !== movId; });
+    _sysCachePut('trash', quedan);
+    _paintTrash(quedan);
+  });
 }
 
 /* ── Giving every existing movement a name ──────────────────────────────────
@@ -12791,11 +13480,14 @@ function _tipNode(){
  *
  * Se mide la burbuja DE VERDAD en vez de dar por hecho un ancho máximo de 240,
  * que es lo que hacía el anterior. Un texto corto ocupa 120 y se le empujaba
- * como si ocupara 240, así que se descentraba sin necesidad. */
-function _tipPlace(anchor){
-  var t = _tipNode();
+ * como si ocupara 240, así que se descentraba sin necesidad.
+ *
+ * Vale para cualquier cosa que flote pegada a algo: la burbuja de ayuda y la
+ * ficha de una persona usan ESTA función, no dos copias parecidas. La segunda
+ * copia es como la primera se queda sin el tercer caso. */
+function _floatPlace(nodo, anchor){
   var a = anchor.getBoundingClientRect();
-  var b = t.getBoundingClientRect();
+  var b = nodo.getBoundingClientRect();
   var M = TIP_EDGE_MARGIN;
 
   var left = a.left + a.width / 2 - b.width / 2;
@@ -12808,9 +13500,11 @@ function _tipPlace(anchor){
   else if (encima >= M)                                 top = encima;
   else top = Math.max(M, Math.min(debajo, window.innerHeight - M - b.height));
 
-  t.style.left = Math.round(left) + 'px';
-  t.style.top  = Math.round(top)  + 'px';
+  nodo.style.left = Math.round(left) + 'px';
+  nodo.style.top  = Math.round(top)  + 'px';
 }
+
+function _tipPlace(anchor){ _floatPlace(_tipNode(), anchor); }
 
 function _tipShow(el){
   var txt = el.getAttribute('data-tip');
@@ -12887,6 +13581,112 @@ window.addEventListener('resize', _tipFollow);
 // encima de ella.
 document.addEventListener('click', _tipHide, true);
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _tipHide(); });
+
+/* ═══ LA FICHA DE UNA PERSONA ═══════════════════════════════════════════════
+ *
+ * Jose: "al hacer hover aparezcan las opciones de enviar email o llamar por
+ * Google Meet."
+ *
+ * NO ES UN TOOLTIP, y no puede serlo: un tooltip lleva texto y se va en cuanto
+ * el ratón lo roza, y aquí hay BOTONES que hay que poder pulsar. Así que vive
+ * en su propio nodo, se queda mientras el ratón esté encima de ella o de su
+ * ancla, y sólo se va tras una pausa corta al salir de las dos. Esa pausa es
+ * toda la diferencia entre una ficha usable y una que se escapa por el hueco
+ * entre el nombre y el botón.
+ *
+ * Cuelga de <body> por el mismo motivo que la burbuja: un `transform` en
+ * cualquier antepasado convierte a un position:fixed en hijo de ESE elemento, y
+ * es lo que dejaba todas las ayudas 225px más abajo hasta la v11.65.
+ *
+ * SOBRE "LLAMAR POR MEET": Google no publica ninguna dirección que llame a una
+ * persona por su correo. Lo que sí existe y está documentado es meet.new, que
+ * abre una reunión al instante para pasarle el enlace, y el formulario de
+ * Calendar con esa persona ya invitada. Están los dos, con su nombre de verdad
+ * —"Meet" y "Schedule"— en vez de un botón que prometa un timbre que no suena.
+ */
+var PERSON_GRACE_MS = 220;
+var _personEl = null, _personFor = null, _personTimer = null;
+
+function _personNode(){
+  if (!_personEl){
+    _personEl = document.createElement('div');
+    _personEl.id = 'acPerson';
+    _personEl.addEventListener('mouseenter', function(){
+      if (_personTimer){ clearTimeout(_personTimer); _personTimer = null; }
+    });
+    _personEl.addEventListener('mouseleave', _personSoftHide);
+    document.body.appendChild(_personEl);
+  }
+  return _personEl;
+}
+
+function _personShow(el){
+  var mail = el.getAttribute('data-person') || '';
+  if (!mail) return;
+  if (_personTimer){ clearTimeout(_personTimer); _personTimer = null; }
+  var p = _personNode();
+  var nombre = _personName(mail);
+  var asunto = encodeURIComponent('Acopio — ' + (_companyName || 'warehouse'));
+  // innerHTML con TODO escapado a mano: el nombre y el correo salen de una hoja
+  // que edita una persona.
+  p.innerHTML =
+    (nombre ? '<div class="ap-name">' + _he(nombre) + '</div>' : '') +
+    '<div class="ap-mail">' + _he(mail) + '</div>' +
+    '<div class="ap-acts">' +
+      '<a class="ap-btn" href="mailto:' + _escAttr(mail) + '?subject=' + asunto + '">✉ Email</a>' +
+      '<a class="ap-btn" href="https://meet.new" target="_blank" rel="noopener noreferrer" ' +
+         'title="Opens a new Google Meet — send them the link">📹 Meet</a>' +
+      '<a class="ap-btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;add=' +
+         encodeURIComponent(mail) + '" target="_blank" rel="noopener noreferrer" ' +
+         'title="New Google Calendar event with them already invited">📅 Schedule</a>' +
+    '</div>';
+  _personFor = el;
+  p.classList.add('ready');
+  _floatPlace(p, el);
+  p.classList.add('show');
+}
+
+/* Con pausa: el ratón tiene que poder cruzar el hueco entre el nombre y la
+ * ficha sin que se cierre por el camino. */
+function _personSoftHide(){
+  if (_personTimer) clearTimeout(_personTimer);
+  _personTimer = setTimeout(_personHide, PERSON_GRACE_MS);
+}
+
+function _personHide(){
+  if (_personTimer){ clearTimeout(_personTimer); _personTimer = null; }
+  _personFor = null;
+  if (_personEl) _personEl.classList.remove('show', 'ready');
+}
+
+document.addEventListener('mouseover', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.mc-who');
+  if (el){ _personShow(el); return; }
+  // Salir del ancla no cierra de golpe: puede que vaya camino de la ficha.
+  if (_personFor && !(e.target.closest && e.target.closest('#acPerson'))) _personSoftHide();
+}, true);
+document.addEventListener('focusin', function(e){
+  var el = e.target && e.target.closest && e.target.closest('.mc-who');
+  if (el) _personShow(el);
+});
+// Sigue a su fila igual que la burbuja, y se va si la fila sale de la ventana.
+function _personFollow(){
+  if (!_personFor || !_personEl) return;
+  var r = _personFor.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth){
+    _personHide(); return;
+  }
+  _floatPlace(_personEl, _personFor);
+}
+window.addEventListener('scroll', _personFollow, true);
+window.addEventListener('resize', _personFollow);
+// Un clic DENTRO de la ficha es uno de sus botones y tiene que llegar; sólo se
+// cierra por lo de fuera.
+document.addEventListener('click', function(e){
+  if (e.target && e.target.closest && e.target.closest('#acPerson')) return;
+  _personHide();
+}, true);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _personHide(); });
 
 // ── Event delegation ──────────────────────────────────────────────────────────
 // Buttons inside dynamically-rendered lists carry  data-action + data-* payload
@@ -14129,7 +14929,38 @@ function _syncCfgBell(){
       '</div></div>';
   }).join('');
 
-  list.innerHTML = cfgRows + sysRows;    // questions first, reports after
+  /* LAS TARJETAS NARANJAS ESTABAN EN EL NÚMERO Y NO EN LA LISTA.
+   *
+   * Jose, 2026-09-11, con captura: la campana decía 3 y al abrirla se veían 2.
+   * El contador de arriba suma _todoDeckTotal; el panel se armaba con
+   * `cfgRows + sysRows` y nada más. Y el comentario de ahí arriba prometía "The
+   * panel lists ALL of them" — otro que decía lo que el código no hacía.
+   *
+   * Van PRIMERAS, antes incluso que las sugerencias: una entrega que llegó y no
+   * tiene entrada es material en el almacén del que las cantidades no saben
+   * nada. Es lo más urgente que puede haber en esa lista.
+   *
+   * Llevan los mismos dos botones que la tarjeta del mazo, con los mismos
+   * data-todo-do / data-todo-x — pero HAY QUE ENGANCHARLOS AQUÍ. Los del mazo
+   * se atan con `deck.querySelectorAll(...)`, o sea dentro del mazo y sólo ahí;
+   * dar por hecho que el mismo atributo trae el mismo comportamiento habría
+   * dejado dos botones que no hacen nada, que es peor que no ponerlos. */
+  _todoLoad();
+  var todoRows = _todoItems.map(function(t){
+    var qty = t.qty > 0 ? (_qtyText(t.qty) + ' ' + (t.unit || 'UNIT')) : 'qty not stated';
+    return '<div class="cfg-bell-row">' +
+      '<div class="cfg-card-lbl" style="color:var(--orange)">Arrived · entry not made</div>' +
+      '<div class="cfg-card-val" title="' + _he(t.name) + '">' + _he(t.name) + '</div>' +
+      '<div style="font-size:.72rem;color:var(--muted);margin-bottom:.4rem">' +
+        _he(qty) + (t.supplier ? ' · ' + _he(t.supplier) : '') +
+        ' · ' + _he(_fmtWhen(t.at)) + '</div>' +
+      '<div class="cfg-card-acts">' +
+        '<button type="button" class="cfg-card-add" data-todo-do="' + _he(t.id) + '">Make the entry</button>' +
+        '<button type="button" class="cfg-card-skip" data-todo-x="' + _he(t.id) + '">Later</button>' +
+      '</div></div>';
+  }).join('');
+
+  list.innerHTML = todoRows + cfgRows + sysRows;   // lo urgente, lo que pregunta, lo que informa
   list.querySelectorAll('button[data-act]').forEach(function(b){
     b.addEventListener('click', function(e){
       e.stopPropagation();
@@ -14140,6 +14971,24 @@ function _syncCfgBell(){
     b.addEventListener('click', function(e){
       e.stopPropagation();
       _dismissSysCard(b.getAttribute('data-sys-x'));
+    });
+  });
+  // Los de las naranjas, atados al PANEL. Ver el comentario de arriba: los del
+  // mazo están atados al mazo y no alcanzan hasta aquí.
+  list.querySelectorAll('button[data-todo-x]').forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      _todoDrop(b.getAttribute('data-todo-x'));
+    });
+  });
+  list.querySelectorAll('button[data-todo-do]').forEach(function(b){
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      // Abrir el formulario deja el panel por detrás; cerrarlo es lo que hace
+      // la tarjeta del mazo y es lo que espera quien pulsa.
+      var panel = document.getElementById('cfgBellPanel');
+      if (panel) panel.classList.remove('show');
+      _todoDo(b.getAttribute('data-todo-do'));
     });
   });
 }
@@ -15326,6 +16175,25 @@ function renderAll(){
     _TAB_RENDERS[tab]();
     _dirtyTabs[tab] = false;
   }
+  /* EL POPUP DE LA MAÑANA NO ES DE NINGUNA PESTAÑA, así que su refresco no
+   * puede colgar de una.
+   *
+   * Jose, 2026-09-11, con captura: marcó una entrega como llegada desde el
+   * popup, registró su entrada, y el popup siguió enseñándola como Pending con
+   * su botón "Mark arrived" — "tuve que cerrar la ventana y volverla a abrir
+   * para que cambie".
+   *
+   * La causa está tres líneas más arriba: renderAll repinta SÓLO LA PESTAÑA
+   * ACTIVA, y la llamada a _refreshMorningPopup vivía dentro de renderIncoming.
+   * Jose estaba en Movements & History, así que renderIncoming no corría y el
+   * popup no se enteraba de nada. Funcionaba únicamente si la pestaña de
+   * Incoming resultaba ser la de delante — que es la que menos falta hace,
+   * porque ahí los datos ya se ven.
+   *
+   * Aquí sí: renderAll es "los datos cambiaron, repinta". Y es gratis cuando el
+   * popup está cerrado, que es casi siempre — la primera línea de
+   * _refreshMorningPopup se va si el overlay no está abierto. */
+  _refreshMorningPopup();
 }
 
 // ── Stock Detail Panel ────────────────────────────────────────────────────────
@@ -15621,9 +16489,6 @@ function saveMonitorSettings() {
 function renderIncoming() {
   renderIncomingWeekGrid();
   renderIncomingTable();
-  // If the week popup is open behind an edit window, it is looking at the data
-  // that just changed. A no-op when it is closed.
-  _refreshMorningPopup();
 }
 
 function renderIncomingWeekGrid() {
@@ -15900,6 +16765,7 @@ function _entryFromIncoming(item, todoId){
   // este formulario, para poder borrarla si la entrada llega a guardarse — y
   // sólo entonces.
   _entryTodoId = todoId || null;
+  _entryFromIncId = item.id || null;
 
   var set = function(id, v){
     var e = document.getElementById(id);
@@ -16086,6 +16952,10 @@ function _incItemHtml(item, opts){
         '<div class="inc-item-side">' +
           '<div class="inc-item-qty">' + _he(_incQtyText(item)) + '</div>' +
           '<div><span class="inc-status-' + String(status).toLowerCase() + '">' + _he(status) + '</span></div>' +
+          // Dónde se puso. Va SÓLO si consta que la entrada existe; ver
+          // _incEntryWhere, que devuelve '' cuando no la encuentra. Quien
+          // llama decide si preguntar — la pestaña de Incoming no lo hace.
+          (opts.where ? '<div class="inc-item-where">' + _he(opts.where) + '</div>' : '') +
           (canMark
             ? '<div><button class="morning-arrived" data-action="morning-arrived" data-id="' + _escAttr(item.id) + '">Mark arrived →</button></div>'
             : '') +
@@ -16548,6 +17418,170 @@ function _incStillPending(item){
   return st !== 'arrived' && st !== 'cancelled' && st !== 'received';
 }
 
+/* Lo que YA llegó hoy — lo contrario exacto de _thisWeeksDeliveries.
+ *
+ * Jose, con la captura del popup: "dice nada llegando hoy, pero la cosa es que
+ * yo ya recibí 3 materiales hoy que sí estaban en la lista, entonces nada
+ * llegando hoy no es correcto."
+ *
+ * Tenía razón y la causa era de una línea: _thisWeeksDeliveries filtra con
+ * _incStillPending, así que una entrega marcada como llegada no se ordena más
+ * abajo — DESAPARECE. La frase "nothing arriving today" se calculaba sobre una
+ * lista de la que ya se habían quitado justo las tres cosas que sí llegaron.
+ *
+ * La lista de pendientes se queda como está: es la que decide si el popup se
+ * abre y cuándo se cierra, y "lo que queda por hacer" es la pregunta correcta
+ * para eso. Lo que faltaba era la otra mitad, y se pregunta aparte.
+ */
+function _weekBounds(todayStr){
+  var hoy = new Date(todayStr + 'T12:00:00');
+  var ini = new Date(hoy); ini.setDate(hoy.getDate() - hoy.getDay());        // domingo
+  var fin = new Date(hoy); fin.setDate(hoy.getDate() + (6 - hoy.getDay()));  // sábado
+  return { desde: _isoDate(ini), hasta: _isoDate(fin) };
+}
+
+/* ¿Esta entrega cae en algún punto de esta semana? Una ventana cuenta si la
+ * TOCA, no sólo si empieza dentro. */
+function _incInWeek(item, todayStr){
+  if (!item || !item.estDate) return false;
+  var s = _weekBounds(todayStr);
+  var from = item.estDate;
+  var to   = (item.dateMode === 'window' && item.estDateEnd) ? item.estDateEnd : item.estDate;
+  return to >= s.desde && from <= s.hasta;
+}
+
+/* Lo que YA llegó esta semana.
+ *
+ * Jose, cuando le pregunté si el hueco sin locación debía llevar una marca:
+ * "cuando dije no se ve nada, hablaba de la LOCACIÓN; todo material que se
+ * espera o se recibe debe verse en la ventana."
+ *
+ * Con eso, mirar sólo el día de hoy no alcanzaba: una entrega que llegó el
+ * lunes y sigue sin su entrada desaparecía de la ventana el martes — no está
+ * entre lo pendiente, porque ya llegó, ni entre lo de hoy, porque no es de hoy.
+ * Justo la que más falta hace ver.
+ *
+ * Las de hoy van primero y sin fecha encima; las de antes, con su día. La
+ * lista de pendientes se queda como está: es la que decide si la ventana se
+ * abre y cuándo se cierra, y para eso "lo que queda por hacer" sigue siendo la
+ * pregunta correcta.
+ */
+function _weekArrivals(todayStr){
+  var llegadas = incoming.filter(function(item){
+    if (!_incInWeek(item, todayStr)) return false;
+    return String((item && item.status) || '').toLowerCase().trim() === 'arrived';
+  });
+  return llegadas.sort(function(a, b){
+    var ha = _incOnDay(a, todayStr) ? 1 : 0, hb = _incOnDay(b, todayStr) ? 1 : 0;
+    if (ha !== hb) return hb - ha;                       // hoy arriba
+    return String(b.estDate || '').localeCompare(String(a.estDate || ''));
+  });
+}
+
+/* Lo que se esperaba antes de hoy y sigue sin marcar.
+ *
+ * _thisWeeksDeliveries pregunta por "lo que QUEDA de la semana" (`to >=
+ * todayStr`), así que una entrega del lunes que nadie tocó también se caía de
+ * la ventana el martes. Se esperaba, o sea que por la regla de Jose tiene que
+ * verse — y es de las pocas cosas que una ventana de la mañana existe para
+ * enseñar: lo que debía haber llegado y no consta que llegara.
+ *
+ * Se muestra pero NO cuenta para cerrar la ventana. Si contara, una fila vieja
+ * que nadie limpia dejaría la ventana abierta para siempre, y la regla de
+ * cierre es de Jose: se cierra cuando no queda nada por atender de lo que viene.
+ */
+function _overdueThisWeek(todayStr){
+  var s = _weekBounds(todayStr);
+  return incoming.filter(function(item){
+    if (!_incStillPending(item)) return false;
+    if (!item.estDate) return false;
+    var to = (item.dateMode === 'window' && item.estDateEnd) ? item.estDateEnd : item.estDate;
+    return to < todayStr && to >= s.desde;
+  }).sort(function(a, b){ return String(a.estDate || '').localeCompare(String(b.estDate || '')); });
+}
+
+/* ¿Dónde se puso lo que llegó? Sólo si consta; si no, nada.
+ *
+ * Jose: "cuando se haga el entry se muestra la locación en donde se los puso,
+ * si no se hizo el entry no se muestra nada."
+ *
+ * NO HAY UN HILO ENTRE LA ENTREGA Y EL MOVIMIENTO. La entrega vive en INCOMING
+ * y el movimiento en el archivo, y nada guarda el id de una en la otra: la
+ * pantalla de entrada se rellena con los datos de la entrega, pero lo que se
+ * guarda es un movimiento suelto, igual que si se hubiera tecleado a mano. Así
+ * que esto EMPAREJA, y emparejar es adivinar.
+ *
+ * Por eso las dos reglas van de estrictas a menos, y ninguna se estira:
+ *
+ *   1. MISMO PO. Si la entrega trae PO y hay una entrada del mismo material
+ *      con el mismo PO fechada desde el día que se esperaba en adelante, eso no
+ *      es un parecido: es la misma compra. Vale aunque la entrada esté fechada
+ *      otro día, que es lo normal cuando se registra al día siguiente.
+ *   2. SU DÍA. Sin PO, sólo cuenta una entrada del mismo material fechada EL
+ *      DÍA DE LA ENTREGA —o dentro de su ventana, si la tiene—, que es lo que
+ *      _incOnDay contesta. No "hoy": desde la v11.72 la ventana enseña también
+ *      lo que llegó antes en la semana, y comparar con hoy dejaría a todas esas
+ *      sin locación por el mero hecho de no ser de hoy.
+ *
+ * Y la ventana se deja corta A PROPÓSITO. Los dos errores posibles no cuestan
+ * lo mismo: enseñar un estante equivocado APAGA la alarma —da por registrado
+ * algo que no lo está, que es exactamente el hueco por donde se pierde
+ * inventario— mientras que no enseñar ninguno cuando sí se registró sólo
+ * molesta. Ante la duda, callar.
+ */
+/* ¿ESTE MOVIMIENTO ES EL DE ESTA ENTREGA? UNA REGLA, DOS USOS.
+ *
+ * Se usa para dos preguntas que parecen distintas y son la misma:
+ *
+ *   _incEntryWhere — "¿dónde se puso lo que llegó?", mirando los movimientos
+ *   ya guardados;
+ *   _alsoArrivedCandidates — "¿qué otras entregas acabas de recibir?", mirando
+ *   los materiales de la entrada que se acaba de guardar.
+ *
+ * Escribirla dos veces habría sido garantizar que un día una de las dos se
+ * ajusta y la otra no, y entonces la app diría "está en A-3" de una entrega que
+ * al mismo tiempo se ofrece a marcar como llegada.
+ *
+ * Las dos reglas, de estricta a menos: MISMO PO desde el día esperado en
+ * adelante (eso no es un parecido, es la misma compra), o SU DÍA — el de la
+ * entrega, o dentro de su ventana. Corta a propósito: los dos errores posibles
+ * no cuestan lo mismo, y aquí el caro es dar por recibida una entrega que sigue
+ * en la carretera.
+ */
+function _incMatchesMove(item, m){
+  if (!item || !m || m.moveType !== 'ENTRY') return false;
+  var nombre = nt(item.name);
+  if (!nombre || nt(m.name) !== nombre) return false;
+  // La categoría sólo descarta cuando las DOS la tienen: una entrega vieja sin
+  // categoría no puede desmentir a una entrada que sí la trae.
+  var cat = nt(item.category);
+  if (cat && nt(m.category) && nt(m.category) !== cat) return false;
+  var f = String(m.dateRec || '');
+  if (!f) return false;
+  var po = String(item.po || '').trim().toUpperCase();
+  if (po && String(m.po || '').trim().toUpperCase() === po) return f >= (item.estDate || f);
+  return _incOnDay(item, f);
+}
+
+function _incEntryWhere(item){
+  if (!item || !Array.isArray(movements)) return '';
+  var suyas = movements.filter(function(m){ return _incMatchesMove(item, m); });
+  if (!suyas.length) return '';
+
+  // Un mismo ingreso puede haber ido a varios estantes: son varias filas del
+  // archivo y hay que decirlos todos, o el número de una de ellas queda sin
+  // sitio a la vista.
+  var estantes = [];
+  suyas.forEach(function(m){
+    var d = String(m.destLoc || '').trim();
+    if (d && estantes.indexOf(d) === -1) estantes.push(d);
+  });
+  // Una entrada sin estante existe —el archivo la admite— y lo que importa
+  // decir entonces es que la entrada está hecha, no dónde.
+  if (!estantes.length) return 'Entry made';
+  return '→ ' + estantes.join(', ');
+}
+
 function _thisWeeksDeliveries(todayStr){
   var today     = new Date(todayStr + 'T12:00:00');
   var endOfWeek = new Date(today);
@@ -16567,10 +17601,330 @@ function _thisWeeksDeliveries(todayStr){
 // The way back in. Until now the popup appeared once per page load and, once
 // closed, could only be brought back by reloading the whole app — which is
 // exactly what Jose ran into after marking the first delivery of the morning.
+/* ═══ ETIQUETAS DE 4"×6" ════════════════════════════════════════════════════
+ *
+ * Jose, 2026-09-11, cuando le pregunté qué era lo que más falta le hacía: "lo
+ * que me gustaría es pasarnos a la de crear e imprimir los labels al hacer los
+ * entries. Esa es la que me hace falta por ahora."
+ *
+ * Impresora Jadens JD-268BT, térmica, papel de 4"×6" (101.6 × 152.4 mm). En la
+ * etiqueta van cuatro cosas que él nombró —material, cantidad, locación y PO— y
+ * un hueco reservado para el QR o el código de barras.
+ *
+ * UNA ETIQUETA POR ESTANTE, NO POR MATERIAL. Si 44 unidades se repartieron
+ * entre C2A y B4A, son dos bultos en dos sitios y cada uno necesita la suya,
+ * con SU cantidad. Una etiqueta que dijera "44 · C2A, B4A" estaría mintiendo en
+ * los dos estantes a la vez.
+ */
+var _labelRows = [];      // lo que se está ofreciendo imprimir ahora mismo
+var _labelAfter = null;   // lo que hay que hacer al cerrar (ver submitMultiEntry)
+
+/** Las filas imprimibles de una entrada: una por (material × estante). */
+function _labelsFromEntry(materiales, compartido){
+  var out = [];
+  (materiales || []).forEach(function(mat){
+    (mat.locations || []).forEach(function(l){
+      if (!l || !(l.qty > 0)) return;
+      out.push({
+        name:     mat.name || '',
+        category: mat.category || compartido.category || '',
+        qty:      l.qty,
+        unit:     mat.unit || 'UNIT',
+        loc:      l.loc || '',
+        po:       mat.po       || compartido.po       || '',
+        supplier: mat.supplier || compartido.supplier || '',
+        project:  mat.project  || compartido.project  || '',
+        dateRec:  compartido.dateRec || '',
+        copies:   1       // Jose: "1 debe ser el default"
+      });
+    });
+  });
+  return out;
+}
+
+/** Una etiqueta, en HTML. La misma para la vista previa y para el papel: una
+ *  vista previa que se dibuja aparte es una vista previa de otra cosa. */
+function _labelHtml(r){
+  // Un bulto sin estante existe —el formulario lo admite— y la etiqueta tiene
+  // que decirlo en vez de dejar el recuadro vacío, que se lee como un fallo.
+  var loc = String(r.loc || '').trim();
+  var pie = [];
+  if (r.supplier) pie.push(_he(r.supplier));
+  if (r.project)  pie.push(_he(r.project));
+  return '<div class="lbl">' +
+      '<div class="lbl-top"><span>' + _he(r.category || '') + '</span>' +
+        '<span class="lbl-when">' + _he(r.dateRec || '') + '</span></div>' +
+      '<div class="lbl-name">' + _he(r.name) + '</div>' +
+      '<div class="lbl-pair">' +
+        '<div class="lbl-cell"><div class="lbl-cell-lbl">Qty</div>' +
+          '<div class="lbl-cell-val">' + _he(_qtyText(r.qty)) +
+          '<span style="font-size:4.5mm"> ' + _he(r.unit || 'UNIT') + '</span></div></div>' +
+        '<div class="lbl-cell"><div class="lbl-cell-lbl">Location</div>' +
+          '<div class="lbl-cell-val' + (loc ? '' : ' sm') + '">' +
+          _he(loc || 'not assigned') + '</div></div>' +
+      '</div>' +
+      '<div class="lbl-meta">' +
+        (r.po ? '<div>PO <b>' + _he(r.po) + '</b></div>' : '') +
+        (pie.length ? '<div class="lbl-dim">' + pie.join(' · ') + '</div>' : '') +
+      '</div>' +
+      '<div class="lbl-code">QR / barcode</div>' +
+    '</div>';
+}
+
+function _openLabels(rows, alCerrar){
+  _labelAfter = alCerrar || null;
+  _labelRows  = rows || [];
+  if (!_labelRows.length){ _labelsDone(); return; }
+
+  var lead = document.getElementById('labelsLead');
+  var list = document.getElementById('labelsList');
+  if (!lead || !list){ _labelsDone(); return; }
+  lead.textContent = _labelRows.length === 1
+    ? 'One label, 4"×6". Untick it if this one does not need one.'
+    : _labelRows.length + ' labels, 4"×6" — one per rack. Untick the ones that ' +
+      'do not need a label.';
+
+  list.innerHTML = _labelRows.map(function(r, i){
+    return '<label class="lbl-row">' +
+      '<input type="checkbox" checked data-lbl="' + i + '" onchange="_labelsRedraw()">' +
+      '<span class="lbl-row-body">' +
+        '<span class="lbl-row-name">' + _he(r.name) + '</span>' +
+        '<span class="lbl-row-sub">' + _he(_qtyText(r.qty)) + ' ' + _he(r.unit) +
+          ' · ' + _he(r.loc || 'no rack') +
+          (r.po ? ' · PO ' + _he(r.po) : '') + '</span>' +
+      '</span>' +
+      // step="1" porque media etiqueta no existe — son copias, no cantidad.
+      '<span class="lbl-row-n">×<input type="number" min="1" max="99" step="1" ' +
+        'value="' + (Number(r.copies) || 1) + '" ' +
+        'data-copies="' + i + '" onchange="_labelsRedraw()" onclick="event.preventDefault()"></span>' +
+    '</label>';
+  }).join('');
+
+  _labelsRedraw();
+  document.getElementById('labelsOverlay').classList.add('show');
+}
+
+/** Lo marcado, con sus copias. Una sola lectura del cuadro, usada por la vista
+ *  previa y por la impresión — así lo que se ve es exactamente lo que sale. */
+function _labelsChosen(){
+  var list = document.getElementById('labelsList');
+  if (!list) return [];
+  var copias = {};
+  list.querySelectorAll('input[data-copies]').forEach(function(inp){
+    var n = Math.max(1, Math.min(99, Math.round(Number(inp.value) || 1)));
+    copias[inp.getAttribute('data-copies')] = n;
+  });
+  var out = [];
+  list.querySelectorAll('input[data-lbl]').forEach(function(cb){
+    if (!cb.checked) return;
+    var i = cb.getAttribute('data-lbl');
+    var r = _labelRows[Number(i)];
+    if (!r) return;
+    for (var c = 0; c < (copias[i] || 1); c++) out.push(r);
+  });
+  return out;
+}
+
+function _labelsRedraw(){
+  var prev = document.getElementById('labelPreview');
+  var btn  = document.getElementById('labelsPrintBtn');
+  if (!prev) return;
+  var elegidas = _labelsChosen();
+  // Sólo las distintas en la vista previa: cuatro copias de la misma etiqueta
+  // se ven cuatro veces iguales y no dicen nada nuevo. El botón lleva el total.
+  var vistas = {}, unicas = [];
+  elegidas.forEach(function(r){
+    var k = r.name + '|' + r.loc + '|' + r.qty;
+    if (vistas[k]) return;
+    vistas[k] = 1; unicas.push(r);
+  });
+  prev.innerHTML = unicas.map(function(r){
+    return '<div class="lbl-wrap">' + _labelHtml(r) + '</div>';
+  }).join('');
+  if (btn){
+    btn.textContent = elegidas.length
+      ? '🖨 Print ' + elegidas.length + (elegidas.length === 1 ? ' label' : ' labels')
+      : '🖨 Print';
+    btn.disabled = !elegidas.length;
+  }
+}
+
+function _labelsAll(si){
+  var list = document.getElementById('labelsList');
+  if (!list) return;
+  list.querySelectorAll('input[data-lbl]').forEach(function(cb){ cb.checked = !!si; });
+  _labelsRedraw();
+}
+
+function _labelsPrint(){
+  var elegidas = _labelsChosen();
+  if (!elegidas.length) return;
+  var hoja = document.getElementById('labelSheet');
+  if (!hoja) return;
+  hoja.innerHTML = elegidas.map(_labelHtml).join('');
+  // El cuadro se cierra ANTES de imprimir: si sigue abierto, su sombra de fondo
+  // entra en la página. Y la hoja se vacía DESPUÉS, para que el navegador tenga
+  // qué imprimir mientras el diálogo del sistema está abierto.
+  _labelsClose();
+  setTimeout(function(){
+    try { window.print(); } catch (e) { showToast('Could not open the print dialog.', 'err'); }
+    setTimeout(function(){ hoja.innerHTML = ''; }, 1000);
+  }, 60);
+}
+
+function _labelsClose(){
+  var ov = document.getElementById('labelsOverlay');
+  if (ov) ov.classList.remove('show');
+  _labelRows = [];
+  _labelsDone();
+}
+
+/** Lo que venía detrás. Se llama UNA vez y se olvida: si el cuadro se abre y
+ *  se cierra dos veces, la pregunta de las entregas no puede salir dos veces. */
+function _labelsDone(){
+  if (!_labelAfter) return;
+  var f = _labelAfter;
+  _labelAfter = null;
+  setTimeout(f, 250);
+}
+
+/* ═══ "¿TAMBIÉN LLEGÓ ESTO?" ════════════════════════════════════════════════
+ *
+ * Jose, 2026-09-11: marcó UNA entrega como llegada, y cuando se abrió el
+ * formulario de entrada metió también los demás materiales del camión, porque
+ * tenía los papeles en la mano y tiempo para hacerlo. Los movimientos se
+ * guardaron —están en Movements— y las otras entregas se quedaron en Pending.
+ *
+ * Y la app tenía razón, en el sentido incómodo: NADIE LE DIJO QUE LLEGARON.
+ * Guardar una entrada escribe un movimiento y no toca INCOMING_V3. La única
+ * entrega que se salda es aquella por cuya tarjeta se entró.
+ *
+ * DE LOS DOS DISEÑOS POSIBLES, ÉSTE ES EL QUE ELIGIÓ JOSE, y la razón es su
+ * forma de trabajar. El otro era que la entrada guardara de qué entrega vino:
+ * un enlace duro, más "correcto", y que sólo existe si entraste por la tarjeta
+ * de esa entrega. Para los materiales que añadió a mano habría que ponerle a
+ * CADA LÍNEA un selector de entrega — justo el tecleo que estaba evitando.
+ *
+ * Éste no le cambia el trabajo: guarda como siempre y al final la app pregunta.
+ *
+ * Y PREGUNTA, no decide. El emparejamiento es adivinar —ver _incMatchesMove— y
+ * marcar sola una entrega que sigue en la carretera es el error caro: se deja
+ * de esperar algo que no ha llegado. Una casilla cuesta un segundo.
+ */
+var _alsoArrivedItems = [];     // las entregas que se están ofreciendo ahora
+
+/* Las entregas Pending que se parecen a lo que se acaba de entrar.
+ *
+ * `materiales` son las líneas del formulario, no movimientos guardados, así que
+ * se convierten a la forma de un movimiento para poder pasarlas por la MISMA
+ * regla. Inventar aquí una segunda regla parecida es lo que _incMatchesMove
+ * existe para evitar. */
+function _alsoArrivedCandidates(materiales, dateRec, po, exceptoId){
+  if (!Array.isArray(incoming) || !Array.isArray(materiales)) return [];
+  var comoMov = materiales.map(function(mat){
+    return { moveType: 'ENTRY', name: mat.name, category: mat.category,
+             dateRec: dateRec, po: (mat.po || po || '') };
+  });
+  return incoming.filter(function(it){
+    // Ya llegó o se canceló: no hay nada que ofrecer.
+    if (!_incStillPending(it)) return false;
+    // La que se marcó al abrir el formulario ya está guardada como Arrived en
+    // la hoja — pero la lista del navegador todavía no lo sabe, porque la
+    // recarga va en camino. Sin esta línea se ofrecería marcar otra vez algo
+    // que ya está marcado, y quien lo lea pensaría que no se guardó.
+    if (exceptoId && it.id === exceptoId) return false;
+    return comoMov.some(function(m){ return _incMatchesMove(it, m); });
+  });
+}
+
+function _offerAlsoArrived(materiales, dateRec, po, exceptoId){
+  var cands = _alsoArrivedCandidates(materiales, dateRec, po, exceptoId);
+  // Sin candidatos no aparece nada. Un cuadro vacío que hay que cerrar es peor
+  // que no preguntar.
+  if (!cands.length) return;
+  _alsoArrivedItems = cands;
+
+  var lead = document.getElementById('alsoArrivedLead');
+  var list = document.getElementById('alsoArrivedList');
+  if (!lead || !list) return;
+  lead.textContent = cands.length === 1
+    ? 'This expected delivery matches what you just entered, and is still marked as not arrived.'
+    : 'These ' + cands.length + ' expected deliveries match what you just entered, ' +
+      'and are still marked as not arrived.';
+
+  // TODAS VIENEN MARCADAS. Quien llega aquí acaba de teclear esos materiales
+  // con los papeles delante; lo normal es que sí llegaran. Desmarcar la que no
+  // es más rápido que marcar las cuatro que sí.
+  list.innerHTML = cands.map(function(it){
+    var qty = it.qty > 0 ? (_qtyText(it.qty) + ' ' + (it.unit || 'UNIT')) : 'qty not stated';
+    return '<label class="also-row">' +
+      '<input type="checkbox" checked data-also="' + _escAttr(it.id) + '">' +
+      '<span class="also-body">' +
+        '<span class="also-name">' + _he(it.name) + '</span>' +
+        '<span class="also-sub">' + _he(qty) +
+          (it.supplier ? ' · ' + _he(it.supplier) : '') +
+          (it.po ? ' · PO ' + _he(it.po) : '') +
+          (it.estDate ? ' · ' + _he(_incDateLabel(it)) : '') + '</span>' +
+      '</span></label>';
+  }).join('');
+
+  document.getElementById('alsoArrivedOverlay').classList.add('show');
+}
+
+function _alsoArrivedClose(){
+  _alsoArrivedItems = [];
+  var ov = document.getElementById('alsoArrivedOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+function _alsoArrivedSave(){
+  var list = document.getElementById('alsoArrivedList');
+  if (!list) { _alsoArrivedClose(); return; }
+  var marcadas = {};
+  list.querySelectorAll('input[data-also]').forEach(function(cb){
+    if (cb.checked) marcadas[cb.getAttribute('data-also')] = true;
+  });
+  var voy = _alsoArrivedItems.filter(function(it){ return marcadas[it.id]; });
+  _alsoArrivedClose();
+  if (!voy.length) return;     // las desmarcó todas: no pasa nada, y está bien
+
+  voy.forEach(function(it){
+    // LA FILA ENTERA con el estado cambiado: updateIncoming reescribe las
+    // diecisiete columnas, así que mandar sólo el estado borraría el resto.
+    var payload = {
+      id: it.id, estDate: it.estDate, dateMode: it.dateMode || 'exact',
+      estDateEnd: it.estDateEnd || '', dateNote: it.dateNote || '',
+      status: 'Arrived', category: it.category, name: it.name,
+      qty: it.qty, unit: it.unit, supplier: it.supplier, po: it.po,
+      pm: it.pm || '', notes: it.notes || ''
+    };
+    _acWrite({
+      args: ['updateIncoming', _h(payload)],
+      what: 'marking "' + it.name + '" as arrived',
+      ok: function(){
+        // La copia del navegador, al día en el acto: la recarga llegará, pero
+        // el popup y la pestaña de Incoming ya pueden decir la verdad.
+        for (var i = 0; i < incoming.length; i++){
+          if (incoming[i].id === it.id) { incoming[i].status = 'Arrived'; break; }
+        }
+        renderAll();
+      }
+    });
+  });
+  showToast(voy.length === 1
+    ? '✓ Marked as arrived.'
+    : '✓ ' + voy.length + ' deliveries marked as arrived.', 'ok');
+  _reloadWhenIdle();
+}
+
 function openWeekSchedule(){
   var todayStr = _isoDate(new Date());
   var items = _thisWeeksDeliveries(todayStr);
-  if (!items.length){
+  // Lo que ya llegó, y lo que se esperaba y no consta, también son motivo para
+  // abrir. Si no, el día que se recibe todo lo de la semana el botón contesta
+  // "nothing expected" y la lista de lo que llegó —la que dice cuál está sin
+  // registrar— no hay forma de verla.
+  if (!items.length && !_weekArrivals(todayStr).length && !_overdueThisWeek(todayStr).length){
     showToast('Nothing expected for the rest of this week.', 'ok');
     return;
   }
@@ -16597,6 +17951,18 @@ function _refreshMorningPopup(){
 
      Y sin _incStillPending arreglado esto no habría servido de nada: la lista
      nunca se vaciaba, porque el filtro descartaba un estado que no existe. */
+  /* LA REGLA DE CIERRE NO SE TOCA, y estuvo a punto de tocarse.
+     Al añadir el bloque de "llegó hoy" pensé en dejar la ventana abierta
+     mientras alguna llegada siguiera sin su entrada — "eso también es trabajo
+     pendiente"—. Pero Jose dijo la regla con estas palabras: "si hay solo un
+     material y ya fue aceptado, la ventana desaparece". Ampliarla habría sido
+     cambiarle una regla suya sin decírselo, y por una razón que además no hace
+     falta: el recordatorio de "llegó y falta su entrada" ya existe y es la
+     TARJETA NARANJA, que se queda en la esquina hasta que la entrada se guarda
+     y sobrevive a cerrar la ventana, a cambiar de pestaña y a recargar la
+     página. La ventana es la lista de la mañana; la tarjeta es lo que persiste.
+     Y para volver a mirar lo que llegó está el botón, que desde la v11.71 abre
+     aunque no quede nada pendiente. */
   if (!quedan.length){
     ov.classList.remove('show');
     return;
@@ -16639,13 +18005,39 @@ function showMorningPopup(items, todayStr) {
     return _incItemHtml(item, { showDate: !_incOnDay(item, todayStr) });
   }
 
+  // Lo que ya llegó, y lo que se esperaba y no consta. Ninguna de las dos sale
+  // de `items` —esa lista es la de pendientes de aquí en adelante— sino de la
+  // misma pregunta hecha por los otros dos lados. Con las tres, en la ventana
+  // está TODO lo que esta semana se espera o se recibió, que es la regla que
+  // Jose puso: "todo material que se espera o se recibe debe verse".
+  var llegaron = _weekArrivals(todayStr);
+  var tarde    = _overdueThisWeek(todayStr);
+
   var body = document.getElementById('morningPopupBody');
   var html = '';
+  if (tarde.length) {
+    html += '<div class="morning-late"><div class="morning-late-label">⚠️ Was Due Earlier This Week</div>' +
+      tarde.map(function(item){ return _incItemHtml(item, { showDate: true }); }).join('') + '</div>';
+  }
   if (todayItems.length) {
     html += '<div class="morning-today"><div class="morning-today-label">☀️ Arriving Today</div>' +
       todayItems.map(itemRow).join('') + '</div>';
-  } else {
+  } else if (!llegaron.some(function(i){ return _incOnDay(i, todayStr); })) {
+    // "Nada llegando hoy" ya sólo se dice cuando de verdad no hay nada DE HOY,
+    // ni esperando ni llegado. Antes se decía con tres entregas recibidas esa
+    // misma mañana delante, porque el filtro las había quitado de la lista.
+    // Y se mira "de hoy", no "el bloque está vacío": el bloque puede traer las
+    // del lunes, y entonces la frase sería verdad y hay que decirla.
     html += '<div class="morning-today" style="border-color:#E5E7EB;background:var(--bg)"><div class="morning-today-label" style="color:var(--muted)">Nothing arriving today</div></div>';
+  }
+  if (llegaron.length) {
+    html += '<div class="morning-done"><div class="morning-done-label">✅ Arrived</div>' +
+      llegaron.map(function(item){
+        // La fecha sólo en las que no son de hoy: dentro de un bloque de hoy
+        // sería el mismo día escrito en todos los renglones.
+        return _incItemHtml(item, { showDate: !_incOnDay(item, todayStr),
+                                    where: _incEntryWhere(item) });
+      }).join('') + '</div>';
   }
   if (restItems.length) {
     html += '<div class="morning-week-label">🗓 Rest of This Week</div>' + restItems.map(itemRow).join('');
@@ -17388,6 +18780,7 @@ function _applyData(data) {
   if (data.warehouseRoleLabel) warehouseRoleLabel = data.warehouseRoleLabel;
   _applyWarehouseRoleLabel();
   userEmail          = data.userEmail          || '';
+  userNames          = data.userNames          || {};
   incoming           = data.incoming           || [];
   monitoredMaterials = data.monitoredMaterials || null;
   rackPhotos         = data.rackPhotos         || {};
@@ -17613,6 +19006,16 @@ var _todoItems = [];
 // sin guardar dejaba el trabajo sin hacer y sin rastro.
 var _entryTodoId = null;
 
+/* Y DE QUÉ ENTREGA venía, que no es lo mismo que de qué tarjeta.
+ *
+ * La tarjeta es del navegador y se salda al guardar; esto es el id de la
+ * entrega en la hoja, y sirve para UNA cosa: no ofrecer marcar como llegada la
+ * que se acaba de marcar. Al abrirse el formulario esa entrega ya está guardada
+ * como Arrived, pero la lista del navegador todavía dice Pending porque la
+ * recarga va en camino — sin esto, la app se ofrecería a hacer lo que acaba de
+ * hacer, y quien lo lea pensaría que no se guardó. */
+var _entryFromIncId = null;
+
 function _todoLoad(){
   try {
     var raw = localStorage.getItem(_TODO_KEY);
@@ -17815,6 +19218,60 @@ function _btnShowSiblings(btn){
     if (!el._acWasDisabled) el.disabled = false;   // see the merge note above
     el._acWasDisabled = null;
   });
+}
+
+/* ═══ CÓMO SE VA UNA FILA ════════════════════════════════════════════════════
+ *
+ * Jose, 2026-09-09: "quiero esta animación en cada lugar donde se borre algo, ya
+ * sea que se corrija, restaure, elimine, haga merge, etc. Debe ser estándar en
+ * la app."
+ *
+ * Una función, y el `done` es la parte que importa: quien llama pone ahí lo que
+ * pasa DESPUÉS —quitarla de la lista, repintar, avisar— y no tiene que saber
+ * nada de clases ni de milisegundos. Eso es lo que permite que los ocho sitios
+ * donde algo desaparece compartan una sola forma en vez de ocho parecidas.
+ *
+ * `done` SE LLAMA SIEMPRE, exactamente una vez: sin elemento, con el elemento
+ * fuera del DOM, o con el movimiento reducido. Una animación que se traga el
+ * trabajo que venía detrás es peor que no animar.
+ *
+ * LA LECCIÓN DE LA v11.66 APLICA AQUÍ Y HAY QUE DECIRLA: si quien llama repinta
+ * la lista entera, ESTO NO SE VE — la fila no se encoge, la lista parpadea. Por
+ * eso el repintado va DENTRO de `done`, nunca antes.
+ */
+var ROW_LEAVE_MS = 240;
+
+function _rowLeave(el, done){
+  var una = function(){ if (done){ var d = done; done = null; d(); } };
+  if (!el || !el.parentNode){ una(); return; }
+  var quieto = false;
+  try { quieto = window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  if (quieto){ una(); return; }        // quien pidió menos movimiento no lo recibe
+
+  if (el.tagName === 'TR'){
+    el.classList.add('row-leaving');
+  } else {
+    // max-height no transiciona desde `none`, así que primero se le pone su
+    // altura real en píxeles y se fuerza el reflow. Sin esa línea el elemento
+    // desaparece de golpe y la clase parece no hacer nada.
+    el.style.maxHeight = el.scrollHeight + 'px';
+    void el.offsetHeight;
+    el.classList.add('card-leaving');
+  }
+  setTimeout(una, ROW_LEAVE_MS);
+}
+
+/** La fila de un movimiento en la tabla, si está pintada. */
+function _movRowEl(mov){
+  if (!mov || !mov.movId) return null;
+  try { return document.querySelector('#tableContainer tr[data-mov="' + CSS.escape(mov.movId) + '"]'); }
+  catch (e) {
+    // CSS.escape no existe en navegadores viejos. El movId es hexadecimal, así
+    // que el selector directo vale; y si tampoco, se anima nada y se sigue.
+    try { return document.querySelector('#tableContainer tr[data-mov="' + mov.movId + '"]'); }
+    catch (e2) { return null; }
+  }
 }
 
 function _btnBusy(btn, label){
