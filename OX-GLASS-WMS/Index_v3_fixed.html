@@ -245,6 +245,11 @@
     .badge-teal{background:#CCFBF1;color:#0F766E}
     .badge-pink{background:#FCE7F3;color:#BE185D}
     .badge-navy{background:#DBEAFE;color:#1E3A8A}
+    /* El candado de la columna Location en el Stock Dashboard. Un pelo más
+       grande que el texto de la celda (.78rem) porque es lo único de esa celda
+       que hay que ver sin leer, y cursor:help porque el motivo está en el
+       title de la celda, no en una burbuja aparte. */
+    .sc-lock{font-size:.85rem;cursor:help}
     /* ── WAREHOUSE MAP ── */
     .rack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;padding:1.25rem}
     /* ── WAREHOUSE MAP — RACK GRID ── */
@@ -270,6 +275,37 @@
     .map-letter-col{flex:0 0 auto;width:300px;max-width:100%}
     .map-letter-hdr{font-size:1.2rem;font-weight:800;color:var(--navy);padding:.4rem .25rem .15rem;border-bottom:2px solid var(--accent);margin-bottom:.5rem;letter-spacing:.02em}
     .map-section-hdr{font-size:.92rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;padding:.45rem .25rem .1rem;margin-top:.6rem;border-bottom:1px dashed var(--border)}
+
+    /* ── LA TIRA DE RESERVAS ──────────────────────────────────────────────────
+       Va encima del plano y se lee de un vistazo, así que es una REJILLA de
+       cuatro columnas y no un flex: el estante, el material, la cantidad y el
+       motivo tienen que quedar alineados entre filas, porque lo que se hace con
+       esta lista es compararla consigo misma ("¿qué más está apartado?").
+       Un flex dejaría cada fila con sus columnas en un sitio distinto.
+
+       El motivo es lo único que se recorta: es texto de una persona y puede ser
+       largo; los otros tres son datos y se leen enteros o no sirven. */
+    .resv-strip{border:1px solid var(--yellow);border-radius:10px;background:var(--yellow-bg);
+      padding:.6rem .75rem;margin-bottom:.9rem}
+    .resv-strip-hdr{font-size:.78rem;font-weight:700;color:var(--text);
+      display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem;margin-bottom:.45rem}
+    .resv-hint{font-weight:400;font-size:.72rem;color:var(--muted)}
+    .resv-rows{display:flex;flex-direction:column;gap:.25rem}
+    .resv-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1.4fr);
+      gap:.6rem;align-items:baseline;width:100%;text-align:left;cursor:pointer;
+      background:var(--card);border:1px solid var(--border);border-radius:7px;
+      padding:.35rem .55rem;font-family:inherit;font-size:.76rem;color:var(--text)}
+    .resv-row:hover{border-color:var(--yellow);background:var(--yellow-bg)}
+    .resv-rack{font-weight:700;color:var(--accent);white-space:nowrap}
+    .resv-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .resv-qty{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .resv-why{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* En pantalla estrecha la rejilla de cuatro no cabe sin recortarlo todo a
+       nada, así que se parte en dos renglones y el motivo pasa entero debajo. */
+    @media (max-width:640px){
+      .resv-row{grid-template-columns:auto minmax(0,1fr) auto}
+      .resv-why{grid-column:1 / -1;white-space:normal}
+    }
     /* Each row is a grid of N equal columns → A1A A1B A1C always stay on ONE line. */
     .map-rack-row{display:grid;gap:.45rem;margin-bottom:.45rem}
     .map-rack-row > .rack-card{min-width:0}
@@ -1052,8 +1088,13 @@
        algo, ya sea que se corrija, restaure, elimine, haga merge, etc. Debe ser
        estándar en la app."
        Así que no es "la animación de borrar movimientos": es CÓMO SE VA UNA
-       FILA, escrito una vez. Los ocho sitios donde algo desaparece la usan por
-       _rowLeave.
+       FILA, escrito una vez. Todos los sitios donde algo desaparece pasan por
+       _rowLeave (una fila) o _rowLeaveAll (varias a la vez): borrar y restaurar
+       un movimiento, vaciar la papelera, las cuatro fusiones, borrar una
+       ubicación y quitar un valor del catálogo o un contacto del directorio.
+       Este comentario decía "los ocho sitios" cuando sólo había DOS — se
+       escribió con la intención y nunca se volvió. Ahora lo cuenta una prueba,
+       que es lo único que no se queda viejo en silencio.
        Se encoge además de desvanecerse, y eso no es adorno: una fila que se
        desvanece deja su hueco y las de abajo saltan de golpe cuando el hueco se
        cierra. Encogiéndose, las de abajo SUBEN, y ese movimiento es lo que se
@@ -1261,7 +1302,40 @@
     /* min-width:0 so a long material name wraps instead of shoving the
        quantity column off the card. */
     .inc-item-main{flex:1;min-width:0}
-    .inc-item-name{font-size:.82rem;line-height:1.35;color:var(--text);overflow-wrap:anywhere}
+    /* NOMBRE - SUPPLIER, en UNA sola línea, y CEDE EL QUE SOBRA.
+       El primer intento dejaba encoger a los dos (flex-shrink en ambos), que es
+       lo que parece razonable y no lo es: flex reparte el encogimiento EN
+       PROPORCIÓN al tamaño, así que con un nombre larguísimo y "AMSCO" al lado,
+       AMSCO también perdía su parte y salía "AMSC…" habiendo sitio de sobra.
+       Lo cazó la medición en el navegador, no la lectura del CSS.
+       La regla que sí hace lo que Jose pidió: el supplier NO encoge (flex 0 0)
+       y está topado al 55% de la línea; el nombre se queda con el resto. Los
+       cuatro casos salen bien —nombre largo, supplier largo, los dos, ninguno—
+       y el único número inventado es ese 55%, que existe para que el nombre del
+       material, que es como se reconoce la tarjeta, nunca baje de casi la mitad.
+       El recorte va en cada trozo y NO en .inc-item-name: puesto en el padre,
+       los puntos suspensivos saldrían una sola vez al final de la línea y el
+       supplier desaparecería entero en vez de acortarse.
+       Los dos llevan title, porque recortar en pantalla no puede ser perder el
+       dato — el texto completo se lee pasando el mouse. */
+    .inc-item-name{font-size:.82rem;line-height:1.35;color:var(--text);
+                   display:flex;align-items:baseline;min-width:0;flex-wrap:nowrap}
+    .inc-name-txt,.inc-name-sup{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .inc-name-txt{flex:1 1 auto;min-width:0}
+    /* El proveedor es una INSIGNIA, como la categoría, pero de UN SOLO COLOR
+       para todos. Jose: la categoría se colorea porque el color significa qué
+       tipo de material es; el proveedor no tiene tipos, así que darle colores
+       distintos inventaría un significado que no existe. Oscuro con letra
+       blanca para que se separe del gris del resto sin competir con la
+       categoría, que es la que manda en la tarjeta.
+       Sin guion delante: la forma de insignia ya dice que es otra cosa, y el
+       guion era una separación que sobraba en cuanto hay caja. */
+    .inc-name-sup{flex:0 0 auto;max-width:55%;margin-left:.4rem;
+                  background:var(--navy);color:#fff;
+                  padding:.1rem .45rem;border-radius:20px;
+                  font-size:.7rem;font-weight:600;line-height:1.5}
+    /* El clip nunca encoge: es un objetivo de toque, no texto. */
+    .inc-item-name > a{flex:none}
     .inc-item-meta{color:var(--muted);font-size:.72rem;line-height:1.4;margin-top:.1rem;overflow-wrap:anywhere}
     /* The right column never shrinks and never wraps its own contents: a
        quantity broken across two lines is unreadable, and the whole reason it
@@ -1428,6 +1502,23 @@
     .role-badge-warehouse{background:#DBEAFE;color:#1D4ED8;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
     .role-badge-viewer{background:#F3F4F6;color:#6B7280;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
     .user-inactive{opacity:.45}
+    /* DOS DATOS EN UNA COLUMNA, como Date/Type y Category/Name en la tabla de
+       movimientos. Jose: "así tenemos menos cosas ocupando tanto espacio". El
+       de arriba es el que se busca con la vista —el nombre, el rol— y el de
+       abajo el que se consulta cuando ya encontraste la fila. */
+    .usr-two{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+    .usr-top{font-size:.84rem;font-weight:600;line-height:1.25;
+             overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* El correo se parte si hace falta: es lo único de esta tabla que puede ser
+       larguísimo, y cortarlo con puntos suspensivos escondería justo la parte
+       que distingue a dos personas de la misma empresa. */
+    .usr-sub{font-size:.72rem;color:var(--muted);line-height:1.3;
+             overflow-wrap:anywhere}
+    .usr-bar{margin-bottom:.75rem}
+    /* La casilla de uno mismo no se puede marcar, y tiene que NOTARSE que no
+       es un descuido. Sin esto, marcas tres contigo dentro y la acción
+       funciona a medias. */
+    .usr-select-cb:disabled{opacity:.3;cursor:not-allowed}
     .user-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem}
     @media(max-width:520px){.user-form-grid{grid-template-columns:1fr}}
     /* ── SIMILAR-MATERIAL HINT ── */
@@ -1476,7 +1567,24 @@
        would not read as a deck. Newest is last in the DOM so it paints on top
        without fighting z-index. Padding on the container leaves room for the
        rotated corners and the badge to sit OUTSIDE the top card. */
-    .deck{position:fixed;right:22px;bottom:22px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(400px,calc(100vw - 44px));padding:16px 12px 0 14px}
+    /* DOS TERCIOS DE LA VENTANA, NO MÁS. Jose, sobre el muro de tarjetas
+       naranjas: en pantalla grande la pila crecía hasta donde quisiera y
+       tapaba lo que estabas mirando. Ahora tiene un techo — el tercio de
+       arriba se queda libre pase lo que pase — y si hay más tarjetas de las
+       que caben, la pila se desplaza dentro de su propio hueco en vez de
+       comerse la pantalla.
+
+       El 22px de abajo va restado porque el tope es sobre la VENTANA, no sobre
+       el hueco: sin restarlo, dos tercios más el margen pasan de dos tercios.
+
+       overflow-y:auto y no hidden: esconder una tarjeta que existe es peor que
+       cualquier problema de sitio. scrollbar-width:none porque el resto de la
+       app ya oculta las suyas (ver html{scrollbar-width:none}) y una barra
+       gris aquí partiría el borde redondeado de las tarjetas. */
+    .deck{position:fixed;right:22px;bottom:22px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(400px,calc(100vw - 44px));padding:16px 12px 0 14px;
+          max-height:calc(66.6vh - 22px);overflow-y:auto;overflow-x:visible;
+          scrollbar-width:none}
+    .deck::-webkit-scrollbar{display:none}
     .deck:empty{display:none}
     /* Reading the pile should not mean the page slides around underneath it.
        Scroll only — no backdrop, no dimming: this is a corner of the screen
@@ -1861,15 +1969,30 @@
     #acPerson{position:fixed;left:-9999px;top:-9999px;
       background:var(--card);color:var(--text);border:1px solid var(--border);
       border-radius:10px;padding:.6rem .7rem;box-shadow:0 8px 24px rgba(0,0,0,.18);
-      width:max-content;max-width:min(300px,90vw);text-align:left;
+      /* SIEMPRE DEL MISMO TAMAÑO. Jose, 2026-09-16, con video: "quiero que el
+         pop-up sea del mismo tamaño no importa el nombre y el correo... se
+         mueve o aparece en un lugar diferente y de un largo diferente
+         dependiendo del correo".
+
+         Era width:max-content: la tarjeta medía lo que midiera el correo.
+         jose@ox-glass.com daba una, joseisrael5101@gmail.com otra más ancha —
+         y como al ensancharse tiene que apartarse para no salirse de la
+         ventana, TAMBIÉN cambiaba de sitio. Una sola causa para las dos
+         quejas.
+
+         Ancho fijo, y el nombre y el correo en UNA línea con puntos
+         suspensivos: si se les deja partirse en dos, cambia el alto y vuelve
+         a no ser del mismo tamaño. Lo que no cabe se lee en el title, y el
+         botón de Email no necesita leerlo para funcionar. */
+      width:min(300px,90vw);text-align:left;
       opacity:0;visibility:hidden;
       transition:opacity .13s ease,transform .13s ease;transform:translateY(-4px);
       z-index:2147483000}
     #acPerson.ready{visibility:visible}
     #acPerson.show{opacity:1;transform:translateY(0)}
+    .ap-name,.ap-mail{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .ap-name{font-size:.86rem;font-weight:700;line-height:1.3}
-    .ap-mail{font-size:.74rem;color:var(--muted);line-height:1.35;margin-top:.1rem;
-      overflow-wrap:anywhere}
+    .ap-mail{font-size:.74rem;color:var(--muted);line-height:1.35;margin-top:.1rem}
     .ap-acts{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.55rem}
     .ap-btn{display:inline-flex;align-items:center;gap:.25rem;text-decoration:none;
       font-size:.72rem;font-weight:600;color:var(--accent);
@@ -1956,6 +2079,13 @@
     .loc-list.drop-target{background:rgba(59,125,216,.10);outline:2px dashed var(--accent);outline-offset:-4px}
     .loc-item{display:flex;align-items:center;gap:.35rem;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:.3rem .55rem;font-size:.78rem;color:var(--text);cursor:grab}
     .loc-item.dragging{opacity:.4}
+    /* La marca de reservado en la lista de ubicaciones. Amarillo, el mismo que
+       usa el trozo "Reserved" de la barra de stock y la tira del mapa: un
+       estado que se dice de tres colores distintos en tres pantallas es un
+       estado que hay que aprenderse tres veces. */
+    .loc-resv{flex-shrink:0;font-size:.7rem;font-weight:700;background:var(--yellow-bg);
+      color:var(--text);border-radius:6px;padding:1px 6px;cursor:help;
+      font-variant-numeric:tabular-nums}
     .loc-grip{color:var(--muted);font-size:.85rem;line-height:1}
     .loc-empty{color:var(--muted);font-size:.75rem;padding:.35rem .5rem;font-style:italic}
     .loc-group-archived{opacity:.85}
@@ -2106,6 +2236,50 @@
     .toast.fade-out{animation:toastOut .3s ease forwards}
     @keyframes toastIn {from{opacity:0;transform:translateY(-18px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)}}
     @keyframes toastOut{from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-12px) scale(.95)}}
+    /* ── LA LÍNEA DE PROGRESO ───────────────────────────────────────────────
+       Jose, 2026-09-15: "en lugar de mostrar los toasts de cada eliminación,
+       ¿no sería mejor usar lo que Google usa en el Drive al cargar un archivo
+       (una ventana abajo donde se ve el progreso de todo lo que pasa, con un
+       check luego de realizarse)?"
+
+       Trece borrados daban trece avisos, uno encima de otro, sobre la tabla
+       que la persona está mirando. Y ninguno decía lo único que hace falta
+       saber mientras se espera: cuánto falta. Una línea que se actualiza dice
+       más que trece que se apilan, y deja la tabla a la vista.
+
+       Abajo y NO donde los toasts (arriba, en medio): esto no interrumpe,
+       acompaña. Lo que sí interrumpe —un borrado que falló— sigue siendo un
+       toast, porque hay que leerlo.
+
+       A LA IZQUIERDA, no a la derecha. Empezó a la derecha y Jose lo vio en
+       pantalla grande: ahí se sienta encima de las tarjetas. La izquierda de
+       abajo está vacía en todas las pantallas de la app —tabla, mapa, ajustes—
+       y el modal de Ajustes va centrado, así que tampoco lo tapa.
+
+       Y SE VA AL PULSARLO. Se queda seis segundos, que es lo que Jose pidió
+       ("debería permanecer más tiempo sin desaparecer"), y si alguna vez
+       estorba basta un clic. Un rato largo sin salida es peor que uno corto. */
+    #progWrap{position:fixed;left:1.25rem;bottom:1.25rem;z-index:9998;
+              cursor:pointer;
+              display:none;align-items:center;gap:.6rem;
+              background:var(--card);color:var(--text);
+              border-radius:10px;padding:.7rem 1rem;
+              box-shadow:0 8px 32px rgba(0,0,0,.25);
+              border-left:4px solid var(--accent);
+              font-size:.84rem;font-weight:500;
+              min-width:250px;max-width:380px;
+              animation:progIn .25s ease}
+    #progWrap.show{display:flex}
+    #progWrap.done{border-left-color:var(--green)}
+    #progWrap.warn{border-left-color:var(--yellow)}
+    #progWrap.fade-out{animation:progOut .3s ease forwards}
+    #progIcon{font-size:1rem;flex-shrink:0}
+    #progMsg{flex:1;line-height:1.35}
+    #progCount{color:var(--muted);font-size:.78rem;flex-shrink:0;
+               font-variant-numeric:tabular-nums}
+    @keyframes progIn {from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)}}
+    @keyframes progOut{from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(8px)}}
+    @media(max-width:640px){ #progWrap{left:1rem;right:1rem;min-width:0;max-width:none} }
     /* ── SKELETON LOADING ── */
     .skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(255,255,255,.3) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;height:14px}
     @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -2509,6 +2683,14 @@
 
 <!-- ══ TOAST CONTAINER ═══════════════════════════════════════════════════════ -->
 <div id="toastContainer"></div>
+<!-- La línea de progreso. aria-live="polite" para que un lector de pantalla
+     diga el avance sin cortar lo que esté leyendo. -->
+<div id="progWrap" role="status" aria-live="polite" title="Click to dismiss"
+     onclick="_progHide()">
+  <span id="progIcon" class="spin-hg">⏳</span>
+  <span id="progMsg"></span>
+  <span id="progCount"></span>
+</div>
 
 <!-- ══ USERS MANAGEMENT MODAL ════════════════════════════════════════════════ -->
 <div class="overlay" id="usersOverlay">
@@ -2518,9 +2700,59 @@
       <button class="modal-x" onclick="closeModal('usersOverlay')" title="Close">✕</button>
     </div>
 
-    <!-- Add / Edit form -->
-    <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-      <p style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:.65rem" id="userFormTitle">➕ Add New User</p>
+    <!-- LA BARRA, CON LA MISMA FORMA QUE MOVEMENTS & HISTORY.
+         Jose: "quiero quitar el cuadro de add user de arriba y solo dejarlo como
+         un botón que al dar clic abre el cuadro donde se escriben los datos,
+         también el botón editar y desactivar solo se activan cuando
+         seleccionamos algún usuario". Es el patrón que ya tiene la tabla de
+         movimientos, y tenerlo en los dos sitios es una razón en sí misma:
+         una sola forma de hacer las cosas en toda la app.
+
+         APAGADOS, NO ESCONDIDOS, igual que allí: un botón que aparece es un
+         botón que mueve la página. -->
+    <div class="col-bar usr-bar">
+      <button class="btn btn-primary btn-sm" onclick="openUserForm()">➕ Add User</button>
+      <span class="mov-act-sep">
+        <button class="btn btn-ghost btn-sm" id="btnUsrEdit" onclick="editSelectedUser()" disabled>✏️ Edit</button>
+        <button class="btn btn-ghost btn-sm" id="btnUsrActive" onclick="toggleSelectedUsers()" disabled>🚫 Deactivate</button>
+        <span id="usrSelCount" class="mov-sel-count"></span>
+      </span>
+    </div>
+
+    <!-- Users table. CUATRO COLUMNAS, NO SIETE.
+         Jose: "poner cosas como nombre y correo uno sobre otro y rol y added
+         uno sobre otro, added by y status pueden estar luego pero más cerca,
+         así tenemos menos cosas ocupando tanto espacio". Es lo mismo que ya se
+         hizo con Date/Type y Category/Name en la tabla de movimientos. -->
+    <div class="table-wrapper" style="max-height:45vh">
+      <table class="users-table">
+        <thead><tr>
+          <th class="mov-sel-cell"><input type="checkbox" id="usrSelAll" onchange="toggleUsrSelectAll(this)" title="Select all"></th>
+          <th>User</th><th>Role / Added</th><th>Added By</th><th>Status</th>
+        </tr></thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">
+      Deactivating a user stops them signing in but keeps the audit trail — nothing they
+      recorded is lost. Tick them and press Reactivate to let them back in.
+    </p>
+  </div>
+</div>
+
+<!-- Add / Edit form — en su propia ventana desde la v11.98.
+     HERMANA de usersOverlay, no hija: un .overlay anidado dentro de un .modal
+     hereda su contexto de apilamiento, y entonces el formulario queda DEBAJO de
+     la lista que lo abrió. Todas las demás ventanas de la app viven en este
+     nivel; ésta también. -->
+<div class="overlay" id="userFormOverlay">
+  <div class="modal">
+      <div class="mhdr">
+        <h3 id="userFormTitle">➕ Add New User</h3>
+        <button class="modal-x" onclick="closeModal('userFormOverlay')" title="Close">✕</button>
+      </div>
       <div class="user-form-grid">
         <div class="field" style="margin:0">
           <label>Email *</label>
@@ -2538,31 +2770,12 @@
             <option value="ADMIN">ADMIN — Full access</option>
           </select>
         </div>
-        <div class="field" style="margin:0;display:flex;align-items:flex-end;gap:.5rem">
-          <button class="btn btn-primary" onclick="saveUser()" id="btnSaveUser" style="flex:1">Save User</button>
-          <button class="btn btn-ghost" onclick="resetUserForm()" id="btnCancelUserEdit" style="display:none">Cancel</button>
-        </div>
       </div>
       <div id="userFormMsg" style="display:none;margin-top:.5rem;font-size:.78rem;padding:.35rem .6rem;border-radius:6px"></div>
-    </div>
-
-    <!-- Users table -->
-    <div id="rowModeSlot_usr"></div>
-    <div class="table-wrapper" style="max-height:45vh" data-rowscope="usr">
-      <table class="users-table">
-        <thead><tr>
-          <th>Email</th><th>Name</th><th>Role</th>
-          <th>Added By</th><th>Added</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody id="usersTableBody">
-          <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">Loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:.72rem;color:var(--muted);margin-top:.6rem">
-      Removing a user deactivates them (they can no longer log in) but keeps the audit trail.
-      To re-activate, edit the row directly in the USERS_V3 sheet.
-    </p>
+      <div class="modal-actions" style="margin-top:1.1rem">
+        <button class="btn btn-ghost" onclick="closeModal('userFormOverlay')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUser()" id="btnSaveUser">Save User</button>
+      </div>
   </div>
 </div>
 
@@ -3586,11 +3799,11 @@
 <div class="overlay" id="lockMatOverlay">
   <div class="modal modal-sm">
     <div class="mhdr">
-      <h3>🔒 Lock Material</h3>
+      <h3>🔒 Reserve Material</h3>
       <button class="modal-x" onclick="closeModal('lockMatOverlay')" title="Close">✕</button>
     </div>
     <p style="font-size:.8rem;color:var(--muted);margin:.1rem 0 1rem">
-      <strong id="lockMatSubject"></strong> at <strong id="lockMatRack"></strong> won't be able to EXIT or WASTE while locked. TRANSFER is still allowed.
+      <strong id="lockMatSubject"></strong> at <strong id="lockMatRack"></strong> won't be able to EXIT or WASTE while reserved. TRANSFER is still allowed.
     </p>
     <input type="hidden" id="lockMatId">
     <input type="hidden" id="lockMatCat">
@@ -3606,7 +3819,7 @@
     </div>
     <div style="display:flex;gap:.75rem;margin-top:1.25rem;justify-content:flex-end">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('lockMatOverlay')">Cancel</button>
-      <button class="btn btn-danger btn-sm" id="lockMatSubmit" onclick="submitLockMaterial()">🔒 Lock Material</button>
+      <button class="btn btn-danger btn-sm" id="lockMatSubmit" onclick="submitLockMaterial()">🔒 Reserve</button>
     </div>
   </div>
 </div>
@@ -3666,7 +3879,6 @@
 var movements   = [];
 var stockData   = {};  // pre-calculated by backend: { matId: {warehouseQty, siteQty, ...} }
 var config      = { projects:[], categories:[], suppliers:[], locations:[], trucks:[], minStock:{} };
-var reservations = [];
 var currentMoveType = 'ENTRY';
 // Movements kept its column visibility here until v9.41 — a map of eight
 // checkbox flags. Nothing writes it any more; it is read once per browser so a
@@ -3677,7 +3889,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '11.79';
+var APP_VERSION = '12.01';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -3689,7 +3901,7 @@ var APP_VERSION = '11.79';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '4651f018';
+var APP_BUILD = '37eb6f06';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -3836,6 +4048,64 @@ function _rebuildLocksIndex(){
   materialLocks.forEach(function(l){ _locksByKey[l.matId + '|||' + _normKey(l.rack)] = l; });
 }
 function _findLock(matId, rack){ return _locksByKey[matId + '|||' + _normKey(rack)] || null; }
+
+/* ═══ LAS RESERVAS, EN UN SOLO SITIO ═════════════════════════════════════════
+ *
+ * Jose, 2026-09-19: *"debe haber un lugar donde se vean todas las reservas de
+ * la bodega… quiero que haya un lugar en el mapa, un lugar en settings
+ * (locations) y un lugar en el stock dashboard, no quiero una pestaña más."*
+ *
+ * Tres pantallas, y por eso ESTO es una función y no tres. Lo que se comparte
+ * es EL CÁLCULO, no el dibujo: cada sitio enseña lo que ahí tiene sentido —el
+ * tablero un total, el mapa qué estantes, Settings qué ubicaciones— pero
+ * ninguno vuelve a contar por su cuenta. Tres contadores son como se consigue
+ * que tres pantallas den tres números, que es exactamente lo que acaba de pasar
+ * con la insignia del mazo y la campana.
+ *
+ * LA CANTIDAD NO SE GUARDA: se deriva del estante. Una reserva aparta lo que
+ * haya de ese material en ese estante, así que la cifra sale de
+ * `warehouseLocs[rack]` y no puede quedar desincronizada del stock. Es la misma
+ * cuenta que `reservedQtyFromRacks_` hace en el servidor — si las dos contaran
+ * distinto, el tablero y el mapa se contradirían.
+ */
+function _reservasActivas(){
+  var out = [];
+  (materialLocks || []).forEach(function(l){
+    if (String(l.status || 'Active').toLowerCase() !== 'active') return;
+    var s   = stockData[l.matId] || null;
+    var qty = s ? Math.max(0, Number((s.warehouseLocs || {})[l.rack]) || 0) : 0;
+    out.push({
+      id: l.id, matId: l.matId, category: l.category, name: l.name,
+      rack: l.rack, qty: qty, unit: (s && s.unit) || 'UNIT',
+      reason: l.reason || '', by: l.lockedBy || '', at: l.lockedAt || '',
+      allowedDest: l.allowedDest || []
+    });
+  });
+  // Por estante, que es como se recorre un almacén: quien mira esta lista está
+  // decidiendo a dónde caminar, no leyendo un catálogo de materiales.
+  out.sort(function(a, b){
+    if (a.rack !== b.rack) return a.rack < b.rack ? -1 : 1;
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+  });
+  return out;
+}
+
+/** El resumen que necesitan el tablero y el mapa: cuántas, cuántas unidades y
+ *  en cuántos estantes. Sale de _reservasActivas para que no haya dos cuentas. */
+function _reservasResumen(){
+  var lista = _reservasActivas(), unidades = 0, estantes = {};
+  lista.forEach(function(r){ unidades += r.qty; estantes[r.rack] = 1; });
+  return { lista: lista, n: lista.length, unidades: unidades,
+           estantes: Object.keys(estantes).length };
+}
+
+/** Cuántas reservas hay en una ubicación concreta. Lo usa Settings → Locations,
+ *  que razona por ubicación y no por material. */
+function _reservasDeEstante(rack){
+  var k = _normKey(rack);
+  return _reservasActivas().filter(function(r){ return _normKey(r.rack) === k; });
+}
+
 var _popupShownThisLoad = false; // true once popup fires; resets on real page load (F5)
 
 // ── Utility ───────────────────────────────────────────────────────────────────
@@ -4585,7 +4855,8 @@ function finishColEdit(t){
     var changed = JSON.stringify(labels) !== JSON.stringify(columnPrefs.labels || {});
     if (changed){
       google.script.run
-        .withSuccessHandler(function(){ showToast('Column names saved for everyone ✓', 'ok'); })
+        // Sin aviso: las cabeceras de la tabla ya enseñan el nombre nuevo.
+        .withSuccessHandler(function(){})
         .withFailureHandler(function(e){ showToast('Could not save names: ' + (e.message || e), 'err', 6000); })
         .processMovement('saveColumnPrefs', _h({ labels: labels, hidden: [] }));
       columnPrefs.labels = labels;
@@ -5602,6 +5873,40 @@ function stockBadge(item){
   return '<span class="badge badge-gray">Zero Stock</span>';
 }
 
+/** Los candados que afectan a ESTE material en los estantes donde HOY tiene
+ *  existencias. Un candado sobre un estante que ya se vació no bloquea nada
+ *  —no queda nada que sacar de ahí— y marcarlo sería ruido.
+ *
+ *  Jose lo pidió después de trabar MH 145 en B2A y no encontrar el candado en
+ *  ninguna parte del dashboard: estaba sólo en el cajón del estante y en el
+ *  formulario de salida, es decir, sólo donde ya era tarde. */
+function _stockLocks(s){
+  var out  = [];
+  var locs = (s && s.warehouseLocs) || {};
+  for (var r in locs){
+    if (!locs.hasOwnProperty(r) || !(locs[r] > 0)) continue;
+    var l = _findLock(s.matId, r);
+    if (l) out.push(l);
+  }
+  return out;
+}
+
+/** Lo que dice el candado, en las palabras de lo que de verdad impide. La regla
+ *  está en Code_v3_fixed.gs, sobre MATERIAL_LOCKS: EXIT y WASTE desde ese
+ *  estante siempre bloqueados; TRANSFER permitido, y si el candado trae lista
+ *  de destinos, sólo a esos. Una lista vacía NO significa "nada": significa
+ *  "muévelo donde quieras dentro de la bodega, pero no lo saques". */
+function _lockLines(ls){
+  return ls.map(function(l){
+    var quien = l.lockedBy ? ' (by ' + l.lockedBy + ')' : '';
+    var mover = (l.allowedDest && l.allowedDest.length)
+      ? '    Can only be moved to: ' + l.allowedDest.join(', ')
+      : '    Can be moved to any rack, but not taken out.';
+    return '🔒 Reserved at ' + l.rack + ' — ' + (l.reason || 'no reason given') + quien +
+           '\n    No exits, no waste.' + '\n' + mover;
+  });
+}
+
 function rowClass(mt){
   var map = {ENTRY:'row-entry',EXIT:'row-exit',TRANSFER:'row-transfer',RETURN:'row-return',WASTE:'row-waste',ADJUST:'row-adjust'};
   return map[normMT(mt)] || '';
@@ -5611,7 +5916,28 @@ function rowClass(mt){
 // ── Tab Lazy-Render system ────────────────────────────────────────────────────
 var _TAB_RENDERS = {
   dashboard: function(){ renderStats(); renderStock(); drawInventoryCharts(); },
-  movements: function(){ _movPage = 1; renderMovements(); },
+  /* NO SE VUELVE A LA PÁGINA 1 AQUÍ, Y ÉSE ERA EL FALLO.
+   *
+   * Jose, 2026-09-16: "al estar seleccionando más movimientos se borraron
+   * todos los checks, eso es raro".
+   *
+   * Raro no: reproducible. Este mapa lo llama renderAll, y renderAll lo llama
+   * CADA RECARGA SILENCIOSA — o sea, cada vez que el latido ve que la otra
+   * cuenta guardó algo, que trabajando con dos cuentas es cada veinte
+   * segundos. La tabla se plegaba a la primera página, las filas marcadas de
+   * la página 2 en adelante dejaban de estar pintadas, y las casillas
+   * desaparecían de la vista.
+   *
+   * Y LA MITAD PELIGROSA: la selección NO se perdía. _selectedMovements
+   * recorre la lista entera, no lo pintado, así que el botón Delete seguía
+   * armado sobre filas que ya no se veían. Marcar ocho, ver cero, y que
+   * borrar se lleve ocho es peor que perder la selección.
+   *
+   * Volver a la página 1 tiene sentido cuando LO QUE MIRAS cambia — entrar a
+   * la pestaña, cambiar un filtro— y ésos ya lo hacen por su cuenta. Que
+   * lleguen datos nuevos no es eso.
+   */
+  movements: function(){ renderMovements(); },
   projects:  function(){ refreshProjectDropdown(); renderProjectView(); },
   warehouse: function(){ renderWarehouseMap(); },
   incoming:  function(){ renderIncoming(); }
@@ -5634,6 +5960,10 @@ function showTab(tab, btnId){
   // los modos — así que la selección era lo único de la pantalla que sobrevivía
   // a irse de ella.
   _clearMovSelection();
+  // Y se empieza por arriba. Es la otra mitad de la misma regla de Jose —
+  // "si cambio de página, el check debe desaparecer"— y el sitio donde la
+  // vuelta a la página 1 sí significa algo: acabas de llegar.
+  _movPage = 1;
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById(tab).classList.add('active');
   document.querySelectorAll('.nav button').forEach(function(b){ b.classList.remove('active'); });
@@ -5752,6 +6082,11 @@ function renderStats(){
     document.getElementById('stockDetailPanel').classList.remove('open');
   }
 
+  // Una sola llamada para la tarjeta de abajo: _reservasResumen recorre las
+  // reservas y el stock, y pedirla dos veces en la misma cadena de texto
+  // sería recorrerlo todo dos veces por repintado.
+  var resumen = _reservasResumen();
+
   document.getElementById('statsRow').innerHTML =
     '<div class="stat">'+_statLabel('SKUs Tracked','Every distinct category + material combination the system has ever seen — including ones with zero stock right now. The line below shows how many currently have stock.')+'<div class="val">'+items.length+'</div><div class="sub">'+inStock+' with stock</div></div>'+
     (_canSeeCosts() && pricedCount > 0 ?
@@ -5759,6 +6094,25 @@ function renderStats(){
         Math.round(invValue).toLocaleString()+'</div><div class="sub">'+pricedCount+' of '+items.length+' SKUs priced</div></div>' : '')+
     '<div class="stat" style="border-left-color:var(--green)">'+_statLabel('In Warehouse','Total units currently sitting in any rack or location, added up across every material.')+'<div class="val">'+totalWh.toLocaleString()+'</div><div class="sub">units across all racks</div></div>'+
     '<div class="stat" style="border-left-color:var(--red)">'+_statLabel('Dispatched','Total units currently sent out to a project or site and not yet back in the warehouse.')+'<div class="val">'+totalSite.toLocaleString()+'</div><div class="sub">units sent to site</div></div>'+
+    // LAS RESERVAS, SITIO 1 DE 3 (tablero). La tarjeta sólo aparece cuando hay
+    // alguna: una tarjeta que dice 0 todos los días es una tarjeta que se deja
+    // de leer, y el sitio del tablero es caro. El detalle —qué material, en qué
+    // estante y por qué— va en la ayuda, que es donde ya vive el detalle de las
+    // otras seis tarjetas; el mapa enseña lo mismo sobre el plano.
+    (resumen.n ?
+      '<div class="stat" style="border-left-color:var(--accent)">'+
+        _statLabel('Reserved', 'Material held for a reason — it cannot be taken out of the ' +
+          'warehouse until somebody releases it. A reservation holds whatever is in that ' +
+          'rack, so the number moves with the stock.\n\n' +
+          resumen.lista.map(function(r){
+            return '· ' + r.qty + ' ' + r.unit + ' — ' + r.name + ' at ' + r.rack +
+                   (r.reason ? ' — ' + r.reason : '') + (r.by ? ' (' + r.by + ')' : '');
+          }).join('\n') +
+          '\n\nSee them on the Warehouse Map.')+
+        '<div class="val">'+resumen.unidades.toLocaleString()+'</div>'+
+        '<div class="sub">'+resumen.n+' reservation'+(resumen.n===1?'':'s')+
+          ' · '+resumen.estantes+' rack'+(resumen.estantes===1?'':'s')+'</div>'+
+      '</div>' : '')+
     '<div class="stat" style="border-left-color:var(--orange)">'+_statLabel('Active Projects','Number of distinct projects that have at least one movement recorded against them.')+'<div class="val">'+activeProjects+'</div><div class="sub">in system</div></div>'+
     '<div class="stat" style="border-left-color:var(--yellow)">'+_statLabel('Zero Stock','Materials with nothing left in the warehouse and nothing at any site. "Below min" counts materials that still have some stock but less than the minimum you set in the Low-Stock Monitor.')+'<div class="val" style="color:'+(zeroItems.length>0?'var(--red)':'var(--green)')+'">'+zeroItems.length+'</div><div class="sub">'+(belowMin.length?' · '+belowMin.length+' below min':'need restocking')+'</div></div>'+
     (totalWasted>0?'<div class="stat" style="border-left-color:#6B7280">'+_statLabel('Total Wasted','Total units ever recorded as WASTE, all-time — this never resets.')+'<div class="val" style="color:var(--red)">'+totalWasted.toLocaleString()+'</div><div class="sub">units recorded as waste</div></div>':'')+
@@ -5863,9 +6217,85 @@ function clearStockSelection(){
 // Opens the EXIT modal pre-loaded with every selected material as its own line,
 // racks auto-filled — same engine as the "↗ Auto-fill Racks" button, just applied
 // to each selection instead of typed one at a time.
+/* Lo que de un material NO se puede sacar, y por qué.
+ *
+ * Devuelve '' cuando sí se puede. Un material está bloqueado ENTERO sólo si
+ * TODOS los estantes donde hoy tiene existencias están trabados: con uno libre
+ * la salida sigue teniendo sentido y el formulario sirve. */
+function _exitBloqueado(s){
+  var locs = (s && s.warehouseLocs) || {};
+  var conStock = [], trabados = [], motivos = [];
+  for (var r in locs){
+    if (!locs.hasOwnProperty(r) || !(locs[r] > 0)) continue;
+    conStock.push(r);
+    var l = _findLock(s.matId, r);
+    if (l){
+      trabados.push(r);
+      var quien = l.lockedBy ? ' (' + l.lockedBy + ')' : '';
+      motivos.push(r + ' — ' + (l.reason || 'no reason given') + quien);
+    }
+  }
+  if (!conStock.length || trabados.length < conStock.length) return '';
+  return motivos.join('\n');
+}
+
+/* LA VENTANA NO SE ABRE PARA DECIR QUE NO.
+ *
+ * Jose, 2026-09-15, con dos capturas: marcó 44 NORTH —trabado en C3B—, pulsó
+ * "Exit Selected", y la app abrió el formulario entero de salida para luego
+ * decirle "locked" en letra pequeña al lado de la cantidad. Sus palabras: "la
+ * ventana no debería abrirse sólo para decir que no se puede".
+ *
+ * Tenía razón, y no es sólo estética: abrir un formulario es una invitación a
+ * rellenarlo. Enseñarlo cuando la respuesta ya es no hace perder el tiempo dos
+ * veces — al llenarlo y al descubrirlo. */
 function exitSelectedStock(){
   var mats = _selectedStockRows();
   if (!mats.length) return;
+
+  var bloqueados = [], libres = [];
+  mats.forEach(function(s){
+    var motivo = _exitBloqueado(s);
+    if (motivo) bloqueados.push({ s: s, motivo: motivo });
+    else libres.push(s);
+  });
+
+  if (bloqueados.length){
+    var lista = bloqueados.map(function(b){
+      return b.s.name + '\n    ' + b.motivo.split('\n').join('\n    ');
+    }).join('\n\n');
+
+    if (!libres.length){
+      // Nada que sacar: el aviso es la respuesta entera, sin formulario y sin
+      // un "Cancel" que no cancela nada.
+      _showConfirm({
+        icon: '🔒',
+        title: bloqueados.length === 1 ? 'This material is reserved'
+                                       : 'These materials are reserved',
+        message: 'Nothing can be taken out.\n\n' + lista +
+                 '\n\nAn admin can release it from the Warehouse Map.',
+        confirmText: 'Got it',
+        soloAviso: true
+      });
+      return;
+    }
+
+    // Algunos sí se pueden. Se dice cuáles no y se deja seguir con el resto —
+    // abrir el formulario con los trabados dentro sólo los llevaría a un error
+    // al guardar.
+    _showConfirm({
+      icon: '🔒',
+      title: 'Some are reserved',
+      message: lista + '\n\nThey will be left out. Continue with the other ' +
+               libres.length + '?',
+      confirmText: 'Continue',
+      onConfirm: function(){
+        openMoveModal('EXIT');
+        _fillExitLinesFrom(libres);
+      }
+    });
+    return;
+  }
 
   openMoveModal('EXIT'); // synchronous — modal + multi-exit section are ready after this returns
   _fillExitLinesFrom(mats);
@@ -5982,13 +6412,22 @@ function _levelsOf(s){
 /* Por qué está reservado, con las palabras de quien lo reservó. Jose:
  * "al hacer hover podemos mostrar datos o detalles… como el detalle de por qué
  * se reservó". Los datos ya viajan al navegador; sólo había que enseñarlos. */
+/* LEE `materialLocks`, NO `reservations`. La lista vieja llegaba de una hoja que
+ * nada podía llenar desde la app, así que este hover no enseñó nunca nada.
+ *
+ * Y LA CANTIDAD NO SE GUARDA EN NINGÚN SITIO: se deriva del estante, porque una
+ * reserva aparta lo que haya ahí. Es la misma cuenta que reservedQtyFromRacks_
+ * hace en el servidor, y tiene que serlo — si las dos mitades contaran distinto,
+ * el hover contradiría a la barra que está justo al lado. */
 function _lvReasons(s){
   var out = [];
-  (reservations || []).forEach(function(r){
-    if (String(r.status || 'Active').toLowerCase() !== 'active') return;
-    if (nt(r.category) !== nt(s.category) || nt(r.name) !== nt(s.name)) return;
-    var quien = r.by ? (' · ' + r.by) : '';
-    out.push('  ' + r.qty + ' for ' + (r.project || 'a job') + quien);
+  (materialLocks || []).forEach(function(l){
+    if (String(l.status || 'Active').toLowerCase() !== 'active') return;
+    if (nt(l.category) !== nt(s.category) || nt(l.name) !== nt(s.name)) return;
+    var enEse = Math.max(0, Number((s.warehouseLocs || {})[l.rack]) || 0);
+    var quien = l.lockedBy ? (' · ' + l.lockedBy) : '';
+    out.push('  ' + enEse + ' at ' + l.rack + ' — ' +
+             (l.reason || 'no reason given') + quien);
   });
   return out;
 }
@@ -6186,13 +6625,25 @@ function renderStock(){
       ' onclick="event.stopPropagation()" onchange="toggleStockSelect(this)"' +
       (selDisabled ? ' title="No available stock to exit"' : ' title="Select for Exit"') + '>';
 
+    // El candado va DELANTE del texto a propósito: la celda recorta con puntos
+    // suspensivos, y un candado al final es un candado que desaparece justo en
+    // las filas con más estantes, que son las que más lo necesitan. El motivo no
+    // va en una burbuja propia sino en el MISMO title que ya tenía la celda —
+    // dos tooltips encima del mismo cuadrito es peor que uno.
+    var locTxt   = locSummary(s.warehouseLocs);
+    var locLocks = _stockLocks(s);
+    var lockMark = locLocks.length ? '<span class="sc-lock">🔒</span> ' : '';
+    var locTip   = locLocks.length
+      ? locTxt + '\n\n' + _lockLines(locLocks).join('\n')
+      : locTxt;
+
     // Cells are built by NAME and then emitted in the user's own order, so the
     // row can never drift out of step with the header it sits under.
     var cells = {
       category:     '<td class="sc-category">'+catBadge(s.category)+'</td>',
       name:         '<td class="sc-name"><strong>'+_he(s.name)+'</strong>'+(s.project&&s.project!=='GENERIC'?'<br><span style="font-size:.72rem;color:var(--muted)">'+_he(s.project)+'</span>':'')+'</td>',
       levels:       _levelsCell(s),
-      location:     '<td class="sc-location" style="color:var(--muted);font-size:.78rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(locSummary(s.warehouseLocs))+'">'+_he(locSummary(s.warehouseLocs))+'</td>',
+      location:     '<td class="sc-location" style="color:var(--muted);font-size:.78rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(locTip)+'">'+lockMark+_he(locTxt)+'</td>',
       status:       '<td class="sc-status">'+stockBadge(s)+'</td>',
       dateReceived: '<td class="sc-dateReceived">'+dateCell+'</td>',
       lastNote:     '<td class="sc-lastNote">'+noteCell+'</td>',
@@ -6541,20 +6992,28 @@ function renderMovements(){
       ? '<td><div style="display:flex;align-items:center;gap:2px">'+(m.archived?'<span style="font-size:.68rem;color:var(--muted)" title="Archived movement — read only">📜</span>':'<button class="btn-icon" data-rowact="edit" title="Edit record" onclick="openEditMovModal('+m.rowIdx+')" style="color:var(--accent)">✏️</button><button class="btn-icon" data-rowact="del" title="Delete record" onclick="deleteMovementRow('+m.rowIdx+')" style="color:var(--red);opacity:.7">🗑</button>')+'</div></td>'
       : '';
 
+    // A row waiting its turn in the delete queue says so. It is still there
+    // because it has NOT been deleted yet — dimming it is the truth, and it
+    // stops the same bin being pressed twice.
+    var esperando = !!(m.movId && _delPending[m.movId]);
+    var pendCls   = esperando ? ' row-deleting' : '';
+
     // La casilla de la fila. Un movimiento archivado no la lleva: no se puede
     // editar ni borrar, así que ofrecerlo sería ofrecer un callejón sin salida.
+    //
+    // Y una fila con el borrado ya en el aire tampoco se puede volver a marcar.
+    // El gris lo dice, pero decirlo no basta: si se puede marcar, se marca — y
+    // el segundo intento se encuentra con que ya no está y responde GONE|. Es
+    // el error que Jose registró el 2026-09-15 a las 3:09:50 sobre un
+    // movimiento que él mismo había borrado a las 3:08.
     var selCell = isAdmin
       ? '<td class="mov-sel-cell">' + (m.archived ? '' :
           '<input type="checkbox" class="mov-select-cb" data-movid="' + _escAttr(m.movId || '') +
           '" data-rowidx="' + m.rowIdx + '"' + (m.movId && _movSelection[m.movId] ? ' checked' : '') +
-          (m.movId ? '' : ' disabled title="This movement has no ID yet — run Settings → System → Movement IDs"') +
+          (esperando ? ' disabled title="This movement is being deleted"' :
+           m.movId ? '' : ' disabled title="This movement has no ID yet — run Settings → System → Movement IDs"') +
           ' onclick="event.stopPropagation()" onchange="toggleMovSelect(this)">') + '</td>'
       : '';
-
-    // A row waiting its turn in the delete queue says so. It is still there
-    // because it has NOT been deleted yet — dimming it is the truth, and it
-    // stops the same bin being pressed twice.
-    var pendCls = (m.movId && _delPending[m.movId]) ? ' row-deleting' : '';
     // data-mov: para poder encontrar ESTA fila y animar su salida sin repintar
     // la tabla. Va el movId y no el rowIdx a propósito — el rowIdx se mueve
     // cuando alguien borra una fila de más arriba, y animaríamos la equivocada.
@@ -6590,8 +7049,32 @@ function renderMovements(){
   // to be attached again each time.
   if (_colEdit.mov) _wireColEdit('mov');
 
-  // La selección sobrevive al repintado, y la barra de acciones se pone al día
-  // con lo que de verdad hay marcado — no con lo que había antes de filtrar.
+  /* LO MARCADO ES LO QUE SE VE. SIEMPRE.
+   *
+   * La selección sobrevive al repintado —se guarda por ID, no por número de
+   * fila— pero no puede sobrevivir a que la fila deje de estar en pantalla. Si
+   * sobrevive, Delete queda armado sobre algo que nadie está mirando, y ése es
+   * el estado en el que se borra lo que no se quería.
+   *
+   * Pasa de verdad, y de dos maneras: la tabla se pliega a menos páginas, o la
+   * otra cuenta borró la fila mientras tú la tenías marcada. En los dos casos
+   * la respuesta correcta es la misma — lo que no está pintado no está
+   * seleccionado.
+   *
+   * Va DESPUÉS de escribir la tabla, no antes: lo que se mira son las casillas
+   * que acaban de pintarse.
+   */
+  var pintadas = {};
+  tc.querySelectorAll('.mov-select-cb').forEach(function(cb){
+    var id = cb.getAttribute('data-movid');
+    if (id) pintadas[id] = 1;
+  });
+  Object.keys(_movSelection).forEach(function(id){
+    if (!pintadas[id]) delete _movSelection[id];
+  });
+
+  // Y la barra de acciones se pone al día con lo que de verdad hay marcado —
+  // no con lo que había antes de filtrar.
   _syncMovSelectAll();
   _updateMovActionBar();
 
@@ -6602,7 +7085,7 @@ function renderMovements(){
 
 function _loadOlderHistoryClicked() {
   var btn = document.getElementById('btnLoadOlderHistory');
-  if (_oldHistoryLoaded) { showToast('Older history already loaded (' + oldMovements.length + ' movements).', 'ok'); return; }
+  if (_oldHistoryLoaded) { showToast('Older history already loaded (' + oldMovements.length + ' movements).', 'ok', TOAST_QUICK); return; }
   _btnBusy(btn, 'Loading…');
   google.script.run
     .withSuccessHandler(function(rows) {
@@ -6611,11 +7094,11 @@ function _loadOlderHistoryClicked() {
       _btnLabel(btn, '📜 Older History (' + oldMovements.length + ')');
       _movPage = 1;
       renderMovements();
-      showToast('✓ Loaded ' + oldMovements.length + ' archived movement(s).', 'ok');
+      showToast('✓ Loaded ' + oldMovements.length + ' archived movement(s).', 'ok', TOAST_QUICK);
     })
     .withFailureHandler(function(e) {
       _btnLabel(btn, '📜 Load Older History');
-      showToast('⚠ Error: ' + (e.message||e), 'err');
+      showToast('⚠ Error: ' + _stripTags(e), 'err');
     })
     .processMovement('loadOlderHistory', _h({}));
 }
@@ -6640,7 +7123,9 @@ function deleteMovementRow(rowIdx){
     message: what + ' will be removed from the warehouse history.\n\n' +
              'It goes to the trash, so you can put it back from Settings → System.',
     confirmText: 'Yes, Delete',
-    onConfirm: function(){ _doDeleteMovementRow(rowIdx); }
+    onConfirm: function(){
+      if (_doDeleteMovementRow(rowIdx)) _progStart(1, 'Deleting movement');
+    }
   });
 }
 
@@ -6786,10 +7271,19 @@ function deleteSelectedMovements(){
       // veinte reconstrucciones del almacén de golpe es justo lo que daba
       // "System busy". La selección se suelta ya: las filas se ven esperando
       // por su cuenta, y dejarlas marcadas invitaría a pulsar otra vez.
+      //
+      // Se cuenta lo que DE VERDAD se encoló, no lo que se seleccionó: una fila
+      // que ya tenía su borrado en el aire no encola otro, y contarla dejaría la
+      // línea de progreso esperando para siempre a una respuesta que no viene.
+      var pedidos = 0;
       sel.forEach(function(m){
         delete _movSelection[m.movId];
-        _doDeleteMovementRow(m.rowIdx);
+        if (_doDeleteMovementRow(m.rowIdx)) pedidos++;
       });
+      // Después del bucle, no dentro: las respuestas del servidor no pueden
+      // llegar hasta que este código suelte el hilo, así que el total ya está
+      // completo cuando cuente el primer ✓.
+      _progStart(pedidos, pedidos === 1 ? 'Deleting movement' : 'Deleting movements');
       _updateMovActionBar();
     }
   });
@@ -6824,21 +7318,66 @@ var _delQueue   = [];      // trabajos esperando turno
 var _delRunning = false;   // hay uno en el aire
 var _delPending = {};      // movId → true, para que la fila se vea esperando
 
+/* ── POR QUÉ NINGUNA RECARGA PUEDE PINTAR EN MEDIO DE UNA TANDA ─────────────
+ *
+ * Jose, 2026-09-15, borrando trece de golpe: "se eliminan todas las filas
+ * enseguida, pero luego de algunos segundos empiezan a salir los toasts de
+ * confirmación y REGRESAN TODAS LAS FILAS opacas a eliminarse una por una;
+ * también regresan algunas sin estar opacas y al tratar de eliminarlas otra
+ * vez me sale un error... si ya se desaparecieron al principio, ¿por qué
+ * aparecen otra vez?"
+ *
+ * Las dos cosas son el mismo fallo, y no es el borrado: es una FOTO VIEJA.
+ *
+ * Cada borrado mueve el sello de datos. El latido de ESTA MISMA ventana lo ve
+ * cambiado a los veinte segundos y pide una recarga silenciosa. Esa recarga se
+ * trae del servidor los doce que todavía no han salido de la cola — y los
+ * vuelve a pintar, uno por uno, delante de quien ya los vio irse.
+ *
+ * Y los que vuelven SIN estar en gris son la parte peligrosa. Una fila se pinta
+ * en gris mientras su borrado está en el aire; en cuanto el servidor confirma,
+ * la marca se quita. Si la foto se pidió antes de esa confirmación y llega
+ * después, la fila vuelve sin marca: se puede volver a seleccionar y volver a
+ * borrar. El segundo intento se encuentra con que ya no está, y responde GONE|.
+ * Ése es el registro exacto que Jose mandó — borrada a las 3:08, error a las
+ * 3:09:50, misma cuenta, mismo movimiento.
+ *
+ * EL NÚMERO DE ORDEN DE LA v11.53 NO CUBRE ESTO, y merece decirse porque
+ * parece que sí. Aquél descarta respuestas que llegan DESORDENADAS. Ésta no
+ * llegó desordenada: es la más nueva que hay, la única pedida. Lo viejo no es
+ * la respuesta, es el momento en que se sacó la foto. Así que la regla no es de
+ * orden, es de momento: mientras quede un borrado en el aire, ninguna recarga
+ * pinta. La que haga falta se pide UNA VEZ al final — que es justo lo que el
+ * último borrado de la cola ya hacía.
+ *
+ * _delGen sube con cada borrado que el servidor contesta, a favor o en contra.
+ * Una carga se lo lleva apuntado y se descarta si al volver ya no coincide:
+ * cubre el hueco entre "la cola se vació" y "la respuesta llegó".
+ */
+var _delGen = 0;
+
 function _delEnqueue(job){ _delQueue.push(job); _delPump(); }
 
 function _delPump(){
-  if (_delRunning || !_delQueue.length) return;
+  // Vacía: puede que a esta cola le toque cerrar la tanda. El guardián de
+  // _cierreDeTanda comprueba también la otra, así que llamarlo de más no hace
+  // nada.
+  if (_delRunning || !_delQueue.length){ _cierreDeTanda(); return; }
   _delRunning = true;
   var job = _delQueue.shift();
   job(function(){ _delRunning = false; _delPump(); });
 }
 
+/* Devuelve si de verdad encoló algo. Quien llama necesita saberlo para contar
+   la tanda: si dice "borrando 13" y dos no llegaron a encolarse, la línea de
+   progreso se queda en 11 de 13 para siempre, esperando a dos que nunca
+   contestan. */
 function _doDeleteMovementRow(rowIdx){
   var mov = _movByRowIdx(rowIdx);
-  if (!mov) return;
+  if (!mov) return false;
   // Pulsar dos veces la misma papelera no encola dos borrados. El segundo
   // recibiría "ya lo borró jose@…", que es verdad y no ayuda a nadie.
-  if (mov.movId && _delPending[mov.movId]) return;
+  if (mov.movId && _delPending[mov.movId]) return false;
   if (mov.movId) _delPending[mov.movId] = true;
 
   /* LA FILA SE VA AL PULSAR, NO CUANDO EL SERVIDOR CONTESTA.
@@ -6869,8 +7408,21 @@ function _doDeleteMovementRow(rowIdx){
     var state = { tries: 0 };
 
     function attempt(){
+      /* LA MARCA SE PONE AQUÍ, EN CADA INTENTO, no al encolar.
+       *
+       * Hasta la v11.96 este camino no la ponía en absoluto: el aplazamiento de
+       * la v11.89 vivía dentro de _acWrite, y los borrados van por su propia
+       * cola desde la v11.58. Trece borrados pagaban trece reconstrucciones del
+       * almacén — doce segundos cada uno, cronometrados sobre el video de Jose.
+       *
+       * En cada intento y no una vez: si el servidor contestó "ocupado" y esto
+       * se reintenta treinta segundos después, la cola pudo vaciarse entre
+       * medias y entonces éste ya es el último. */
+      var carga = { op: 'deleteRow', movId: mov.movId || '', rowIdx: rowIdx };
+      _marcarAplazable(carga);
       google.script.run
         .withSuccessHandler(function(){
+          _delGen++;   // una foto pedida antes de esto ya no vale
           if (mov.movId) delete _delPending[mov.movId];
           // La fila ya se fue al pulsar, hace unos cuatro segundos. Esto es el
           // seguro por si la animación no llegó a correr —pestaña en segundo
@@ -6882,12 +7434,19 @@ function _doDeleteMovementRow(rowIdx){
           var at = movements.indexOf(mov);
           if (at !== -1) { movements.splice(at, 1); renderAll(); }
           _sysCacheDrop('trash');
-          showToast('Movement deleted. It is in the trash.', 'ok');
+          // Antes: un toast por borrado. Trece borrados, trece avisos apilados
+          // sobre la tabla. Ahora una sola línea que cuenta — ver _progStart.
+          _progStep(true);
           done();
-          // La recarga silenciosa va DESPUÉS de soltar la cola, y sólo cuando
-          // no queda ninguno esperando: traerse el almacén entero entre un
-          // borrado y el siguiente es justo lo que hacía la ráfaga lenta.
-          if (!_delQueue.length && !_delRunning) loadDataFromGoogle(true, true);
+          /* La recarga silenciosa va DESPUÉS de soltar la cola, y sólo cuando no
+             queda NADA esperando en ninguna de las dos: traerse el almacén
+             entero entre un borrado y el siguiente es justo lo que hacía la
+             ráfaga lenta.
+
+             Y por _reloadWhenIdle, no directo: si la tanda aplazó el refresco,
+             el cierre lo pide y la foto buena llega después. Pedirla aquí a
+             secas traería las hojas derivadas a medias. */
+          if (!_hayMasEscrituras() && !_delRunning && !_wqBusy) _reloadWhenIdle();
         })
         .withFailureHandler(function(err){
           // Ocupado no es un fallo: es un turno. Se espera y se vuelve, sin
@@ -6898,6 +7457,7 @@ function _doDeleteMovementRow(rowIdx){
             setTimeout(attempt, _busyDelay(state.tries));
             return;
           }
+          _delGen++;   // la fila vuelve a su sitio: la foto de antes tampoco vale
           if (mov.movId) delete _delPending[mov.movId];
 
           /* LA VUELTA ATRÁS, Y EL "NO" QUE NO LA MERECE.
@@ -6928,17 +7488,20 @@ function _doDeleteMovementRow(rowIdx){
                ' tries. Nothing was deleted — the row is back where it was.')
             : (_stripTags(err) + (siguePuesto ? ' — the row is back where it was.' : '')),
             'err', 8000);
+          // Cuenta como no hecho, y es la verdad aunque el motivo sea "ya no
+          // estaba": esta petición no borró nada. El porqué lo cuenta el toast
+          // de arriba; la línea sólo lleva la cuenta.
+          _progStep(false);
           done();
         })
-        .processMovement('manageMaterial', _h({
-          op: 'deleteRow',
-          movId: mov.movId || '',
-          rowIdx: rowIdx            // sólo para el registro; el servidor borra por movId
-        }));
+        // rowIdx va sólo para el registro; el servidor borra por movId.
+        .processMovement('manageMaterial', _h(carga));
     }
 
     attempt();
   });
+
+  return true;   // encolado: quien llama puede contarlo en la tanda
 }
 
 // ── Project View ──────────────────────────────────────────────────────────────
@@ -8157,15 +8720,100 @@ function _reloadWhenIdle(){
   if (_reloadTimer) clearTimeout(_reloadTimer);
   _reloadTimer = setTimeout(function(){
     _reloadTimer = null;
-    // Todavía hay trabajo en la cola: recargar ahora daría una foto a medias
-    // y habría que repetirla igual. Se vuelve a esperar.
-    if (_wq.length || _wqBusy) { _reloadWhenIdle(); return; }
+    /* Todavía hay trabajo en alguna cola: recargar ahora daría una foto a
+       medias y habría que repetirla igual. Se vuelve a esperar.
+
+       LAS DOS COLAS desde la v11.96. Miraba sólo la de escrituras, y los
+       borrados van por la suya — así que una tanda de borrados podía recargar
+       con la mitad sin hacer, traerse filas que estaban a punto de irse, y
+       dejarlas en pantalla hasta la siguiente vuelta. */
+    if (_wq.length || _wqBusy || _delQueue.length || _delRunning) { _reloadWhenIdle(); return; }
     loadDataFromGoogle(true, true);   // skipCache, silencioso
   }, 700);
 }
 
+/* UN REFRESCO DEL SERVIDOR POR TANDA, NO UNO POR OPERACIÓN.
+ *
+ * Jose, 2026-09-15: "todo se actualiza, no con la velocidad que me gustaría".
+ * La recarga del NAVEGADOR ya se agrupaba (ver _reloadWhenIdle, arriba). Lo que
+ * no se agrupaba era el trabajo del SERVIDOR: cada operación reconstruía
+ * LIVE_STOCK, SITE_STOCK y WASTED_STOCK por su cuenta, y eso son unos nueve
+ * viajes a Google —3,7 segundos medidos en su hoja—. Borrar diez filas los
+ * pagaba diez veces.
+ *
+ * Ahora, mientras queda trabajo detrás en la cola, cada operación le dice al
+ * servidor que NO refresque todavía; cuando la cola se vacía se pide UN
+ * refresco. Ver refreshOrDefer_ en Code_v3_fixed.gs, que explica por qué esto
+ * no puede dejar sacar material que ya no está: validar lee el ARCHIVO, no las
+ * hojas derivadas.
+ */
+var _refrescoAplazado = false;
+
+/* HAY DOS COLAS, Y LA v11.89 SÓLO MIRABA UNA. ÉSE ERA EL FALLO.
+ *
+ * Jose grabó el 2026-09-16 borrando trece movimientos con dos cuentas abiertas.
+ * La línea de progreso, cronometrada sobre su propio video:
+ *
+ *     3 de 13 …… 1:20
+ *     6 de 13 …… 2:00
+ *    10 de 13 …… 2:40
+ *
+ * Doce segundos por borrado. La v11.89 tenía que haber dejado la tanda entera
+ * en DOS reconstrucciones, y estaba pagando trece.
+ *
+ * La causa: el aplazamiento vivía dentro de _acWrite, que es la cola de
+ * ESCRITURAS (_wq). Los borrados tienen su propia cola desde la v11.58
+ * (_delQueue) y llaman a google.script.run directamente, sin pasar por ahí. O
+ * sea que la optimización existía y los borrados no la tocaban — y borrar es
+ * justo lo que se hace en tandas grandes.
+ *
+ * "¿Queda trabajo detrás?" tiene que mirar LAS DOS. Una sola cola respondería
+ * que no mientras la otra está llena, y entonces una operación refrescaría en
+ * medio de la tanda (el gasto que se quería evitar) o —peor— la última
+ * aplazaría creyendo que viene alguien detrás y no vendría nadie.
+ */
+function _hayMasEscrituras(){
+  return _wq.length > 0 || _delQueue.length > 0;
+}
+
+/* EL CIERRE DE LA TANDA, uno para las dos colas.
+ *
+ * Sólo cuando las DOS están vacías y no queda nada en el aire. Si lo llamara
+ * cada cola por su cuenta, borrar mientras se guarda pediría el refresco con la
+ * otra a medias, y habría que volver a pedirlo.
+ */
+function _cierreDeTanda(){
+  if (_wqBusy || _wq.length || _delRunning || _delQueue.length) return;
+  if (!_refrescoAplazado) return;
+  _refrescoAplazado = false;
+  google.script.run
+    // Falle o no, se recarga: si el refresco no llegó, el servidor tiene la
+    // marca puesta y el propio getInitialData lo arreglará al contestar.
+    .withSuccessHandler(function(){ _reloadWhenIdle(); })
+    .withFailureHandler(function(){ _reloadWhenIdle(); })
+    .processMovement('refreshNow', _h({}));
+}
+
+/* La marca que viaja con la carga: "no refresques todavía, viene más".
+ *
+ * Se decide EN EL MOMENTO DE ENVIAR y no al encolar — entre una cosa y otra la
+ * cola pudo vaciarse, y entonces ésta es la última y sí tiene que refrescar. Al
+ * revés, la última de la tanda diría "ya vendrá otro" y no vendría nadie: los
+ * números se quedarían viejos hasta que alguien recargara a mano.
+ */
+function _marcarAplazable(carga){
+  if (!carga || typeof carga !== 'object') return;
+  if (_hayMasEscrituras()){
+    carga._skipRefresh = true;
+    _refrescoAplazado  = true;
+  } else {
+    delete carga._skipRefresh;
+    _refrescoAplazado = false;
+  }
+}
+
 function _wqPump(){
-  if (_wqBusy || !_wq.length) return;
+  if (_wqBusy || !_wq.length) { _cierreDeTanda(); return; }
   _wqBusy = true;
   var job = _wq.shift();
   job(function(){ _wqBusy = false; _wqPump(); });
@@ -8185,9 +8833,21 @@ function _acWrite(o){
     var tries = 0;
 
     function attempt(){
+      // ¿Viene más trabajo detrás? Entonces el servidor no refresca todavía.
+      // Se mira EN CADA INTENTO y no al encolar: entre el encolado y el envío
+      // la cola pudo vaciarse, y entonces ésta es la última y sí tiene que
+      // refrescar. Si se marcara al encolar, la última de la tanda diría "ya
+      // vendrá otro" y no vendría nadie.
+      // Mira las DOS colas, no sólo ésta: ver _hayMasEscrituras.
+      _marcarAplazable((o.args && o.args.length > 1) ? o.args[1] : null);
       var run = google.script.run
         .withSuccessHandler(function(res){
           done();
+          // `prog: true` = este trabajo va en la línea de progreso. Se cuenta
+          // AQUÍ y no en cada sitio porque la cola es la única que sabe de
+          // verdad si un trabajo terminó bien o mal — y porque contarlo abajo,
+          // en el manejador de cada quien, es exactamente donde se olvida.
+          if (o.prog) _progStep(true);
           try { if (o.ok) o.ok(res); } catch (e) {}
         })
         .withFailureHandler(function(err){
@@ -8201,6 +8861,10 @@ function _acWrite(o){
             return;
           }
           done();
+          // Va ANTES del desvío a o.fail: un trabajo que falló cuenta como
+          // hecho-mal pase lo que pase, y si se contara después del `return` la
+          // línea se quedaría esperándolo para siempre.
+          if (o.prog) _progStep(false);
           if (o.btn) _btnReset(o.btn);
           if (o.fail) { try { o.fail(err, _isBusyError(err)); } catch (e) {} return; }
 
@@ -8349,6 +9013,9 @@ async function submitMovement(){
     if (!adjust.rack){ alert('Enter the rack you counted.'); return; }
     if (!adjust.hasCount){ alert('Enter what you counted.'); return; }
     if (adjust.delta === 0){
+      // NO va a TOAST_QUICK: esto explica por qué NO pasó nada, que es lo
+      // contrario de confirmar algo. Si se va en dos segundos, la persona se
+      // queda creyendo que su ajuste se perdió.
       showToast('The count matches what the app already says — nothing to correct.', 'ok', 5000);
       return;
     }
@@ -8530,7 +9197,7 @@ async function submitMovement(){
               ' removed. Remaining warehouse stock: ' + remaining +
               '.\n⚠️ Row saved with Status = "Damaged" in master sheet.', 'warn', 8000);
           } else {
-            showToast('Saved ✓', 'ok');
+            showToast('Saved ✓', 'ok', TOAST_QUICK);
           }
         }, 400);
       })
@@ -8577,7 +9244,7 @@ async function submitMovement(){
   // threw before reaching the spinner/button-state line.
   console.error('submitMovement error:', e);
   _reportClientError('submitMovement', e && e.message ? e.message : String(e), e && e.stack);
-  showToast('⚠ Error: ' + (e && e.message ? e.message : e), 'err', 6000);
+  showToast('⚠ Error: ' + _stripTags(e), 'err', 6000);
   var btnErr = document.getElementById('moveSubmit');
   if (btnErr) { btnErr.textContent = 'Save to System'; btnErr.disabled = false; }
   _setModalBusy('moveOverlay', false);
@@ -9559,7 +10226,7 @@ function syncExitRackAvail(n){
     // A locked material can't EXIT from this rack — the backend rejects it anyway,
     // this is just an early, visible warning before the user even tries to submit.
     var lock = _findLock(key, rack);
-    if (lock){ chip.className='el-avail warn'; chip.textContent='🔒 locked — ' + lock.reason; return; }
+    if (lock){ chip.className='el-avail warn'; chip.textContent='🔒 reserved — ' + lock.reason; return; }
     if (qty > avail){ chip.className='el-avail warn'; chip.textContent='⚠ only '+avail; }
     else { chip.className='el-avail ok'; chip.textContent='✓ '+avail+' avail'; chip.dataset.avail = avail; }
   });
@@ -9700,7 +10367,7 @@ function autoFillExitMatRows(n){
   // Focus first qty field
   var firstQty = locsDiv.querySelector('.el-qty');
   if (firstQty) firstQty.focus();
-  showToast(racks.length + ' rack(s) auto-filled — enter quantities.','ok');
+  showToast(racks.length + ' rack(s) auto-filled — enter quantities.','ok',TOAST_QUICK);
 }
 
 function submitMultiExit(){
@@ -9776,7 +10443,7 @@ function submitMultiExit(){
         if (res && res.refreshError) {
           showToast('✓ '+res.rowCount+' movement record(s) saved — but ⚠ '+res.refreshError, 'warn', 12000);
         } else {
-          showToast('✓ '+res.rowCount+' movement record(s) saved.','ok');
+          showToast('✓ '+res.rowCount+' movement record(s) saved.','ok',TOAST_QUICK);
         }
         loadDataFromGoogle(false); // cached numbers show instantly, fresh ones catch up quietly
       })
@@ -9972,7 +10639,7 @@ function submitMultiEntry(){
             if (res.refreshError) msgs.push('⚠ ' + res.refreshError);
             showToast('Saved ✓ — ' + count + ' material(s), ' + rows + ' row(s) — ' + msgs.join(' | '), 'warn', res.refreshError ? 12000 : 8000);
           } else {
-            showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' + (rows===1?'':'s') + ')', 'ok', 5000);
+            showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' + (rows===1?'':'s') + ')', 'ok', TOAST_QUICK);
           }
           /* DOS COSAS DESPUÉS DE GUARDAR, Y EN ESTE ORDEN.
              Las dos van al final y no antes: los movimientos ya están
@@ -10012,7 +10679,13 @@ function submitMultiEntry(){
           });
           return;
         }
-        showToast('Error: ' + msg, 'err', 6000);
+        // _stripTags, igual que la salida. Era la única de las dos que
+        // enseñaba el texto crudo: la entrada decía 'Error: ' + msg y la
+        // salida ya pasaba por aquí. Hoy ninguna acción de este camino lanza
+        // un error marcado, así que no se veía —pero la asimetría es la
+        // trampa, no el síntoma: el día que el servidor marque un error de
+        // entrada, el usuario leería SYSTEM_BUSY| en su pantalla.
+        showToast('Error: ' + _stripTags(err), 'err', 6000);
       })
       .processMovement('addMultiEntry', _h(payload));
   }
@@ -10208,7 +10881,7 @@ function _saveArchiveCutoff() {
   var months = sel.value;
   google.script.run
     .withSuccessHandler(function() { showToast('✓ Archive cutoff updated to ' + months + ' months.', 'ok'); })
-    .withFailureHandler(function(e) { showToast('⚠ Error: ' + (e.message||e), 'err'); })
+    .withFailureHandler(function(e) { showToast('⚠ Error: ' + _stripTags(e), 'err'); })
     .processMovement('updateConfig', _h({ type: 'archiveCutoffMonths', value: months }));
 }
 
@@ -10225,7 +10898,7 @@ function _rebuildStockNow() {
     })
     .withFailureHandler(function(e){
       _btnLabel(btn, '🔧 Rebuild Stock Totals Now');
-      showToast('⚠ Error: ' + (e.message||e), 'err', 6000);
+      showToast('⚠ Error: ' + _stripTags(e), 'err', 6000);
     })
     .processMovement('adminAction', _h({ action: 'reconcile' }));
 }
@@ -10352,7 +11025,9 @@ function _savePermSwitch(sw){
     .withSuccessHandler(function(res){
       sw.disabled = false;
       rolePerms = res.perms;
-      showToast('Saved ✓', 'ok');
+      // Sin aviso: el interruptor se queda donde lo pusiste. Mientras
+      // guarda está apagado, y si falla vuelve solo con su error — o sea
+      // que su POSICIÓN ya es la respuesta.
     })
     .withFailureHandler(function(e){
       sw.checked = !want; sw.disabled = false;   // put it back
@@ -10450,8 +11125,8 @@ function _saveCompanyProfile(){
       }
       applyCompanyBranding(c);
       _coLogo = null; _coLogoRemove = false;
+      // Sin aviso: la pestaña se repinta y el logo aparece en la cabecera.
       _renderCompanyTab();
-      showToast('Company details saved ✓', 'ok');
     })
     .withFailureHandler(function(e){
       _btnLabel(btn, 'Save changes');
@@ -10853,6 +11528,10 @@ function _emptyTrash(){
     confirmText: 'Empty it',
     onConfirm: function(){
       _btnBusy(btn, 'Emptying…');
+      // La línea gira mientras tanto y termina con el número que dé el
+      // servidor: vaciar una papelera con cincuenta dentro tarda, y hasta
+      // ahora no se veía nada hasta el final.
+      _progStart(1, 'Emptying the trash');
       _acWrite({
         args: ['manageMaterial', _h({ op: 'emptyTrash' })],
         btn:  btn,
@@ -10860,9 +11539,20 @@ function _emptyTrash(){
         ok: function(res){
           _btnReset(btn);
           var n = (res && res.removed) || 0;
-          showToast('✓ ' + n + ' deleted movement' + (n === 1 ? '' : 's') + ' discarded.', 'ok');
+          _progEnd(n + ' deleted movement' + (n === 1 ? '' : 's') + ' discarded.');
           _sysCacheDrop('trash');
-          _loadTrash();
+          // Todas a la vez, y la lista se repinta cuando la última terminó.
+          // Vaciar la papelera es lo más definitivo que hace la app; que se vea
+          // vaciarse, en vez de aparecer vacía, es parte de decir qué pasó.
+          var caja = document.getElementById('trashBox');
+          _rowLeaveAll(caja ? Array.prototype.slice.call(caja.querySelectorAll('[data-trash]')) : [],
+            function(){ _loadTrash(); });
+        },
+        fail: function(e, ocupado){
+          _progEnd('The trash was not emptied.', true);
+          showToast(ocupado
+            ? 'The system has been busy for a while — nothing was lost. Try again in a few seconds.'
+            : 'Could not empty the trash: ' + _humanErr(e), ocupado ? 'warn' : 'err', 8000);
         }
       });
     }
@@ -10889,13 +11579,21 @@ function _restoreMovement(btn){
   var movId = btn ? (btn.getAttribute('data-movid') || '') : '';
   if (!movId || _trashPending[movId]) return;   // pulsarlo dos veces no encola dos
   _trashPending[movId] = true;
+  // Uno a uno, porque no hay botón de "restaurar todos": cada clic suma a la
+  // misma tanda mientras siga viva, y el final dice el total. Jose: "como todos
+  // los movimientos van desapareciendo, al final debería decir cuántos fueron
+  // restaurados".
+  _progStart(1, 'Restoring movements', _progFinRestaurado);
   _btnBusy(btn, 'Restoring…');
   _acWrite({
     args: ['manageMaterial', _h({ op: 'restoreMovement', movId: movId })],
     btn:  btn,
+    // Antes: un toast por movimiento. Restaurar cinco daba cinco avisos sobre
+    // la ventana de Ajustes que la persona está usando — y la fila ya se va
+    // sola, así que el aviso no contaba nada que no se viera.
+    prog: true,
     ok: function(){
       delete _trashPending[movId];
-      showToast('✓ Movement restored.', 'ok');
       // AL INSTANTE Y EN LOCAL. El servidor YA lo hizo — esto es el manejador
       // de ÉXITO — así que volver a pedirle la lista para enterarnos de algo
       // que ya sabemos es lo que borraba el "Restoring…" de los demás.
@@ -10907,6 +11605,8 @@ function _restoreMovement(btn){
     fail: function(e, ocupado){
       delete _trashPending[movId];
       _btnReset(btn);
+      // El fallo SÍ sigue siendo un aviso, porque hay que leerlo. Contarlo ya
+      // lo hizo la cola (prog: true), para que el total del final no mienta.
       showToast(ocupado
         ? 'The system has been busy for a while — nothing was lost. Try again in a few seconds.'
         : '⚠ ' + _humanErr(e), ocupado ? 'warn' : 'err', 8000);
@@ -11826,19 +12526,27 @@ function _commitImport(){
   if (!validRows.length) return;
   var btn = document.getElementById('btnCommitImport');
   _btnBusy(btn, 'Importing…');
+  // Importar doscientas filas tarda, y hasta ahora la pantalla se quedaba
+  // quieta hasta el final. La línea gira mientras tanto y termina con el
+  // número que dé el servidor.
+  _progStart(1, 'Importing rows');
   google.script.run
     .withSuccessHandler(function(res){
-      showToast('✓ Imported ' + res.rowCount + ' row(s) as new ENTRY movements.', 'ok', 6000);
+      _progEnd('Imported ' + res.rowCount + ' row' + (res.rowCount === 1 ? '' : 's') +
+               ' as new ENTRY movements.');
       _importParsedRows = [];
       var box = document.getElementById('importPreviewBox'); if (box) box.innerHTML = '';
       var fi  = document.getElementById('importFileInput');  if (fi)  fi.value = '';
       // Silencioso aunque una importación cambie mucho: sigue siendo el
-      // resultado de algo que se acaba de pulsar, y el aviso dice cuántas filas
+      // resultado de algo que se acaba de pulsar, y la línea dice cuántas filas
       // entraron.
       loadDataFromGoogle(true, true);
     })
     .withFailureHandler(function(err){
       _btnLabel(btn, '✓ Import ' + validRows.length + ' Valid Row(s)');
+      _progEnd('Nothing was imported.', true);
+      // El porqué sigue siendo un aviso: una importación que falla suele
+      // fallar por algo del archivo, y eso hay que leerlo.
       showToast('Import failed: ' + (err.message || err).replace(/^Error:\s*/i,''), 'err', 8000);
     })
     .processMovement('commitImport', _h({ rows: validRows }));
@@ -12078,8 +12786,8 @@ function _locWhyKept(name, use){
   var u = use[String(name || '').trim().toUpperCase()];
   if (!u) return '';
   if (u.qty > 0) return 'Has ' + u.qty + ' in stock';
-  if (u.locked)  return 'A material is locked to it';
-  if (u.allowed) return 'A lock allows moving material here';
+  if (u.locked)  return 'A material is reserved there';
+  if (u.allowed) return 'A reservation allows moving material here';
   return '';
 }
 
@@ -12110,6 +12818,25 @@ function _renderLocGroup(type, use){
             return '<li class="loc-item" draggable="true" data-name="' + _he(l.name) + '">' +
               '<input type="checkbox" class="loc-pick" data-name="' + _he(l.name) + '" title="Select to merge">' +
               '<span class="loc-grip">⠿</span><span>' + _he(l.name) + '</span>' +
+              // LAS RESERVAS, SITIO 3 DE 3 (Settings → Locations). Aquí se
+              // razona POR UBICACIÓN —qué hay en este estante, se puede borrar,
+              // se puede archivar— así que lo que hace falta saber es si ESTE
+              // estante tiene algo apartado, no la lista entera de la bodega.
+              // Eso ya está arriba, en el mapa y en el tablero.
+              //
+              // Y es la respuesta a una pregunta que esta pantalla ya hacía a
+              // medias: el botón de borrar desaparece cuando "a material is
+              // reserved there", pero hasta ahora no decía CUÁL ni POR QUÉ.
+              (function(){
+                var rs = _reservasDeEstante(l.name);
+                if (!rs.length) return '';
+                var u = rs.reduce(function(a2, r){ return a2 + r.qty; }, 0);
+                return '<span class="loc-resv" title="' + _escAttr(rs.map(function(r){
+                         return r.qty + ' ' + r.unit + ' ' + r.name +
+                                (r.reason ? ' — ' + r.reason : '') +
+                                (r.by ? ' (' + r.by + ')' : '');
+                       }).join('\n')) + '">🔒 ' + u + '</span>';
+              })() +
               '<button class="loc-arch-btn" data-rowact="del" title="' +
                 _escAttr(isArchived ? 'Restore'
                                     : (why ? why + ' — archive it instead of deleting' : 'Archive')) + '" ' +
@@ -12154,9 +12881,11 @@ function _locDelete(name){
     confirmText: 'Delete',
     danger: true,
     onConfirm: function(){
-      _locLayout = _locLayout.filter(function(l){ return l.name !== name; });
-      _redrawLocGroups();
-      _locMarkDirty();
+      _rowLeaveAll(_itemsBy('locGroups', 'li.loc-item', 'data-name', [name]), function(){
+        _locLayout = _locLayout.filter(function(l){ return l.name !== name; });
+        _redrawLocGroups();
+        _locMarkDirty();
+      });
     }
   });
 }
@@ -12351,7 +13080,9 @@ function _wireLocMerge(){
           _btnBusy(btn, 'Merging…');
           google.script.run
             .withSuccessHandler(function(res){
-              showToast('Merged ✓ — ' + res.rowsChanged + ' entr(ies) updated.', 'ok', 5000);
+              // Sin aviso: las ubicaciones fusionadas desaparecen de la lista.
+              // Se las ve irse ANTES de que el repintado se las lleve.
+              var seVan = _itemsBy('locGroups', 'li.loc-item', 'data-name', from);
               var gone = {};
               from.forEach(function(v){ gone[v.toUpperCase()] = 1; });
               _locLayout = _locLayout.filter(function(l){ return !gone[l.name.toUpperCase()]; });
@@ -12361,7 +13092,8 @@ function _wireLocMerge(){
               });
               config.locations = (config.locations || []).filter(function(l){ return !gone[String(l.name).toUpperCase()]; });
               bar.innerHTML = ''; bar.classList.remove('show');
-              _redrawLocGroups();
+              // El repintado espera a que las que se van terminen de encogerse.
+              _rowLeaveAll(seVan, function(){ _redrawLocGroups(); });
               refreshDropdowns();
               // The patches above fix the LISTS. They cannot fix the stock,
               // which is where a location merge actually shows: the Warehouse
@@ -12456,9 +13188,16 @@ function _locMarkDirty(){
       .withSuccessHandler(function(res){
         // Names the deletions rather than reporting a generic save: deleting is
         // the one thing on this screen that cannot be undone by dragging back.
+        /* SÓLO CUANDO BORRÓ ALGO. Guardar el mapa se ve: la barra de "Save
+           layout" desaparece y el mapa se queda como lo dejaste, así que
+           decirlo otra vez sobra — ésa es la parte que Jose pidió quitar.
+
+           Pero lo que se BORRÓ no se ve en ninguna parte, y es lo único de
+           esta pantalla que no se deshace arrastrando de vuelta. Una ubicación
+           que desaparece sin que nadie la nombre es una ubicación que nadie
+           sabe que perdió. Esa mitad se queda. */
         var gone = (res && res.deleted) || [];
-        showToast('Location layout saved ✓' +
-          (gone.length ? ' — deleted ' + gone.join(', ') : ''), 'ok', gone.length ? 5000 : 3000);
+        if (gone.length) showToast('Deleted ' + gone.join(', '), 'warn', 6000);
         bar.classList.remove('show'); bar.innerHTML = ''; bar.dataset.dirty = '0';
         // Local mirror so other screens see the new types without a full reload.
         _settingsData.locations     = _locLayout.map(function(l){ return l.name; });
@@ -12516,8 +13255,12 @@ function _wireManualMerge(tab, label){
           _btnBusy(btn, 'Merging…');
           google.script.run
             .withSuccessHandler(function(res){
-              showToast('Merged ✓ — ' + res.rowsChanged + ' movement(s) updated.', 'ok', 5000);
-              _applyMergeLocally(tab, from, into);
+              // Sin aviso: los nombres fusionados desaparecen de la lista —
+              // y ahora se los ve irse, que es lo que hace legible CUÁLES se
+              // fueron cuando se fusionan tres de golpe.
+              _rowLeaveAll(
+                _itemsBy('settingsTabContent', 'li.cfg-item', 'data-val', from),
+                function(){ _applyMergeLocally(tab, from, into); });
               bar.innerHTML = ''; bar.classList.remove('show');
               // Same reason as the location merge below: the local patch fixes
               // the catalog list, but the movements and the project/supplier
@@ -12674,7 +13417,8 @@ function _wireSimilarGroups(tab){
           _btnBusy(btn, 'Merging…');
           google.script.run
             .withSuccessHandler(function(res){
-              showToast('Merged ✓ — ' + res.rowsChanged + ' movement(s) updated.', 'ok', 5000);
+              // Sin aviso: el grupo de duplicados se quita de la lista aquí
+              // mismo (g.remove(), abajo), y ésa es la respuesta.
               // Deliberately NOT _loadSettings() + loadDataFromGoogle(): both
               // re-read and repaint everything, which took seconds and made
               // working through a list of duplicates painful. The server has
@@ -12682,7 +13426,10 @@ function _wireSimilarGroups(tab){
               // which is exact and instant.
               _applyMergeLocally(tab, from, into);
               var g = btn.closest('.sim-group');
-              if (g) g.remove();
+              // Antes: g.remove(), de golpe. Es la única lista donde se
+              // trabaja seguido —un duplicado detrás de otro— y ver irse el
+              // que acabas de resolver es lo que dice por dónde vas.
+              _rowLeave(g, function(){ if (g) g.remove(); });
               _refreshSimHeader();
             })
             .withFailureHandler(_mergeFailed(btn, 'Merge into selected'))
@@ -12861,7 +13608,9 @@ function _renderPmDirectoryTab() {
 function _drawPmDirectory() {
   var content = document.getElementById('settingsTabContent');
   var rows = _pmDirectoryData.map(function(p) {
-    return '<li class="cfg-item">' +
+    // data-val en la FILA y no sólo en su botón: es por donde se la encuentra
+    // para animarla al irse.
+    return '<li class="cfg-item" data-val="'+_he(p.name)+'">' +
       '<span class="cfg-item-name" style="flex:1"><strong>'+_he(p.name)+'</strong> <span style="color:var(--muted);font-size:.78rem">'+_he(p.email)+'</span></span>' +
       '<button class="cfg-btn cfg-btn-danger" data-rowact="del" data-action="pm-dir-delete" data-val="'+_he(p.name)+'">🗑</button>' +
     '</li>';
@@ -12886,10 +13635,10 @@ function _pmDirAdd() {
   google.script.run
     .withSuccessHandler(function() {
       _pmDirectoryData = null; // force refetch
+      // Sin aviso: la fila nueva aparece en la lista.
       _renderPmDirectoryTab();
-      showToast('✓ PM added.', 'ok');
     })
-    .withFailureHandler(function(e) { showToast('⚠ Error: ' + (e.message||e), 'err', 6000); })
+    .withFailureHandler(function(e) { showToast('⚠ Error: ' + _stripTags(e), 'err', 6000); })
     .processMovement('managePmDirectory', _h({ op: 'add', name: name, email: email }));
 }
 
@@ -12902,11 +13651,15 @@ function _pmDirDelete(name) {
     onConfirm: function(){
       google.script.run
         .withSuccessHandler(function() {
-          _pmDirectoryData = null;
-          _renderPmDirectoryTab();
-          showToast('PM removed.', 'ok');
+          // Sin aviso: la fila desaparece de la lista, y ahora se la ve irse.
+          _rowLeaveAll(
+            _itemsBy('settingsTabContent', 'li.cfg-item', 'data-val', [name]),
+            function(){
+              _pmDirectoryData = null;
+              _renderPmDirectoryTab();
+            });
         })
-        .withFailureHandler(function(e) { showToast('⚠ Error: ' + (e.message||e), 'err', 6000); })
+        .withFailureHandler(function(e) { showToast('⚠ Error: ' + _stripTags(e), 'err', 6000); })
         .processMovement('managePmDirectory', _h({ op: 'delete', name: name }));
     }
   });
@@ -13000,7 +13753,16 @@ function _cfgCall(payload, onDone) {
     .withSuccessHandler(function() {
       done();
       if (onDone) onDone();
-      _applyCfgChangeLocally(payload);   // re-renders the tab, rebuilding the buttons enabled
+      // La fila se encoge y SÓLO DESPUÉS se repinta la pestaña. Al revés no se
+      // ve nada: el repintado se lleva por delante el elemento que se estaba
+      // animando (la trampa de la v11.66).
+      _rowLeaveAll(
+        payload.op === 'delete'
+          ? _itemsBy('settingsTabContent', 'li.cfg-item', 'data-val', [payload.value])
+          : [],
+        function(){
+          _applyCfgChangeLocally(payload);   // re-renders the tab, rebuilding the buttons enabled
+        });
       _settingMsg('Saved ✓', 'ok');
     })
     .withFailureHandler(function(e){
@@ -13335,8 +14097,12 @@ function _matCall(payload) {
     args: ['manageMaterial', _h(payload)],
     ok: function(res) {
       _matSetBusy(false);
-      _applyMatChangeLocally(payload);
-      showToast('Done ✓ — ' + (res.updated || res.merged || 1) + ' row(s) updated.', 'ok');
+      // Sin aviso: el material cambiado se ve en la lista en el acto. Y si fue
+      // una FUSIÓN, el que se va se ve irse antes de que el repintado se lo
+      // lleve — los otros dos cambios (renombrar, cambiar de categoría) no
+      // quitan ninguna fila, así que ahí no hay nada que animar.
+      _rowLeaveAll(payload.op === 'merge' ? _matItemEls(payload.name, payload.category) : [],
+        function(){ _applyMatChangeLocally(payload); });
       loadDataFromGoogle(true, true);   // skipCache, quiet
     },
     fail: function(e, ocupado){
@@ -13366,6 +14132,25 @@ function _matSetBusy(on) {
   // one-cell edit.
   if (on) _settingMsg('Updating every matching movement and rebuilding stock totals — this can take a few seconds…', 'info');
   else    _settingMsg('Done ✓', 'ok');
+}
+
+/* LA FILA DE UN MATERIAL, por nombre Y categoría.
+ *
+ * Las dos cosas, no sólo el nombre: el MatID se compone de categoría + nombre,
+ * así que "SILICONE" en SEALANT y "SILICONE" en WINDOW son dos materiales
+ * distintos y animar el equivocado enseñaría que se fue uno que sigue ahí.
+ */
+function _matItemEls(name, cat){
+  var box = document.getElementById('matListContainer');
+  if (!box) return [];
+  var n = String(name || '').toUpperCase();
+  var c = String(cat  || '').toUpperCase();
+  try {
+    return Array.prototype.filter.call(box.querySelectorAll('.mat-item'), function(el){
+      return String(el.getAttribute('data-name') || '').toUpperCase() === n &&
+             String(el.getAttribute('data-cat')  || '').toUpperCase() === c;
+    });
+  } catch (e) { return []; }
 }
 
 function _applyMatChangeLocally(p){
@@ -13630,10 +14415,31 @@ function _personShow(el){
   // innerHTML con TODO escapado a mano: el nombre y el correo salen de una hoja
   // que edita una persona.
   p.innerHTML =
-    (nombre ? '<div class="ap-name">' + _he(nombre) + '</div>' : '') +
-    '<div class="ap-mail">' + _he(mail) + '</div>' +
+    // title en los dos: la tarjeta es de ancho fijo desde la v11.95, así que un
+    // nombre o un correo largos se cortan con puntos suspensivos. Cortar sin
+    // dejar forma de leerlo entero sería esconder el dato, no ordenarlo.
+    (nombre ? '<div class="ap-name" title="' + _escAttr(nombre) + '">' + _he(nombre) + '</div>' : '') +
+    '<div class="ap-mail" title="' + _escAttr(mail) + '">' + _he(mail) + '</div>' +
     '<div class="ap-acts">' +
-      '<a class="ap-btn" href="mailto:' + _escAttr(mail) + '?subject=' + asunto + '">✉ Email</a>' +
+      /* GMAIL, NO EL mailto DEL SISTEMA.
+         Jose, 2026-09-15: pulsó ✉ Email y Windows le preguntó con qué app
+         abrirlo; eligió "Always" sobre Outlook, y desde entonces ya no le
+         ofrece nada más — "sólo la app del escritorio y yo no la uso nunca".
+
+         El problema de fondo no es Outlook: es que mailto depende de una
+         configuración POR COMPUTADORA, y una elección hecha una vez sin querer
+         deja el botón inservible para siempre. Y sus dos vecinos de esta misma
+         tarjeta —Meet y Schedule— ya van a Google directamente; el correo era
+         el único que se salía de la app.
+
+         Todo el que entra a Acopio entra con una cuenta de Google, así que
+         esto funciona igual en su computadora, en la de la bodega y en el
+         teléfono. Y a quien tenga su Outlook enganchado a Gmail no le quita
+         nada: el correo le sigue llegando a su bandeja igual. */
+      '<a class="ap-btn" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=' +
+         encodeURIComponent(mail) + '&amp;su=' + asunto + '" ' +
+         'target="_blank" rel="noopener noreferrer" ' +
+         'title="Opens a new Gmail message to them">✉ Email</a>' +
       '<a class="ap-btn" href="https://meet.new" target="_blank" rel="noopener noreferrer" ' +
          'title="Opens a new Google Meet — send them the link">📹 Meet</a>' +
       '<a class="ap-btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;add=' +
@@ -13711,10 +14517,9 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _perso
       openIncomingModal(el.getAttribute('data-id'));
     } else if (a === 'morning-arrived') {
       _markArrivedFromPopup(el.getAttribute('data-id'));
-    } else if (a === 'edit-user') {
-      editUser(el.getAttribute('data-email'));
-    } else if (a === 'deact-user') {
-      deactivateUser(el.getAttribute('data-email'));
+    // 'edit-user' y 'deact-user' se fueron en la v11.98: las acciones de la
+    // tabla de usuarios ya no viven en cada fila, viven en la barra de arriba
+    // y trabajan sobre lo marcado. Ver editSelectedUser y toggleSelectedUsers.
     } else if (a === 'stock-suggest') {
       _applyStockSuggest(el.getAttribute('data-name'));
     } else if (a === 'exit-suggest') {
@@ -13774,14 +14579,33 @@ function submitAttachment() {
     return;
   }
 
+  var fila = parseInt(document.getElementById('aRowIdx').value);
+
   _btnBusy(btn, 'Saving…');
   _setModalBusy('attachOverlay', true);
   google.script.run
-    .withSuccessHandler(function() {
+    .withSuccessHandler(function(res) {
+      // La columna DOC, al día en el acto. Ver "PINTAR EN CUANTO EL SERVIDOR
+      // DICE SÍ", junto a _incAplicarLocal.
+      //
+      // El texto viene del servidor porque el navegador no puede componerlo: sí
+      // sabe qué enlaces sobreviven —los manda él en keepLinks— pero no la URL
+      // de Drive del archivo que acaba de subir. Ver updateDocument_.
+      //
+      // `null` significa "no se tocó la celda" y '' significa "se quitaron
+      // todos", así que la comprobación es contra null, no contra falsy: un ''
+      // tratado como "no hay dato" dejaría los recortes en pantalla justo
+      // cuando se acaban de borrar.
+      if (res && res.docLinks != null && typeof movements !== 'undefined' && movements){
+        for (var i = 0; i < movements.length; i++){
+          if (movements[i].rowIdx === fila){ movements[i].docLinks = res.docLinks; break; }
+        }
+        renderAll();
+      }
       _setModalBusy('attachOverlay', false);
       _btnDone(btn, true, function(){ closeModal('attachOverlay'); });
-      showToast('Documents updated ✓', 'ok');
-      loadDataFromGoogle(false);
+      showToast('Documents updated ✓', 'ok', TOAST_QUICK);
+      _reloadWhenIdle();
     })
     .withFailureHandler(function(err) {
       showToast('Save failed: ' + (err.message || err), 'err', 6000);
@@ -13789,7 +14613,7 @@ function submitAttachment() {
       _setModalBusy('attachOverlay', false);
     })
     .processMovement('updateDocument', _h({
-      rowIdx:    parseInt(document.getElementById('aRowIdx').value),
+      rowIdx:    fila,
       expectedCategory: _attachOrigCategory,
       expectedName:     _attachOrigName,
       keepLinks: keepLinks,
@@ -14678,11 +15502,24 @@ function _paintDeck(){
   // something already done, the other is waiting on an answer, and the thing
   // waiting on you belongs on top.
   // Más tarde en el DOM = más arriba en la pila.
+  //
+  // Escribir innerHTML pone scrollTop en 0 — arriba, la tarjeta más vieja. Esto
+  // corre en CADA refresco de fondo, así que un mazo abierto que alguien está
+  // leyendo daría un salto al principio cada vez que se guarda un movimiento en
+  // otra pestaña. Se guarda la posición y se repone.
+  //
+  // Sólo si está ABIERTO. Cerrado no se toca: la pila colapsada usa márgenes
+  // negativos, así que el navegador ve desborde donde no lo hay y cualquier
+  // scrollTop la arrastraría (ver _deckTopado). De bajar al fondo ya se encarga
+  // _deckAnclarFondo en la apertura, que es cuando hay un fondo real.
+  var scrollPrevio  = deck.scrollTop;
+  var estabaAbierto = deck.classList.contains('open');
   deck.innerHTML = _sysDeckHtml + _cfgDeckHtml + _todoDeckHtml;
   if (!deck.innerHTML){
     deck.classList.remove('open', 'stack-2', 'stack-3');
     return;
   }
+  if (estabaAbierto) deck.scrollTop = scrollPrevio;
 
   var cards = deck.querySelectorAll('.deck-card');
 
@@ -14712,7 +15549,20 @@ function _paintDeck(){
 
   // The badge counts the WHOLE pile, including the cards held back from the
   // DOM, and rides on whichever card is actually on top.
-  var total = _cfgDeckTotal + _sysDeckTotal;
+  //
+  // LAS TRES CLASES, no dos. El mazo se arma arriba con
+  // `_sysDeckHtml + _cfgDeckHtml + _todoDeckHtml`, así que el contador tiene que
+  // sumar las tres mismas. Faltaba `_todoDeckTotal` — las tarjetas naranjas de
+  // "llegó y no se registró la entrada" — desde que se agregaron: se actualizó
+  // el contador de la campana y se olvidó éste. El resultado era que la
+  // insignia decía 4 con 6 tarjetas dentro, y que la campana y el mazo se
+  // contradecían entre sí en la misma pantalla (Jose lo cazó en video).
+  //
+  // Si algún día aparece una CUARTA clase de tarjeta, esta suma y la de
+  // `_syncCfgBell` son las dos líneas que hay que tocar juntas; el test
+  // test-mazo-contador.js las compara entre sí precisamente para que no vuelva
+  // a pasar.
+  var total = _cfgDeckTotal + _sysDeckTotal + _todoDeckTotal;
   var top = deck.lastElementChild;
   if (top && total > 1){
     var badge = document.createElement('span');
@@ -14833,18 +15683,18 @@ function _cfgAddAll(){
     confirmText: 'Add all',
     onConfirm: function(){
       _cfgAddAllRunning = true;
-      var ok = 0, failed = 0;
+      // Una llamada por valor, de una en una. La línea va contando "3 of 12"
+      // en vez de dejar la pantalla quieta hasta el último.
+      _progStart(queue.length, 'Adding to your lists', _progFinListas);
       (function next(){
         if (!queue.length){
           _cfgAddAllRunning = false;
-          showToast('Added ' + ok + ' to your lists' + (failed ? ' · ' + failed + ' failed' : '') + ' ✓',
-            failed ? 'warn' : 'ok', 6000);
           _recomputeCfgDeck();
           return;
         }
         var p = queue.shift();
         _cfgAddValue(p.type, p.value, function(good){
-          if (good) ok++; else failed++;
+          _progStep(!!good);
           setTimeout(next, 120);   // paced, not hammered
         });
       })();
@@ -14875,7 +15725,7 @@ function _cfgCardAction(act, key, btn){
   if (btn){ _btnBusy(btn, 'Adding…'); }
   _cfgAddValue(p.type, p.value, function(ok, err){
     if (ok){
-      showToast('Added to your ' + (p.type === 'suppliers' ? 'suppliers' : 'projects') + ' ✓', 'ok');
+      // Sin aviso: la tarjeta sale del mazo, que es la respuesta.
     } else {
       _btnLabel(btn, '+ Add to list');
       showToast('Could not add: ' + err, 'err', 5000);
@@ -15031,16 +15881,90 @@ function _cfgWake(){
 var _deckHover = false, _deckPinned = false, _deckLeaveTimer = null;
 var _DECK_LEAVE_MS = 280;
 
+// ── El mazo abre POR ABAJO ────────────────────────────────────────────────────
+// La tarjeta más nueva es la ÚLTIMA del DOM (ver _paintDeck: "más tarde en el
+// DOM = más arriba en la pila"), y el mazo está anclado a la esquina inferior,
+// así que la más nueva es la de abajo. Desde la v11.98 el mazo tiene tope de
+// altura y barra propia — .deck{max-height:calc(66.6vh - 22px);overflow-y:auto}
+// — que es lo que evita el muro naranja que llegaba al techo de la pantalla.
+//
+// Efecto secundario que Jose cazó en video: un contenedor con scroll abre en
+// scrollTop 0, o sea ARRIBA, o sea enseñando la tarjeta MÁS VIEJA. Se abre el
+// mazo para ver lo último que pasó y lo último que pasó es justo lo que queda
+// fuera de cuadro.
+//
+// Un solo `scrollTop = scrollHeight` al abrir NO alcanza, y esto es lo que hace
+// que valga la pena el bucle: el abanico se despliega con transición
+// (--deck-in: .62s) y escalonado (--deck-step: 55ms por tarjeta), así que la
+// altura real sigue creciendo casi un segundo después del clic. Empujar una
+// sola vez deja el scroll en el fondo de la pila CERRADA, que está a mitad de
+// camino del fondo de la abierta.
+//
+// Así que se ancla cuadro a cuadro mientras dura el despliegue y se suelta sola
+// al terminar. Y se suelta ANTES si la persona toca la rueda: poder subir a
+// leer las viejas es exactamente para lo que existe la barra, y un mazo que te
+// arrastra de vuelta abajo mientras lees sería peor que uno que abre arriba.
+var _DECK_FAN_MS  = 620;   // --deck-in
+var _DECK_STEP_MS = 55;    // --deck-step
+var _deckPinRaf = null, _deckPinHasta = 0;
+
+// ¿DESBORDA DE VERDAD? No basta con `scrollHeight > clientHeight`, y esto es lo
+// único de este bloque que no es obvio.
+//
+// El mazo cerrado apila con márgenes NEGATIVOS —.deck:not(.open) .deck-card
+// {margin-top:calc(6px - var(--card-h))}— y una tarjeta que se va se lleva otro
+// margen negativo encima (.deck-card.leaving). Es decir: la CAJA mide mucho
+// menos que lo que su contenido pinta, siempre, por diseño. Medido en el
+// andamio de test-topbar-deck con una tarjeta saliendo: clientHeight 38,
+// scrollHeight 143. Para el navegador eso es desborde, y un scrollTop ahí
+// arrastra la pila entera 105px hacia arriba — la esquina saltaba de y=878 a
+// y=773 en el primer cuadro.
+//
+// El scroll de este mazo existe por UNA sola razón: el tope de altura que se
+// puso en la v11.98 para que el muro naranja no llegara al techo. Así que la
+// pregunta correcta no es "¿sobra contenido?" sino "¿está la caja TOPADA?". Si
+// la pila es más baja que el tope, no hay nada a donde bajar y no se toca nada.
+function _deckTopado(deck, tope){
+  if (!isFinite(tope)) return false;
+  return deck.clientHeight >= tope - 1 && deck.scrollHeight > deck.clientHeight + 1;
+}
+
+function _deckSoltarFondo(){
+  if (_deckPinRaf){ cancelAnimationFrame(_deckPinRaf); _deckPinRaf = null; }
+  _deckPinHasta = 0;
+}
+
+function _deckAnclarFondo(deck){
+  _deckSoltarFondo();
+  var n = deck.querySelectorAll('.deck-card').length;
+  var tope = parseFloat((window.getComputedStyle(deck) || {}).maxHeight);
+  _deckPinHasta = Date.now() + _DECK_FAN_MS + n * _DECK_STEP_MS + 120;
+  (function paso(){
+    if (Date.now() > _deckPinHasta){ _deckSoltarFondo(); return; }
+    // Los primeros cuadros el abanico todavía cabe entero y esto no hace nada,
+    // que es lo correcto: sólo cuando el despliegue llega al tope hay un fondo
+    // al que bajar.
+    if (_deckTopado(deck, tope)) deck.scrollTop = deck.scrollHeight;
+    _deckPinRaf = requestAnimationFrame(paso);
+  })();
+}
+
 function _deckApply(){
   var deck = document.getElementById('cornerDeck');
   if (!deck) return;
   var open = _deckHover || _deckPinned;
+  var estaba = deck.classList.contains('open');
   deck.classList.toggle('open', open);
   // The page behind must hold still while somebody is reading the pile — but
   // NOT dim. A modal darkens because it wants your whole attention; this only
   // wants the words under the pointer to stop sliding away. The page scrollbar
   // is already hidden, so locking it shifts no layout.
   document.documentElement.classList.toggle('deck-open', open);
+  // Solo en el FLANCO de apertura. _deckApply se llama también al cerrar y en
+  // cada repintado; volver a anclar mientras alguien ya está leyendo sería el
+  // tirón que este bloque existe para evitar.
+  if (open && !estaba) _deckAnclarFondo(deck);
+  if (!open) _deckSoltarFondo();
   if (open) _cfgWake(); else _cfgScheduleDim(_CFG_REDIM_MS);
 }
 
@@ -15065,6 +15989,12 @@ function _deckTogglePin(){
   if (!deck) return;
   deck.addEventListener('mouseenter', _deckEnter);
   deck.addEventListener('mouseleave', _deckLeave);
+  // Tocar la rueda (o arrastrar con el dedo) suelta el anclaje al fondo: a
+  // partir de ahí el scroll es de la persona, no del mazo. Van aquí, una sola
+  // vez, y no dentro de _deckAnclarFondo — engancharlos en cada apertura los
+  // iría acumulando sobre el mismo nodo abre tras abre.
+  deck.addEventListener('wheel', _deckSoltarFondo, { passive: true });
+  deck.addEventListener('touchmove', _deckSoltarFondo, { passive: true });
   // Touch has no hover at all, so a tap has to do the whole job.
   deck.addEventListener('click', function(e){
     if (e.target.closest('[data-sys-x],[data-sys-open],button')) return;  // real controls win
@@ -15431,7 +16361,40 @@ function renderWarehouseMap(){
     html += sectionBody(names);
   });
 
-  container.innerHTML = '<div class="wh-map">' + html + '</div>';
+  // LAS RESERVAS, SITIO 2 DE 3 (el mapa). Va ARRIBA del plano, no dentro de un
+  // estante: la pregunta que trae aquí a alguien es "¿qué hay apartado en la
+  // bodega?", y contestarla obligando a abrir estante por estante es no
+  // contestarla. Cada línea lleva a su estante — el mapa ya sabe abrir el cajón.
+  //
+  // Y sólo aparece si hay alguna. Una tira que dice "0 reservations" todos los
+  // días le roba sitio al plano, que es a lo que se viene.
+  container.innerHTML = _reservasTiraHtml() + '<div class="wh-map">' + html + '</div>';
+}
+
+/** La tira de reservas del mapa. Los datos salen de _reservasActivas, igual que
+ *  el total del tablero — una cuenta, tres pantallas. */
+function _reservasTiraHtml(){
+  var res = _reservasResumen();
+  if (!res.n) return '';
+  var filas = res.lista.map(function(r){
+    return '<button class="resv-row" data-action="open-rack" data-rack="' + _escAttr(r.rack) + '" ' +
+             'title="' + _escAttr((r.reason || 'no reason given') +
+                                  (r.by ? ' — ' + r.by : '') +
+                                  (r.at ? ' · ' + r.at : '')) + '">' +
+             '<span class="resv-rack">' + _he(r.rack) + '</span>' +
+             '<span class="resv-name">' + _he(r.name) + '</span>' +
+             '<span class="resv-qty">' + _he(r.qty) + ' ' + _he(r.unit) + '</span>' +
+             '<span class="resv-why">' + _he(r.reason || '—') + '</span>' +
+           '</button>';
+  }).join('');
+  return '<div class="resv-strip">' +
+           '<div class="resv-strip-hdr">🔒 Reserved — ' + res.unidades.toLocaleString() +
+             ' unit' + (res.unidades === 1 ? '' : 's') + ' held across ' + res.estantes +
+             ' rack' + (res.estantes === 1 ? '' : 's') +
+             '<span class="resv-hint">nothing here can leave the warehouse until it is released</span>' +
+           '</div>' +
+           '<div class="resv-rows">' + filas + '</div>' +
+         '</div>';
 }
 
 // ── Rack Detail Drawer ────────────────────────────────────────────────────────
@@ -15442,7 +16405,11 @@ function openRackDrawer(rackName) {
   var rackMap = _buildRackMap('', '');
   var items   = (rackMap[rackName] || []).sort(function(a,b){ return b.qty-a.qty; });
 
-  document.getElementById('rackDrawerTitle').textContent = '📦 ' + rackName;
+  // Al (re)abrir el cajón no hay ningún material seleccionado todavía, así que
+  // el título es el del estante. Vale también para el repintado que llega
+  // cuando otra persona mueve algo: si el material que estabas mirando ya no
+  // está, su nombre no puede seguir en la cabecera.
+  _rdwTitle('📦 ' + rackName);
 
   if (!items.length) {
     _rdwItems = [];
@@ -15464,9 +16431,9 @@ function openRackDrawer(rackName) {
         var lockBtn = '';
         if (lock) {
           lockBtn = '<span class="rdw-lock-badge" title="🔒 '+_he(lock.reason)+' (by '+_he(lock.lockedBy)+')">🔒</span>' +
-            (isAdmin ? '<button class="rdw-lock-btn" data-action="unlock-material" data-lock-id="'+_he(lock.id)+'" data-lock-name="'+_he(item.name)+'" title="Unlock">Unlock</button>' : '');
+            (isAdmin ? '<button class="rdw-lock-btn" data-action="unlock-material" data-lock-id="'+_he(lock.id)+'" data-lock-name="'+_he(item.name)+'" title="Release">Release</button>' : '');
         } else if (isAdmin) {
-          lockBtn = '<button class="rdw-lock-btn" data-action="open-lock-modal" data-matid="'+_he(item.matId)+'" data-cat="'+_he(item.category)+'" data-name="'+_he(item.name)+'" data-rack="'+_he(rackName)+'" title="Lock this material at this rack">🔒 Lock</button>';
+          lockBtn = '<button class="rdw-lock-btn" data-action="open-lock-modal" data-matid="'+_he(item.matId)+'" data-cat="'+_he(item.category)+'" data-name="'+_he(item.name)+'" data-rack="'+_he(rackName)+'" title="Reserve this material at this rack">🔒 Reserve</button>';
         }
         return '<div class="rdw-item-wrap">'+
           '<div class="rdw-item">'+
@@ -15494,6 +16461,26 @@ function openRackDrawer(rackName) {
 // see the comment in openRackDrawer for why a JS array instead of DOM attrs.
 var _rdwItems = [];
 
+/* EL TÍTULO DICE QUÉ MATERIAL ESTÁS TOCANDO.
+ *
+ * Jose: "sólo quiero que aparezca el nombre del material cuando se lo
+ * selecciona, o sea, cuando das clic en el material o lo tocas en el teléfono
+ * y aparecen las opciones".
+ *
+ * En el teléfono es donde importa: las opciones se abren, el dedo tapa la fila,
+ * y la cabecera es lo único que queda a la vista para saber sobre QUÉ vas a
+ * pulsar Exit o Waste. Al cerrar vuelve al estante, porque entonces la pregunta
+ * otra vez es "¿dónde estoy?" y no "¿qué toqué?".
+ */
+function _rdwTitle(txt){
+  var el = document.getElementById('rackDrawerTitle');
+  if (el) el.textContent = txt;
+}
+
+function _rdwTitleRack(){
+  _rdwTitle('📦 ' + (_openRackName || 'Rack'));
+}
+
 function _toggleRdwActions(idx){
   var el = document.getElementById('rdw-actions-' + idx);
   if (!el) return;
@@ -15506,6 +16493,13 @@ function _toggleRdwActions(idx){
     el.style.display = 'flex';
     var nameEl = document.querySelector('.rdw-name[data-idx="' + idx + '"]');
     if (nameEl) nameEl.classList.add('rdw-name-open');
+    var item = _rdwItems[idx];
+    // Sin el nombre no hay nada mejor que decir, así que se deja el estante:
+    // una cabecera vacía sería peor que la de siempre.
+    _rdwTitle(item && item.name ? '📦 ' + item.name : '📦 ' + (_openRackName || 'Rack'));
+  } else {
+    // Se cerró el que estaba abierto: vuelve a ser una pregunta de estante.
+    _rdwTitleRack();
   }
 }
 
@@ -16011,12 +17005,15 @@ function _handleRackPhotoFileChange(){
   // BEFORE the upload finished, leaving the user staring at nothing with zero
   // feedback. Now it stays up (long fallback duration) until we explicitly
   // dismiss it the moment we know the real outcome.
-  var uploadToastId = showToast('📷 Uploading photo…', 'info', 20000);
+  // ESTO YA ERA UNA LÍNEA DE PROGRESO HECHA A MANO: un toast con duración
+  // larguísima que se cerraba a mano al saber el resultado, porque Drive tarda
+  // uno a tres segundos en compartir el archivo. Ahora es la de verdad, y ya
+  // no hace falta acordarse de cerrarla.
+  _progStart(1, 'Uploading photo');
   _compressImage(file, 1280, 0.82, function(b64, mime){
     google.script.run
       .withSuccessHandler(function(res){
-        dismissToast(uploadToastId);
-        if (!res || !res.photo) { showToast('Upload failed.', 'err', 5000); return; }
+        if (!res || !res.photo) { _progEnd('The photo was not saved.', true); return; }
         rackPhotos[rack.toUpperCase()] = res.photo;
         // Re-render the stock table (rebuilds the photo grid inline) while keeping
         // whichever detail row(s) the user currently has expanded open.
@@ -16024,11 +17021,11 @@ function _handleRackPhotoFileChange(){
         renderStock();
         openIds.forEach(function(id){ var el = document.getElementById(id); if (el) el.classList.add('open'); });
         renderWarehouseMap();
-        showToast('📷 Photo saved for ' + rack, 'ok');
+        _progEnd('Photo saved for ' + rack + '.');
       })
       .withFailureHandler(function(err){
-        dismissToast(uploadToastId);
-        showToast('Error uploading photo: ' + (err.message || err), 'err', 6000);
+        _progEnd('The photo was not saved.', true);
+        showToast('Error uploading photo: ' + _stripTags(err), 'err', 6000);
       })
       .processMovement('uploadRackPhoto', _h({ location: rack, fileData: b64, fileMimeType: mime }));
   });
@@ -16049,7 +17046,7 @@ function openLockModal(matId, cat, name, rack){
 
 function submitLockMaterial(){
   var reason = (document.getElementById('lockReason').value || '').trim();
-  if (!reason) { showToast('A reason is required to lock a material.', 'warn'); return; }
+  if (!reason) { showToast('A reason is required to reserve a material.', 'warn'); return; }
 
   var payload = {
     category:            document.getElementById('lockMatCat').value,
@@ -16060,11 +17057,11 @@ function submitLockMaterial(){
   };
 
   var btn = document.getElementById('lockMatSubmit');
-  _btnBusy(btn, 'Locking…');
+  _btnBusy(btn, 'Reserving…');
 
   google.script.run
     .withSuccessHandler(function(res){
-      _btnLabel(btn, '🔒 Lock Material');
+      _btnLabel(btn, '🔒 Reserve');
       closeModal('lockMatOverlay');
       // Apply locally + re-index immediately — don't wait on a full async reload,
       // which would leave the just-reopened drawer showing stale (unlocked) state.
@@ -16073,14 +17070,14 @@ function submitLockMaterial(){
         materialLocks.push(res.lock);
         _rebuildLocksIndex();
       }
-      showToast('🔒 ' + payload.name + ' locked at ' + payload.rack, 'ok');
+      showToast('🔒 ' + payload.name + ' reserved at ' + payload.rack, 'ok');
       if (_openRackName) openRackDrawer(_openRackName);
       renderStock();
       renderWarehouseMap();
     })
     .withFailureHandler(function(err){
-      _btnLabel(btn, '🔒 Lock Material');
-      showToast('Error: ' + (err.message || err), 'err', 6000);
+      _btnLabel(btn, '🔒 Reserve');
+      showToast('Error: ' + _stripTags(err), 'err', 6000);
     })
     .processMovement('lockMaterial', _h(payload));
 }
@@ -16109,7 +17106,7 @@ function unlockMaterialConfirm(lockId, name){
   var lineas = [];
 
   if (lock && lock.lockedBy){
-    lineas.push('Locked by ' + lock.lockedBy +
+    lineas.push('Reserved by ' + lock.lockedBy +
       (lock.lockedAt ? ' on ' + lock.lockedAt : '') + '.');
   }
   if (lock && String(lock.reason || '').trim()){
@@ -16127,12 +17124,12 @@ function unlockMaterialConfirm(lockId, name){
   }
 
   lineas.push('');
-  lineas.push('Unlocking it makes it exit-able and unrestricted again at this rack.');
+  lineas.push('Releasing it makes it exit-able and unrestricted again at this rack.');
 
   _showConfirm({
-    icon: '🔓', title: 'Unlock ' + name + '?',
+    icon: '🔓', title: 'Release ' + name + '?',
     message: lineas.join('\n'),
-    confirmText: 'Unlock', danger: false,
+    confirmText: 'Release', danger: false,
     onConfirm: function(){ _doUnlockMaterial(lockId); }
   });
 }
@@ -16151,10 +17148,10 @@ function _doUnlockMaterial(lockId){
       // es justo lo que faltaba: antes este caso iba por el manejador de FALLO,
       // que sólo enseñaba un error, y por eso el candado se quedaba pintado.
       if (res && res.alreadyGone) {
-        showToast('🔓 Already unlocked — someone else got there first. ' +
+        showToast('🔓 Already released — someone else got there first. ' +
                   'Nothing left to do.', 'info', 5000);
       } else {
-        showToast('🔓 Unlocked' +
+        showToast('🔓 Released' +
           (lock && lock.name ? ' — ' + lock.name + (lock.rack ? ' at ' + lock.rack : '') : '') +
           '.', 'ok');
       }
@@ -16479,7 +17476,7 @@ function saveMonitorSettings() {
     google.script.run
       .withSuccessHandler(function(){ /* silent — already applied locally */ })
       .withFailureHandler(function(err){
-        showToast('Error saving min-stock thresholds: ' + (err.message || err), 'err', 6000);
+        showToast('Error saving min-stock thresholds: ' + _stripTags(err), 'err', 6000);
       })
       .processMovement('updateMinStockBulk', _h({ updates: minUpdates }));
   }
@@ -16806,7 +17803,99 @@ function _entryFromIncoming(item, todoId){
     }
   }, 120);
 
+  // NO va a TOAST_QUICK: esto no confirma, INSTRUYE. Son quince palabras y
+  // la última es la única que importa — qué falta por hacer.
   showToast('Everything the delivery already knew is filled in — say which rack it went to.', 'info', 6000);
+}
+
+/* ═══ PINTAR EN CUANTO EL SERVIDOR DICE SÍ ═══════════════════════════════════
+ *
+ * Jose, 2026-09-17, con video y cronómetro sobre "Mark arrived":
+ *
+ *   segundo  8–14  el botón en "Saving…"
+ *   segundo    15  la ventana se cierra — EL SERVIDOR YA CONFIRMÓ
+ *   segundo    16  sale el toast
+ *   segundo 17–25  el popup sigue diciendo "Pending"
+ *   segundo    26  por fin dice "Arrived"
+ *
+ * Once segundos entre "el servidor dijo sí" y "la pantalla lo dice". Jose:
+ * "SI YA SE VALIDÓ EN EL SERVIDOR, LA APP NO DEBE ESPERAR NADA MÁS PARA DAR EL
+ * FEEDBACK VISUAL."
+ *
+ * Eran DOS fallos, y el segundo es el que se come los once segundos:
+ *
+ *   1. El manejador de éxito no tocaba `incoming`. La pantalla repintaba el
+ *      estado viejo porque el dato viejo era el único que había.
+ *
+ *   2. Recargaba con loadDataFromGoogle(false), y ese `false` significa USA EL
+ *      CACHÉ. O sea: repintaba el dato viejo OTRA VEZ, y sólo se corregía al
+ *      terminar un getInitialData completo — que lee todas las hojas.
+ *
+ * El molde de cómo se hace bien ya estaba en la app, en _alsoArrivedSave y en
+ * submitLockMaterial: parchar la copia local y repintar en el mismo instante en
+ * que el servidor confirma, y dejar la recarga como confirmación silenciosa.
+ * Esto es ese molde, escrito una vez, para los tres caminos que le faltaban.
+ *
+ * NO es optimismo: no se pinta nada antes de tener el sí del servidor. Se pinta
+ * EN el sí, que es donde siempre debió pintarse.
+ */
+
+/* Update-or-insert de una entrega esperada en la copia del navegador.
+ *
+ * EL ORDEN IMPORTA y es lo único no obvio de aquí: getIncoming ordena por fecha
+ * estimada y manda las que no tienen fecha al final ('9999-12-31'). Pegar la
+ * entrega nueva al final de la lista la dejaría en el sitio equivocado hasta
+ * que llegara la recarga — o sea, cambiaría un retraso por un salto, que es
+ * peor. Se ordena igual que el servidor.
+ *
+ * Los campos que la hoja conserva —addedBy, addedAt— se conservan aquí también;
+ * y estDate vacío con modo distinto de 'unknown' mantiene la fecha que había,
+ * exactamente como hace updateIncoming en el servidor. Si las dos mitades no
+ * coinciden, la recarga "corrige" algo que estaba bien y se ve el parpadeo.
+ */
+function _incAplicarLocal(payload, res){
+  if (typeof incoming === 'undefined' || !incoming || !payload) return;
+  var id = payload.id || (res && res.id) || '';
+  if (!id) return;              // sin id no hay nada que casar; la recarga lo traerá
+
+  var previo = null;
+  for (var i = 0; i < incoming.length; i++){
+    if (String(incoming[i].id) === String(id)){ previo = incoming[i]; break; }
+  }
+
+  var modo = payload.dateMode || 'exact';
+  var fila = {
+    id:         String(id),
+    estDate:    modo === 'unknown' ? ''
+              : (payload.estDate || (previo ? previo.estDate : '')),
+    category:   String(payload.category || '').toUpperCase().trim(),
+    name:       String(payload.name || '').trim(),
+    qty:        Number(payload.qty || 0),
+    unit:       String(payload.unit || 'UNIT'),
+    supplier:   String(payload.supplier || ''),
+    po:         String(payload.po || ''),
+    notes:      String(payload.notes || ''),
+    status:     String(payload.status || 'Pending'),
+    addedBy:    previo ? previo.addedBy : ((typeof userEmail === 'string' && userEmail) || ''),
+    addedAt:    previo ? previo.addedAt : new Date().toISOString(),
+    pm:         String(payload.pm || ''),
+    docLink:    (res && typeof res.docLink === 'string' && res.docLink) ||
+                (previo ? previo.docLink : ''),
+    dateMode:   modo,
+    estDateEnd: modo === 'window' ? (payload.estDateEnd || '') : '',
+    dateNote:   String(payload.dateNote || '')
+  };
+
+  if (previo){
+    for (var k in fila){ if (Object.prototype.hasOwnProperty.call(fila, k)) previo[k] = fila[k]; }
+  } else {
+    incoming.push(fila);
+  }
+  incoming.sort(function(a, b){
+    var ka = a.estDate || '9999-12-31';
+    var kb = b.estDate || '9999-12-31';
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
 }
 
 function saveIncomingItem() {
@@ -16852,11 +17941,25 @@ function saveIncomingItem() {
   var arrived   = payload.status === 'Arrived';
   var wantEntry = arrived && !!(document.getElementById('incMakeEntry') || {}).checked;
 
+  // Las tres acciones de entregas esperadas toman el candado del script desde
+  // la v11.85, así que ahora pueden contestar "system busy" si coinciden con un
+  // guardado de movimiento. El reintento es la otra mitad de ese cambio: sin
+  // él, el candado sólo habría cambiado una carrera silenciosa por un error
+  // visible, y eso no es un arreglo.
+  var _busyState = { tries: 0 };
+
   function _send(){
     var action = id ? 'updateIncoming' : 'addIncoming';
     _btnBusy(btn, 'Saving…');
     google.script.run
-      .withSuccessHandler(function(){
+      .withSuccessHandler(function(res){
+        // LO PRIMERO, antes de la animación del botón y antes de cerrar la
+        // ventana: el servidor ya dijo sí, así que la pantalla ya puede decir la
+        // verdad. Metido aquí y no dentro del callback de _btnDone porque ese
+        // callback espera a que termine el ✓ del botón — medio segundo de nada,
+        // pero medio segundo de mentira.
+        _incAplicarLocal(payload, res);
+        renderAll();
         _btnDone(btn, true, function(){
           closeModal('incomingOverlay');
           // LA TARJETA SE CREA SIEMPRE QUE LA ENTREGA PASA A ARRIVED, marque o
@@ -16879,11 +17982,20 @@ function saveIncomingItem() {
             if (wantEntry) _entryFromIncoming(payload, todoId);
           }
         });
-        loadDataFromGoogle(false);
+        // La recarga pasa a ser CONFIRMACIÓN, no la fuente de la verdad: ya no
+        // hay nada que esperar de ella. Y silenciosa y sin caché —_reloadWhenIdle
+        // usa (true, true)—, porque el `false` de antes repintaba el dato viejo
+        // por segunda vez y era el grueso de los once segundos.
+        _reloadWhenIdle();
       })
       .withFailureHandler(function(err){
+        // ANTES de devolver el botón: mientras espera turno no debe poder
+        // volver a pulsarse. Mismo orden que en las dos pantallas de
+        // movimientos, por la misma razón.
+        if (_busyRetry(err, { btn: btn, state: _busyState,
+                              retry: function(){ _send(); } })) return;
         _btnReset(btn);
-        showToast('Error: ' + err.message, 'err', 5000);
+        showToast('Error: ' + _stripTags(err), 'err', 5000);
       })
       .processMovement(action, _h(payload));
   }
@@ -16942,11 +18054,26 @@ function _incItemHtml(item, opts){
   var when = opts.showDate ? _he(_incDateLabel(item)) : '';
   var meta = [when, item.notes ? _he(item.notes) : ''].filter(Boolean).join(' · ');
 
+  // NOMBRE - SUPPLIER, y en la MISMA línea. Jose: "si el nombre es muy largo,
+  // se lo acorta con ... y se pone el supplier en la misma línea, no en la
+  // siguiente", y después: "el supplier también se acorta si es larguísimo".
+  //
+  // Sin supplier no hay guion. Un guion suelto al final de un nombre se lee
+  // como un dato que se perdió, y aquí no se perdió nada: esa entrega nunca
+  // tuvo proveedor escrito.
+  var prov = String(item.supplier || '').trim();
+  var sup  = prov
+    ? '<span class="inc-name-sup" title="' + _escAttr(prov) + '">' + _he(prov) + '</span>'
+    : '';
+
   return '<div class="inc-item">' +
       '<div class="inc-item-cat">' + catBadge(item.category) + '</div>' +
       '<div class="inc-item-body">' +
         '<div class="inc-item-main">' +
-          '<div class="inc-item-name">' + _he(item.name) + doc + '</div>' +
+          '<div class="inc-item-name">' +
+            '<span class="inc-name-txt" title="' + _escAttr(item.name) + '">' + _he(item.name) + '</span>' +
+            sup + doc +
+          '</div>' +
           (meta ? '<div class="inc-item-meta">' + meta + '</div>' : '') +
         '</div>' +
         '<div class="inc-item-side">' +
@@ -17052,22 +18179,40 @@ function _doDeleteIncomingItem(id){
   var btn = document.getElementById('btnDeleteIncoming');
   if (btn && btn.disabled) return;   // already in flight
   _btnBusy(btn, 'Deleting…');
-  google.script.run
-    .withSuccessHandler(function(){ _incomingDeleted(btn); })
-    .withFailureHandler(function(err){
-      var msg = (err && err.message) ? String(err.message) : String(err || '');
-      // The row is gone — a second press, or somebody else deleted it first.
-      // That is the state that was asked for, so report it as done.
-      if (msg.indexOf('Incoming item not found') !== -1){ _incomingDeleted(btn); return; }
-      _btnReset(btn);
-      showToast('Error: ' + msg, 'err', 5000);
-    })
-    .processMovement('deleteIncoming', _h({ id: id }));
+
+  // El reintento envía DE NUEVO, no vuelve a entrar por aquí.
+  //
+  // El primer intento de este cambio le pasaba a _busyRetry un retry que
+  // llamaba a _doDeleteIncomingItem(id) otra vez — y eso no reintentaba nada:
+  // _busyRetry deja el botón ocupado a propósito mientras espera, así que la
+  // reentrada se habría dado la vuelta en la línea de arriba (btn.disabled) y
+  // el borrado se habría perdido en silencio, que es peor que el error que se
+  // estaba tratando de evitar.
+  var estado = { tries: 0 };
+
+  function enviar(){
+    google.script.run
+      .withSuccessHandler(function(){ _incomingDeleted(btn); })
+      .withFailureHandler(function(err){
+        // ANTES de devolver el botón, igual que al guardar: mientras espera
+        // turno no debe poder volver a pulsarse.
+        if (_busyRetry(err, { btn: btn, state: estado, retry: enviar })) return;
+        var msg = (err && err.message) ? String(err.message) : String(err || '');
+        // The row is gone — a second press, or somebody else deleted it first.
+        // That is the state that was asked for, so report it as done.
+        if (msg.indexOf('Incoming item not found') !== -1){ _incomingDeleted(btn); return; }
+        _btnReset(btn);
+        showToast('Error: ' + _stripTags(err), 'err', 5000);
+      })
+      .processMovement('deleteIncoming', _h({ id: id }));
+  }
+
+  enviar();
 }
 function _incomingDeleted(btn){
   _btnDone(btn, true, function(){
     closeModal('incomingOverlay');
-    showToast('Expected delivery deleted.', 'ok');
+    showToast('Expected delivery deleted.', 'ok', TOAST_QUICK);
   });
   // Silencioso: la ventana se cierra con su tick y el aviso lo confirma.
   loadDataFromGoogle(true, true);
@@ -17888,6 +19033,12 @@ function _alsoArrivedSave(){
   _alsoArrivedClose();
   if (!voy.length) return;     // las desmarcó todas: no pasa nada, y está bien
 
+  // ANTES de encolar, para que la cuenta esté abierta cuando llegue el primer
+  // ✓. (No puede llegar antes —google.script.run no contesta hasta que este
+  // código suelte el hilo— pero abrirla después es confiar en eso, y no hace
+  // falta confiar en nada.)
+  _progStart(voy.length, 'Marking as arrived', _progFinLlegadas);
+
   voy.forEach(function(it){
     // LA FILA ENTERA con el estado cambiado: updateIncoming reescribe las
     // diecisiete columnas, así que mandar sólo el estado borraría el resto.
@@ -17901,6 +19052,7 @@ function _alsoArrivedSave(){
     _acWrite({
       args: ['updateIncoming', _h(payload)],
       what: 'marking "' + it.name + '" as arrived',
+      prog: true,
       ok: function(){
         // La copia del navegador, al día en el acto: la recarga llegará, pero
         // el popup y la pestaña de Incoming ya pueden decir la verdad.
@@ -17911,9 +19063,10 @@ function _alsoArrivedSave(){
       }
     });
   });
-  showToast(voy.length === 1
-    ? '✓ Marked as arrived.'
-    : '✓ ' + voy.length + ' deliveries marked as arrived.', 'ok');
+  // ANTES SE ANUNCIABA AQUÍ, al final del bucle, y aquí todavía no había
+  // pasado nada: el aviso salía en el mismo instante en que se ENCOLABAN las
+  // llamadas, así que decía "marcadas" de algo que aún no había salido del
+  // navegador. La línea cuenta las que el servidor confirma, que es otra cosa.
   _reloadWhenIdle();
 }
 
@@ -17925,7 +19078,7 @@ function openWeekSchedule(){
   // "nothing expected" y la lista de lo que llegó —la que dice cuál está sin
   // registrar— no hay forma de verla.
   if (!items.length && !_weekArrivals(todayStr).length && !_overdueThisWeek(todayStr).length){
-    showToast('Nothing expected for the rest of this week.', 'ok');
+    showToast('Nothing expected for the rest of this week.', 'ok', TOAST_QUICK);
     return;
   }
   showMorningPopup(items, todayStr);
@@ -18270,34 +19423,205 @@ function _roleBadge(role) {
   return '<span class="role-badge-' + cls + '">' + _he(_displayRole(role)) + '</span>';
 }
 
+/* ── SELECCIÓN DE USUARIOS ──────────────────────────────────────────────────
+   Misma forma que la selección de movimientos, y a propósito: dos pantallas
+   que hacen lo mismo deben hacerlo igual. Se guarda por CORREO, que es lo
+   único que no cambia de un usuario — el nombre y el rol sí. */
+var _usrSelection = {};
+
+/* TU PROPIA FILA NO SE PUEDE MARCAR, y el servidor opina lo mismo: removeUser
+   se niega en redondo ("You cannot remove your own account"). Que la casilla
+   esté apagada no es un adorno — es la misma regla dicha antes de pulsar. */
+function _usrPickable(u){ return !!u && u.email !== userEmail; }
+
+function _selectedUsers(){
+  return (_usersData || []).filter(function(u){
+    return _usrPickable(u) && _usrSelection[u.email];
+  });
+}
+
+function toggleUsrSelect(cb){
+  var email = cb.getAttribute('data-email');
+  if (!email) return;
+  if (cb.checked) _usrSelection[email] = true; else delete _usrSelection[email];
+  _syncUsrSelectAll();
+  _updateUsrActionBar();
+}
+
+function toggleUsrSelectAll(cb){
+  document.querySelectorAll('#usersTableBody .usr-select-cb').forEach(function(x){
+    if (x.disabled) return;
+    var email = x.getAttribute('data-email');
+    if (!email) return;
+    x.checked = cb.checked;
+    if (cb.checked) _usrSelection[email] = true; else delete _usrSelection[email];
+  });
+  _updateUsrActionBar();
+}
+
+function _syncUsrSelectAll(){
+  var all = document.getElementById('usrSelAll');
+  if (!all) return;
+  var boxes = [];
+  document.querySelectorAll('#usersTableBody .usr-select-cb').forEach(function(x){
+    if (!x.disabled) boxes.push(x);
+  });
+  var marcadas = boxes.filter(function(x){ return x.checked; }).length;
+  all.checked       = boxes.length > 0 && marcadas === boxes.length;
+  all.indeterminate = marcadas > 0 && marcadas < boxes.length;
+  all.disabled      = boxes.length === 0;
+}
+
+/* EL BOTÓN DICE LO QUE VA A HACER, y con una mezcla no dice nada.
+ *
+ * Hoy un usuario desactivado sólo mostraba la palabra "inactive" y el pie de la
+ * ventana mandaba a editar la hoja de cálculo a mano para devolverle el acceso.
+ * El servidor ya sabía hacerlo —updateUser acepta `active`— así que lo único
+ * que faltaba era el botón.
+ *
+ * Con activos e inactivos marcados a la vez se APAGA en vez de elegir por su
+ * cuenta: "Deactivate" sobre alguien que ya está fuera no significa nada, y
+ * hacer las dos cosas a la vez con un solo botón es pedir un accidente.
+ */
+function _updateUsrActionBar(){
+  var sel  = _selectedUsers();
+  var n    = sel.length;
+  var edit = document.getElementById('btnUsrEdit');
+  var act  = document.getElementById('btnUsrActive');
+  var cnt  = document.getElementById('usrSelCount');
+
+  if (edit){
+    // Uno solo: un formulario no puede decir la verdad sobre dos a la vez.
+    edit.disabled = n !== 1;
+    edit.title = n === 1 ? 'Edit ' + sel[0].email
+               : n === 0 ? 'Tick a user first'
+               : 'Pick just one to edit';
+  }
+
+  if (act){
+    var activos   = sel.filter(function(u){ return u.active; }).length;
+    var inactivos = n - activos;
+    var reactivar = n > 0 && activos === 0;
+    act.textContent = reactivar ? '↩ Reactivate' : '🚫 Deactivate';
+    act.disabled    = (n === 0) || (activos > 0 && inactivos > 0);
+    act.title = n === 0 ? 'Tick a user first'
+              : (activos > 0 && inactivos > 0)
+                ? 'Some are active and some are not — pick one kind at a time'
+              : reactivar ? 'Let ' + n + ' user' + (n === 1 ? '' : 's') + ' sign in again'
+              : 'Stop ' + n + ' user' + (n === 1 ? '' : 's') + ' signing in';
+  }
+
+  if (cnt) cnt.textContent = n ? (n + ' selected') : '';
+}
+
 function _renderUsersTable() {
-  var slot = document.getElementById('rowModeSlot_usr');
-  if (slot && !slot.firstChild) slot.innerHTML = _rowModeBarHtml('usr');
-  _mountRowMode('usr');
   var tbody = document.getElementById('usersTableBody');
   if (!_usersData.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1rem">No users registered yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">No users registered yet.</td></tr>';
+    _usrSelection = {};
+    _syncUsrSelectAll();
+    _updateUsrActionBar();
     return;
   }
   tbody.innerHTML = _usersData.map(function(u) {
-    var isSelf = u.email === userEmail;
+    var isSelf  = u.email === userEmail;
+    var marcado = !isSelf && !!_usrSelection[u.email];
     return '<tr class="' + (u.active ? '' : 'user-inactive') + '">' +
-      '<td style="font-size:.8rem;word-break:break-all">' + _he(u.email) + (isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem">you</span>' : '') + '</td>' +
-      '<td style="font-size:.82rem">' + _he(u.name || '—') + '</td>' +
-      '<td>' + _roleBadge(u.role) + '</td>' +
-      '<td style="font-size:.75rem;color:var(--muted)">' + _he(u.addedBy || '—') + '</td>' +
-      '<td style="font-size:.75rem;color:var(--muted);white-space:nowrap">' + (u.addedAt || '—') + '</td>' +
-      '<td><span class="badge ' + (u.active ? 'badge-green' : 'badge-gray') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
-      '<td style="white-space:nowrap">' +
-        (!isSelf
-          ? '<button class="btn-icon" data-rowact="edit" data-action="edit-user" data-email="' + _he(u.email) + '" title="Edit">✏️</button> ' +
-            (u.active
-              ? '<button class="btn-icon" data-rowact="del" data-action="deact-user" data-email="' + _he(u.email) + '" title="Deactivate">🚫</button>'
-              : '<span style="color:var(--muted);font-size:.72rem">inactive</span>')
-          : '<span style="color:var(--muted);font-size:.72rem">—</span>') +
+      '<td class="mov-sel-cell">' +
+        '<input type="checkbox" class="usr-select-cb" data-email="' + _escAttr(u.email) + '"' +
+        (marcado ? ' checked' : '') +
+        (isSelf ? ' disabled title="This is you — you cannot edit or deactivate your own account"' : '') +
+        ' onchange="toggleUsrSelect(this)">' +
       '</td>' +
+      // Nombre arriba, correo abajo: el nombre es lo que se busca con la vista.
+      '<td><div class="usr-two">' +
+        '<span class="usr-top">' + _he(u.name || '—') +
+          (isSelf ? ' <span class="badge badge-blue" style="font-size:.6rem">you</span>' : '') + '</span>' +
+        '<span class="usr-sub">' + _he(u.email) + '</span>' +
+      '</div></td>' +
+      '<td><div class="usr-two">' +
+        '<span>' + _roleBadge(u.role) + '</span>' +
+        '<span class="usr-sub">' + (u.addedAt || '—') + '</span>' +
+      '</div></td>' +
+      '<td class="usr-sub">' + _he(u.addedBy || '—') + '</td>' +
+      '<td><span class="badge ' + (u.active ? 'badge-green' : 'badge-gray') + '">' + (u.active ? 'Active' : 'Inactive') + '</span></td>' +
     '</tr>';
   }).join('');
+
+  /* LO MARCADO ES LO QUE SE VE, la misma regla que la tabla de movimientos
+     aprendió en la v11.95: un usuario que ya no está en la lista no puede
+     quedarse marcado, o los botones quedan armados sobre alguien que nadie
+     está mirando. */
+  var pintados = {};
+  document.querySelectorAll('#usersTableBody .usr-select-cb').forEach(function(cb){
+    var e = cb.getAttribute('data-email');
+    if (e && !cb.disabled) pintados[e] = 1;
+  });
+  Object.keys(_usrSelection).forEach(function(e){
+    if (!pintados[e]) delete _usrSelection[e];
+  });
+
+  _syncUsrSelectAll();
+  _updateUsrActionBar();
+}
+
+/** Abre el formulario en blanco. El botón ➕ de la barra. */
+function openUserForm(){
+  resetUserForm();
+  document.getElementById('userFormOverlay').classList.add('show');
+  setTimeout(function(){ var e = document.getElementById('uEmail'); if (e) e.focus(); }, 60);
+}
+
+function editSelectedUser(){
+  var sel = _selectedUsers();
+  if (sel.length !== 1) return;
+  editUser(sel[0].email);
+}
+
+/* Desactivar o reactivar los marcados. Cuál de las dos lo dice el botón, y el
+   botón ya se apagó si la selección era una mezcla — aquí sólo se ejecuta. */
+function toggleSelectedUsers(){
+  var sel = _selectedUsers();
+  if (!sel.length) return;
+  var reactivar = sel.every(function(u){ return !u.active; });
+  if (!reactivar && !sel.every(function(u){ return u.active; })) return;   // mezcla: no debería llegar
+
+  var quienes = sel.map(function(u){ return u.email; });
+  _showConfirm({
+    icon: reactivar ? '↩' : '🔒',
+    danger: !reactivar,
+    title: reactivar
+      ? (sel.length === 1 ? 'Let this user back in?' : 'Let ' + sel.length + ' users back in?')
+      : (sel.length === 1 ? 'Deactivate this user?'  : 'Deactivate ' + sel.length + ' users?'),
+    message: quienes.join('\n') + '\n\n' + (reactivar
+      ? 'They will be able to sign in again with the role they had.'
+      : 'They will no longer be able to sign in. Nothing they recorded is lost, and you can let them back in from here.'),
+    confirmText: reactivar ? 'Reactivate' : 'Deactivate',
+    onConfirm: function(){
+      // Uno a uno por la cola de escrituras, igual que todo lo demás que
+      // escribe: son llamadas al servidor y no tienen por qué salir de golpe.
+      _progStart(sel.length, reactivar ? 'Reactivating users' : 'Deactivating users',
+        reactivar ? _progFinReactivados : _progFinDesactivados);
+      sel.forEach(function(u){
+        _acWrite({
+          // Reactivar va por updateUser, que ya aceptaba `active` desde
+          // siempre: lo único que faltaba era quién se lo pidiera.
+          args: reactivar
+            ? ['updateUser', _h({ email: u.email, active: true })]
+            : ['removeUser', _h({ email: u.email })],
+          what: (reactivar ? 'reactivating ' : 'deactivating ') + u.email,
+          prog: true,
+          ok: function(){
+            _usersData.forEach(function(x){ if (x.email === u.email) x.active = reactivar; });
+            _sysCachePut('users', _usersData, true);
+            _renderUsersTable();
+          }
+        });
+      });
+      _usrSelection = {};
+      _renderUsersTable();
+    }
+  });
 }
 
 function editUser(email) {
@@ -18309,8 +19633,10 @@ function editUser(email) {
   document.getElementById('uName').value  = u.name  || '';
   document.getElementById('uRole').value  = u.role  || 'WAREHOUSE';
   document.getElementById('userFormTitle').textContent = '✏️ Editing: ' + u.email;
-  document.getElementById('btnCancelUserEdit').style.display = '';
-  document.getElementById('uEmail').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // El formulario vive en su propia ventana desde la v11.98, así que hay que
+  // abrirla — antes estaba siempre puesta y bastaba con rellenarla.
+  document.getElementById('userFormOverlay').classList.add('show');
+  setTimeout(function(){ var e = document.getElementById('uName'); if (e) e.focus(); }, 60);
 }
 
 function resetUserForm() {
@@ -18320,7 +19646,6 @@ function resetUserForm() {
   document.getElementById('uName').value     = '';
   document.getElementById('uRole').value     = 'WAREHOUSE';
   document.getElementById('userFormTitle').textContent  = '➕ Add New User';
-  document.getElementById('btnCancelUserEdit').style.display = 'none';
   _userFormMsg('', '');
 }
 
@@ -18358,6 +19683,7 @@ function saveUser() {
       else _usersData.push({ email: email, name: name, role: role, active: true,
                              addedBy: userEmail, addedAt: _isoDate(new Date()) });
       resetUserForm();
+      closeModal('userFormOverlay');
       _sysCachePut('users', _usersData, true);   // ya está al día, no hay que ir a buscarla
       _renderUsersTable();
     })
@@ -18368,25 +19694,11 @@ function saveUser() {
     .processMovement(action, _h(payload));
 }
 
-function deactivateUser(email) {
-  _showConfirm({
-    icon: '🔒', danger: true,
-    title: 'Deactivate User?',
-    message: email + '\n\nThey will no longer be able to log in.\nYou can re-activate them from the USERS_V3 sheet.',
-    confirmText: 'Deactivate',
-    onConfirm: function(){
-      google.script.run
-        .withSuccessHandler(function() {
-          _usersData.forEach(function(u){ if (u.email === email) u.active = false; });
-          _sysCachePut('users', _usersData, true);
-          _renderUsersTable();
-          showToast(email + ' can no longer sign in.', 'ok');
-        })
-        .withFailureHandler(function(err) { showToast(err.message || err, 'err', 5000); })
-        .processMovement('removeUser', _h({ email: email }));
-    }
-  });
-}
+/* deactivateUser(email) SE FUE EN LA v11.98, y merece una línea porque el
+   botón que la llamaba también. Desactivar ya no es una acción de fila: se
+   marcan los usuarios y la barra hace lo que toque — desactivar o reactivar,
+   que antes no se podía sin abrir la hoja de cálculo a mano. Ver
+   toggleSelectedUsers. */
 
 // ── Access Denied Screen ──────────────────────────────────────────────────────
 // ── Identity Picker (for non-org users when GAS can't detect email) ──────────
@@ -18615,6 +19927,7 @@ var _loadBusy    = false;
 
 function loadDataFromGoogle(skipCache, quiet){
   var seq = ++_loadSeq;
+  var gen = _delGen;      // ver el bloque de _delGen, junto a la cola de borrados
   _loadBusy = true;
   lastLoadTime = null;
   if (!quiet) setConnStatus('loading');
@@ -18670,6 +19983,21 @@ function loadDataFromGoogle(skipCache, quiet){
       // encima del de ahora, y devolvería a la pantalla movimientos que ya
       // están borrados.
       if (seq < _loadApplied) return;
+
+      /* Y LA OTRA CARRERA, LA QUE EL NÚMERO DE ORDEN NO VE. Ésta llegó en su
+         turno; lo viejo es la FOTO, sacada antes de que la tanda de borrados
+         acabara. Pintarla devuelve a la pantalla filas que la persona ya vio
+         irse — y alguna de ellas sin la marca de "esperando", lista para que la
+         borren dos veces. Ver el bloque de _delGen, junto a la cola.
+
+         Se descarta, PERO SE APUNTA EL NÚMERO: nada más viejo que ésta puede
+         pintar tampoco. Y no hace falta pedir otra aquí — la cola pide una al
+         terminar el último borrado, y ésa sí lleva la foto buena. */
+      if (_delQueue.length || _delRunning || gen !== _delGen) {
+        _loadApplied = seq;
+        return;
+      }
+
       _loadApplied = seq;
       try {
         applyCompanyBranding(data.company);
@@ -18774,7 +20102,6 @@ function _applyData(data) {
   movements          = data.movements          || [];
   stockData          = data.stock              || {};
   config             = data.config             || config;
-  reservations       = data.reservations       || [];
   userRole           = data.userRole           || 'WAREHOUSE';
   if (data.rolePerms) rolePerms = data.rolePerms;
   if (data.warehouseRoleLabel) warehouseRoleLabel = data.warehouseRoleLabel;
@@ -19262,6 +20589,44 @@ function _rowLeave(el, done){
   setTimeout(una, ROW_LEAVE_MS);
 }
 
+/* VARIAS A LA VEZ, CON UN SOLO AVISO AL TERMINAR.
+ *
+ * Una fusión se lleva dos, tres o cinco filas de golpe, y vaciar la papelera se
+ * las lleva todas. Animarlas una por una y repintar tras la primera se llevaría
+ * por delante las demás a mitad de camino — la trampa de la v11.66 otra vez.
+ * Todas corren a la vez y el repintado espera a la última.
+ */
+function _rowLeaveAll(els, done){
+  els = (els || []).filter(Boolean);
+  if (!els.length){ if (done) done(); return; }
+  var faltan = els.length;
+  els.forEach(function(el){
+    _rowLeave(el, function(){ if (--faltan === 0 && done) done(); });
+  });
+}
+
+/* LAS FILAS DE UNA LISTA, POR SU VALOR.
+ *
+ * Se comparan atributos EN JAVASCRIPT en vez de meter el valor dentro de un
+ * selector. Los nombres los escribe una persona en una hoja de cálculo —
+ * "JOSE'S HOUSE", 'BAY "A"'— y cualquiera de esos dos rompe un selector, que
+ * además LANZA: el borrado entero se caería por querer animarlo. Comparar no
+ * puede romperse.
+ *
+ * En mayúsculas porque es como el catálogo compara en todas partes.
+ */
+function _itemsBy(scope, sel, attr, vals){
+  var box = (typeof scope === 'string') ? document.getElementById(scope) : scope;
+  if (!box) return [];
+  var quiero = {};
+  (vals || []).forEach(function(v){ quiero[String(v).toUpperCase()] = 1; });
+  try {
+    return Array.prototype.filter.call(box.querySelectorAll(sel), function(el){
+      return quiero[String(el.getAttribute(attr) || '').toUpperCase()] === 1;
+    });
+  } catch (e) { return []; }
+}
+
 /** La fila de un movimiento en la tabla, si está pintada. */
 function _movRowEl(mov){
   if (!mov || !mov.movId) return null;
@@ -19336,6 +20701,188 @@ function _btnDone(btn, ok, then){
   btn.innerHTML = '<span class="btn-tick">✓</span>';
   setTimeout(function(){ _btnReset(btn); if (then) then(); }, 700);
 }
+
+/* ── LA LÍNEA DE PROGRESO ───────────────────────────────────────────────────
+ * Jose, 2026-09-15: "podemos mostrar solo una línea con el ícono de cargando y
+ * un check verde cada vez que se finaliza algo".
+ *
+ * Un aviso por cosa hecha no es información, es ruido: para cuando salen los
+ * trece ya nadie los lee y la tabla lleva medio minuto tapada. Esto enseña lo
+ * que de verdad se quiere saber mientras se espera —voy por 4 de 13— y termina
+ * en un check que se va solo.
+ *
+ * LO QUE NO PASA POR AQUÍ: un borrado que falla. Eso sigue siendo un toast,
+ * porque hay que leerlo y decide qué hacer después. La línea sólo lo cuenta.
+ */
+var _prog      = null;   // la tanda que se está enseñando
+var _progHideT = null;
+
+/* CÓMO TERMINA CADA TIPO DE TANDA. Va aparte porque el final es lo único que
+   cambia de una acción a otra, y porque tiene que decir CUÁNTOS: Jose, sobre
+   restaurar, "como todos los movimientos van desapareciendo, al final debería
+   decir cuántos fueron restaurados". Una fila que se va sin dejar número deja a
+   quien miraba sin saber qué pasó. */
+function _progFinBorrado(hechos, fallados){
+  return fallados
+    ? (hechos + ' moved to the trash · ' + fallados + ' could not be deleted')
+    : (hechos === 1 ? 'Moved to the trash.'
+                    : hechos + ' movements moved to the trash.');
+}
+
+function _progFinRestaurado(hechos, fallados){
+  return fallados
+    ? (hechos + ' put back · ' + fallados + ' could not be restored')
+    : (hechos === 1 ? 'Movement put back.'
+                    : hechos + ' movements put back.');
+}
+
+function _progFinListas(hechos, fallados){
+  return fallados
+    ? (hechos + ' added · ' + fallados + ' failed')
+    : (hechos === 1 ? 'Added to your lists.' : hechos + ' added to your lists.');
+}
+
+function _progFinDesactivados(hechos, fallados){
+  return fallados
+    ? (hechos + ' deactivated · ' + fallados + ' failed')
+    : (hechos === 1 ? 'That user can no longer sign in.'
+                    : hechos + ' users can no longer sign in.');
+}
+
+function _progFinReactivados(hechos, fallados){
+  return fallados
+    ? (hechos + ' reactivated · ' + fallados + ' failed')
+    : (hechos === 1 ? 'That user can sign in again.'
+                    : hechos + ' users can sign in again.');
+}
+
+function _progFinLlegadas(hechos, fallados){
+  return fallados
+    ? (hechos + ' marked as arrived · ' + fallados + ' failed')
+    : (hechos === 1 ? 'Marked as arrived.'
+                    : hechos + ' deliveries marked as arrived.');
+}
+
+/* n      — cuántos se acaban de pedir
+   label  — lo que se está haciendo, en presente ("Deleting movements")
+   fin    — cómo se cuenta el final; por defecto, el del borrado
+
+   El label hace también de identidad de la tanda: dos peticiones del MISMO
+   trabajo suman, y una de otro trabajo cierra la anterior y abre la suya. Sin
+   eso, borrar y luego restaurar compartirían contador y el final diría una
+   cosa de la otra. */
+function _progStart(n, label, fin){
+  if (!n) return;
+  var w = document.getElementById('progWrap');
+  if (!w) return;
+  if (_progHideT){ clearTimeout(_progHideT); _progHideT = null; }
+
+  // Una segunda tanda encima de una que sigue viva SUMA, no reinicia: volver a
+  // "0 de 3" con ocho ya hechos detrás sería mentir sobre lo que falta.
+  var viva = _prog && (_prog.done + _prog.failed) < _prog.total && _prog.label === label;
+  if (viva) _prog.total += n;
+  else _prog = { total: n, done: 0, failed: 0, label: label,
+                 fin: fin || _progFinBorrado };
+
+  w.className = 'show';
+  _progPaint();
+}
+
+/* TERMINAR CON UNA FRASE QUE VIENE DEL SERVIDOR.
+ *
+ * _progStep sirve cuando el navegador cuenta: una llamada por cosa, y al final
+ * la suma. Pero hay trabajos que son UNA llamada y el número lo trae la
+ * respuesta — vaciar la papelera, importar un archivo. Ahí no hay nada que
+ * contar aquí; hay que enseñar el número que dio el servidor.
+ *
+ * El patrón es: _progStart(1, 'Emptying the trash') al pulsar, y _progEnd con
+ * la frase de verdad cuando conteste. Mientras tanto la línea gira, que es lo
+ * que faltaba: importar tarda, y antes no se veía nada hasta el final.
+ */
+function _progEnd(texto, hayFallo){
+  var w = document.getElementById('progWrap');
+  if (!w) return;
+  if (_progHideT){ clearTimeout(_progHideT); _progHideT = null; }
+  _prog = { total: 1, done: hayFallo ? 0 : 1, failed: hayFallo ? 1 : 0,
+            label: '', fin: function(){ return texto; } };
+  _progFinish();
+}
+
+/** Quitarla a mano. La línea se va sola, pero seis segundos delante de algo que
+ *  quieres leer son seis segundos, así que un clic la cierra. */
+function _progHide(){
+  var w = document.getElementById('progWrap');
+  if (!w) return;
+  if (_progHideT){ clearTimeout(_progHideT); _progHideT = null; }
+  w.className = '';
+  _prog = null;
+}
+
+function _progStep(ok){
+  if (!_prog) return;
+  if (ok) _prog.done++; else _prog.failed++;
+  if ((_prog.done + _prog.failed) >= _prog.total) _progFinish();
+  else _progPaint();
+}
+
+function _progPaint(){
+  var w = document.getElementById('progWrap');
+  if (!w || !_prog) return;
+  var icon = document.getElementById('progIcon');
+  var msg  = document.getElementById('progMsg');
+  var cnt  = document.getElementById('progCount');
+  if (icon){ icon.className = 'spin-hg'; icon.textContent = '⏳'; }
+  if (msg)  msg.textContent = _prog.label + '…';
+  // El contador sólo cuando hay algo que contar. "1 of 1" no le dice nada a
+  // nadie y ocupa el sitio de la frase.
+  if (cnt)  cnt.textContent = _prog.total > 1
+    ? ((_prog.done + _prog.failed) + ' of ' + _prog.total) : '';
+}
+
+function _progFinish(){
+  var w = document.getElementById('progWrap');
+  if (!w || !_prog) return;
+  var icon = document.getElementById('progIcon');
+  var msg  = document.getElementById('progMsg');
+  var cnt  = document.getElementById('progCount');
+  var hechos = _prog.done, fallados = _prog.failed;
+
+  if (icon){ icon.className = ''; icon.textContent = fallados ? '⚠️' : '✅'; }
+  // Si algo falló se dicen LOS DOS números. "11 moved" a secas dejaría creer
+  // que los trece salieron; el toast del fallo cuenta el porqué, esto cuenta
+  // cuántos. Cada tipo de tanda trae su propia frase — ver _progFinBorrado.
+  if (msg) msg.textContent = _prog.fin(hechos, fallados);
+  if (cnt) cnt.textContent = '';
+  w.className = 'show ' + (fallados ? 'warn' : 'done');
+
+  /* CUÁNTO SE QUEDA. Jose: "debería permanecer más tiempo sin desaparecer".
+     Empezó en 2.6 s, que es tiempo de toast — y esto no es un toast: es el
+     resultado de un trabajo que tardó medio minuto, y la persona puede estar
+     mirando otra cosa cuando termina. Seis segundos, y diez si hubo fallos,
+     que ahí sí hay algo que leer. Un clic la cierra antes. */
+  _progHideT = setTimeout(function(){
+    w.className += ' fade-out';
+    setTimeout(function(){ w.className = ''; _prog = null; _progHideT = null; }, 320);
+  }, fallados ? 10000 : 6000);
+}
+
+/* CUÁNTO SE QUEDA UN AVISO, Y POR QUÉ HAY UN NÚMERO CON NOMBRE.
+ *
+ * Jose, repasando la lista de los 47 avisos de "salió bien": los que confirman
+ * algo que él mismo acaba de pulsar se quedan, "pero que duren menos".
+ *
+ * Es el caso en que la persona YA SABE lo que pidió y sólo quiere ver que
+ * ocurrió. Dos segundos alcanzan de sobra para eso —son cuatro o cinco
+ * palabras— y evitan que tres confirmaciones seguidas se apilen encima de la
+ * tabla, que es de donde salió toda esta revisión.
+ *
+ * NO SE TOCA EL VALOR POR DEFECTO. Un error o una advertencia hay que leerlos,
+ * y algunos avisos no confirman: EXPLICAN, o dicen qué hacer a continuación
+ * ("say which rack it went to"). Ésos se quedan con lo suyo. Bajar el defecto
+ * los habría acortado a todos de golpe, en silencio, que es justo la clase de
+ * cambio que parece pequeño y no lo es.
+ */
+var TOAST_QUICK = 2000;
 
 function showToast(msg, type, duration) {
   type     = type     || 'ok';
@@ -20045,6 +21592,11 @@ function _showConfirm(opts) {
   var okBtn = document.getElementById('confirmOkBtn');
   okBtn.textContent  = opts.confirmText || 'OK';
   okBtn.className    = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
+  // Un aviso que no ofrece nada no lleva "Cancel": cancelar QUÉ, si no se ha
+  // propuesto nada. Con soloAviso el botón de la izquierda desaparece y el de
+  // la derecha dice lo único que se puede hacer, que es enterarse.
+  var cancelBtn = document.getElementById('confirmCancelBtn');
+  if (cancelBtn) cancelBtn.hidden = !!opts.soloAviso;
   document.getElementById('confirmOverlay').classList.add('show');
 }
 function _confirmOk() {
@@ -20305,6 +21857,43 @@ function saveEditMov() {
     btn:  btn,
     what: 'Could not save',
     ok: function(res) {
+      // LA FILA EDITADA, al día en el acto. Ver "PINTAR EN CUANTO EL SERVIDOR
+      // DICE SÍ", junto a _incAplicarLocal.
+      //
+      // Se normaliza IGUAL que el servidor —mayúsculas en categoría y estantes,
+      // cleanDisplay_ en el nombre (mayúsculas + trim + espacios colapsados)—
+      // porque si las dos mitades no coinciden, la recarga "corrige" algo que
+      // ya estaba bien y se ve un parpadeo donde antes había un retraso. Un
+      // parpadeo es peor: el retraso al menos no miente dos veces.
+      //
+      // LO QUE ESTO NO ARREGLA, y hay que decirlo: si el cambio fue de CANTIDAD,
+      // los totales del dashboard siguen esperando la recarga. El navegador no
+      // puede recalcularlos — el stock sale de las hojas derivadas del servidor,
+      // no de sumar movimientos aquí. La fila que la persona acaba de editar
+      // cambia al instante; el total del material tarda lo que tarde el viaje.
+      if (typeof movements !== 'undefined' && movements){
+        var limpio = function(v){ return String(v || '').toUpperCase().trim().replace(/\s+/g, ' '); };
+        for (var i = 0; i < movements.length; i++){
+          if (movements[i].rowIdx !== payload.rowIdx) continue;
+          var m = movements[i];
+          m.category    = String(payload.category || '').trim().toUpperCase();
+          m.name        = limpio(payload.name);
+          m.qty         = Math.abs(Number(payload.qty) || 0);
+          m.unit        = payload.unit || '';
+          m.dateRec     = payload.dateRec || '';
+          m.responsible = payload.responsible || '';
+          m.sourceLoc   = String(payload.sourceLoc || '').trim().toUpperCase();
+          m.destLoc     = String(payload.destLoc || '').trim().toUpperCase();
+          m.project     = payload.project || '';
+          m.gc          = payload.gc || '';
+          m.supplier    = payload.supplier || '';
+          m.po          = payload.po || '';
+          m.pm          = payload.pm || '';
+          m.comments    = payload.comments || '';
+          break;
+        }
+        renderAll();
+      }
       _setModalBusy('editMovOverlay', false);
       closeModal('editMovOverlay');
       // EL CHECK SE VA AQUÍ. Jose: "una vez que se selecciona un movimiento, se
@@ -20313,7 +21902,7 @@ function saveEditMov() {
       // guardar la fila seguía marcada y la barra seguía ofreciendo Edit y
       // Delete sobre algo que la persona ya había terminado de tocar.
       _clearMovSelection();
-      showToast('Movement updated — ' + res.changes + ' field(s) changed. Email sent.', 'ok');
+      showToast('Movement updated — ' + res.changes + ' field(s) changed. Email sent.', 'ok', TOAST_QUICK);
       // Silencioso: mismo caso que borrar un movimiento.
       loadDataFromGoogle(true, true);
     },
@@ -20468,7 +22057,12 @@ function _pulseOk(res){
   // Y no se amontonan cargas: si ya hay una en camino, el sello sigue distinto
   // y el próximo latido lo verá igual. Pedir tres veces lo mismo sólo gasta
   // cuota y hace más probable la carrera que esto evita.
-  if ((cambio || veniaCaido) && !_loadBusy) {
+  // Y NO SE PIDE NADA MIENTRAS SE ESTÁ BORRANDO. El sello que este latido ve
+  // cambiado lo movió esta misma ventana, borrando; la recarga que pediría se
+  // descartaría al llegar (ver _delGen) y sólo habría gastado una llamada. El
+  // sello no se apunta al descartarla, así que en cuanto la tanda acabe el
+  // siguiente latido lo vuelve a ver distinto y hace lo que toca.
+  if ((cambio || veniaCaido) && !_loadBusy && !_delQueue.length && !_delRunning) {
     // El modo silencioso de la v11.47: lo de antes se queda en pantalla hasta
     // que llega lo nuevo. Sin esto, ver el trabajo de otro desarmaría el
     // tablero cada vez que otra persona guarda algo, que sería peor que no

@@ -46,7 +46,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '11.79';
+var APP_VERSION = '12.01';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -58,7 +58,7 @@ var APP_VERSION = '11.79';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '4651f018';
+var APP_BUILD = '37eb6f06';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -573,7 +573,7 @@ function saveSetupWizard(data) {
       writeConfigColumn_(cfg, 3, data.locations.map(function(l){ return l.name; }));
       writeConfigColumn_(cfg, 4, data.locations.map(function(l){ return l.type || 'RACK'; }));
     }
-    cfg.getRange(2, 8).setValue(sheetSafe_(String(data.adminEmail || actor).trim()));
+    cfg.getRange(2, 8).setValue(textCell_(String(data.adminEmail || actor).trim()));
   }
 
   // The owner becomes ADMIN. Written directly rather than through addUser(),
@@ -594,8 +594,8 @@ function saveSetupWizard(data) {
     if (!email || email.indexOf('@') === -1 || existing[email]) return;
     var role = String(u.role || 'WAREHOUSE').toUpperCase().trim();
     if (['ADMIN','WAREHOUSE','VIEWER'].indexOf(role) === -1) role = 'WAREHOUSE';
-    users.appendRow(['USR-' + (now.getTime() + i), sheetSafe_(email),
-                     sheetSafe_(String(u.name || '').trim()), role, actor, now, true]);
+    users.appendRow(['USR-' + (now.getTime() + i), textCell_(email),
+                     textCell_(String(u.name || '').trim()), role, actor, now, true]);
     existing[email] = true;
   });
 
@@ -1615,25 +1615,30 @@ function cleanDisplay_(str) {
   return String(str || '').toUpperCase().trim().replace(/\s+/g, ' ');
 }
 
-// Neutralize formula injection before ANY user-supplied text reaches a cell.
-// Sheets evaluates a cell whose text starts with = or + as a live formula, so a
-// value like "=IMPORTXML(...)" typed into a comment or material name would run
-// inside the customer's spreadsheet and can exfiltrate data or poison totals.
-// - and @ are included because the same strings get exported to CSV and Excel
-// evaluates all four. This matters most on the Gmail-scan path, where the text
-// originates in inbound mail from outside the company and is then written into
-// the very same fields.
+// AQUÍ HABÍA UN SEGUNDO GUARDIÁN, sheetSafe_, y se borró el 2026-09-14.
 //
-// A leading apostrophe is Sheets' "treat as literal text" marker: it is a cell
-// format flag, NOT part of the stored value, so getValues() still returns the
-// original string and existing comparisons — including addMovementsBatch_'s
-// write-verify read — behave exactly as before.
-function sheetSafe_(val) {
-  if (val === null || val === undefined) return '';
-  if (val instanceof Date || typeof val === 'number' || typeof val === 'boolean') return val;
-  var s = String(val);
-  return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
-}
+// Nació antes que textCell_ y para otro problema: la INYECCIÓN DE FÓRMULAS. Un
+// texto que empieza por = o + lo evalúa Sheets como fórmula viva, así que un
+// "=IMPORTXML(...)" escrito en un comentario o en el nombre de un material
+// correría dentro de la hoja del cliente. Ponía la comilla sólo a esos cuatro
+// arranques: = + - @ (los cuatro, porque lo mismo se exporta a CSV y Excel
+// evalúa los cuatro; importa sobre todo en el camino del escaneo de Gmail,
+// donde el texto viene de correo de fuera de la empresa).
+//
+// POR QUÉ SE FUE. Hacía lo mismo que textCell_ pero SÓLO en esos cuatro casos,
+// y por eso dejaba pasar todo lo demás que Sheets también mastica: las fechas.
+// Teniendo los dos, cada sitio nuevo era una elección entre el guardián fuerte
+// y el débil, y la elección se hace una vez por sitio y para siempre. Cuarenta
+// y seis sitios habían elegido el débil.
+//
+// textCell_ cubre la inyección de fórmulas ENTERA: pone la comilla a TODAS las
+// cadenas, incluidas las cuatro de arriba. No se pierde nada borrando éste; se
+// pierde la posibilidad de volver a elegir mal.
+//
+// Lo que sí cambia, y es lo correcto: un PO tecleado como "12345" pasa a
+// guardarse como texto en vez de como el número 12345, así que se ve pegado a
+// la izquierda de la celda en vez de a la derecha. Un PO es una etiqueta, no
+// una cantidad — nadie suma dos POs.
 
 // ─── TEXT THAT STAYS TEXT ───────────────────────────────────────────────────
 // SHEETS PARSES WHAT IT IS GIVEN. setValues("07-6329") does not store those
@@ -1733,9 +1738,42 @@ function getInitialData(sessionToken) {
                serverVersion: APP_VERSION, company: publicCompany_() };
     }
 
+    /* EL SELLO SE LEE AQUÍ, ANTES QUE LOS DATOS. NUNCA DESPUÉS.
+     *
+     * Jose, 2026-09-16, después de borrar trece movimientos con dos cuentas
+     * abiertas: "el último movimiento que se elimina de una cuenta nunca se
+     * actualiza en la otra cuenta, NUNCA" — y lo comprobó durante ocho minutos
+     * de grabación más el rato de comprimirla, descargarla y escribir.
+     *
+     * No era lento. Era permanente, y la causa es el ORDEN de dos lecturas.
+     *
+     * Este sello se leía al final, dentro del objeto que se devuelve — o sea,
+     * después de haber leído el archivo entero. Si un borrado se confirmaba
+     * entre las dos lecturas, el navegador se guardaba:
+     *
+     *     la lista de movimientos de ANTES del borrado
+     *     el sello de DESPUÉS
+     *
+     * Y a partir de ahí el latido compara su sello con el del servidor, salen
+     * IGUALES, y concluye que no ha cambiado nada. No vuelve a pedir datos
+     * nunca. La fila borrada se queda en pantalla para siempre.
+     *
+     * POR QUÉ JUSTO EL ÚLTIMO DE LA TANDA: a los doce primeros los arregla la
+     * recarga que dispara el sello del siguiente. El decimotercero no tiene
+     * ninguno detrás. Y desde la v11.96 es además el más lento de todos —es el
+     * único que reconstruye las hojas derivadas, porque ya no viene nadie
+     * detrás—, así que su ventana es la más ancha. La v11.96 no creó esto: lo
+     * dejó a la vista al quitar el ruido que lo tapaba.
+     *
+     * LEYÉNDOLO PRIMERO, EL FALLO CAMBIA DE LADO. Ahora un borrado a mitad de
+     * camino deja sello VIEJO con datos NUEVOS: el siguiente latido ve el
+     * sello distinto y pide una recarga de más. Se desperdicia un viaje. Al
+     * revés se desperdicia la verdad, y no se recupera sola.
+     */
+    var selloAlEmpezar = dataStamp_();
+
     var ss       = SpreadsheetApp.getActiveSpreadsheet();
     var archive  = ss.getSheetByName(SHEETS.ARCHIVE);
-    var resSheet = ss.getSheetByName(SHEETS.RESERVATIONS);
     var config   = loadConfig();
     // The CONFIG sheet also holds the legacy user list and the admin email. The
     // frontend never reads either one, so strip them instead of shipping the
@@ -1754,28 +1792,33 @@ function getInitialData(sessionToken) {
       }
     }
 
-    var reservations = [];
-    if (resSheet) {
-      var rData = resSheet.getDataRange().getValues();
-      for (var k = 1; k < rData.length; k++) {
-        var r = rData[k];
-        if (!r[0]) continue;
-        reservations.push({
-          id: String(r[0]), category: String(r[1]||''), name: String(r[2]||''),
-          project: String(r[3]||''), qty: Number(r[4]||0), by: String(r[5]||''),
-          date: String(r[6]||''), status: String(r[7]||'Active'), release: String(r[8]||'')
-        });
-      }
-    }
+    // LO APARTADO SALE DE MATERIAL_LOCKS, no de la hoja RESERVATIONS. Ver el
+    // bloque de applyReservationsAndFinalize_: la hoja RESERVATIONS nunca tuvo
+    // quien la llenara desde la app, y ésta es la lista que sí tiene ventana.
+    //
+    // La hoja vieja NO se borra ni se toca. Si algún cliente escribió filas a
+    // mano ahí, siguen suyas; simplemente dejan de contar para el disponible.
+    var locksMap = getActiveLocksMap_(ss);
 
     // Fast path: read pre-aggregated LIVE_STOCK/SITE_STOCK/WASTED_STOCK instead of
     // re-scanning every movement in JS on every login. Falls back to the full scan
     // if the derived sheets haven't been populated yet (e.g. brand-new spreadsheet).
-    var stock = buildStockFromDerivedSheets_(ss);
+    // LA RED DE SEGURIDAD DEL REFRESCO APLAZADO. Si una tanda se quedó a medias
+    // —el navegador se cerró, el refresco final falló—, las hojas derivadas
+    // están atrás. Se ponen al día AQUÍ, antes de leerlas, porque éste es el
+    // único momento en que alguien va a mirar los números. Ver refreshOrDefer_.
+    //
+    // CON CANDADO, y si no se consigue NO SE CONFÍA en las derivadas: se cae al
+    // barrido completo de abajo, que es más lento y siempre correcto. Preferir
+    // lento a inventado.
+    var derivadasAlDia = true;
+    if (refreshPending_()) derivadasAlDia = refreshDerivedSheetsSafely_(ss);
+
+    var stock = derivadasAlDia ? buildStockFromDerivedSheets_(ss) : null;
     if (stock) {
-      applyReservationsAndFinalize_(stock, reservations);
+      applyReservationsAndFinalize_(stock, locksMap);
     } else {
-      stock = calculateStock(movements, reservations);
+      stock = calculateStock(movements, locksMap);
     }
 
     // Register this user's presence and return active users list
@@ -1897,12 +1940,15 @@ function getInitialData(sessionToken) {
       movements:          movements,
       stock:              stock,
       config:             config,
-      reservations:       reservations,
       userRole:           auth.role,
       // La referencia contra la que el latido compara. Sin esto, el primer
       // latido tras cargar vería un sello "distinto" del que no tiene, y todo
       // el mundo se refrescaría una vez de más nada más entrar.
-      dataStamp:          dataStamp_(),
+      // LEÍDO AL EMPEZAR, no aquí. Ver el bloque de selloAlEmpezar arriba: si
+      // se lee en este punto, un borrado que entre mientras se leía el archivo
+      // deja al navegador con datos viejos y sello nuevo — y entonces el latido
+      // no vuelve a pedir nada nunca.
+      dataStamp:          selloAlEmpezar,
       rolePerms:          rolePerms_(),
       warehouseRoleLabel: warehouseRoleLabel_(),
       userName:           auth.name || '',
@@ -1992,7 +2038,7 @@ function parseArchiveRow(row, rowIdx) {
 //    RETURN   → comes back from site.         siteQty--, warehouseQty++, added to DEST_LOC
 //    WASTE    → consumed/damaged.             warehouseQty--, wastedQty++
 //
-function calculateStock(movements, reservations) {
+function calculateStock(movements, locksMap) {
   var stock = {};
 
   for (var i = 0; i < movements.length; i++) {
@@ -2097,24 +2143,69 @@ function calculateStock(movements, reservations) {
     }
   }
 
-  applyReservationsAndFinalize_(stock, reservations);
+  applyReservationsAndFinalize_(stock, locksMap);
   return stock;
+}
+
+/* ═══ UN APARTADO APARTA UN ESTANTE, NO UNA CIFRA ════════════════════════════
+ *
+ * Jose, 2026-09-19: *"no quiero que se llame bloqueo ni quiero que el usuario
+ * vea que dice bloquear algo, debe decir reservar, que es casi lo mismo"*, y
+ * antes: *"actualmente no hay una diferencia entre bloquear y reservar"*.
+ *
+ * LO QUE HABÍA, y por qué había que elegir uno de los dos:
+ *
+ *   LAS RESERVAS (hoja RESERVATIONS) llevaban cantidad y proyecto, y eran
+ *   CÓDIGO MUERTO: `addReservation` y `cancelReservation` existían en el
+ *   servidor y NO TENÍAN UN SOLO LLAMADOR en la interfaz. La hoja sólo se podía
+ *   llenar a mano en el Sheet. Por eso el `Reserved` del tablero decía 0
+ *   siempre — no era un fallo de cuenta, es que no había nada que contar.
+ *
+ *   LOS CANDADOS (hoja MATERIAL_LOCKS) no llevan cantidad —apartan lo que haya
+ *   de ese material en ese estante— pero son reales: tienen ventana, se ponen y
+ *   se quitan, y `enforceMaterialLock_` los hace cumplir de verdad.
+ *
+ * Así que el mecanismo que se queda es el del candado y el nombre que se queda
+ * es "reservar". El usuario no vuelve a leer la palabra "lock" en ninguna
+ * pantalla.
+ *
+ * POR DENTRO SIGUE LLAMÁNDOSE LOCK, a propósito. La hoja MATERIAL_LOCKS ya
+ * existe en la instalación de cada cliente con sus datos dentro; renombrarla
+ * sería una migración de datos a cambio de nada que el usuario vea. Lo que se
+ * renombra es lo que se lee en pantalla. Si esto confunde a alguien dentro de
+ * un año, que lea este bloque: **lock (interno) = reserva (lo que ve la gente)**.
+ *
+ * LO QUE ESTO ENCIENDE SOLO, y es la mitad buena: la validación de salida ya
+ * existía y estaba inerte. En addMovementsBatch_ hay un
+ * `avail = snap.wh - reserved` que rechaza una EXIT que se coma lo apartado —
+ * sólo que `reserved` era siempre 0 porque la hoja estaba vacía. Al alimentarlo
+ * con los apartados empieza a funcionar sin tocar esa línea, y el mensaje de
+ * error ya dice por qué ("Warehouse: 54, Reserved: 44").
+ */
+
+/** Cuántas unidades de un material están apartadas: la suma de lo que hay en
+ *  los estantes apartados. No hay cifra que guardar — el apartado es del
+ *  estante, así que la cantidad SE DERIVA del stock y nunca puede quedar
+ *  desincronizada de él. Un número guardado aparte sí podría. */
+function reservedQtyFromRacks_(locksMap, matId, locs) {
+  if (!locksMap || !locs) return 0;
+  var total = 0;
+  for (var rack in locs) {
+    if (!locs.hasOwnProperty(rack)) continue;
+    if (locksMap[matId + '|||' + normalizeString(rack)]) {
+      total += Math.max(0, Number(locs[rack]) || 0);
+    }
+  }
+  return total;
 }
 
 // Shared by calculateStock() (full-scan path) and buildStockFromDerivedSheets_()
 // (fast path, reads LIVE_STOCK/SITE_STOCK/WASTED_STOCK instead of re-scanning
 // every movement ever made) — both produce the same stock shape up to this point,
 // so reservations + clamping + availableQty only need to be written once.
-function applyReservationsAndFinalize_(stock, reservations) {
-  // Apply active reservations
-  if (reservations) {
-    for (var r = 0; r < reservations.length; r++) {
-      var res  = reservations[r];
-      if (res.status !== 'Active') continue;
-      var rKey = getMaterialId(res.category, res.name);
-      if (stock[rKey]) stock[rKey].reservedQty += res.qty;
-    }
-  }
+//
+// `locksMap` es el de getActiveLocksMap_: 'MATID|||ESTANTE' → {…}.
+function applyReservationsAndFinalize_(stock, locksMap) {
 
   // Finalize every SKU
   for (var k in stock) {
@@ -2130,6 +2221,11 @@ function applyReservationsAndFinalize_(stock, reservations) {
     item.warehouseQty = Math.max(0, item.warehouseQty);
     item.siteQty      = Math.max(0, item.siteQty);
     item.wastedQty     = Math.max(0, item.wastedQty || 0);
+    // DESPUÉS de limpiar los estantes vacíos y ANTES de availableQty. Lo
+    // apartado se cuenta sobre los estantes que QUEDAN: contar uno que acaba de
+    // vaciarse apartaría unidades que ya no están y dejaría el disponible por
+    // debajo de la realidad, que en un almacén significa un camión que no sale.
+    item.reservedQty  = reservedQtyFromRacks_(locksMap, k, item.warehouseLocs);
     item.availableQty = Math.max(0, item.warehouseQty - item.reservedQty);
     item.totalQty      = item.warehouseQty + item.siteQty;
 
@@ -2415,8 +2511,16 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'addMultiEntry')         return addMultiEntry(ss, archive, data, auth);
   if (action === 'addMultiExit')          return addMultiExit(ss, archive, data, auth);
   if (action === 'updateDocument')        return updateDocument_(ss, archive, data, auth);
-  if (action === 'addReservation')        return addReservation_(ss, data, auth);
-  if (action === 'cancelReservation')     return cancelReservation_(ss, data, auth);
+  // EL CIERRE DE LA TANDA. El navegador la manda cuando su cola se vacía, y es
+  // el único refresco de toda la tanda. Si nunca llega —se cerró la ventana, se
+  // cayó la red—, la marca se queda puesta y el siguiente getInitialData lo
+  // hace. Ver refreshOrDefer_.
+  if (action === 'refreshNow') {
+    // Con candado: éste corre por su cuenta, fuera de cualquier acción. Si no
+    // lo consigue, la marca se queda puesta y el siguiente getInitialData lo
+    // hará — que es exactamente para lo que está la marca.
+    return { status: 'success', refreshed: refreshDerivedSheetsSafely_(ss) };
+  }
   if (action === 'addIncoming')           return addIncoming(data);
   if (action === 'updateIncoming')        return updateIncoming(data);
   if (action === 'deleteIncoming')        return deleteIncoming(data.id, data._sessionToken);
@@ -2640,6 +2744,91 @@ function shortStockTag_(cat, name, rack, there, total, asked) {
 
 var DATA_STAMP_KEY = 'WMS_DATA_STAMP';
 
+// ── UN REFRESCO POR TANDA, NO UNO POR OPERACIÓN ─────────────────────────────
+//
+// Jose, 2026-09-15: "todo se actualiza, no con la velocidad que me gustaría".
+// Y tiene un número detrás. refreshDerivedSheets_ reconstruye LIVE_STOCK,
+// SITE_STOCK y WASTED_STOCK, y eso son unos nueve viajes a Google —medidos en
+// SU hoja el 2026-09-10: 3,7 segundos—. Borrar diez filas seguidas los pagaba
+// DIEZ VECES: unos cuarenta segundos para un trabajo que necesita uno.
+//
+// El navegador ya agrupaba SU recarga (ver _reloadWhenIdle). Lo que no se
+// agrupaba era el trabajo del SERVIDOR.
+//
+// POR QUÉ ESTO SE PUEDE APLAZAR SIN RIESGO, que es la pregunta que había que
+// contestar antes de escribirlo: las hojas derivadas son para MOSTRAR. Validar
+// un movimiento —¿queda material?, ¿alcanza en ese estante?— se hace contra
+// buildStockSnapshot_, que lee EL ARCHIVO, no las derivadas. Así que dejarlas
+// atrás un momento puede hacer que los números se vean con retraso; NO puede
+// dejar sacar material que ya no está.
+//
+// Y LA RED DE SEGURIDAD ES LA PARTE QUE IMPORTA. Si el navegador se cierra a
+// mitad de la tanda, o el refresco final falla, la marca se queda puesta y el
+// PRIMER getInitialData que la vea refresca antes de contestar. Nadie llega a
+// ver números viejos: el coste se le cobra a quien de verdad necesita los datos,
+// una vez, en vez de N veces a quien estaba borrando filas.
+var REFRESH_PENDING_KEY = 'WMS_REFRESH_PENDING';
+
+function refreshOrDefer_(ss, data) {
+  if (data && data._skipRefresh) {
+    try {
+      PropertiesService.getScriptProperties().setProperty(REFRESH_PENDING_KEY, '1');
+    } catch (e) {
+      // Si no se pudo dejar la marca, NO se aplaza: refrescar de más cuesta
+      // segundos; no refrescar cuando nadie va a hacerlo cuesta números falsos.
+      Logger.log('refreshOrDefer_: no se pudo marcar, refrescando ahora: ' + e.message);
+      refreshDerivedSheets_(ss);
+    }
+    return;
+  }
+  refreshDerivedSheets_(ss);
+  _clearRefreshPending_();
+}
+
+function _clearRefreshPending_() {
+  try { PropertiesService.getScriptProperties().deleteProperty(REFRESH_PENDING_KEY); }
+  catch (e) {}
+}
+
+/**
+ * Refrescar DESDE FUERA de una acción, tomando el candado.
+ *
+ * LO CAZÓ test-concurrency, y tenía razón: hasta la v11.89 todo refresco
+ * ocurría DENTRO del candado de la acción que lo pedía. Al aplazarlo, el
+ * refresco de cierre pasa a ocurrir por su cuenta — y eso sin candado no es
+ * inofensivo.
+ *
+ * refreshDerivedSheets_ hace clearContents() y luego setValues(). Dos a la vez
+ * se pisan así: A limpia, B limpia, A escribe cien filas, B escribe noventa y
+ * ocho — y las dos últimas de A se quedan colgando debajo de las de B. Eso no
+ * es un número viejo: es un número que nadie escribió.
+ *
+ * Devuelve false si no consiguió el candado. Quien llama NO debe fiarse
+ * entonces de las hojas derivadas: para eso getInitialData se cae al barrido
+ * completo, que es más lento y siempre correcto.
+ */
+function refreshDerivedSheetsSafely_(ss) {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return false;
+  try {
+    refreshDerivedSheets_(ss);
+    _clearRefreshPending_();
+    return true;
+  } catch (e) {
+    Logger.log('refreshDerivedSheetsSafely_: ' + e.message);
+    return false;
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+/** ¿Quedó una tanda a medias? Lo usa getInitialData antes de leer las derivadas. */
+function refreshPending_() {
+  try {
+    return PropertiesService.getScriptProperties().getProperty(REFRESH_PENDING_KEY) === '1';
+  } catch (e) { return false; }
+}
+
 /* LAS ACCIONES QUE MUEVEN EL SELLO. Es una lista corta a propósito, y lo que
  * NO está en ella importa tanto como lo que está.
  *
@@ -2660,10 +2849,6 @@ var DATA_STAMP_KEY = 'WMS_DATA_STAMP';
  *   dismissSystemCard                    — "nuevas tarjetas", también
  *   updateConfig, mergeConfigValues,
  *   mergeLocations, saveLocationLayout   — catálogo: nombres, no existencias
- *   lockMaterial, unlockMaterial         — cambian permisos sobre el material,
- *                                          no cuánto hay. (Que el candado se
- *                                          vea al momento es una petición
- *                                          aparte, anotada en el backlog.)
  *   todo lo que empieza por get…         — no escriben nada
  *
  * LA REGLA CAMBIÓ EL 2026-09-11, y la que había estaba mal escrita. Decía: "si
@@ -2700,7 +2885,16 @@ var DATA_STAMP_ACTIONS = {
   // ventana de la semana.
   addIncoming:         true,
   updateIncoming:      true,
-  deleteIncoming:      true
+  deleteIncoming:      true,
+  // Los candados. Estuvieron fuera con esta razón escrita: "cambian permisos
+  // sobre el material, no cuánto hay". Esa razón era la regla vieja —la de
+  // AVAILABLE— aplicada a otra cosa, y con la regla nueva no se sostiene: el
+  // candado SE VE (en el cajón del estante, en el formulario de salida, y desde
+  // la v11.80 en la tabla del dashboard) y además CAMBIA LO QUE LA OTRA PERSONA
+  // PUEDE HACER. Que se entere en su siguiente carga es justo lo que no sirve:
+  // para cuando recargue ya intentó sacar el material y se comió el error.
+  lockMaterial:        true,
+  unlockMaterial:      true
 };
 
 function bumpDataStamp_() {
@@ -2752,17 +2946,6 @@ function addMovementsBatch_(ss, archive, movements, auth) {
     var takenIds = {};
     var idFixes  = dedupeMovementIds_(archiveValues, takenIds);
 
-    // ── ONE read of reservations → reserved qty per matId ────────────────────
-    var reservedByMat = {};
-    var resSheet = ss.getSheetByName(SHEETS.RESERVATIONS);
-    if (resSheet) {
-      var rData = resSheet.getDataRange().getValues();
-      for (var r = 1; r < rData.length; r++) {
-        if (String(rData[r][7] || '').toUpperCase() !== 'ACTIVE') continue;
-        var rKey = getMaterialId(normalizeString(rData[r][1] || ''), normalizeString(rData[r][2] || ''));
-        reservedByMat[rKey] = (reservedByMat[rKey] || 0) + Number(rData[r][4] || 0);
-      }
-    }
 
     // ── In-memory stock snapshot for ALL materials (mutated as we validate) ───
     var snapshot = buildStockSnapshot_(archiveValues);
@@ -2868,7 +3051,11 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       }
 
       var snap     = snapshot[matId] || (snapshot[matId] = { wh: 0, site: 0, locs: {} });
-      var reserved = reservedByMat[matId] || 0;
+      // Lo apartado se calcula sobre snap.locs, que es la foto VIVA que este
+      // lote va mutando fila a fila. Una cifra leída antes del bucle se
+      // quedaría vieja en cuanto la primera salida del lote vaciara un estante
+      // apartado — y este número decide si la siguiente salida se permite.
+      var reserved = reservedQtyFromRacks_(locksMap, matId, snap.locs);
 
       // Material lock check — authoritative, cannot be bypassed from the frontend.
       enforceMaterialLock_(locksMap, mt, matId, srcKey, destKey);
@@ -2970,18 +3157,34 @@ function addMovementsBatch_(ss, archive, movements, auth) {
         totalCost = round2_(unitCost * qty);
       }
 
+      // CRUDO, TODO. La comilla la pone UNA VEZ el textSafeRow_ de la escritura,
+      // unas líneas más abajo. Citar aquí también deja DOS: Sheets se come una
+      // y guarda la otra DENTRO del valor.
+      //
+      // ASÍ SE ROMPIÓ, y es mío. Hasta la v11.80 estas trece líneas usaban
+      // sheetSafe_, que sólo ponía comilla a lo que empezaba por = + - @, o sea
+      // casi nunca: la doble cita existía y no se veía. Al cambiar sheetSafe_
+      // por textCell_ en la v11.81 —que cita SIEMPRE— pasó a verse en todas.
+      // Jose lo encontró en su historial: 'WINDOW, 'JOSE JOSE, 'UNIT, '16598.
+      //
+      // Y no era sólo feo: el matId se compone de categoría y nombre, así que
+      // "'WINDOW|||'JOSE JOSE" no es el mismo material que "WINDOW|||JOSE JOSE".
+      // Las existencias se habrían partido en dos.
+      //
+      // Al convertirlas las llamé "redundantes pero inofensivas". Eran
+      // redundantes con sheetSafe_; con textCell_ no.
       var row = new Array(AC_WIDTH);
       row[AC.TIMESTAMP]   = now;
-      row[AC.CATEGORY]    = sheetSafe_(cleanDisplay_(d.category));  // stored as typed (keeps , - /)
-      row[AC.NAME]        = sheetSafe_(cleanDisplay_(d.name));      // matId above still uses normalized form
-      row[AC.GC]          = sheetSafe_(String(d.gc || '').trim());
-      row[AC.PO]          = sheetSafe_(String(d.po || '').trim());
+      row[AC.CATEGORY]    = cleanDisplay_(d.category);  // stored as typed (keeps , - /)
+      row[AC.NAME]        = cleanDisplay_(d.name);      // matId above still uses normalized form
+      row[AC.GC]          = String(d.gc || '').trim();
+      row[AC.PO]          = String(d.po || '').trim();
       row[AC.QTY]         = qty;
-      row[AC.UNIT]        = sheetSafe_(String(d.unit || 'UNIT').toUpperCase());
+      row[AC.UNIT]        = String(d.unit || 'UNIT').toUpperCase();
       row[AC.DATE_REC]    = d.dateRec || tzDate;
-      row[AC.SRC_LOC]     = sheetSafe_(src);
-      row[AC.SUPPLIER]    = sheetSafe_(String(d.supplier || '').trim());
-      row[AC.COMMENTS]    = sheetSafe_(String(d.comments || '').trim());
+      row[AC.SRC_LOC]     = src;
+      row[AC.SUPPLIER]    = String(d.supplier || '').trim();
+      row[AC.COMMENTS]    = String(d.comments || '').trim();
       row[AC.STATUS]      = statusVal;
       // "Received By" — who physically took delivery. Left blank when unknown,
       // NEVER defaulted to the signed-in user: that silently asserted the person
@@ -2989,14 +3192,14 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       // enters a delivery on another person's behalf, and it is unfalsifiable
       // after the fact. Who entered it is already captured, separately and
       // truthfully, in USER_EMAIL below.
-      row[AC.RESPONSIBLE] = sheetSafe_(String(d.responsible || '').trim());
-      row[AC.PROJECT]     = sheetSafe_(proj);
-      row[AC.MAT_ID]      = sheetSafe_(matId);
+      row[AC.RESPONSIBLE] = String(d.responsible || '').trim();
+      row[AC.PROJECT]     = proj;
+      row[AC.MAT_ID]      = matId;
       row[AC.DOC_LINKS]   = '';
       row[AC.USER_EMAIL]  = auth.email;
-      row[AC.DEST_LOC]    = sheetSafe_(dest);
+      row[AC.DEST_LOC]    = dest;
       row[AC.MOVETYPE]    = mt;
-      row[AC.PM]          = sheetSafe_(String(d.pm || '').trim());
+      row[AC.PM]          = String(d.pm || '').trim();
       row[AC.UNIT_COST]   = (unitCost  === null) ? '' : unitCost;
       row[AC.TOTAL_COST]  = (totalCost === null) ? '' : totalCost;
       // Given here, at the moment the row is built, and never again. An id
@@ -3124,7 +3327,8 @@ function addMovementsBatch_(ss, archive, movements, auth) {
     var availableByMat = {};
     for (var m2 in snapshot) {
       if (snapshot.hasOwnProperty(m2)) {
-        availableByMat[m2] = Math.max(0, snapshot[m2].wh - (reservedByMat[m2] || 0));
+        availableByMat[m2] = Math.max(0, snapshot[m2].wh -
+                                reservedQtyFromRacks_(locksMap, m2, snapshot[m2].locs));
       }
     }
 
@@ -3510,21 +3714,11 @@ function getCurrentStockForItem(ss, matId) {
 
   for (var k in locs) { if (locs.hasOwnProperty(k) && locs[k] < 0) locs[k] = 0; }
 
-  // Count active reservations
-  var reserved = 0;
-  var resSheet = ss.getSheetByName(SHEETS.RESERVATIONS);
-  if (resSheet) {
-    var rData = resSheet.getDataRange().getValues();
-    for (var j = 1; j < rData.length; j++) {
-      var rKey = getMaterialId(
-        normalizeString(rData[j][1] || ''),
-        normalizeString(rData[j][2] || '')
-      );
-      if (rKey === matId && String(rData[j][7] || '').toUpperCase() === 'ACTIVE') {
-        reserved += Number(rData[j][4] || 0);
-      }
-    }
-  }
+  // Lo apartado: la suma de los estantes de este material que están reservados.
+  // Sale de MATERIAL_LOCKS como en todos los demás sitios — tres lectores
+  // distintos de la hoja RESERVATIONS es justamente como se consigue que tres
+  // pantallas enseñen tres números.
+  var reserved = reservedQtyFromRacks_(getActiveLocksMap_(ss), matId, locs);
 
   return {
     warehouseQty:  Math.max(0, wh),
@@ -3663,12 +3857,14 @@ function saveMaterialPack(data, auth) {
     if (String(rows[i][PACK_COLS.CATEGORY] || '').trim().toUpperCase() === cat &&
         String(rows[i][PACK_COLS.NAME] || '').trim().toUpperCase() === name &&
         String(rows[i][PACK_COLS.PACK] || '').trim().toUpperCase() === pack.toUpperCase()) {
-      sheet.getRange(i + 2, 1, 1, 7).setValues([row]);
+      // PACKS guarda categoría y nombre de material, que es exactamente el
+      // texto que Sheets mastica. Iba sin ninguna protección — ni la débil.
+      sheet.getRange(i + 2, 1, 1, 7).setValues([textSafeRow_(row)]);
       auditLog_(ss, 'PACK_SAVE', auth.email, cat + ' / ' + name, pack, String(per));
       return { status: 'success', updated: true };
     }
   }
-  sheet.appendRow(row);
+  sheet.appendRow(textSafeRow_(row));
   auditLog_(ss, 'PACK_SAVE', auth.email, cat + ' / ' + name, pack, String(per));
   return { status: 'success', updated: false };
 }
@@ -4184,7 +4380,10 @@ function writeConfigSnapshot_(ss) {
   header.push(['PROPERTY', 'VALUE', 'WHAT IT IS']);
 
   var all = header.concat(rows.length ? rows : [['(nothing stored yet)', '', '']]);
-  sheet.getRange(1, 1, all.length, 3).setValues(all);
+  // Es un volcado de diagnóstico, pero lo que vuelca son VALORES de
+  // propiedades que nadie controla. Una fecha inventada en la hoja a la que
+  // se mira cuando algo va mal es la peor hoja donde tenerla.
+  sheet.getRange(1, 1, all.length, 3).setValues(all.map(textSafeRow_));
   sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
   sheet.getRange(header.length, 1, 1, 3).setFontWeight('bold');
   sheet.getRange(1, 3, all.length, 1).setWrap(true).setFontColor('#6B7280');
@@ -5063,8 +5262,8 @@ function refreshDerivedSheets_(ss) {
   if (matIdFixes.length) {
     var archiveFixes = matIdFixes.filter(function(f){ return !f.isHistory; });
     var historyFixes = matIdFixes.filter(function(f){ return f.isHistory; });
-    archiveFixes.forEach(function(f){ archive.getRange(f.rowNum, AC.MAT_ID + 1).setValue(f.correctMatId); });
-    historyFixes.forEach(function(f){ history.getRange(f.rowNum, AC.MAT_ID + 1).setValue(f.correctMatId); });
+    archiveFixes.forEach(function(f){ archive.getRange(f.rowNum, AC.MAT_ID + 1).setValue(textCell_(f.correctMatId)); });
+    historyFixes.forEach(function(f){ history.getRange(f.rowNum, AC.MAT_ID + 1).setValue(textCell_(f.correctMatId)); });
     // The row numbers go in a shape the app can parse back out, so the
     // notification can offer to show you the actual rows rather than leaving
     // you to search the sheet for them.
@@ -5122,43 +5321,26 @@ function refreshDerivedSheets_(ss) {
   if (wasteRows.length > 0) waste.getRange(1, 1, wasteRows.length, 5).setValues(wasteRows.map(textSafeRow_));
 }
 
-// ─── RESERVATIONS ────────────────────────────────────────────────────────────
-function addReservation_(ss, data, auth) {
-  var sheet = ss.getSheetByName(SHEETS.RESERVATIONS);
-  if (!sheet) throw new Error('Reservations sheet not found.');
-
-  var cat   = String(data.category || '').toUpperCase().trim();
-  var name  = String(data.name     || '').trim();
-  var proj  = String(data.project  || '').trim();
-  var qty   = Number(data.qty      || 0);
-  if (!cat || !name || qty <= 0) throw new Error('Invalid reservation data.');
-
-  var matId   = getMaterialId(cat, name);
-  var current = getCurrentStockForItem(ss, matId);
-  if (current.availableQty < qty) throw new Error('Cannot reserve. Available: ' + current.availableQty);
-
-  var id = 'RES-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
-  sheet.appendRow([id, sheetSafe_(cat), sheetSafe_(name), sheetSafe_(proj), qty, auth.email, new Date(), 'Active', '']);
-
-  auditLog_(ss, 'ADD_RESERVATION', auth.email, id + ' | ' + name + ' x' + qty, '', '');
-  return { status: 'success', reservationId: id };
-}
-
-function cancelReservation_(ss, data, auth) {
-  var sheet = ss.getSheetByName(SHEETS.RESERVATIONS);
-  if (!sheet) throw new Error('Reservations sheet not found.');
-  var id     = data.reservationId;
-  var values = sheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === id) {
-      sheet.getRange(i + 1, 8).setValue('Cancelled');
-      sheet.getRange(i + 1, 9).setValue(new Date());
-      auditLog_(ss, 'CANCEL_RESERVATION', auth.email, id, '', '');
-      return { status: 'success' };
-    }
-  }
-  throw new Error('Reservation not found.');
-}
+// ─── RESERVAS ────────────────────────────────────────────────────────────────
+// addReservation_ y cancelReservation_ VIVIERON AQUÍ y se borraron el
+// 2026-09-20. No eran una función a medias: eran dos endpoints SIN UN SOLO
+// LLAMADOR en la interfaz. La única forma de crear una reserva era escribir a
+// mano en la hoja RESERVATIONS, así que el `Reserved` del tablero decía 0
+// siempre y nadie podía probar nada de esto.
+//
+// Ya estaba anotado como decisión pendiente desde la prueba de concurrencia del
+// 2026-09-04: "queda pendiente DECIDIR si las reservas van a existir de cara al
+// usuario; si no, el arreglo correcto puede ser quitar el endpoint en vez de
+// blindarlo". Jose decidió: "actualmente no hay una diferencia entre bloquear y
+// reservar" y "debe decir reservar".
+//
+// Lo que se queda es el mecanismo de abajo, que sí funciona, con el nombre de
+// arriba. Borrar el endpoint muerto no es limpieza cosmética: cada función
+// pública de Apps Script es una puerta que google.script.run puede llamar, y
+// una puerta que nadie usa es una puerta que nadie vigila.
+//
+// La hoja RESERVATIONS no se borra. Si algún cliente escribió filas a mano ahí,
+// siguen siendo suyas.
 
 // ─── MATERIAL LOCKS ──────────────────────────────────────────────────────────
 // Locks a specific (material, rack) pair — NOT the whole rack, NOT the whole
@@ -5218,14 +5400,14 @@ function managePmDirectory(data, auth) {
         throw new Error('"' + name + '" is already in the PM directory.');
       }
     }
-    sheet.appendRow([sheetSafe_(name), sheetSafe_(email)]);
+    sheet.appendRow([textCell_(name), textCell_(email)]);
   } else if (data.op === 'rename') {
     var oldName = String(data.oldName || '').trim();
     if (!oldName) throw new Error('Current PM name is required.');
     var found = false;
     for (var j = 1; j < rows.length; j++) {
       if (String(rows[j][0] || '').trim().toUpperCase() === oldName.toUpperCase()) {
-        sheet.getRange(j + 1, 1, 1, 2).setValues([[sheetSafe_(name || oldName), sheetSafe_(email || rows[j][1])]]);
+        sheet.getRange(j + 1, 1, 1, 2).setValues([[textCell_(name || oldName), textCell_(email || rows[j][1])]]);
         found = true;
         break;
       }
@@ -5391,12 +5573,12 @@ function enforceMaterialLock_(locksMap, mt, matId, srcKey, destKey) {
   // this function returns early when there is no source — which is right:
   // finding MORE than the record said takes nothing away from anybody.
   if (mt === 'EXIT' || mt === 'WASTE' || mt === 'ADJUST') {
-    throw new Error('LOCKED: This material is locked at ' + srcKey + ' — ' + lock.reason +
-      ' (by ' + lock.lockedBy + '). Cannot ' + mt + '. Ask an admin to unlock it first.');
+    throw new Error('RESERVED: This material is reserved at ' + srcKey + ' — ' + lock.reason +
+      ' (by ' + lock.lockedBy + '). Cannot ' + mt + '. Ask an admin to release it first.');
   }
   if (mt === 'TRANSFER' && lock.allowedDest.length) {
     if (!destKey || lock.allowedDest.indexOf(destKey) === -1) {
-      throw new Error('LOCKED: Material at ' + srcKey + ' can only be transferred to: ' +
+      throw new Error('RESERVED: Material at ' + srcKey + ' can only be transferred to: ' +
         lock.allowedDest.join(', ') + ' — ' + lock.reason);
     }
   }
@@ -5412,7 +5594,7 @@ function lockMaterial(data, auth) {
   var reason = String(data.reason || '').trim();
   if (!cat || !name) throw new Error('Category and name are required.');
   if (!rack) throw new Error('Rack is required.');
-  if (!reason) throw new Error('A reason is required to lock a material.');
+  if (!reason) throw new Error('A reason is required to reserve a material.');
 
   var matId = getMaterialId(cat, name);
   // normalizeString-form throughout — must match getActiveLocksMap_'s enforcement
@@ -5434,7 +5616,7 @@ function lockMaterial(data, auth) {
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][9] || '').toUpperCase() !== 'ACTIVE') continue;
     if (String(rows[i][1] || '') === matId && normalizeString(rows[i][4] || '') === rackKey) {
-      sheet.getRange(i + 1, 6, 1, 4).setValues([[sheetSafe_(allowedDest.join(', ')), sheetSafe_(reason), auth.email, now]]);
+      sheet.getRange(i + 1, 6, 1, 4).setValues([[textCell_(allowedDest.join(', ')), textCell_(reason), auth.email, now]]);
       auditLog_(ss, 'UPDATE_LOCK', auth.email, data.name + ' @ ' + rack, '', reason);
       CacheService.getScriptCache().remove('materialLocksV1');
       return { status: 'success', lock: { id: String(rows[i][0]), matId: matId, category: data.category, name: data.name, rack: rack, allowedDest: allowedDest, reason: reason, lockedBy: auth.email, lockedAt: nowStr } };
@@ -5442,7 +5624,7 @@ function lockMaterial(data, auth) {
   }
 
   var id = 'LOCK-' + new Date().getTime();
-  sheet.appendRow([id, sheetSafe_(matId), sheetSafe_(data.category), sheetSafe_(data.name), sheetSafe_(rack), sheetSafe_(allowedDest.join(', ')), sheetSafe_(reason), auth.email, now, 'Active', '', '']);
+  sheet.appendRow([id, textCell_(matId), textCell_(data.category), textCell_(data.name), textCell_(rack), textCell_(allowedDest.join(', ')), textCell_(reason), auth.email, now, 'Active', '', '']);
   auditLog_(ss, 'LOCK_MATERIAL', auth.email, data.name + ' @ ' + rack, '', reason);
   CacheService.getScriptCache().remove('materialLocksV1');
   return { status: 'success', lock: { id: id, matId: matId, category: data.category, name: data.name, rack: rack, allowedDest: allowedDest, reason: reason, lockedBy: auth.email, lockedAt: nowStr } };
@@ -5452,7 +5634,7 @@ function unlockMaterial(data, auth) {
   auth = requireAuth_('ADMIN');   // ignores any caller-supplied `auth` — see requireAuth_
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('MATERIAL_LOCKS');
-  if (!sheet) throw new Error('No locks exist.');
+  if (!sheet) throw new Error('No reservations exist.');
   var rows = sheet.getDataRange().getValues();
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(data.id) && String(rows[i][9] || '').toUpperCase() === 'ACTIVE') {
@@ -5522,8 +5704,19 @@ function updateDocument_(ss, archive, data, auth) {
   if (hasDocGroups) links = uploadDocGroups_(data.docGroups, matName);          // named, multi-photo groups → PDF
   else if (hasFiles) links = uploadFiles_(data.files, matName, 'row-' + data.rowIdx); // legacy single-file
 
+  // SE DEVUELVE EL TEXTO FINAL, y no es un extra: es lo único que le permite al
+  // navegador pintar el cambio en el acto.
+  //
+  // Jose, 2026-09-17, con video: adjuntaba un documento, salía el "Documents
+  // updated ✓", y la columna DOC seguía igual unos segundos. El navegador no
+  // podía arreglarlo solo — sabe qué enlaces SOBREVIVEN (los manda él en
+  // keepLinks) pero no la URL de Drive del archivo que acaba de subir, que se
+  // crea aquí dentro. Sin este dato lo único que le quedaba era esperar una
+  // recarga entera.
+  //
+  // No cuesta nada: el texto ya estaba calculado para escribirlo en la celda.
+  var finalText = null;
   if (data.rowIdx && (links || hasKeepLinks)) {
-    var finalText;
     if (hasKeepLinks) {
       finalText = data.keepLinks.concat(links ? [links] : []).join('\n');
     } else {
@@ -5534,7 +5727,10 @@ function updateDocument_(ss, archive, data, auth) {
     if (finalText) docLinksCell.setRichTextValue(richTextForDocLinks_(finalText));
     else docLinksCell.setValue(''); // all documents removed, nothing to replace with
   }
-  return { status: 'success' };
+  // null cuando NO se tocó la celda; '' cuando se quitaron todos. Son cosas
+  // distintas y el navegador tiene que poder diferenciarlas: '' vacía la
+  // columna, null la deja como estaba.
+  return { status: 'success', docLinks: finalText };
 }
 
 // Legacy single-file upload (kept for backward compatibility with older clients / attach modal)
@@ -5609,12 +5805,12 @@ function uploadRackPhoto(data, auth) {
   var found = false;
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][0] || '').trim().toUpperCase() === loc) {
-      sheet.getRange(i + 1, 1, 1, 4).setValues([[sheetSafe_(loc), url, auth.email, now]]);
+      sheet.getRange(i + 1, 1, 1, 4).setValues([[textCell_(loc), url, auth.email, now]]);
       found = true;
       break;
     }
   }
-  if (!found) sheet.appendRow([sheetSafe_(loc), url, auth.email, now]);
+  if (!found) sheet.appendRow([textCell_(loc), url, auth.email, now]);
 
   auditLog_(ss, 'UPLOAD_RACK_PHOTO', auth.email, loc, '', url);
   CacheService.getScriptCache().remove('rackPhotosV1');
@@ -6061,27 +6257,52 @@ function updateTruck_(ss, data) {
   var values = cfg.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][8] || '') === data.truckName) {
-      cfg.getRange(i + 1, 10).setValue(sheetSafe_(data.assignedPerson || ''));
-      cfg.getRange(i + 1, 11).setValue(sheetSafe_(data.status || 'ACTIVE'));
+      cfg.getRange(i + 1, 10).setValue(textCell_(data.assignedPerson || ''));
+      cfg.getRange(i + 1, 11).setValue(textCell_(data.status || 'ACTIVE'));
       return { status: 'success' };
     }
   }
-  cfg.appendRow(['','','','','','','','',sheetSafe_(data.truckName), sheetSafe_(data.assignedPerson || ''), sheetSafe_(data.status || 'ACTIVE'),'','']);
+  cfg.appendRow(['','','','','','','','',textCell_(data.truckName), textCell_(data.assignedPerson || ''), textCell_(data.status || 'ACTIVE'),'','']);
   return { status: 'success', message: 'Truck added.' };
 }
 
 function addUser_(ss, data) {
   var cfg = ss.getSheetByName(SHEETS.CONFIG);
-  cfg.appendRow(['','','','','',sheetSafe_(data.email), sheetSafe_(data.role),'','','','','','']);
+  cfg.appendRow(['','','','','',textCell_(data.email), textCell_(data.role),'','','','','','']);
   return { status: 'success' };
 }
 
+// BORRABA LA FILA ENTERA DE CONFIG, Y EN CONFIG CADA COLUMNA ES UNA LISTA.
+//
+// Encontrado el 2026-09-14 barriendo concurrencia. Esto hacía
+// cfg.deleteRow(i + 1) — y en la hoja CONFIG la columna A son proyectos, la B
+// categorías, la C proveedores, la D locaciones, la I camiones, la L el
+// min-stock. Un usuario vive en las columnas F y G de alguna fila, y borrar esa
+// fila se lleva por delante lo que compartiera renglón.
+//
+// Y la secuencia que lo junta todo es normal, no rebuscada: addUser_ añade una
+// fila con sólo F y G; luego updateConfig, al añadir una categoría, RELLENA EL
+// PRIMER HUECO de su columna —que puede ser esa misma fila—; y quitar al
+// usuario borraría la categoría con él.
+//
+// NUNCA LE PASÓ A NADIE, y hay que decirlo: ningún botón de la app llama a este
+// camino. La app gestiona usuarios en USERS_V3, donde quitar a alguien sólo
+// pone Active = false. Los usuarios de CONFIG son el respaldo HEREDADO que
+// getUserRole lee cuando USERS_V3 no contesta — se leen, no se escriben.
+//
+// Se arregla en vez de borrarse porque borrar el camino muerto es una decisión
+// aparte, con sus propias consecuencias, y no se mete de pasajero en un cambio
+// de concurrencia.
+//
+// Ahora hace lo mismo que la versión viva: vacía las dos celdas del usuario y
+// deja la fila donde está. Nada se desplaza, nada más se pierde.
 function removeUser_(ss, data) {
   var cfg    = ss.getSheetByName(SHEETS.CONFIG);
   var values = cfg.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][5] || '').toLowerCase() === data.email.toLowerCase()) {
-      cfg.deleteRow(i + 1);
+      // Columnas F y G — el correo y el rol. Y sólo ésas.
+      cfg.getRange(i + 1, 6, 1, 2).setValues([['', '']]);
       return { status: 'success' };
     }
   }
@@ -6097,7 +6318,7 @@ function updateMinStock_(ss, data) {
       return { status: 'success' };
     }
   }
-  cfg.appendRow(['','','','','','','','','','','',sheetSafe_(data.category), Number(data.qty) || 0]);
+  cfg.appendRow(['','','','','','','','','','','',textCell_(data.category), Number(data.qty) || 0]);
   return { status: 'success' };
 }
 
@@ -6129,7 +6350,7 @@ function updateMinStockBulk(data, auth) {
     if (rowByName[nm] !== undefined) {
       cfg.getRange(rowByName[nm], 13).setValue(qty);
     } else {
-      appended.push(['','','','','','','','','','','', sheetSafe_(nm), qty]);
+      appended.push(['','','','','','','','','','','', textCell_(nm), qty]);
     }
   });
   if (appended.length) {
@@ -6176,7 +6397,7 @@ function saveAvgCostUpdates_(ss, touched, avgCostMap) {
       // Cost — built with Array(14), not typed out by hand, because a
       // hand-counted run of empty strings is exactly the kind of thing that
       // is off by one and silent about it.
-      appended.push(new Array(14).fill('').concat([sheetSafe_(c.category), sheetSafe_(c.name), c.avg]));
+      appended.push(new Array(14).fill('').concat([textCell_(c.category), textCell_(c.name), c.avg]));
     }
   });
   if (appended.length) {
@@ -6552,7 +6773,12 @@ function writeMovIdColumn_(sheet, rows) {
   if (!sheet || rows.length < 2) return;
   ensureArchiveWidth_(sheet);
   var col = [];
-  for (var i = 1; i < rows.length; i++) col.push([rows[i] ? (rows[i][AC.MOV_ID] || '') : '']);
+  // Ida y vuelta: la columna sale de la hoja sin la comilla y se vuelve a
+  // escribir entera. Un id de movimiento no tiene forma de fecha hoy, pero la
+  // regla de este archivo es no ponerse a decidir qué cadena "parece" una fecha
+  // —eso es reescribir el parser de Sheets y equivocarse el primer día que no
+  // coincidan—. La comilla no cuesta nada.
+  for (var i = 1; i < rows.length; i++) col.push([textCell_(rows[i] ? (rows[i][AC.MOV_ID] || '') : '')]);
   sheet.getRange(2, AC.MOV_ID + 1, col.length, 1).setValues(col);
 }
 
@@ -6630,7 +6856,9 @@ function backfillMovementIds_(ss, auth) {
         renamed++;
       }
 
-      if (filled || renamed) sheet.getRange(2, AC.MOV_ID + 1, count, 1).setValues(ids);
+      // Misma ida y vuelta que writeMovIdColumn_: la columna entera vuelve a
+      // la hoja, así que vuelve con la comilla puesta.
+      if (filled || renamed) sheet.getRange(2, AC.MOV_ID + 1, count, 1).setValues(ids.map(function(r){ return [textCell_(r[0])]; }));
       out.filled  += filled;
       out.renamed += renamed;
       out.sheets.push({ sheet: sheetName, filled: filled, renamed: renamed, rows: count });
@@ -6656,7 +6884,7 @@ function backfillMovementIds_(ss, auth) {
 function auditLog_(ss, action, user, details, oldVal, newVal) {
   var sheet = ss.getSheetByName(SHEETS.AUDIT);
   if (!sheet) return;
-  sheet.appendRow([new Date(), action, user, sheetSafe_(details), sheetSafe_(oldVal), sheetSafe_(newVal)]);
+  sheet.appendRow([new Date(), action, user, textCell_(details), textCell_(oldVal), textCell_(newVal)]);
 }
 
 // ─── WHAT THE SYSTEM DID ON ITS OWN ──────────────────────────────────────────
@@ -6852,11 +7080,18 @@ function ensureErrorLogSheet_(ss) {
 // admin viewer, while still being captured for pattern-spotting (e.g. one rack
 // repeatedly hitting INSUFFICIENT stock might mean a data problem, not user error).
 var _KNOWN_VALIDATION_PREFIXES = [
-  'INSUFFICIENT', 'LOCKED', 'DUPLICATE_MOVEMENT', 'Not authenticated',
+  'INSUFFICIENT', 'DUPLICATE_MOVEMENT', 'Not authenticated',
   'Access denied', 'Read-only access', 'Admin only', 'Archive sheet not found',
   'Unknown action', 'Category and Name are required', 'Quantity must be',
-  'A reason is required', 'Rack is required', 'Cannot reserve',
-  'Reservation not found', 'Lock not found', 'WASTE movements require'
+  'A reason is required', 'Rack is required',
+  // 'RESERVED' —no 'LOCKED'— desde que la función se llama reservar de cara al
+  // usuario. ESTA LISTA DECIDE SI UN MENSAJE SE REGISTRA COMO "la app rechazó
+  // algo correctamente" O COMO "la app se rompió", así que renombrar el mensaje
+  // sin renombrarlo aquí convertía cada reserva respetada en un error de
+  // sistema en el registro. Lo cazó test-reservas al contar las palabras
+  // visibles, no al revisarlo a ojo.
+  'RESERVED', 'No reservations exist',
+  'WASTE movements require'
 ];
 // Messages that are the app CORRECTLY refusing something, rather than the app
 // breaking. Matched anywhere in the text, not just as a prefix, because many of
@@ -6917,8 +7152,8 @@ function logError_(ss, severity, source, action, userEmail, message, context, re
   try {
     var sheet = ensureErrorLogSheet_(ss);
     sheet.appendRow([
-      new Date(), severity, sheetSafe_(userEmail || ''), source, sheetSafe_(action || ''),
-      sheetSafe_(String(message || '').substring(0, 500)), sheetSafe_(sanitizeErrorContext_(context)), requestId || ''
+      new Date(), severity, textCell_(userEmail || ''), source, textCell_(action || ''),
+      textCell_(String(message || '').substring(0, 500)), textCell_(sanitizeErrorContext_(context)), requestId || ''
     ]);
   } catch (e) {
     Logger.log('logError_ failed: ' + e.message);
@@ -8726,7 +8961,8 @@ function menuNormalizeStatus() {
     }
   }
 
-  if (fixed) archive.getRange(2, statusCol, lastRow - 1, 1).setValues(statusVals);
+  // Ida y vuelta sobre la columna Status. Ver rewriteArchiveColumn_.
+  if (fixed) archive.getRange(2, statusCol, lastRow - 1, 1).setValues(statusVals.map(function(r){ return [textCell_(r[0])]; }));
   auditLog_(ss, 'STATUS_NORMALIZED', 'Spreadsheet menu', fixed + ' row(s)', '', '');
 
   ui.alert('✓ Done.\n\n' + fixed + ' Status cell(s) corrected.' +
@@ -8961,7 +9197,7 @@ function addUser(data, auth) {
 
   var now = new Date();
   var id  = 'USR-' + now.getTime();
-  sheet.appendRow([id, sheetSafe_(email), sheetSafe_(name), sheetSafe_(role), auth.email, now, true]);
+  sheet.appendRow([id, textCell_(email), textCell_(name), textCell_(role), auth.email, now, true]);
   auditLog_(ss, 'ADD_USER', auth.email, email + ' as ' + role, '', '');
   return { status: 'success', id: id };
 }
@@ -8979,8 +9215,8 @@ function updateUser(data, auth) {
   for (var i = 1; i < rows.length; i++) {
     if (String(rows[i][1] || '').toLowerCase().trim() === email) {
       var rowNum = i + 1;
-      if (data.name !== undefined)   sheet.getRange(rowNum, 3).setValue(sheetSafe_(String(data.name).trim()));
-      if (data.role !== undefined)   sheet.getRange(rowNum, 4).setValue(sheetSafe_(String(data.role).toUpperCase().trim()));
+      if (data.name !== undefined)   sheet.getRange(rowNum, 3).setValue(textCell_(String(data.name).trim()));
+      if (data.role !== undefined)   sheet.getRange(rowNum, 4).setValue(textCell_(String(data.role).toUpperCase().trim()));
       if (data.active !== undefined) sheet.getRange(rowNum, 7).setValue(!!data.active);
       auditLog_(ss, 'UPDATE_USER', auth.email, email + ' → ' + (data.role || 'no role change'), '', '');
       return { status: 'success' };
@@ -9087,7 +9323,11 @@ function mergeLocationsLocked_(data, auth, into, from) {
   // location would go on living in the history under its old name, and
   // refreshDerivedSheets_ reads the two concatenated — so the location would
   // reappear as a place stock still sits.
-  var storedInto = sheetSafe_(into);
+  // CRUDO a propósito: rewriteArchiveColumn_ es quien pone la comilla ahora,
+  // y ponerla aquí también dejaría DOS — la hoja se come una y guarda la otra
+  // DENTRO del valor. Se cita una vez, en el borde. Lo cazó
+  // test-text-stays-text.js el mismo día que se escribió el arreglo.
+  var storedInto = into;
   function keep(row, col) {
     var cur = String(row[col] || '').trim();
     return (cur && wanted[cur.toUpperCase()]) ? storedInto : null;
@@ -9131,7 +9371,7 @@ function mergeLocationsLocked_(data, auth, into, from) {
     writeConfigColumn_(cfg, 4, types);
   }
 
-  refreshDerivedSheets_(ss);
+  refreshOrDefer_(ss, data);
   auditLog_(ss, 'MERGE_LOCATIONS', auth.email, from.join(' + ') + ' → ' + into, String(rowsChanged) + ' cells', '');
   return { status: 'success', rowsChanged: rowsChanged, into: into };
 }
@@ -9388,8 +9628,8 @@ function locationBlockReason_(use, name) {
   var u = use[String(name || '').trim().toUpperCase()];
   if (!u) return '';
   if (u.qty > 0) return 'it still holds ' + u.qty + ' unit(s)';
-  if (u.locked)  return 'a material is locked to it';
-  if (u.allowed) return 'a lock names it as an allowed destination';
+  if (u.locked)  return 'a material is reserved there';
+  if (u.allowed) return 'a reservation names it as an allowed destination';
   return '';
 }
 
@@ -9458,7 +9698,8 @@ function mergeConfigValuesLocked_(data, auth, type, into, from) {
   from.forEach(function (v) { wanted[v.toUpperCase()] = true; });
 
   // 1. Rewrite both archives so history reads as one project.
-  var storedInto = sheetSafe_(into);
+  // Crudo: la comilla la pone rewriteArchiveColumn_. Ver mergeLocationsLocked_.
+  var storedInto = into;
   var rowsChanged = 0;
   [ss.getSheetByName(SHEETS.ARCHIVE), ensureArchiveHistorySheet_(ss)].forEach(function (sheet) {
     rowsChanged += rewriteArchiveColumn_(sheet, col, function (row) {
@@ -9487,7 +9728,7 @@ function mergeConfigValuesLocked_(data, auth, type, into, from) {
     writeConfigColumn_(cfg, cfgCol, keep);
   }
 
-  refreshDerivedSheets_(ss);
+  refreshOrDefer_(ss, data);
   auditLog_(ss, 'MERGE_CONFIG', auth.email,
     type + ': ' + from.join(' + ') + ' → ' + into, String(rowsChanged) + ' rows', '');
 
@@ -9534,8 +9775,28 @@ function rewriteArchiveColumn_(sheet, col, decide) {
   var out = [], changed = 0;
   for (var i = 0; i < rows.length; i++) {
     var nv = decide(rows[i]);
-    if (nv === null || nv === undefined) out.push([rows[i][col]]);
-    else { out.push([nv]); changed++; }
+    // textCell_ EN LAS DOS RAMAS, y la de abajo —la fila que NADIE tocó— es la
+    // que importa. Esto es una IDA Y VUELTA: lee la columna entera y la vuelve
+    // a escribir entera.
+    //
+    // La comilla que protege una celda es un formato, no parte del valor:
+    // getValues() devuelve "08-4885", nunca "'08-4885" (está escrito arriba, en
+    // textCell_). Así que la columna sale de la hoja SIN protección, y
+    // reescribirla tal cual se la da a Sheets otra vez para que la mastique. Un
+    // material llamado "08-4885" se convertía en fecha, y safeStr_ devuelve ''
+    // ante un Date: el material desaparecía del stock.
+    //
+    // Y no hacía falta tocar ESE material: bastaba renombrar cualquier otro de
+    // la misma columna, o fusionar dos, o cambiar una categoría, o aceptar un
+    // arreglo de "Check my data". Siete acciones normales pasan por aquí.
+    //
+    // Es la misma ida y vuelta de la papelera que Jose sufrió el 2026-09-09
+    // —"está dando un dato que no existe y borrando uno que sí"—, por la puerta
+    // de al lado. El comentario de textSafeRow_ enumera dónde se usa: guardar
+    // filas nuevas, editar una, copiarla a la papelera, restaurarla y la
+    // rotación nocturna. Las reescrituras POR COLUMNA no estaban en esa lista.
+    if (nv === null || nv === undefined) out.push([textCell_(rows[i][col])]);
+    else { out.push([textCell_(nv)]); changed++; }
   }
   if (changed) sheet.getRange(2, col + 1, last - 1, 1).setValues(out);
   return changed;
@@ -9559,7 +9820,11 @@ function renameIncomingCategory_(ss, oldVal, newValStored) {
   for (var i = 0; i < vals.length; i++) {
     if (String(vals[i][0] || '').trim().toUpperCase() === want) { vals[i][0] = newValStored; changed++; }
   }
-  if (changed) sheet.getRange(2, 3, last - 1, 1).setValues(vals);
+  // La misma ida y vuelta que rewriteArchiveColumn_, sobre INCOMING_V3: lee la
+  // columna de categorías entera y la reescribe entera, así que las filas que
+  // nadie tocó también pierden la comilla al pasar. Ver la explicación larga
+  // allí.
+  if (changed) sheet.getRange(2, 3, last - 1, 1).setValues(vals.map(function(v){ return [textCell_(v[0])]; }));
   return changed;
 }
 
@@ -9647,7 +9912,7 @@ function updateConfig(data, auth) {
     for (var i = 1; i < rows.length; i++) {
       if (!rows[i][col]) { targetRow = i + 1; break; }
     }
-    cfg.getRange(targetRow, col + 1).setValue(sheetSafe_(nv));
+    cfg.getRange(targetRow, col + 1).setValue(textCell_(nv));
 
   } else if (data.op === 'rename') {
     if (!val) throw new Error('Current value required for rename.');
@@ -9662,7 +9927,7 @@ function updateConfig(data, auth) {
     // matching each other. Found by renaming a real category for the first
     // time, in production, which is exactly where a mismatch like this
     // finally shows up.
-    var nvStored = sheetSafe_(nv.toUpperCase());
+    var nvStored = textCell_(nv.toUpperCase());
     for (var i = 1; i < rows.length; i++) {
       if (String(rows[i][col] || '').trim().toUpperCase() === val.toUpperCase()) {
         cfg.getRange(i + 1, col + 1).setValue(nvStored);
@@ -9690,8 +9955,12 @@ function updateConfig(data, auth) {
         // one category would have silently split into two materials: the
         // recent rows under the new name, the old ones under the old. Nobody
         // had hit it yet only because no installation has filled up.
-        var n  = renameCategoryColumn_(ss.getSheetByName(SHEETS.ARCHIVE), val, nvStored);
-        n     += renameCategoryColumn_(ensureArchiveHistorySheet_(ss), val, nvStored);
+        // nvStored (con comilla) es para la celda de CONFIG, que se escribe
+        // directa. A los reescritores de columna va el valor CRUDO: ellos
+        // citan, y citar dos veces guarda una comilla dentro del dato.
+        var nvCrudo = nv.toUpperCase();
+        var n  = renameCategoryColumn_(ss.getSheetByName(SHEETS.ARCHIVE), val, nvCrudo);
+        n     += renameCategoryColumn_(ensureArchiveHistorySheet_(ss), val, nvCrudo);
 
         // And the expected deliveries, which were being left behind.
         //
@@ -9705,7 +9974,7 @@ function updateConfig(data, auth) {
         // Deliveries are not stock, so this changes no number. It is here
         // because a rename has to reach every place the old word is stored, and
         // this was the one place it did not.
-        renameIncomingCategory_(ss, val, nvStored);
+        renameIncomingCategory_(ss, val, nv.toUpperCase());
 
         // LIVE_STOCK / SITE_STOCK / WASTED_STOCK are a cache of the archive,
         // and every screen in the app reads the cache, not the archive. Without
@@ -9720,7 +9989,7 @@ function updateConfig(data, auth) {
         // Inside the lock on purpose: the rewrite above and the rebuild are one
         // operation, and a save landing between them would be replayed against
         // a half-renamed archive.
-        if (n) refreshDerivedSheets_(ss);
+        if (n) refreshOrDefer_(ss, data);
       });
     }
 
@@ -9846,18 +10115,18 @@ function manageMaterialLocked_(data, auth) {
     var oldNm = nm;
     var newNm = String(data.newName || '').trim();
     if (!newNm) throw new Error('New name required.');
-    var hit = matches(cat, oldNm), storedNm = sheetSafe_(newNm);
+    var hit = matches(cat, oldNm), storedNm = newNm;   // crudo: cita rewriteArchiveColumn_
     var count = rewriteBoth(AC.NAME, function (row) { return hit(row) ? storedNm : null; });
-    if (count) refreshDerivedSheets_(ss);
+    if (count) refreshOrDefer_(ss, data);
     auditLog_(ss, 'RENAME_MATERIAL', auth.email, cat, oldNm, newNm + ' (' + count + ' rows)');
     return { status: 'success', updated: count };
 
   } else if (op === 'changeCategory') {
     var newCat = String(data.newCategory || '').trim().toUpperCase();
     if (!newCat) throw new Error('New category required.');
-    var hitC = matches(cat, nm), storedCat = sheetSafe_(newCat);
+    var hitC = matches(cat, nm), storedCat = newCat;   // crudo: cita rewriteArchiveColumn_
     var countC = rewriteBoth(AC.CATEGORY, function (row) { return hitC(row) ? storedCat : null; });
-    if (countC) refreshDerivedSheets_(ss);
+    if (countC) refreshOrDefer_(ss, data);
     auditLog_(ss, 'CHANGE_CAT', auth.email, nm, cat, newCat + ' (' + countC + ' rows)');
     return { status: 'success', updated: countC };
 
@@ -9866,9 +10135,9 @@ function manageMaterialLocked_(data, auth) {
     var srcNm  = nm;
     var tgtNm  = String(data.targetName || '').trim();
     if (!tgtNm) throw new Error('Target name required.');
-    var hitM = matches(cat, srcNm), storedTgt = sheetSafe_(tgtNm);
+    var hitM = matches(cat, srcNm), storedTgt = tgtNm; // crudo: cita rewriteArchiveColumn_
     var countM = rewriteBoth(AC.NAME, function (row) { return hitM(row) ? storedTgt : null; });
-    if (countM) refreshDerivedSheets_(ss);
+    if (countM) refreshOrDefer_(ss, data);
     auditLog_(ss, 'MERGE_MATERIAL', auth.email, cat, srcNm, tgtNm + ' (' + countM + ' rows)');
     return { status: 'success', merged: countM };
 
@@ -9921,7 +10190,7 @@ function manageMaterialLocked_(data, auth) {
     // LIVE_STOCK/SITE_STOCK/WASTED_STOCK are aggregates built from the archive —
     // deleting a row without recomputing them leaves stale totals behind forever
     // (the deleted movement's effect stays baked in even though the row is gone).
-    refreshDerivedSheets_(ss);
+    refreshOrDefer_(ss, data);
     return { status: 'success', movId: movId, trashed: true };
 
   } else if (op === 'restoreMovement') {
@@ -9953,7 +10222,7 @@ function manageMaterialLocked_(data, auth) {
 
     auditLog_(ss, 'RESTORE_ROW', auth.email, String(restored[AC.CATEGORY]), String(restored[AC.NAME]),
               rid + ' → ' + backTo);
-    refreshDerivedSheets_(ss);
+    refreshOrDefer_(ss, data);
     return { status: 'success', movId: rid };
 
   } else if (op === 'emptyTrash') {
@@ -10125,55 +10394,88 @@ function incomingStatus_(v) {
   return 'Pending';
 }
 
+// ── LAS TRES ENTREGAS ESPERADAS VAN DENTRO DEL CANDADO ──────────────────────
+//
+// Encontrado el 2026-09-14 barriendo "¿quién gana cuando dos escriben a la
+// vez?". deleteIncoming borra la fila por su NÚMERO —deleteRow(i + 1), y todo
+// lo de abajo sube una— y updateIncoming escribe por el suyo. Ninguna de las
+// dos tomaba el candado, así que:
+//
+//   1. A abre la entrega #5. El servidor la lee y la encuentra en la fila 6.
+//   2. B borra la entrega #2. Todo sube una fila.
+//   3. A guarda: escribe en la fila 6, que ahora es OTRA entrega.
+//
+// La edición de A cae encima de una entrega que nadie estaba tocando. Las dos
+// acciones son de ADMIN y Jose trabaja con dos cuentas abiertas.
+//
+// ES LA MISMA LECCIÓN DEL 2026-09-07, la que él confirmó en vivo con los
+// movimientos: "un número de fila es lo que hacía esto peligroso". Allí se
+// arregló borrando POR ID. Aquí no se conectó nunca — el mismo patrón de
+// siempre: escrito para un camino, conectado a uno solo.
+//
+// LA AUTENTICACIÓN SE QUEDA FUERA DEL CANDADO a propósito: resolver el rol lee
+// USERS_V3, y sostener el candado del script mientras tanto haría esperar a
+// todo el mundo por algo que no escribe nada.
+//
+// EL COSTE, que hay que decirlo: el candado de Apps Script es UNO para todo el
+// script, así que una edición de entrega puede quedarse esperando a que termine
+// un guardado de movimiento. Por eso este cambio viene con el reintento puesto
+// en las dos pantallas que las llaman (saveIncomingItem y _doDeleteIncomingItem
+// en Index_v3_fixed.html): sin él, esto habría cambiado una carrera silenciosa
+// por un error visible, que no es un arreglo.
 function addIncoming(data) {
   var auth = getUserRole(data && data._sessionToken);
   if (auth.role !== 'ADMIN') throw new Error('Admin only.');
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ensureIncomingSheet_(ss);
-  var id    = 'INC-' + new Date().getTime();
-  var mode    = incomingDateMode_(data.dateMode);
-  var estDate = incomingDateCell_(mode === 'unknown' ? '' : data.estDate);
-  var estEnd  = incomingDateCell_(mode === 'window'  ? data.estDateEnd : '');
-  var docLink = uploadIncomingDoc_(data.docFile, data.name, data.po);
-  /* textSafeRow_, NO sheetSafe_. Jose, 2026-09-11, con cuatro capturas: escribió
-   * el PO "08-4885" en una entrega esperada, guardó, volvió a abrirla y el
-   * campo estaba VACÍO.
-   *
-   * sheetSafe_ sólo protege lo que empieza por = + - @, o sea las fórmulas.
-   * "08-4885" empieza por un cero, así que pasaba sin comilla, y Sheets lo leía
-   * como "mes 08, año 4885" y guardaba una fecha. Al leerlo de vuelta,
-   * safeStr_ ve un Date y devuelve '' — las dos mitades del fallo que Jose ya
-   * describió en septiembre: "está dando un dato que no existe y borrando uno
-   * que sí".
-   *
-   * ES EL MISMO FALLO DE LA v11.63, EN UN SITIO DONDE NO SE CABLEÓ. Allí se
-   * arreglaron el archivo, la papelera, el histórico y CONFIG; addIncoming y
-   * updateIncoming se quedaron fuera, y son justo las dos donde una persona
-   * teclea un PO a mano. Tercera vez que muerde el mismo patrón en este
-   * archivo: escrito para un camino, conectado a uno solo.
-   *
-   * textCell_ además sustituye a sheetSafe_ sin perder nada: una comilla
-   * delante hace la celda literal, así que también neutraliza las fórmulas. */
-  sheet.appendRow(textSafeRow_([
-    id,
-    estDate,
-    String(data.category || '').toUpperCase().trim(),
-    String(data.name     || '').trim(),
-    Number(data.qty      || 0),
-    String(data.unit     || 'UNIT'),
-    String(data.supplier || ''),
-    String(data.po       || ''),
-    String(data.notes    || ''),
-    incomingStatus_(data.status),
-    auth.email,
-    new Date(),
-    String(data.pm       || ''),
-    docLink,
-    mode,
-    estEnd,
-    String(data.dateNote || '')
-  ]));
-  return { status: 'success', id: id, docLink: docLink };
+  // Todo lo que sigue lee la hoja y escribe por número de fila: va dentro
+  // del candado. Ver la nota de arriba.
+  return withStockLock_(function(){
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ensureIncomingSheet_(ss);
+    var id    = 'INC-' + new Date().getTime();
+    var mode    = incomingDateMode_(data.dateMode);
+    var estDate = incomingDateCell_(mode === 'unknown' ? '' : data.estDate);
+    var estEnd  = incomingDateCell_(mode === 'window'  ? data.estDateEnd : '');
+    var docLink = uploadIncomingDoc_(data.docFile, data.name, data.po);
+    /* textSafeRow_, NO sheetSafe_. Jose, 2026-09-11, con cuatro capturas: escribió
+     * el PO "08-4885" en una entrega esperada, guardó, volvió a abrirla y el
+     * campo estaba VACÍO.
+     *
+     * sheetSafe_ sólo protege lo que empieza por = + - @, o sea las fórmulas.
+     * "08-4885" empieza por un cero, así que pasaba sin comilla, y Sheets lo leía
+     * como "mes 08, año 4885" y guardaba una fecha. Al leerlo de vuelta,
+     * safeStr_ ve un Date y devuelve '' — las dos mitades del fallo que Jose ya
+     * describió en septiembre: "está dando un dato que no existe y borrando uno
+     * que sí".
+     *
+     * ES EL MISMO FALLO DE LA v11.63, EN UN SITIO DONDE NO SE CABLEÓ. Allí se
+     * arreglaron el archivo, la papelera, el histórico y CONFIG; addIncoming y
+     * updateIncoming se quedaron fuera, y son justo las dos donde una persona
+     * teclea un PO a mano. Tercera vez que muerde el mismo patrón en este
+     * archivo: escrito para un camino, conectado a uno solo.
+     *
+     * textCell_ además sustituye a sheetSafe_ sin perder nada: una comilla
+     * delante hace la celda literal, así que también neutraliza las fórmulas. */
+    sheet.appendRow(textSafeRow_([
+      id,
+      estDate,
+      String(data.category || '').toUpperCase().trim(),
+      String(data.name     || '').trim(),
+      Number(data.qty      || 0),
+      String(data.unit     || 'UNIT'),
+      String(data.supplier || ''),
+      String(data.po       || ''),
+      String(data.notes    || ''),
+      incomingStatus_(data.status),
+      auth.email,
+      new Date(),
+      String(data.pm       || ''),
+      docLink,
+      mode,
+      estEnd,
+      String(data.dateNote || '')
+    ]));
+    return { status: 'success', id: id, docLink: docLink };
+  });
 }
 
 // Uploads an attached PDF/photo for an incoming item; returns the Drive URL ('' if none).
@@ -10190,60 +10492,68 @@ function uploadIncomingDoc_(docFile, name, po) {
 function updateIncoming(data) {
   var auth = getUserRole(data && data._sessionToken);
   if (auth.role !== 'ADMIN') throw new Error('Admin only.');
-  var ss     = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet  = ensureIncomingSheet_(ss);   // guarantees the Doc Link column exists
-  var values = sheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(data.id)) {
-      var mode    = incomingDateMode_(data.dateMode);
-      var estDate = mode === 'unknown' ? ''
-                  : (data.estDate ? incomingDateCell_(data.estDate) : values[i][1]);
-      var estEnd  = incomingDateCell_(mode === 'window' ? data.estDateEnd : '');
-      // New file replaces the old link; otherwise keep whatever was there (col N, idx 13)
-      var docLink = data.docFile && data.docFile.fileData
-        ? uploadIncomingDoc_(data.docFile, data.name, data.po)
-        : (values[i][13] || '');
-      // textSafeRow_ por el mismo motivo que en addIncoming: sin él, un PO con
-      // forma de fecha —"08-4885"— se guarda como fecha y vuelve vacío.
-      sheet.getRange(i + 1, 1, 1, 17).setValues([textSafeRow_([
-        data.id,
-        estDate,
-        String(data.category || '').toUpperCase().trim(),
-        String(data.name     || '').trim(),
-        Number(data.qty      || 0),
-        String(data.unit     || 'UNIT'),
-        String(data.supplier || ''),
-        String(data.po       || ''),
-        String(data.notes    || ''),
-        incomingStatus_(data.status),
-        values[i][10],          // preserve addedBy
-        values[i][11],          // preserve addedAt
-        String(data.pm || ''),  // PM — Project Manager
-        docLink,
-        mode,
-        estEnd,
-        String(data.dateNote || '')
-      ])]);
-      return { status: 'success', docLink: docLink };
+  // Todo lo que sigue lee la hoja y escribe por número de fila: va dentro
+  // del candado. Ver la nota de arriba.
+  return withStockLock_(function(){
+    var ss     = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet  = ensureIncomingSheet_(ss);   // guarantees the Doc Link column exists
+    var values = sheet.getDataRange().getValues();
+    for (var i = 1; i < values.length; i++) {
+      if (String(values[i][0]) === String(data.id)) {
+        var mode    = incomingDateMode_(data.dateMode);
+        var estDate = mode === 'unknown' ? ''
+                    : (data.estDate ? incomingDateCell_(data.estDate) : values[i][1]);
+        var estEnd  = incomingDateCell_(mode === 'window' ? data.estDateEnd : '');
+        // New file replaces the old link; otherwise keep whatever was there (col N, idx 13)
+        var docLink = data.docFile && data.docFile.fileData
+          ? uploadIncomingDoc_(data.docFile, data.name, data.po)
+          : (values[i][13] || '');
+        // textSafeRow_ por el mismo motivo que en addIncoming: sin él, un PO con
+        // forma de fecha —"08-4885"— se guarda como fecha y vuelve vacío.
+        sheet.getRange(i + 1, 1, 1, 17).setValues([textSafeRow_([
+          data.id,
+          estDate,
+          String(data.category || '').toUpperCase().trim(),
+          String(data.name     || '').trim(),
+          Number(data.qty      || 0),
+          String(data.unit     || 'UNIT'),
+          String(data.supplier || ''),
+          String(data.po       || ''),
+          String(data.notes    || ''),
+          incomingStatus_(data.status),
+          values[i][10],          // preserve addedBy
+          values[i][11],          // preserve addedAt
+          String(data.pm || ''),  // PM — Project Manager
+          docLink,
+          mode,
+          estEnd,
+          String(data.dateNote || '')
+        ])]);
+        return { status: 'success', docLink: docLink };
+      }
     }
-  }
-  throw new Error('Incoming item not found: ' + data.id);
+    throw new Error('Incoming item not found: ' + data.id);
+  });
 }
 
 function deleteIncoming(id, sessionToken) {
   var auth = getUserRole(sessionToken);
   if (auth.role !== 'ADMIN') throw new Error('Admin only.');
-  var ss     = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet  = ss.getSheetByName('INCOMING_V3');
-  if (!sheet) throw new Error('INCOMING_V3 sheet not found.');
-  var values = sheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(id)) {
-      sheet.deleteRow(i + 1);
-      return { status: 'success' };
+  // Todo lo que sigue lee la hoja y escribe por número de fila: va dentro
+  // del candado. Ver la nota de arriba.
+  return withStockLock_(function(){
+    var ss     = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet  = ss.getSheetByName('INCOMING_V3');
+    if (!sheet) throw new Error('INCOMING_V3 sheet not found.');
+    var values = sheet.getDataRange().getValues();
+    for (var i = 1; i < values.length; i++) {
+      if (String(values[i][0]) === String(id)) {
+        sheet.deleteRow(i + 1);
+        return { status: 'success' };
+      }
     }
-  }
-  throw new Error('Incoming item not found: ' + id);
+    throw new Error('Incoming item not found: ' + id);
+  });
 }
 
 // ═══ DATA QUALITY SWEEP ══════════════════════════════════════════════════════
@@ -10662,7 +10972,7 @@ function dqFillGapLocked_(ss, auth, data) {
       '. Run the check again.');
   }
 
-  var stored = sheetSafe_(value);
+  var stored = value;   // crudo: la comilla la pone rewriteArchiveColumn_
   var filled = 0;
   [ss.getSheetByName(SHEETS.ARCHIVE), ss.getSheetByName(SHEETS.ARCHIVE_HISTORY)].forEach(function (sheet) {
     if (!sheet) return;
@@ -10684,7 +10994,7 @@ function dqFillGapLocked_(ss, auth, data) {
 
   // Only the project column feeds anything the stock engine reads, but a
   // refresh after either is cheap next to being wrong.
-  if (filled) refreshDerivedSheets_(ss);
+  if (filled) refreshOrDefer_(ss, data);
   auditLog_(ss, 'DATA_FIX', auth.email,
     field + ' → "' + value + '" on ' + parts[0] + ' / ' + parts[1],
     String(filled) + ' rows', '');
@@ -10930,7 +11240,21 @@ function modifyMovementLocked_(data, auth) {
     if (oldStr !== newStr) {
       origVals[f.label] = oldStr;
       changes.push(f.label + ': "' + oldStr + '" → "' + newStr + '"');
-      rowVals[f.col] = (key === 'qty') ? (parseFloat(newStr) || 0) : sheetSafe_(newStr);
+      // CRUDO. La comilla la pone UNA VEZ el textSafeRow_ de la escritura, más
+      // abajo. Citar aquí también deja DOS: Sheets se come una y guarda la otra
+      // DENTRO del valor.
+      //
+      // ASÍ SE VIO, y lo encontró Jose el 2026-09-15 con cuatro capturas:
+      // editó un movimiento cambiándole SÓLO el nombre y el historial pasó a
+      // decir 'JOSE I. Sólo el nombre porque sólo los campos que CAMBIAN pasan
+      // por esta línea; los demás conservan el valor que se leyó de la hoja,
+      // que ya venía limpio. Crear una entrada no lo hacía —eso iba por otro
+      // camino, arreglado en la v11.86—, y por eso parecía arreglado.
+      //
+      // Y aquí hacía más daño que en el archivo: unas líneas más abajo, si
+      // cambió la categoría o el nombre, el MatID se RECOMPONE a partir de
+      // rowVals — con la comilla dentro.
+      rowVals[f.col] = (key === 'qty') ? (parseFloat(newStr) || 0) : newStr;
     }
   });
 
@@ -10963,7 +11287,7 @@ function modifyMovementLocked_(data, auth) {
   // Same class of bug as manageMaterial's deleteRow: qty/category/location edits
   // change what LIVE_STOCK/SITE_STOCK/WASTED_STOCK should total to — without this,
   // the derived sheets keep reflecting the pre-edit numbers indefinitely.
-  refreshDerivedSheets_(ss);
+  refreshOrDefer_(ss, data);
 
   // Audit log
   auditLog_(ss, 'MODIFY_MOVEMENT', auth.email,
