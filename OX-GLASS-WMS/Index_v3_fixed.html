@@ -277,34 +277,106 @@
     .map-section-hdr{font-size:.92rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;padding:.45rem .25rem .1rem;margin-top:.6rem;border-bottom:1px dashed var(--border)}
 
     /* ── LA TIRA DE RESERVAS ──────────────────────────────────────────────────
-       Va encima del plano y se lee de un vistazo, así que es una REJILLA de
-       cuatro columnas y no un flex: el estante, el material, la cantidad y el
-       motivo tienen que quedar alineados entre filas, porque lo que se hace con
-       esta lista es compararla consigo misma ("¿qué más está apartado?").
-       Un flex dejaría cada fila con sus columnas en un sitio distinto.
+       Va encima del plano y se lee de un vistazo, así que es una REJILLA y no un
+       flex: el estante, el material, la cantidad y el motivo tienen que quedar
+       alineados entre filas, porque lo que se hace con esta lista es compararla
+       consigo misma ("¿qué más está apartado?").
 
-       El motivo es lo único que se recorta: es texto de una persona y puede ser
-       largo; los otros tres son datos y se leen enteros o no sirven. */
+       LAS COLUMNAS SON FIJAS EN PÍXELES, y ésa es la corrección de Jose el
+       2026-09-21: *"todo depende del tamaño de los nombres, cada cosa se mueve
+       si se ponen más letras; démosle un espacio horizontal fijo a cada uno."*
+       Tenía razón y la culpa era de `auto`: con `grid-template-columns:auto …`
+       la columna del estante medía lo que midiera el nombre de estante más
+       largo de la lista, así que AÑADIR UNA RESERVA MOVÍA TODAS LAS DEMÁS. Con
+       píxeles, la columna vale lo mismo tenga la tira una fila o cien.
+
+       Y lo que no cabe NO SE RECORTA: se encoge un paso o dos (fit-sm, fit-xs)
+       y, si aun así no entra, pasa a dos líneas. Es la misma escalera que la de
+       las etiquetas: primero achicar hasta un suelo que se lea, luego partir.
+       Cortar con puntos suspensivos escondía justo el final de los nombres
+       largos, que es donde están el A/B/C y el número que los distinguen. */
     .resv-strip{border:1px solid var(--yellow);border-radius:10px;background:var(--yellow-bg);
       padding:.6rem .75rem;margin-bottom:.9rem}
-    .resv-strip-hdr{font-size:.78rem;font-weight:700;color:var(--text);
-      display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem;margin-bottom:.45rem}
+    .resv-strip-hdr{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+    /* La cabecera ES el botón de abrir y cerrar: toda ella, no un triangulito de
+       diez píxeles. Quien quiere ver la lista apunta al renglón que la nombra. */
+    .resv-toggle{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;
+      gap:.5rem;background:none;border:0;padding:.1rem 0;margin:0;cursor:pointer;
+      font-family:inherit;font-size:.78rem;font-weight:700;color:var(--text);text-align:left}
+    .resv-toggle:hover .resv-caret{color:var(--accent)}
+    .resv-caret{display:inline-block;flex-shrink:0;width:.8rem;color:var(--muted);
+      transition:transform .18s ease}
+    .resv-strip.abierta .resv-caret{transform:rotate(90deg)}
     .resv-hint{font-weight:400;font-size:.72rem;color:var(--muted)}
-    .resv-rows{display:flex;flex-direction:column;gap:.25rem}
-    .resv-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1.4fr);
-      gap:.6rem;align-items:baseline;width:100%;text-align:left;cursor:pointer;
+    /* El botón de soltar las que no retienen nada. Va en la cabecera y no en
+       cada fila porque es una acción sobre el CONJUNTO. */
+    .resv-limpiar{flex-shrink:0;background:var(--card);border:1px solid var(--orange);
+      color:var(--orange);border-radius:6px;padding:.25rem .6rem;font-family:inherit;
+      font-size:.72rem;font-weight:700;cursor:pointer}
+    .resv-limpiar:hover{background:var(--orange);color:#fff}
+    .resv-rows{display:flex;flex-direction:column;gap:.25rem;margin-top:.45rem}
+    /* `hidden` LO PONE EL NAVEGADOR CON display:none, Y ESTA REGLA LO PISABA.
+       La hoja del navegador dice `[hidden]{display:none}`, que es un selector de
+       un atributo; `.resv-rows` es uno de clase y gana. Resultado: la tira salía
+       con el atributo `hidden` puesto y las filas a la vista igualmente. Lo
+       encontró la prueba de navegador midiendo la altura de la tira (236px, o
+       sea, la lista entera) — mirando sólo el HTML, `hidden` estaba ahí y todo
+       parecía correcto. */
+    .resv-rows[hidden]{display:none}
+    /* El envoltorio parte la fila en "lo que se lee" y "lo que se pulsa". Existe
+       para que el botón de soltar no viva DENTRO del botón de abrir el estante:
+       un botón dentro de otro no es HTML válido y el navegador lo desarma. */
+    .resv-row-wrap{display:grid;grid-template-columns:minmax(0,1fr) 84px;gap:.4rem;
+      align-items:stretch}
+    .resv-row-wrap.sin-accion{grid-template-columns:minmax(0,1fr)}
+    /* La columna del estante mide 120px POR MEDIDA, no por gusto: en esta
+       fuente y en negrita, DELIVERY SHELF ocupa 103px a tamaño normal y WINDOW
+       WAREHOUSE 115px al pequeño. Con los 96px que tenía al principio, el
+       estante de Jose de la captura —WINDOW WAREHOUSE— no cabía de ninguna
+       manera y salía cortado con puntos suspensivos, que es justo lo que él no
+       quería. Lo encontró la prueba de navegador, no el ojo. */
+    .resv-row{display:grid;grid-template-columns:120px minmax(0,1.5fr) 104px minmax(0,2fr);
+      gap:.6rem;align-items:center;width:100%;text-align:left;cursor:pointer;
       background:var(--card);border:1px solid var(--border);border-radius:7px;
       padding:.35rem .55rem;font-family:inherit;font-size:.76rem;color:var(--text)}
     .resv-row:hover{border-color:var(--yellow);background:var(--yellow-bg)}
-    .resv-rack{font-weight:700;color:var(--accent);white-space:nowrap}
-    .resv-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .resv-qty{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
-    .resv-why{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    /* En pantalla estrecha la rejilla de cuatro no cabe sin recortarlo todo a
-       nada, así que se parte en dos renglones y el motivo pasa entero debajo. */
+    /* NINGUNA CELDA SE RECORTA. Todas pueden partirse, y todas se paran a las
+       dos líneas. Recortar con puntos suspensivos escondía el final de los
+       nombres largos, que es donde está el A/B/C que los distingue. La escalera
+       de tamaño es lo que hace que casi ninguna NECESITE partirse. */
+    .resv-row > span{min-width:0;overflow:hidden;line-height:1.25;
+      display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;
+      overflow-wrap:anywhere}
+    .resv-rack{font-weight:700;color:var(--accent)}
+    .resv-name{font-weight:600}
+    .resv-qty{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+    .resv-why{color:var(--muted)}
+    /* El suelo es .64rem — medido, no elegido: por debajo de ~10px un nombre en
+       mayúsculas deja de leerse de un vistazo, que es para lo que sirve la tira. */
+    .resv-row .fit-sm{font-size:.70rem}
+    .resv-row .fit-xs{font-size:.64rem}
+    /* La reserva que no retiene nada. Se APAGA en vez de gritar: sigue siendo
+       una reserva de verdad —el material no puede salir— sólo que ahora mismo
+       no hay nada que retener. Un rojo de alarma la pondría por encima de las
+       que sí están reteniendo material, que son las que importan. */
+    .resv-row.resv-vacia{opacity:.72;border-style:dashed}
+    .resv-vacia .resv-qty{color:var(--muted)}
+    .resv-alerta{color:var(--orange);font-weight:600}
+    /* SOLTAR, EN LA FILA. Jose, 2026-09-21: *"¿por qué no lo puedo borrar?"* —
+       porque el único botón para soltar vivía dentro del cajón del estante, en
+       la fila del material, y una reserva que no retiene nada NO TIENE FILA
+       ahí. La advertencia decía qué pasaba y no daba forma de arreglarlo. */
+    .resv-soltar{background:var(--card);border:1px solid var(--border);border-radius:7px;
+      color:var(--muted);font-family:inherit;font-size:.7rem;font-weight:700;
+      cursor:pointer;padding:.2rem;white-space:nowrap}
+    .resv-soltar:hover{border-color:var(--orange);color:var(--orange);background:var(--yellow-bg)}
+    /* En pantalla estrecha la rejilla de cuatro no cabe sin achicarlo todo hasta
+       lo ilegible, así que se parte en dos renglones: los datos arriba y el
+       motivo entero debajo, ya sin límite de líneas. */
     @media (max-width:640px){
-      .resv-row{grid-template-columns:auto minmax(0,1fr) auto}
-      .resv-why{grid-column:1 / -1;white-space:normal}
+      .resv-row{grid-template-columns:86px minmax(0,1fr) 84px}
+      .resv-why{grid-column:1 / -1}
+      .resv-row > span{-webkit-line-clamp:3;line-clamp:3}
     }
     /* Each row is a grid of N equal columns → A1A A1B A1C always stay on ONE line. */
     .map-rack-row{display:grid;gap:.45rem;margin-bottom:.45rem}
@@ -619,6 +691,14 @@
     #transferRowsContainer .transfer-row .btn-remove-loc{transition-property:background,color}
     .mat-line-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.5rem}
     .mat-line-lbl-sm{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:.3rem}
+    /* La casilla de "quiero etiqueta" en la cabecera de cada material. Discreta
+       a propósito: es una opción, no un campo obligatorio, y en la cabecera van
+       ya el total y el botón de quitar. */
+    .mat-lbl-want{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;
+      font-weight:700;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap}
+    .mat-lbl-want input{width:.85rem;height:.85rem;cursor:pointer;margin:0}
+    .mat-lbl-want:hover{color:var(--accent)}
+    .mat-lbl-want input:checked + span{color:var(--accent)}
     .mat-line-grid .field input,.mat-line-grid .field select{padding:.5rem .65rem;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.84rem;width:100%}
     .mat-line-grid .field input:focus,.mat-line-grid .field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,125,216,.15)}
     /* Price-change alert on ENTRY's Unit Cost — "this supplier charged 18%
@@ -772,6 +852,28 @@
        Caps to 40vw so it can't overflow a narrow/mobile viewport either. */
     .inc-suggest-box{position:absolute;width:260px;max-width:40vw;max-height:280px;overflow-y:auto;overflow-x:hidden;z-index:1300;background:var(--card);border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
     .inc-suggest-hdr{padding:.3rem .7rem;font-size:.68rem;font-weight:700;color:var(--accent2);background:#EFF6FF;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #DBEAFE}
+    /* ── EL CUADRO DE POSIBLE DUPLICADO ──────────────────────────────────────
+       Dos columnas y una fila por campo, porque comparar dos entregas es leer
+       de lado a lado. Dos tarjetas sueltas —que es lo primero que uno dibuja—
+       obligan a saltar arriba y abajo para casar cada dato con el suyo. */
+    .dup-tabla{width:100%;border-collapse:collapse;font-size:.82rem}
+    .dup-tabla th{text-align:left;padding:.45rem .6rem;font-size:.7rem;font-weight:700;
+      text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border)}
+    .dup-tabla th.dup-col-vieja{color:var(--muted)}
+    .dup-tabla th.dup-col-nueva{color:var(--accent)}
+    .dup-tabla td{padding:.4rem .6rem;border-bottom:1px solid var(--border);
+      vertical-align:top;overflow-wrap:anywhere}
+    .dup-tabla td.dup-campo{color:var(--muted);font-size:.68rem;font-weight:700;
+      text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;width:1%}
+    /* Lo que DIFIERE se marca, no lo que coincide. Marcar las coincidencias
+       pintaría de color casi toda la tabla justo cuando es un duplicado, que es
+       cuando hace falta que las pocas diferencias salten. */
+    .dup-tabla tr.dup-dif td{background:var(--yellow-bg)}
+    .dup-tabla tr.dup-dif td.dup-nuevo{font-weight:700}
+    .dup-vacio{color:var(--muted)}
+    .dup-acciones{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;justify-content:flex-end}
+    .dup-acciones button{flex:0 1 auto}
+    @media (max-width:560px){ .dup-acciones button{flex:1 1 100%} }
     .inc-suggest-item{padding:.5rem .75rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;align-items:center;gap:.2rem .5rem;transition:background .12s}
     .inc-suggest-item:last-child{border-bottom:none}
     .inc-suggest-item:hover{background:#EFF6FF}
@@ -2441,15 +2543,62 @@
        la etiqueta, y la cantidad es lo segundo que se busca. */
     .lbl-name{font-size:8.5mm;font-weight:800;line-height:1.1;margin-top:3mm;
       overflow-wrap:anywhere;max-height:29mm;overflow:hidden}
-    /* Cantidad y locación, del mismo tamaño y lado a lado: son las dos
-       preguntas que se hacen con el bulto en la mano — cuánto hay, y a dónde
-       vuelve. */
-    .lbl-pair{display:flex;gap:5mm;margin-top:5mm}
-    .lbl-cell{flex:1;min-width:0;border:.4mm solid #000;border-radius:2mm;padding:3mm}
-    .lbl-cell-lbl{font-size:3mm;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-    .lbl-cell-val{font-size:10mm;font-weight:800;line-height:1.05;margin-top:1mm;
-      overflow-wrap:anywhere}
-    .lbl-cell-val.sm{font-size:7mm}
+    /* ── LOCACIÓN ARRIBA, CANTIDAD DEBAJO, CADA UNA A ANCHO COMPLETO ────────
+       Jose, 2026-09-21, con una captura donde "WINDOW WAREHOUSE" salía partido
+       en tres líneas: *"podemos poner el cuadro de la locación sobre el cuadro
+       de la cantidad y hacer el cuadrado un rectángulo… las locaciones con
+       nombres largos sí se leen bien."*
+
+       POR QUÉ ESTABAN MAL LADO A LADO, y es medible: los dos recuadros eran
+       `flex:1`, media etiqueta cada uno, y su contenido no se parece en nada —
+       una cantidad son 1 a 4 caracteres (54, 5, 142) y una locación de 2 a 16
+       (B1B, P4C, WINDOW WAREHOUSE). Repartir el ancho a partes iguales
+       GARANTIZA que uno desperdicie el 80% de su caja mientras al otro no le
+       cabe.
+
+       LA LOCACIÓN VA PRIMERA porque con el bulto en la mano la pregunta es "¿a
+       dónde va esto?". La cantidad es la comprobación, no la búsqueda.
+
+       Y CADA UNA EN UNA SOLA LÍNEA —etiqueta a la izquierda, valor a la
+       derecha— en vez de etiqueta encima y valor debajo. Dos filas de una línea
+       ocupan casi lo mismo que la pareja de dos líneas de antes, así que no se
+       pierde alto: el nombre ya se lleva 29mm y el hueco del código 34. */
+    .lbl-pair{display:flex;flex-direction:column;gap:3mm;margin-top:5mm}
+    /* EL RÓTULO ENCIMA, NO AL LADO — y esto salió de medirlo, no de mirarlo.
+       Con "LOCATION" a la izquierda, al valor le quedaban 230px de los 384 del
+       papel, y "WINDOW WAREHOUSE" sólo entraba en una línea bajando a 20px.
+       Con el rótulo encima el valor dispone del ancho entero y entra a 26, que
+       se lee bastante mejor.
+       Cuesta unos 4mm de alto por recuadro, y hay sitio: la pareja tiene unos
+       53mm disponibles entre el nombre y el hueco del código, y así ocupa 41. */
+    .lbl-cell{min-width:0;border:.4mm solid #000;border-radius:2mm;padding:2.5mm 3.5mm}
+    .lbl-cell-lbl{display:block;font-size:3mm;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase}
+    .lbl-cell-val{display:block;font-size:10mm;font-weight:800;line-height:1.05;
+      margin-top:.5mm;min-width:0;overflow-wrap:anywhere}
+    /* EL TAMAÑO DE LAS CORTAS NO SE TOCA. Jose: *"no le cambies el tamaño."*
+       B1B, P4C y A4A siguen a 10mm exactos, que es lo que se lee desde tres
+       metros y lo que él no quiere perder.
+
+       Lo que baja es SÓLO lo que no cabe. Con el ancho completo entran unos 12
+       caracteres a 10mm; de ahí en adelante se escalona, y "WINDOW WAREHOUSE"
+       en una línea a 6mm se lee mucho mejor que en tres a 10mm — que es lo que
+       hacía antes. La clase la elige _labelValClass por LONGITUD; antes existía
+       una sola (.sm) y se ponía únicamente cuando la locación estaba VACÍA,
+       nunca por largo. Eso era el fallo de la captura. */
+    /* LOS ESCALONES SALEN DE UNA MEDIDA, no de un ojo, y hubo que medir dos
+       veces. Con el valor a 310px de ancho, "WINDOW WAREHOUSE" (16 caracteres)
+       cae en dos líneas a 30px y entra en una a 26. De ahí el 6,5mm. Con el
+       rótulo al lado —como estaba primero— el valor sólo tenía 230px y hacía
+       falta bajar a 20px para lo mismo: por eso el rótulo acabó encima. */
+    .lbl-cell-val.v-md{font-size:6.5mm}
+    .lbl-cell-val.v-sm{font-size:5mm}
+    .lbl-cell-val.v-xs{font-size:4mm;line-height:1.2}
+    .lbl-cell-val .lbl-unit{font-size:4.5mm;font-weight:700}
+    /* "of 5" en la etiqueta partida. Más pequeño que la cantidad y en gris: la
+       cifra grande sigue siendo lo que se lee de lejos, y esto es la letra
+       pequeña que dice de qué es parte. */
+    .lbl-cell-val .lbl-of{font-size:4mm;font-weight:700;color:#444}
     .lbl-meta{margin-top:5mm;font-size:4.2mm;line-height:1.45;overflow-wrap:anywhere}
     .lbl-meta b{font-weight:800}
     .lbl-meta .lbl-dim{color:#444;font-size:3.8mm}
@@ -2496,6 +2645,12 @@
     .lbl-row-body{flex:1;min-width:0}
     .lbl-row-name{font-size:.82rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
     .lbl-row-sub{font-size:.72rem;color:var(--muted);line-height:1.35}
+    /* "Una por unidad". Va DEBAJO del renglón del bulto y sangrada, porque
+       pertenece a esa fila y no es una fila más: sin la sangría, en una lista de
+       diez materiales parecen veinte cosas que marcar. */
+    .lbl-row-split{display:flex;align-items:center;gap:.35rem;margin-top:.3rem;
+      font-size:.7rem;color:var(--accent);font-weight:600;cursor:pointer}
+    .lbl-row-split input{width:.85rem;height:.85rem;flex-shrink:0;cursor:pointer}
     .lbl-row-n{flex:none;display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--muted)}
     .lbl-row-n input{width:3.4rem;padding:.25rem .35rem;font-size:.8rem;
       border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text)}
@@ -2887,6 +3042,14 @@
         <span class="mov-act-sep" id="movActBar" style="display:none">
           <button class="btn btn-ghost btn-sm" id="btnMovEdit" onclick="editSelectedMovement()" disabled>✏️ Edit</button>
           <button class="btn btn-ghost btn-sm" id="btnMovDel"  onclick="deleteSelectedMovements()" disabled>🗑 Delete</button>
+          <!-- IMPRIMIR ETIQUETAS DESPUÉS, no sólo al guardar. Jose: "debemos
+               poner alguna forma de que el usuario seleccione un material o
+               movimiento y la app imprima el label que él quiera." Hasta ahora
+               la única puerta era el momento de guardar la entrada; si la
+               cerrabas, no había segunda oportunidad. Va aquí, en la barra que
+               ya existe y ya sabe actuar sobre varias filas — no en una
+               pantalla nueva. -->
+          <button class="btn btn-ghost btn-sm" id="btnMovLabels" onclick="printSelectedLabels()" disabled>🏷 Labels</button>
           <span id="movSelCount" class="mov-sel-count"></span>
         </span>
         <!-- Save y Reset A LA DERECHA DEL TODO, empujados por el hueco. Sólo
@@ -2919,7 +3082,7 @@
         <table>
           <thead><tr>
             <th>Category</th><th>Name / Description</th>
-            <th>In Bodega</th><th>Sent to Site</th><th>Net</th><th>Status</th>
+            <th>In Warehouse</th><th>Sent to Site</th><th>Net</th><th>Status</th>
           </tr></thead>
           <tbody id="projectBody"></tbody>
         </table>
@@ -2963,6 +3126,14 @@
       <div class="card-header">
         <h2>📦 All Incoming — Sorted by Date</h2>
         <div class="toolbar">
+          <!-- EL MISMO MOLDE QUE MOVEMENTS, no uno nuevo. Jose pidió un buscador
+               aquí porque era la única lista grande de la app sin uno; llevar el
+               que ya existe vale más que inventar otro, porque también se
+               comporta igual (escribe y filtra, sin botón de buscar). Busca en
+               todo lo que una persona recuerda de una entrega: cómo se llamaba,
+               quién la traía, el número de orden, de quién era, y lo que se
+               anotó de ella. -->
+          <input type="text" id="incSearch" placeholder="Name, PO#, supplier, PM, notes..." style="min-width:230px">
           <select id="incStatusFilter" style="border:1px solid var(--border);border-radius:6px;padding:.35rem .6rem;font-size:.8rem">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
@@ -3138,6 +3309,46 @@
       <button id="btnDeleteIncoming" class="btn btn-danger btn-sm" style="margin-right:auto;display:none" onclick="deleteIncomingItem()">🗑 Delete</button>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('incomingOverlay')">Cancel</button>
       <button class="btn btn-primary" onclick="saveIncomingItem()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ POSIBLE DUPLICADO ═════════════════════════════════════════════════════
+     Jose, 2026-09-21, dando la regla y el trato:
+
+       "Un duplicado es mismo nombre + mismo proveedor + fecha cercana + mismo
+        PO. EL PO ES LO QUE EN REALIDAD DICE SI ES EL MISMO O NO, ya que cada
+        empresa crea uno nuevo para una entrega nueva. Pero si no hay PO,
+        entonces el nombre con los demás datos trabajan bien. (…) Podemos
+        mostrar un pop-up de advertencia que diga POSIBLE DUPLICADO y mostrar el
+        que ya estaba con el que se está creando, y preguntar si se desea
+        proceder o revisar la información."
+
+     LA COMPARACIÓN ES LA REVISIÓN, y ahí es donde esto se aparta un paso de lo
+     que él dibujó. Un botón de "revisar" que lleva a otra pantalla añade un
+     clic y no añade información: los dos datos ya están delante. Así que este
+     cuadro ES la revisión —las dos entregas en columnas, campo a campo, con lo
+     que difiere marcado— y las salidas son las tres decisiones de verdad:
+     es la misma y hay que editar aquélla, son distintas y se crea igual, o no
+     hacer nada.
+
+     Y la primera es la que importa: la lección de la reserva huérfana de esta
+     misma semana es que un aviso que no ofrece el arreglo es medio arreglo.
+     Decir "posible duplicado" y dejar a la persona buscar la otra a mano sería
+     repetirla. -->
+<div class="overlay" id="incDupOverlay">
+  <div class="modal modal-lg">
+    <div class="mhdr">
+      <h3 id="incDupTitle">⚠ Possible duplicate</h3>
+      <button class="modal-x" onclick="closeModal('incDupOverlay')" title="Close">✕</button>
+    </div>
+    <p id="incDupLead" style="font-size:.84rem;color:var(--muted);line-height:1.5"></p>
+    <div class="table-wrapper" id="incDupBody"></div>
+    <p id="incDupMas" style="font-size:.78rem;color:var(--muted);margin-top:.5rem"></p>
+    <div class="dup-acciones">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('incDupOverlay')">Cancel</button>
+      <button class="btn btn-ghost btn-sm" id="incDupEditBtn" onclick="_incDupEditarLaQueExiste()">✏️ It's the same one — edit that one</button>
+      <button class="btn btn-primary btn-sm" onclick="_incDupCrearIgual()">They're different — add it anyway</button>
     </div>
   </div>
 </div>
@@ -3889,7 +4100,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.01';
+var APP_VERSION = '12.06';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -3901,7 +4112,7 @@ var APP_VERSION = '12.01';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '37eb6f06';
+var APP_BUILD = '3c1d41ea';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -4074,11 +4285,39 @@ function _reservasActivas(){
     if (String(l.status || 'Active').toLowerCase() !== 'active') return;
     var s   = stockData[l.matId] || null;
     var qty = s ? Math.max(0, Number((s.warehouseLocs || {})[l.rack]) || 0) : 0;
+    /* UNA RESERVA PUEDE NO RETENER NADA, y la app lo sabe: hay que decirlo.
+     *
+     * Jose, 2026-09-21: *"hay un material llamado EVELYN A QUINONEZ que no
+     * tiene cantidad pero sí aparece como reservado, pero no hay un lugar donde
+     * esté."* Tenía razón: la reserva estaba activa en la hoja desde el 5 de
+     * septiembre, el estante B no tenía ese material, y el material no tenía ni
+     * una sola fila de stock ni un solo movimiento.
+     *
+     * No es un fallo de cuenta — la reserva aparta lo que haya en el estante, y
+     * ahí no había nada, así que 0 es la respuesta correcta. Lo que estaba mal
+     * era CALLARLO: una fila con un hueco parece un dato perdido.
+     *
+     * Y es información que se puede usar: una reserva que no retiene nada es
+     * una reserva que alguien debería soltar. Los dos motivos se distinguen
+     * porque lo que hay que hacer es distinto — si el material se movió de
+     * estante, la reserva se quedó atrás; si no existe en ninguna parte, se
+     * borraron sus movimientos o nunca los tuvo. */
+    var vacia = '';
+    if (qty === 0) {
+      vacia = !s ? 'sin-material' : 'sin-stock-aqui';
+    }
     out.push({
       id: l.id, matId: l.matId, category: l.category, name: l.name,
       rack: l.rack, qty: qty, unit: (s && s.unit) || 'UNIT',
       reason: l.reason || '', by: l.lockedBy || '', at: l.lockedAt || '',
-      allowedDest: l.allowedDest || []
+      allowedDest: l.allowedDest || [],
+      vacia: vacia,
+      // El total del material, para poder decir "ya no está en B, está en C3C".
+      totalDelMaterial: s ? Math.max(0, Number(s.warehouseQty) || 0) : 0,
+      otrosEstantes: s ? Object.keys(s.warehouseLocs || {}).filter(function(r){
+        return _normKey(r) !== _normKey(l.rack) &&
+               Math.max(0, Number(s.warehouseLocs[r]) || 0) > 0;
+      }) : []
     });
   });
   // Por estante, que es como se recorre un almacén: quien mira esta lista está
@@ -4093,10 +4332,14 @@ function _reservasActivas(){
 /** El resumen que necesitan el tablero y el mapa: cuántas, cuántas unidades y
  *  en cuántos estantes. Sale de _reservasActivas para que no haya dos cuentas. */
 function _reservasResumen(){
-  var lista = _reservasActivas(), unidades = 0, estantes = {};
-  lista.forEach(function(r){ unidades += r.qty; estantes[r.rack] = 1; });
+  var lista = _reservasActivas(), unidades = 0, estantes = {}, vacias = 0;
+  lista.forEach(function(r){
+    unidades += r.qty;
+    estantes[r.rack] = 1;
+    if (r.vacia) vacias++;
+  });
   return { lista: lista, n: lista.length, unidades: unidades,
-           estantes: Object.keys(estantes).length };
+           estantes: Object.keys(estantes).length, vacias: vacias };
 }
 
 /** Cuántas reservas hay en una ubicación concreta. Lo usa Settings → Locations,
@@ -4111,6 +4354,17 @@ var _popupShownThisLoad = false; // true once popup fires; resets on real page l
 // ── Utility ───────────────────────────────────────────────────────────────────
 function nz(v){ return v || ''; }
 function nt(v){ return (v || '').toUpperCase().trim(); }
+/* GEMELO EXACTO de cleanDisplay_ del servidor: mayúsculas, sin espacios a los
+ * lados y los de dentro colapsados a uno — y la puntuación intacta, que es lo
+ * que la distingue de normalizeString ("A-680, 80 SERIES" se guarda tal cual).
+ *
+ * Existe porque el navegador pinta la fila ANTES de que el servidor conteste.
+ * Si las dos no coincidieran letra por letra, lo recién guardado se vería un
+ * instante de una forma y cambiaría solo al recargar. */
+function _limpiarNombre(v){
+  return String(v === null || v === undefined ? '' : v)
+    .toUpperCase().trim().replace(/\s+/g, ' ');
+}
 // Mirrors the backend's normalizeString() EXACTLY — stockData keys are built
 // server-side with that transform (strips , . ' `, turns - into a space). Any
 // stockData[key] lookup rebuilt from displayed text (which may contain those
@@ -6106,8 +6360,13 @@ function renderStats(){
           'rack, so the number moves with the stock.\n\n' +
           resumen.lista.map(function(r){
             return '· ' + r.qty + ' ' + r.unit + ' — ' + r.name + ' at ' + r.rack +
-                   (r.reason ? ' — ' + r.reason : '') + (r.by ? ' (' + r.by + ')' : '');
+                   (r.vacia ? ' — HOLDS NOTHING, can be released'
+                            : (r.reason ? ' — ' + r.reason : '')) +
+                   (r.by ? ' (' + r.by + ')' : '');
           }).join('\n') +
+          (resumen.vacias ? '\n\n' + resumen.vacias + ' of them hold nothing: the material ' +
+                            'left the rack, or it has no stock recorded at all. Releasing ' +
+                            'them changes no numbers — it just tidies the list.' : '') +
           '\n\nSee them on the Warehouse Map.')+
         '<div class="val">'+resumen.unidades.toLocaleString()+'</div>'+
         '<div class="sub">'+resumen.n+' reservation'+(resumen.n===1?'':'s')+
@@ -7244,7 +7503,53 @@ function _updateMovActionBar(){
                : n > 1   ? 'Edit works on one movement at a time'
                          : 'Edit this movement';
   }
+  var lbl = document.getElementById('btnMovLabels');
+  if (lbl){
+    lbl.disabled = n === 0;
+    lbl.title = n === 0 ? 'Tick a row first'
+                        : 'Print a label for ' + n + ' movement' + (n === 1 ? '' : 's');
+  }
   if (cnt) cnt.textContent = n ? (n + ' selected') : '';
+}
+
+/** Las filas imprimibles de unos movimientos ya guardados.
+ *
+ *  Un movimiento guardado ya tiene UN estante —el de destino si entró, el de
+ *  origen si salió— así que no hay que repartirlo como en una entrada nueva:
+ *  es una etiqueta por movimiento.
+ *
+ *  Y la fecha es la del movimiento, no la de hoy: se está reimprimiendo la
+ *  etiqueta de algo que llegó el martes, y ponerle la de hoy la convertiría en
+ *  una etiqueta que miente sobre cuándo entró. */
+function _labelsFromMovements(movs){
+  return (movs || []).map(function(m){
+    var entra = m.moveType === 'ENTRY' || m.moveType === 'RETURN';
+    return {
+      name:     m.name || '',
+      category: m.category || '',
+      qty:      Math.abs(Number(m.qty) || 0),
+      unit:     m.unit || 'UNIT',
+      loc:      (entra ? m.destLoc : m.sourceLoc) || m.destLoc || m.sourceLoc || '',
+      po:       m.po || '',
+      supplier: m.supplier || '',
+      project:  m.project || '',
+      dateRec:  m.dateRec || '',
+      copies:   1
+    };
+  }).filter(function(r){ return r.name && r.qty > 0; });
+}
+
+function printSelectedLabels(){
+  var sel = _selectedMovements();
+  if (!sel.length) return;
+  var filas = _labelsFromMovements(sel);
+  if (!filas.length){
+    showToast('Those movements have no quantity to put on a label.', 'warn');
+    return;
+  }
+  // Sin `alCerrar`: esto no viene detrás de un guardado, así que al cerrar el
+  // cuadro no hay ninguna pregunta pendiente que lanzar.
+  _openLabels(filas, null);
 }
 
 function editSelectedMovement(){
@@ -9543,6 +9848,21 @@ function _matLineTpl(n){
     '<div class="mat-line-hdr">' +
       '<span class="mat-line-lbl">Material ' + n + '</span>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
+        /* DECIR AQUÍ CUÁL LLEVA ETIQUETA. Jose: *"mi idea es poner un checkbox
+         * al crear el entry para los que quiera labels, así ya la app sabe
+         * cuáles quiero."*
+         *
+         * Nace SIN MARCAR, y eso es lo que le ahorra trabajo: con diez
+         * materiales y dos que necesitan etiqueta, marcar dos es mejor que
+         * desmarcar ocho en el cuadro de después.
+         *
+         * PERO SI NADIE LA TOCA, EL CUADRO SE COMPORTA COMO SIEMPRE — todas
+         * marcadas. Quien ignore esta casilla no puede perder una función que
+         * ya tenía; lo que hace esta casilla es ESTRECHAR la selección, no
+         * crearla. Ver _labelsFromEntry. */
+        '<label class="mat-lbl-want" title="Print a 4&quot;×6&quot; label for this material">' +
+          '<input type="checkbox" id="mat-label-' + n + '"><span>🏷 Label</span>' +
+        '</label>' +
         '<span id="mat-total-' + n + '" style="font-size:.78rem;font-weight:700;color:var(--accent2);background:#DBEAFE;padding:2px 10px;border-radius:10px">0 units</span>' +
         '<button type="button" class="mat-line-remove" onclick="removeMatLine(' + n + ')" title="Remove this material">×</button>' +
       '</div>' +
@@ -10543,7 +10863,11 @@ function submitMultiEntry(){
       valid = false; return;
     }
 
-    var matEntry = { category: cat, name: name, unit: unit, locations: locs, qty: totalQty };
+    var matEntry = { category: cat, name: name, unit: unit, locations: locs, qty: totalQty,
+                     // Sólo para el cuadro de etiquetas; NO viaja al servidor.
+                     // Ver el `_h(payload)` de más abajo: lo que se manda es
+                     // payload, y esto vive en el array local.
+                     wantsLabel: !!(document.getElementById('mat-label-' + n) || {}).checked };
     // Per-material always, unlike Supplier/PO/etc below — cost belongs to the
     // material being bought, never to the "same info for all" grouping, and
     // the field doesn't exist in the DOM at all for someone without
@@ -14191,8 +14515,29 @@ function _applyMatChangeLocally(p){
 // removing that feature took a helper used 26 times across the app with it. A
 // missing function is not a syntax error, so every check passed and the app
 // simply stopped part-way through its first render.
-function _he(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function _escAttr(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+/* EL CERO ES UN NÚMERO, NO UNA AUSENCIA.
+ *
+ * Esto era `String(s||'')`, y con eso `_he(0)` devolvía CADENA VACÍA — porque 0
+ * es falsy en JavaScript. Jose lo encontró el 2026-09-21 en la tira de reservas
+ * del mapa: una fila que decía "EVELYN A QUINONEZ ___ UNIT", con el hueco donde
+ * tenía que ir la cantidad. La cantidad era 0 y el escapador se la comió.
+ *
+ * No era sólo ahí. Toda la app pasa cantidades por aquí —el cajón del estante,
+ * las tarjetas de llegada, el "% used" del indicador de espacio— y en todas,
+ * un cero se dibujaba como un hueco. Un hueco parece un dato que se perdió; un
+ * 0 es una respuesta.
+ *
+ * Sólo lo que NO EXISTE se vuelve cadena vacía: null y undefined. Un 0, un
+ * false o un NaN se escriben, porque alguien los mandó a propósito. */
+function _he(s){
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// Mismo arreglo y por lo mismo que _he: un 0 en un atributo es un 0.
+function _escAttr(s){
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
 
 // The "i" badge used everywhere a field used to carry a paragraph of always-
 // visible help text: same explanation, shown on hover/focus instead of taking
@@ -14534,6 +14879,10 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _perso
       openLockModal(el.getAttribute('data-matid'), el.getAttribute('data-cat'), el.getAttribute('data-name'), el.getAttribute('data-rack'));
     } else if (a === 'unlock-material') {
       unlockMaterialConfirm(el.getAttribute('data-lock-id'), el.getAttribute('data-lock-name'));
+    } else if (a === 'toggle-resv') {
+      toggleReservasTira();
+    } else if (a === 'release-empty') {
+      releaseEmptyReservationsConfirm();
     } else if (a === 'toggle-rdw') {
       _toggleRdwActions(parseInt(el.getAttribute('data-idx'), 10));
     } else if (a === 'rdw-move') {
@@ -16371,30 +16720,189 @@ function renderWarehouseMap(){
   container.innerHTML = _reservasTiraHtml() + '<div class="wh-map">' + html + '</div>';
 }
 
+/* PLEGADA POR DEFECTO, y abierta si quien la usa la dejó abierta.
+ *
+ * Jose, 2026-09-21: *"si existen 100 materiales reservados habrá una lista de
+ * 100 cosas, será bien larga; debemos hacerlo expandible como el Low Stock del
+ * dashboard, que sólo se expande al hacer clic."*
+ *
+ * La cabecera ya dice lo que se lee de un vistazo —cuántas unidades, en cuántos
+ * estantes, cuántas no retienen nada—; la lista es para ACTUAR, y eso se pide.
+ * La elección se guarda porque no es una preferencia de esta pantalla sino de
+ * cómo trabaja esa persona: quien la quiere abierta la quiere abierta mañana. */
+var _RESV_KEY = 'acopio_resv_abierta';
+var _resvAbierta = (function(){
+  try { return localStorage.getItem(_RESV_KEY) === '1'; } catch(e){ return false; }
+})();
+function toggleReservasTira(){
+  _resvAbierta = !_resvAbierta;
+  try { localStorage.setItem(_RESV_KEY, _resvAbierta ? '1' : '0'); } catch(e){}
+  var strip = document.querySelector('.resv-strip');
+  if (!strip) return;
+  strip.classList.toggle('abierta', _resvAbierta);
+  var rows = strip.querySelector('.resv-rows');
+  if (rows) rows.hidden = !_resvAbierta;
+  var btn = strip.querySelector('.resv-toggle');
+  if (btn) btn.setAttribute('aria-expanded', _resvAbierta ? 'true' : 'false');
+}
+
+/* CUÁNTO OCUPA UNA LETRA, MEDIDO. 8,5px a .76rem en negrita y mayúsculas, que
+ * es como se escriben aquí los estantes y los materiales. Sale de medir en el
+ * navegador los nombres reales del almacén de Jose —WINDOW WAREHOUSE 136px/16
+ * letras, MIRRORS/SHOWERS BACK WALL 200px/25, DELIVERY SHELF 103px/14— y
+ * quedarse con el peor de ellos, no con la media: el umbral tiene que aguantar
+ * el nombre más ancho, no el corriente.
+ *
+ * Se cuenta por letras y no por píxeles porque el ancho real sólo se sabe
+ * DESPUÉS de pintar, y para entonces ya se eligió el tamaño. */
+var _RESV_PX_LETRA = 8.5;
+
+/** Qué tamaño le toca a este texto en una columna de `anchoPx` píxeles.
+ *
+ *  Una escalera de dos peldaños, y nada más: si al pequeño tampoco cabe, no se
+ *  recorta —se parte en dos líneas, que lo hace el CSS por su cuenta—. Ésa es
+ *  la regla que pidió Jose: *"que se encojan hasta un punto que sí se pueda
+ *  leer, pero si es mucha letra entonces se hace doble línea."* */
+function _resvFit(v, anchoPx){
+  var n = String(v === null || v === undefined ? '' : v).length;
+  if (!n) return '';
+  if (n * _RESV_PX_LETRA <= anchoPx) return '';
+  // .70rem sobre .76rem — el mismo texto ocupa un 92% de lo que ocupaba.
+  if (n * _RESV_PX_LETRA * 0.92 <= anchoPx) return 'fit-sm';
+  return 'fit-xs';
+}
+
 /** La tira de reservas del mapa. Los datos salen de _reservasActivas, igual que
  *  el total del tablero — una cuenta, tres pantallas. */
 function _reservasTiraHtml(){
   var res = _reservasResumen();
   if (!res.n) return '';
+  var esAdmin = userRole === 'ADMIN';
   var filas = res.lista.map(function(r){
-    return '<button class="resv-row" data-action="open-rack" data-rack="' + _escAttr(r.rack) + '" ' +
-             'title="' + _escAttr((r.reason || 'no reason given') +
-                                  (r.by ? ' — ' + r.by : '') +
-                                  (r.at ? ' · ' + r.at : '')) + '">' +
-             '<span class="resv-rack">' + _he(r.rack) + '</span>' +
-             '<span class="resv-name">' + _he(r.name) + '</span>' +
-             '<span class="resv-qty">' + _he(r.qty) + ' ' + _he(r.unit) + '</span>' +
-             '<span class="resv-why">' + _he(r.reason || '—') + '</span>' +
-           '</button>';
+    // La fila que no retiene nada se dice con palabras, no con un hueco. Y el
+    // motivo va en el sitio del motivo: lo que la persona escribió al apartar
+    // sigue estando, porque es lo que le dice si todavía tiene sentido.
+    var aviso = r.vacia === 'sin-material'
+      ? 'holds nothing — no stock recorded for this material anywhere'
+      : r.vacia === 'sin-stock-aqui'
+        ? ('holds nothing — the material is no longer at ' + r.rack +
+           (r.otrosEstantes.length ? ' (it is at ' + r.otrosEstantes.join(', ') + ')' : ''))
+        : '';
+    var porque = aviso || r.reason || '—';
+    var qty    = _qtyText(r.qty) + ' ' + r.unit;
+    return '<div class="resv-row-wrap' + (esAdmin ? '' : ' sin-accion') + '">' +
+             '<button class="resv-row' + (r.vacia ? ' resv-vacia' : '') + '" ' +
+               'data-action="open-rack" data-rack="' + _escAttr(r.rack) + '" ' +
+               'title="' + _escAttr((r.reason || 'no reason given') +
+                                    (r.by ? ' — ' + r.by : '') +
+                                    (r.at ? ' · ' + r.at : '') +
+                                    (aviso ? '\n\n' + aviso + '.' : '')) + '">' +
+               // Los anchos son los de la rejilla de arriba. Los dos fijos son
+               // exactos; los dos flexibles son el ancho que toman en una
+               // pantalla de escritorio, que es donde el tamaño importa —en una
+               // estrecha lo que salva la fila es partirla, no encogerla.
+               '<span class="resv-rack ' + _resvFit(r.rack, 120) + '">' + _he(r.rack) + '</span>' +
+               '<span class="resv-name ' + _resvFit(r.name, 190) + '">' + _he(r.name) + '</span>' +
+               '<span class="resv-qty ' + _resvFit(qty, 104) + '">' + _he(qty) + '</span>' +
+               '<span class="resv-why ' + _resvFit(porque, 250) + '">' +
+                 (aviso ? '<span class="resv-alerta">⚠ ' + _he(aviso) + '</span>' : _he(porque)) +
+               '</span>' +
+             '</button>' +
+             (esAdmin
+               ? '<button class="resv-soltar" data-action="unlock-material" ' +
+                   'data-lock-id="' + _escAttr(r.id) + '" ' +
+                   'data-lock-name="' + _escAttr(r.name) + '" ' +
+                   'title="Release this reservation">Release</button>'
+               : '') +
+           '</div>';
   }).join('');
-  return '<div class="resv-strip">' +
-           '<div class="resv-strip-hdr">🔒 Reserved — ' + res.unidades.toLocaleString() +
-             ' unit' + (res.unidades === 1 ? '' : 's') + ' held across ' + res.estantes +
-             ' rack' + (res.estantes === 1 ? '' : 's') +
-             '<span class="resv-hint">nothing here can leave the warehouse until it is released</span>' +
+
+  // El botón de limpiar sólo aparece cuando hay algo que limpiar, y dice cuántas
+  // son: "Release 3" es una cuenta que se puede comprobar antes de pulsar.
+  var limpiar = (esAdmin && res.vacias)
+    ? '<button class="resv-limpiar" data-action="release-empty">🧹 Release the ' +
+        res.vacias + ' holding nothing</button>'
+    : '';
+
+  return '<div class="resv-strip' + (_resvAbierta ? ' abierta' : '') + '">' +
+           '<div class="resv-strip-hdr">' +
+             '<button class="resv-toggle" data-action="toggle-resv" ' +
+               'aria-expanded="' + (_resvAbierta ? 'true' : 'false') + '">' +
+               '<span class="resv-caret">▸</span>' +
+               '<span>🔒 Reserved — ' + res.unidades.toLocaleString() +
+                 ' unit' + (res.unidades === 1 ? '' : 's') + ' held across ' + res.estantes +
+                 ' rack' + (res.estantes === 1 ? '' : 's') + '</span>' +
+               '<span class="resv-hint">nothing here can leave the warehouse until it is ' +
+                 'released · ' + res.n + ' reservation' + (res.n === 1 ? '' : 's') +
+                 (res.vacias ? ' · ' + res.vacias + ' hold' + (res.vacias === 1 ? 's' : '') +
+                               ' nothing' : '') +
+                 ' · ' + (_resvAbierta ? 'click to hide' : 'click to see them') +
+               '</span>' +
+             '</button>' + limpiar +
            '</div>' +
-           '<div class="resv-rows">' + filas + '</div>' +
+           '<div class="resv-rows"' + (_resvAbierta ? '' : ' hidden') + '>' + filas + '</div>' +
          '</div>';
+}
+
+/** Soltar de golpe todas las que no retienen nada.
+ *
+ *  Jose preguntó qué sentido tiene AVISAR de una reserva que no retiene nada si
+ *  luego no se puede hacer nada con ella. Ninguno: un aviso sin botón es medio
+ *  arreglo. Éste es el botón.
+ *
+ *  Y se nombran una por una en la confirmación, no "3 reservations". Soltar es
+ *  irreversible —hay que volver a apartar a mano, con su motivo— así que lo que
+ *  se va a soltar se lee antes de soltarlo. */
+function releaseEmptyReservationsConfirm(){
+  var vacias = _reservasActivas().filter(function(r){ return r.vacia; });
+  if (!vacias.length){
+    showToast('Every reservation is holding material right now.', 'info');
+    return;
+  }
+  var lineas = vacias.slice(0, 12).map(function(r){
+    return '· ' + r.name + ' @ ' + r.rack +
+           (r.vacia === 'sin-material' ? '  (no stock anywhere)'
+                                       : '  (moved out of ' + r.rack + ')');
+  });
+  if (vacias.length > 12) lineas.push('· …and ' + (vacias.length - 12) + ' more');
+
+  _showConfirm({
+    icon: '🧹',
+    title: 'Release ' + vacias.length + ' reservation' + (vacias.length === 1 ? '' : 's') +
+           ' holding nothing?',
+    message: lineas.join('\n') + '\n\n' +
+             'These hold no material, so releasing them changes no quantity ' +
+             'anywhere — it only takes them off this list. To hold the material ' +
+             'again you would have to reserve it again, with a reason.',
+    confirmText: 'Release ' + vacias.length,
+    danger: false,
+    onConfirm: function(){
+      _doUnlockMany(vacias.map(function(r){ return r.id; }));
+    }
+  });
+}
+
+function _doUnlockMany(ids){
+  google.script.run
+    .withSuccessHandler(function(res){
+      var quitar = {};
+      ids.forEach(function(id){ quitar[id] = true; });
+      materialLocks = materialLocks.filter(function(l){ return !quitar[l.id]; });
+      _rebuildLocksIndex();
+      var n = (res && res.released) || 0;
+      // Que alguien se haya adelantado no es un fallo de quien pulsó: el mundo
+      // acabó como pedía. Se cuenta, no se disculpa. Misma regla que en
+      // unlockMaterial, y la misma razón.
+      showToast('🔓 Released ' + n + ' reservation' + (n === 1 ? '' : 's') +
+        (res && res.alreadyGone
+          ? ' — ' + res.alreadyGone + ' had already been released by someone else.'
+          : '.'), 'ok', 5000);
+      if (_openRackName) openRackDrawer(_openRackName);
+      renderStock();
+      renderWarehouseMap();
+    })
+    .withFailureHandler(function(err){ showToast('Error: ' + _stripTags(err), 'err', 6000); })
+    .processMovement('unlockMaterials', _h({ ids: ids }));
 }
 
 // ── Rack Detail Drawer ────────────────────────────────────────────────────────
@@ -17531,13 +18039,37 @@ function renderIncomingWeekGrid() {
   }).join('');
 }
 
+/** Los campos por los que busca la caja de Incoming. En su propia función para
+ *  que la búsqueda y lo que dice el marcador de posición no puedan separarse:
+ *  un buscador que mira en sitios que no anuncia parece roto cuando encuentra
+ *  algo raro, y parece roto también cuando no encuentra lo que sí tiene. */
+function _incCamposBuscables(it){
+  return [it.name, it.po, it.supplier, it.pm, it.notes, it.category];
+}
+
 function renderIncomingTable() {
   var container = document.getElementById('incomingTableContainer');
   if (!container) return;
   var sf = (document.getElementById('incStatusFilter') || {}).value || '';
-  var filtered = incoming.filter(function(i){ return !sf || i.status === sf; });
+  var q  = ((document.getElementById('incSearch') || {}).value || '').toLowerCase().trim();
+  var filtered = incoming.filter(function(i){
+    if (sf && i.status !== sf) return false;
+    if (!q) return true;
+    return _incCamposBuscables(i).some(function(f){
+      return String(f || '').toLowerCase().indexOf(q) !== -1;
+    });
+  });
   if (!filtered.length) {
-    container.innerHTML = '<p style="padding:1rem;color:var(--muted)">No incoming materials' + (sf ? ' with status "' + sf + '"' : '') + '.</p>';
+    // El vacío dice POR QUÉ está vacío. "No incoming materials" a secas, con un
+    // filtro puesto y una búsqueda escrita, se lee como que no hay nada — y lo
+    // que pasa es que no hay nada QUE CUMPLA LAS DOS COSAS.
+    var porque = [];
+    if (q)  porque.push('matching "' + _he(q) + '"');
+    if (sf) porque.push('with status "' + _he(sf) + '"');
+    container.innerHTML = '<p style="padding:1rem;color:var(--muted)">No incoming materials' +
+      (porque.length ? ' ' + porque.join(' ') : '') + '.' +
+      (porque.length ? ' <span style="opacity:.8">' + incoming.length +
+                       ' in the full list.</span>' : '') + '</p>';
     return;
   }
   var isAdmin = userRole === 'ADMIN';
@@ -17868,8 +18400,12 @@ function _incAplicarLocal(payload, res){
     id:         String(id),
     estDate:    modo === 'unknown' ? ''
               : (payload.estDate || (previo ? previo.estDate : '')),
-    category:   String(payload.category || '').toUpperCase().trim(),
-    name:       String(payload.name || '').trim(),
+    // EL MISMO cleanDisplay_ QUE EL SERVIDOR, escrito aquí porque esta fila se
+    // pinta antes de que el servidor conteste. Si el navegador normalizara de
+    // otra manera, la entrega aparecería un instante como se tecleó y cambiaría
+    // sola al recargar — que es exactamente el parpadeo que la v12.00 quitó.
+    category:   _limpiarNombre(payload.category),
+    name:       _limpiarNombre(payload.name),
     qty:        Number(payload.qty || 0),
     unit:       String(payload.unit || 'UNIT'),
     supplier:   String(payload.supplier || ''),
@@ -17898,13 +18434,212 @@ function _incAplicarLocal(payload, res){
   });
 }
 
+/* ══ POSIBLE DUPLICADO ══════════════════════════════════════════════════════
+ *
+ * LA REGLA ES DE JOSE, palabra por palabra, el 2026-09-21:
+ *
+ *   "Un duplicado es mismo nombre + mismo proveedor + fecha cercana + mismo PO.
+ *    EL PO ES LO QUE EN REALIDAD DICE SI ES EL MISMO O NO, ya que cada empresa
+ *    crea uno nuevo para una entrega nueva. Pero si no hay PO, entonces el
+ *    nombre con los demás datos trabajan bien. Debemos recordar que los
+ *    materiales pueden venir con el mismo nombre y misma cantidad de diferentes
+ *    proveedores, así que ahí no creo que debamos avisar de un duplicado."
+ *
+ * Eso son tres reglas distintas y conviene tenerlas separadas:
+ *
+ *   MISMO PO + MISMO NOMBRE  → casi seguro la misma entrega escrita dos veces.
+ *                              El PO es la identidad: lo emite el proveedor, y
+ *                              uno nuevo significa un pedido nuevo.
+ *   DOS PO Y DISTINTOS       → NO es duplicado, y no se avisa. Son dos pedidos.
+ *                              Ésta es la regla que evita el aviso molesto.
+ *   SIN PO QUE COMPARAR      → nombre + proveedor + fecha cercana. Probable,
+ *                              no seguro, y así se dice.
+ *
+ * Y la que Jose nombró aparte: mismo nombre con proveedor distinto son dos
+ * entregas de verdad. No se avisa.
+ *
+ * NADA DE ESTO FUNCIONA SIN LA NORMALIZACIÓN de esta misma versión: la
+ * comparación es sobre nt(), y hasta hoy una entrega podía guardarse "Yogu
+ * Yogu" y otra "YOGU YOGU". Por eso aquello iba primero. */
+
+// Siete días a cada lado. Una ventana más corta deja escapar la entrega que
+// alguien anotó con una semana de margen —que es lo normal cuando el proveedor
+// dice "la semana que viene"—; una más larga marcaría como duplicado dos
+// pedidos mensuales del mismo material al mismo proveedor, que también es
+// normal. Es una decisión, no un hallazgo: si resulta estrecha, se mueve.
+var _INC_DIAS_CERCA = 7;
+
+function _incDiasEntre(a, b){
+  if (!a || !b) return null;            // sin fecha no hay distancia que medir
+  var ms = Date.parse(String(a) + 'T00:00:00') - Date.parse(String(b) + 'T00:00:00');
+  if (isNaN(ms)) return null;
+  return Math.abs(Math.round(ms / 86400000));
+}
+
+/** ¿Están las dos entregas en fechas cercanas?
+ *
+ *  Si a alguna le falta la fecha, NO se descarta: "no lo sé" no es "no". La
+ *  entrega sin fecha es justamente la que alguien apunta dos veces, porque no
+ *  tiene un día con el que recordarla. El cuadro enseña las dos fechas, así que
+ *  quien mira ve por qué saltó. */
+function _incFechasCerca(a, b){
+  var d = _incDiasEntre(a && a.estDate, b && b.estDate);
+  return d === null ? true : d <= _INC_DIAS_CERCA;
+}
+
+/** Las entregas ya anotadas que podrían ser ésta. Devuelve las seguras y las
+ *  probables por separado, porque se dicen con palabras distintas. */
+function _incDuplicados(p){
+  var fuertes = [], suaves = [];
+  var nombre = nt(p.name), prov = nt(p.supplier), po = nt(p.po);
+  if (!nombre) return { fuertes: fuertes, suaves: suaves };
+
+  (typeof incoming !== 'undefined' && incoming ? incoming : []).forEach(function(it){
+    // Una entrega no es duplicado de sí misma al editarla.
+    if (p.id && String(it.id) === String(p.id)) return;
+    // Una cancelada ya no espera nada: volver a anotarla es lo correcto, no un
+    // duplicado. Avisar ahí sería avisar de haber hecho lo que tocaba.
+    if (String(it.status || '').toLowerCase() === 'cancelled') return;
+    if (nt(it.name) !== nombre) return;
+
+    var poViejo = nt(it.po);
+    if (po && poViejo){
+      // Los dos tienen PO: el PO manda, y manda en los dos sentidos.
+      if (po === poViejo) fuertes.push(it);
+      return;
+    }
+    // Sin PO que comparar: hace falta el proveedor Y una fecha cercana.
+    if (!prov || nt(it.supplier) !== prov) return;
+    if (!_incFechasCerca(p, it)) return;
+    suaves.push(it);
+  });
+  return { fuertes: fuertes, suaves: suaves };
+}
+
+// Lo que quedó pendiente mientras el cuadro está abierto: qué se iba a guardar,
+// contra cuál se comparó, y cómo seguir si la persona dice que son distintas.
+var _incDupPend = null;
+
+/** Las filas de la comparación. En su propia función porque es lo que hay que
+ *  poder leer de un vistazo para saber si el cuadro dice la verdad. */
+function _incDupFilas(p, it){
+  var cajaFecha = { estDate: p.estDate, dateMode: p.dateMode,
+                    estDateEnd: p.estDateEnd, dateNote: p.dateNote };
+  return [
+    ['Est. date', _incDateLabel(it),            _incDateLabel(cajaFecha)],
+    ['Status',    it.status || 'Pending',       p.status || 'Pending'],
+    ['Category',  it.category || '',            p.category || ''],
+    ['Name',      it.name || '',                p.name || ''],
+    ['Qty',       (Number(it.qty) > 0 ? _qtyText(it.qty) + ' ' + (it.unit || '') : ''),
+                  (Number(p.qty)  > 0 ? _qtyText(p.qty)  + ' ' + (p.unit  || '') : '')],
+    ['Supplier',  it.supplier || '',            p.supplier || ''],
+    ['PO #',      it.po || '',                  p.po || ''],
+    ['PM',        it.pm || '',                  p.pm || ''],
+    ['Notes',     it.notes || '',               p.notes || '']
+  ];
+}
+
+function _incDupPreguntar(p, dup, seguir){
+  // El PO manda: si hay una coincidencia de PO, es ÉSA la que se enseña, aunque
+  // haya otras. Enseñar la probable teniendo delante la casi segura sería
+  // esconder la mejor prueba.
+  var fuerte = dup.fuertes.length > 0;
+  var lista  = fuerte ? dup.fuertes : dup.suaves;
+  var it     = lista[0];
+  _incDupPend = { payload: p, existente: it, seguir: seguir };
+
+  document.getElementById('incDupTitle').textContent =
+    fuerte ? '⚠ This looks like the same delivery' : '⚠ Possible duplicate';
+
+  document.getElementById('incDupLead').textContent = fuerte
+    ? 'A delivery already on the list has the same material AND the same PO ' +
+      'number. A supplier issues a new PO for a new order, so the same PO twice ' +
+      'is almost always the same delivery written down twice.'
+    : 'A delivery already on the list has the same material from the same ' +
+      'supplier, around the same date, and neither has a PO number to tell them ' +
+      'apart. It may well be a second, real delivery — check below.';
+
+  var filas = _incDupFilas(p, it).map(function(f){
+    var viejo = String(f[1] || ''), nuevo = String(f[2] || '');
+    var difiere = nt(viejo) !== nt(nuevo);
+    var celda = function(v, clase){
+      return '<td' + (clase ? ' class="' + clase + '"' : '') + '>' +
+        (v ? _he(v) : '<span class="dup-vacio">—</span>') + '</td>';
+    };
+    return '<tr' + (difiere ? ' class="dup-dif"' : '') + '>' +
+      '<td class="dup-campo">' + _he(f[0]) + '</td>' +
+      celda(viejo) + celda(nuevo, 'dup-nuevo') +
+    '</tr>';
+  }).join('');
+
+  document.getElementById('incDupBody').innerHTML =
+    '<table class="dup-tabla"><thead><tr>' +
+      '<th></th>' +
+      '<th class="dup-col-vieja">Already on the list</th>' +
+      '<th class="dup-col-nueva">' + (p.id ? 'After your changes' : 'You are adding') + '</th>' +
+    '</tr></thead><tbody>' + filas + '</tbody></table>';
+
+  // Si hay más de una, se dice. Un cuadro que enseña una de tres y no lo
+  // menciona deja a la persona resolviendo el problema equivocado.
+  var otras = lista.length - 1;
+  document.getElementById('incDupMas').textContent = otras > 0
+    ? otras + ' other delivery' + (otras === 1 ? '' : 'ies') +
+      ' on the list also matches. Use the search box to review them.'
+    : '';
+
+  // Editar la que existe sólo tiene sentido si quien mira puede editarla.
+  var bEdit = document.getElementById('incDupEditBtn');
+  if (bEdit) bEdit.style.display = (userRole === 'ADMIN') ? '' : 'none';
+
+  // El escudo de ventanas (_modalShield) se encarga solo: observa las clases
+  // `show` y congela lo de detrás, así que este cuadro encima del formulario de
+  // Incoming se apila bien sin hacer nada aquí.
+  document.getElementById('incDupOverlay').classList.add('show');
+}
+
+/** "Es la misma" — se abandona lo que se estaba creando y se abre aquélla.
+ *  No se crea una segunda entrega, que es el punto entero del aviso. */
+function _incDupEditarLaQueExiste(){
+  var pend = _incDupPend;
+  if (!pend || !pend.existente) return;
+  _incDupPend = null;
+  closeModal('incDupOverlay');
+  closeModal('incomingOverlay');
+  openIncomingModal(pend.existente.id);
+  showToast('Opened the delivery that was already on the list. ' +
+            'Nothing new was created.', 'info', 5000);
+}
+
+/** "Son distintas" — se sigue por donde se iba, sin regañar. El aviso era una
+ *  pregunta, y ya está contestada. */
+function _incDupCrearIgual(){
+  var pend = _incDupPend;
+  if (!pend) return;
+  _incDupPend = null;
+  closeModal('incDupOverlay');
+  pend.seguir();
+}
+
 function saveIncomingItem() {
   var id       = document.getElementById('incId').value;
   var dateMode = document.getElementById('incDateMode').value || 'exact';
   var estDate  = document.getElementById('incDate').value;
   var estEnd   = document.getElementById('incDateEnd').value;
   var dateNote = (document.getElementById('incDateNote').value || '').trim();
-  var name     = (document.getElementById('incName').value || '').trim();
+  /* NORMALIZADO AQUÍ, no sólo en el servidor, y por dos razones distintas.
+   *
+   * La de fondo: el servidor guarda cleanDisplay_(name), así que lo que la
+   * pantalla enseñe antes de guardar tiene que ser ESO y no lo que se tecleó.
+   * El cuadro de posible duplicado lo puso en evidencia — comparaba "DOOR
+   * SCREEN" (lo guardado) contra "door screen" (lo tecleado) y parecía una
+   * diferencia entre las dos entregas cuando no lo era. Una tabla de comparar
+   * que marca como distinto lo que se va a guardar igual miente sobre lo único
+   * que tiene que decir.
+   *
+   * Y la práctica: el mismo valor viaja al servidor, se pinta al instante en la
+   * lista y se compara contra las demás. Normalizarlo una vez, aquí, es lo que
+   * hace que los tres vean lo mismo. */
+  var name     = _limpiarNombre(document.getElementById('incName').value);
   if (dateMode !== 'unknown' && !estDate){
     showToast('Pick a date, or choose "Not known yet".', 'warn'); return;
   }
@@ -17925,7 +18660,7 @@ function saveIncomingItem() {
     estDateEnd: estEnd,
     dateNote:   dateNote,
     status:   document.getElementById('incStatus').value,
-    category: document.getElementById('incCategory').value,
+    category: _limpiarNombre(document.getElementById('incCategory').value),
     name:     name || '📎 See attached',
     qty:      Number(document.getElementById('incQty').value) || 0,
     unit:     document.getElementById('incUnit').value,
@@ -18000,15 +18735,34 @@ function saveIncomingItem() {
       .processMovement(action, _h(payload));
   }
 
-  if (hasFile){
-    _btnBusy(btn, 'Reading file…');
-    _readFileAsBase64(fileInput.files[0], function(b64, mime){
-      if (b64){ payload.docFile = { fileData: b64, fileMimeType: mime, fileName: fileInput.files[0].name }; }
+  function _arrancar(){
+    if (hasFile){
+      _btnBusy(btn, 'Reading file…');
+      _readFileAsBase64(fileInput.files[0], function(b64, mime){
+        if (b64){ payload.docFile = { fileData: b64, fileMimeType: mime, fileName: fileInput.files[0].name }; }
+        _send();
+      });
+    } else {
       _send();
-    });
-  } else {
-    _send();
+    }
   }
+
+  /* EL AVISO DE DUPLICADO VA AQUÍ: al guardar, y ANTES de leer el archivo.
+   *
+   * Al guardar y no mientras se teclea, a propósito. Un aviso que salta a media
+   * palabra interrumpe a quien todavía está escribiendo el nombre y no ha
+   * llegado al proveedor ni al PO — o sea, justo antes de tener los datos con
+   * los que se decide. Lo que acompaña mientras se escribe es la sugerencia del
+   * formulario de entrada, que es otra cosa.
+   *
+   * Y antes de leer el archivo porque leer un PDF adjunto tarda: preguntar
+   * primero evita hacer ese trabajo para algo que a lo mejor no se guarda. */
+  var dup = _incDuplicados(payload);
+  if (dup.fuertes.length || dup.suaves.length){
+    _incDupPreguntar(payload, dup, _arrancar);
+    return;
+  }
+  _arrancar();
 }
 
 // ── One expected delivery, drawn one way ─────────────────────────────────────
@@ -18766,11 +19520,22 @@ var _labelAfter = null;   // lo que hay que hacer al cerrar (ver submitMultiEntr
 
 /** Las filas imprimibles de una entrada: una por (material × estante). */
 function _labelsFromEntry(materiales, compartido){
+  /* LA CASILLA DEL FORMULARIO ESTRECHA, NO CREA.
+   *
+   * Si alguien marcó "🏷 Label" en alguna línea, el cuadro se abre con ESAS
+   * marcadas y las demás no — que es lo que ahorra trabajo cuando se entran
+   * diez materiales y sólo dos necesitan etiqueta.
+   *
+   * Si NADIE la tocó, todas vienen marcadas, como siempre. Quien ignore la
+   * casilla nueva no puede perder una función que ya tenía; y un cuadro que se
+   * abre con todo desmarcado y el botón apagado parece roto. */
+  var alguienEligio = (materiales || []).some(function(m){ return m.wantsLabel; });
   var out = [];
   (materiales || []).forEach(function(mat){
     (mat.locations || []).forEach(function(l){
       if (!l || !(l.qty > 0)) return;
       out.push({
+        marcada:  alguienEligio ? !!mat.wantsLabel : true,
         name:     mat.name || '',
         category: mat.category || compartido.category || '',
         qty:      l.qty,
@@ -18787,26 +19552,60 @@ function _labelsFromEntry(materiales, compartido){
   return out;
 }
 
+/** La clase de tamaño de un valor, POR LONGITUD.
+ *
+ *  Antes había una sola (.sm) y se ponía únicamente cuando la locación estaba
+ *  VACÍA — nunca por lo largo que fuera. Por eso "WINDOW WAREHOUSE" se dibujaba
+ *  al tamaño pensado para "B1B" y partía en tres líneas.
+ *
+ *  Los cortes salen del ancho útil del papel: 101,6mm menos 12mm de márgenes y
+ *  7mm del rótulo de la izquierda dejan unos 76mm, y a 10mm de letra en negrita
+ *  caben unos 12 caracteres. De ahí los escalones. Lo que NO se toca es el
+ *  tamaño de los cortos: Jose fue explícito — "no le cambies el tamaño" — y son
+ *  los que se leen de lejos. */
+function _labelValClass(v){
+  var n = String(v || '').length;
+  if (n <= 12) return '';          // B1B, P4C, A4A, WAREHOUSE  — 10mm, sin tocar
+  if (n <= 17) return ' v-md';     // WINDOW WAREHOUSE          — 6,5mm, una línea
+  if (n <= 26) return ' v-sm';
+  return ' v-xs';
+}
+
 /** Una etiqueta, en HTML. La misma para la vista previa y para el papel: una
  *  vista previa que se dibuja aparte es una vista previa de otra cosa. */
 function _labelHtml(r){
   // Un bulto sin estante existe —el formulario lo admite— y la etiqueta tiene
   // que decirlo en vez de dejar el recuadro vacío, que se lee como un fallo.
-  var loc = String(r.loc || '').trim();
+  var loc = String(r.loc || '').trim() || 'not assigned';
   var pie = [];
   if (r.supplier) pie.push(_he(r.supplier));
   if (r.project)  pie.push(_he(r.project));
+
+  /* "1 of 5" — LA ETIQUETA PARTIDA DICE QUE LO ESTÁ.
+   *
+   * Jose: *"hay 5 door screens que voy a poner en un mismo lugar, pero quiero
+   * imprimir un label para cada una, entonces debe tener 1 en la cantidad."*
+   *
+   * Y eso cambia lo que PROMETE el número. Sin partir, la cantidad de una
+   * etiqueta significa "cuánto hay de esto en este estante"; partida significa
+   * "cuánto hay en este bulto". Las dos son útiles y no son la misma, así que
+   * la partida tiene que decirlo — si no, alguien suma cinco etiquetas de 1 y
+   * cree que hay 5 unidades donde hay 5 bultos de 1. */
+  var deCuantos = (r.ofTotal && r.ofTotal > 1)
+    ? '<span class="lbl-of"> of ' + _he(r.ofTotal) + '</span>' : '';
+
   return '<div class="lbl">' +
       '<div class="lbl-top"><span>' + _he(r.category || '') + '</span>' +
         '<span class="lbl-when">' + _he(r.dateRec || '') + '</span></div>' +
       '<div class="lbl-name">' + _he(r.name) + '</div>' +
       '<div class="lbl-pair">' +
-        '<div class="lbl-cell"><div class="lbl-cell-lbl">Qty</div>' +
-          '<div class="lbl-cell-val">' + _he(_qtyText(r.qty)) +
-          '<span style="font-size:4.5mm"> ' + _he(r.unit || 'UNIT') + '</span></div></div>' +
-        '<div class="lbl-cell"><div class="lbl-cell-lbl">Location</div>' +
-          '<div class="lbl-cell-val' + (loc ? '' : ' sm') + '">' +
-          _he(loc || 'not assigned') + '</div></div>' +
+        '<div class="lbl-cell"><span class="lbl-cell-lbl">Location</span>' +
+          '<span class="lbl-cell-val' + _labelValClass(loc) + '">' +
+          _he(loc) + '</span></div>' +
+        '<div class="lbl-cell"><span class="lbl-cell-lbl">Qty</span>' +
+          '<span class="lbl-cell-val">' + _he(_qtyText(r.qty)) +
+          '<span class="lbl-unit"> ' + _he(r.unit || 'UNIT') + '</span>' +
+          deCuantos + '</span></div>' +
       '</div>' +
       '<div class="lbl-meta">' +
         (r.po ? '<div>PO <b>' + _he(r.po) + '</b></div>' : '') +
@@ -18830,13 +19629,41 @@ function _openLabels(rows, alCerrar){
       'do not need a label.';
 
   list.innerHTML = _labelRows.map(function(r, i){
+    /* "UNA POR UNIDAD" — la petición de las cinco puertas.
+     *
+     * Jose: *"hay 5 door screens que voy a poner en un mismo lugar, pero quiero
+     * imprimir un label para cada una, entonces debe tener 1 en la cantidad,
+     * pero como el ingreso lo hice con 5 unidades, entonces los labels no salen
+     * como quiero."*
+     *
+     * El ×N de al lado son COPIAS de la misma etiqueta —cinco papeles que dicen
+     * "5 UNIT"— y eso es otra cosa. Esto parte el bulto: cinco etiquetas que
+     * dicen "1 UNIT · 1 of 5".
+     *
+     * Sólo se ofrece cuando hay más de una unidad. Con una, partir no significa
+     * nada, y una casilla que no hace nada es una casilla que enseña a no
+     * leerlas. Y en cantidades fraccionarias tampoco: media puerta no es un
+     * bulto. */
+    var parteVale = Number(r.qty) > 1 && Number(r.qty) === Math.round(Number(r.qty));
+    // `marcada` viene de la casilla del formulario de entrada. Las filas que
+    // llegan por otro camino —reimprimir desde Movements— no la traen, y
+    // entonces vienen marcadas, que es lo correcto: ahí se eligió fila por fila
+    // antes de abrir el cuadro.
+    var marcada = (r.marcada === undefined) ? true : !!r.marcada;
     return '<label class="lbl-row">' +
-      '<input type="checkbox" checked data-lbl="' + i + '" onchange="_labelsRedraw()">' +
+      '<input type="checkbox"' + (marcada ? ' checked' : '') +
+        ' data-lbl="' + i + '" onchange="_labelsRedraw()">' +
       '<span class="lbl-row-body">' +
         '<span class="lbl-row-name">' + _he(r.name) + '</span>' +
         '<span class="lbl-row-sub">' + _he(_qtyText(r.qty)) + ' ' + _he(r.unit) +
           ' · ' + _he(r.loc || 'no rack') +
           (r.po ? ' · PO ' + _he(r.po) : '') + '</span>' +
+        (parteVale
+          ? '<span class="lbl-row-split"><input type="checkbox" data-split="' + i + '" ' +
+              'onchange="_labelsRedraw()" onclick="event.stopPropagation()">' +
+              '<span>one label per unit — ' + _he(_qtyText(r.qty)) + ' labels of 1</span>' +
+            '</span>'
+          : '') +
       '</span>' +
       // step="1" porque media etiqueta no existe — son copias, no cantidad.
       '<span class="lbl-row-n">×<input type="number" min="1" max="99" step="1" ' +
@@ -18859,13 +19686,38 @@ function _labelsChosen(){
     var n = Math.max(1, Math.min(99, Math.round(Number(inp.value) || 1)));
     copias[inp.getAttribute('data-copies')] = n;
   });
+  // Qué filas están partidas en una etiqueta por unidad.
+  var partidas = {};
+  list.querySelectorAll('input[data-split]').forEach(function(inp){
+    if (inp.checked) partidas[inp.getAttribute('data-split')] = true;
+  });
+
   var out = [];
   list.querySelectorAll('input[data-lbl]').forEach(function(cb){
     if (!cb.checked) return;
     var i = cb.getAttribute('data-lbl');
     var r = _labelRows[Number(i)];
     if (!r) return;
-    for (var c = 0; c < (copias[i] || 1); c++) out.push(r);
+    /* Partir NO es multiplicar copias: son etiquetas DISTINTAS —"1 of 5", "2 of
+     * 5"— y por eso se construyen una a una en vez de repetir la misma. El ×N
+     * sigue significando lo de siempre y se aplica encima: cinco bultos, dos
+     * copias de cada uno, diez papeles. */
+    var piezas;
+    if (partidas[i]) {
+      var n = Math.round(Number(r.qty)) || 1;
+      piezas = [];
+      for (var k = 1; k <= n; k++) {
+        var uno = {};
+        for (var campo in r) { if (r.hasOwnProperty(campo)) uno[campo] = r[campo]; }
+        uno.qty = 1; uno.ofTotal = n; uno.pieza = k;
+        piezas.push(uno);
+      }
+    } else {
+      piezas = [r];
+    }
+    for (var c = 0; c < (copias[i] || 1); c++) {
+      for (var j = 0; j < piezas.length; j++) out.push(piezas[j]);
+    }
   });
   return out;
 }
@@ -18879,7 +19731,10 @@ function _labelsRedraw(){
   // se ven cuatro veces iguales y no dicen nada nuevo. El botón lleva el total.
   var vistas = {}, unicas = [];
   elegidas.forEach(function(r){
-    var k = r.name + '|' + r.loc + '|' + r.qty;
+    // La pieza entra en la clave: "1 of 5" y "2 of 5" NO son la misma etiqueta,
+    // y esconder las cuatro últimas dejaría la vista previa mintiendo sobre lo
+    // que va a salir de la impresora.
+    var k = r.name + '|' + r.loc + '|' + r.qty + '|' + (r.pieza || '');
     if (vistas[k]) return;
     vistas[k] = 1; unicas.push(r);
   });
@@ -21096,6 +21951,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Incoming filter
   _safeOn('incStatusFilter','change', renderIncoming);
+  /* El buscador repinta SÓLO LA TABLA, no la semana de arriba. La caja vive
+   * dentro de la tarjeta de "All Incoming" y filtra lo que hay debajo de ella;
+   * vaciar de paso la vista de la semana —que es un calendario, no una lista—
+   * escondería días enteros por escribir tres letras. */
+  _safeOn('incSearch','input', _debounce(renderIncomingTable, 220));
 
   // Modals — close on outside click
   _safeOn('incomingOverlay','click', function(e){ closeIfOutside(e,'incomingOverlay'); });
