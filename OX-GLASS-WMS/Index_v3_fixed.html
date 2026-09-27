@@ -22,7 +22,58 @@
        that a table or a list continues past the fold. */
     html{scrollbar-width:none}
     html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}
+    /* ══ LA TABLA DE CAPAS ═══════════════════════════════════════════════════
+       QUIÉN VA ENCIMA DE QUIÉN, EN UN SOLO SITIO Y EN ORDEN.
+
+       Jose, 2026-09-21, con dos capturas: *"al abrir el menú del usuario éste
+       se abre DETRÁS de las tarjetas. Creo yo que este menú debe tener
+       prioridad, ya que sólo se abre si damos clic en el avatar y eso significa
+       que queremos hacer algo ahí."*
+
+       Tenía razón, y el porqué no se ve leyendo los números. `.acct-menu`
+       declara `z-index:600` y las tarjetas `399`, así que sobre el papel gana
+       el menú. Medido en el navegador, gana el mazo. La razón es que UN
+       z-index SÓLO COMPITE DENTRO DE SU PROPIO CONTEXTO DE APILADO: el menú
+       vive dentro de `.topbar`, que es `position:sticky` con `z-index:100`, y
+       eso abre un contexto. Hacia fuera el menú no vale 600 — vale lo que
+       valga la barra, 100. Y 100 < 399.
+
+       POR ESO ESTO ES UNA TABLA Y NO UN NÚMERO MÁS. Con veinticuatro
+       `z-index` sueltos por el archivo, cada vez que algo salía tapado se
+       subía su número hasta que se veía; así se llega a un 600 que no puede
+       hacer nada y a que nadie sepa el orden real. Aquí el orden se lee de
+       arriba abajo, y cambiarlo es mover una línea, no descubrir un número.
+
+       REGLA PARA AÑADIR UNA CAPA: se añade AQUÍ, con su nombre y su sitio en
+       el orden, y la regla de CSS usa la variable. Un `z-index:` literal en
+       una capa flotante es un número que nadie podrá ordenar después.
+       `tools/test-capas.js` cuenta los que quedan fuera y no deja que suban. */
     :root{
+      --z-topbar:100;          /* la barra de arriba, pegada */
+      --z-nudge:390;           /* el aviso de "te saltaste un paso" */
+      --z-deck:399;            /* el mazo de tarjetas de la esquina */
+      /* La barra SÓLO mientras el menú del avatar está abierto. Sube por
+         encima del mazo y se queda por debajo del cajón y de las ventanas:
+         abrir el menú da prioridad sobre lo que se pinta solo, nunca sobre una
+         ventana que alguien abrió. Es la prioridad condicional que pidió Jose
+         —"sólo se abre si damos clic"—, no una barra que tapa siempre. */
+      --z-topbar-acct:450;
+      --z-bell:420;            /* el panel de la campana */
+      --z-drawer-back:499;     /* el fondo oscuro del cajón del estante */
+      --z-drawer:500;          /* el cajón del estante */
+      --z-morning:540;         /* el popup de la mañana */
+      --z-overlay:550;         /* las ventanas de la app */
+      --z-confirm:1100;        /* confirmar / avisar, va sobre una ventana */
+      --z-lightbox:1200;       /* ver un documento a pantalla completa */
+      --z-suggest:1300;        /* la caja de sugerencias, sobre su ventana */
+      --z-fullscreen:2000;     /* el asistente de instalación y la portada */
+      --z-progress:9998;       /* la línea de progreso */
+      --z-toast:9999;          /* los avisos de arriba */
+      /* La burbuja de ayuda es la única que va sobre todo, y tiene su propia
+         explicación medida donde se define: vive en el <body> para poder
+         salir de cualquier recorte. */
+      --z-tip:2147483000;
+
       --navy:#1B2A4A;--steel:#2C3E6B;--accent:#3B7DD8;--accent2:#2563EB;
       --bg:#F0F2F5;--card:#FFFFFF;--text:#1a1a2e;--muted:#6B7280;
       --green:#059669;--green-bg:#D1FAE5;--red:#DC2626;--red-bg:#FEE2E2;
@@ -44,7 +95,7 @@
        on a wide window and dropped below it on a narrower one — and the whole
        page shifted as it went. Now the tabs have a line of their own that they
        never leave; they just move toward the middle as the window grows. */
-    .topbar{background:var(--navy);padding:.7rem 1.5rem .6rem;display:flex;flex-direction:column;gap:.55rem;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--accent)}
+    .topbar{background:var(--navy);padding:.7rem 1.5rem .6rem;display:flex;flex-direction:column;gap:.55rem;position:sticky;top:0;z-index:var(--z-topbar);border-bottom:3px solid var(--accent)}
     .topbar-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     /* Row two is the tabs and the account cluster TOGETHER, so the circle is
        always beside the tabs rather than stranded on the line above them. The
@@ -300,9 +351,16 @@
     .resv-strip-hdr{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
     /* La cabecera ES el botón de abrir y cerrar: toda ella, no un triangulito de
        diez píxeles. Quien quiere ver la lista apunta al renglón que la nombra. */
-    .resv-toggle{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;
+    /* flex:0 1 auto y no flex:1 — la ⓘ tiene que quedar PEGADA al texto, no
+       empujada al otro extremo de la fila. Lo que empuja al botón de limpiar
+       hacia la derecha es el margen automático de la ⓘ, no el ancho del
+       botón. */
+    .resv-toggle{flex:0 1 auto;min-width:0;display:flex;flex-wrap:wrap;align-items:center;
       gap:.5rem;background:none;border:0;padding:.1rem 0;margin:0;cursor:pointer;
       font-family:inherit;font-size:.78rem;font-weight:700;color:var(--text);text-align:left}
+    .resv-info{margin-right:auto}
+    /* Lo único accionable de la cabecera, y por eso es lo único con color. */
+    .resv-hint-ojo{font-weight:600;font-size:.72rem;color:var(--orange)}
     .resv-toggle:hover .resv-caret{color:var(--accent)}
     .resv-caret{display:inline-block;flex-shrink:0;width:.8rem;color:var(--muted);
       transition:transform .18s ease}
@@ -396,7 +454,7 @@
        covering almost the whole screen — capped at two-thirds of the
        viewport instead, same as the "not on your lists" bell panel. Still
        400px max on anything wider than a phone, unchanged from before. */
-    .rack-drawer{position:fixed;right:0;top:0;bottom:0;width:min(400px,66.667vw);background:var(--card);box-shadow:-6px 0 28px rgba(0,0,0,.18);z-index:500;transform:translateX(110%);transition:transform .25s ease;display:flex;flex-direction:column}
+    .rack-drawer{position:fixed;right:0;top:0;bottom:0;width:min(400px,66.667vw);background:var(--card);box-shadow:-6px 0 28px rgba(0,0,0,.18);z-index:var(--z-drawer);transform:translateX(110%);transition:transform .25s ease;display:flex;flex-direction:column}
     .rack-drawer.open{transform:translateX(0)}
     .rack-drawer-hdr{background:var(--navy);color:#fff;padding:.85rem 1.1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .rack-drawer-hdr h3{font-size:1rem;font-weight:700;margin:0}
@@ -415,7 +473,7 @@
     .rdw-lock-badge{flex-shrink:0;font-size:.9rem;cursor:default}
     .rdw-lock-btn{flex-shrink:0;font-size:.68rem;font-weight:700;background:var(--border);color:var(--text);border:none;border-radius:5px;padding:2px 7px;cursor:pointer;white-space:nowrap;transition:.15s}
     .rdw-lock-btn:hover{background:var(--red);color:#fff}
-    .rack-drawer-overlay{display:none;position:fixed;inset:0;z-index:499;background:rgba(0,0,0,.3)}
+    .rack-drawer-overlay{display:none;position:fixed;inset:0;z-index:var(--z-drawer-back);background:rgba(0,0,0,.3)}
     .rack-drawer-overlay.open{display:block}
     /* ── ALERTS ── */
     .alert-banner{background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;font-size:.82rem;color:var(--yellow);display:none}
@@ -427,7 +485,7 @@
        because several elements used literal light colours while the tokens
        around them flipped. Rather than audit every rule for both themes on a
        screen seen once, it commits to one look. */
-    .wiz-overlay{display:none;position:fixed;inset:0;background:#F1F5F9;z-index:2000;overflow-y:auto;padding:2rem 1rem;color:#111827}
+    .wiz-overlay{display:none;position:fixed;inset:0;background:#F1F5F9;z-index:var(--z-fullscreen);overflow-y:auto;padding:2rem 1rem;color:#111827}
     .wiz-overlay.show{display:block}
     .wiz-box{background:#fff;border-radius:16px;box-shadow:0 12px 48px rgba(0,0,0,.18);max-width:640px;margin:0 auto;padding:2rem}
     .wiz-steps{display:flex;gap:6px;margin-bottom:1.5rem}
@@ -463,7 +521,7 @@
     .wiz-progress-fill{height:100%;width:0%;background:#3B7DD8;border-radius:4px;transition:width .3s ease}
     .wiz-progress-label{font-size:.78rem;color:#6B7280;margin-top:.45rem;text-align:center}
     /* Nudge shown after setup when an optional step was skipped */
-    .setup-nudge{position:fixed;bottom:22px;left:22px;z-index:390;background:#1B2A4A;color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:290px}
+    .setup-nudge{position:fixed;bottom:22px;left:22px;z-index:var(--z-nudge);background:#1B2A4A;color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:290px}
     /* Coming back is not the same as arriving. A reminder that pops into place
        reads as an alarm; this one walks in from off the left edge, invisible,
        and colours up as it travels to where it was sitting. Slow on purpose. */
@@ -477,7 +535,7 @@
     .setup-nudge:hover .nudge-act{display:flex}
     .setup-nudge button{border:none;border-radius:6px;padding:.3rem .6rem;font-size:.74rem;font-weight:600;cursor:pointer;font-family:inherit}
     @media (max-width:640px){.setup-nudge{left:12px;right:12px;bottom:76px;max-width:none}.wiz-box{padding:1.25rem}.wiz-gen{grid-template-columns:1fr}}
-    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:550;align-items:center;justify-content:center;padding:15px}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:var(--z-overlay);align-items:center;justify-content:center;padding:15px}
     .ri-photo-thumb{position:relative;width:52px;height:52px;flex-shrink:0}
     .ri-photo-thumb img{width:52px;height:52px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block}
     .ri-photo-thumb button{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:.65rem;cursor:pointer;line-height:1;padding:0}
@@ -499,11 +557,46 @@
        leaves the list exactly where it was. */
     html.modal-open{overflow:hidden}
     .app-inert{pointer-events:none}
-    /* height (not max-height): the box is ALWAYS this size, tied only to the
-       viewport — never shrinks for a short form, never grows for a long one.
-       Short content just leaves empty space at the bottom; long content scrolls
-       inside via overflow-y. Every .modal instance shares this one fixed size. */
-    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);height:min(82vh,700px);overflow-y:auto;scrollbar-gutter:stable;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    /* ── LA REGLA DE JOSE, 2026-09-22 ───────────────────────────────────────
+       *"Toda ventana debe aparecer completa si la pantalla se lo permite, pero
+        completa significa que se vea todo el contenido. Si una ventana tiene
+        poco contenido (como Add User), entonces la ventana sólo debe tener el
+        tamaño necesario para mostrar el contenido, no ocupar toda la pantalla
+        porque sí."*
+
+       AQUÍ DECÍA `height` Y ERA A PROPÓSITO. El comentario anterior lo
+       defendía así: *"la caja es SIEMPRE de este tamaño, atada sólo a la
+       pantalla — nunca encoge para un formulario corto ni crece para uno
+       largo. El contenido corto deja espacio vacío abajo."* La idea era que
+       todas las ventanas midieran igual, y como idea se sostiene.
+
+       Lo que no se sostiene es el resultado, y Jose lo vio en dos sitios
+       distintos antes de dar con la causa: *"la ventana del Add User es muy
+       grande, no debe ser tan grande si lo que tiene dentro no es tanto"*
+       (2026-09-17) y *"la ventana de Edit es muy pequeña incluso cuando la
+       pantalla es grande, lo que hace que siempre haya una scroll bar
+       vertical"* (2026-09-22). Son la misma línea: con `height` fijo, las
+       VEINTE ventanas de la app miden el 82% de la pantalla — la que lleva
+       cuatro campos deja medio metro de vacío, y la que lleva veinte scrollea
+       igual porque el tope no depende de lo que haya dentro.
+
+       `max-height` es la regla entera en una palabra: crece con su contenido
+       hasta donde la pantalla aguanta, y ni un píxel más.
+
+       Y EL TOPE PASA A SER SÓLO LA PANTALLA, sin los 700px que lo acompañaban.
+       Ese número era el segundo techo y contradecía la primera mitad de la
+       regla —*"debe aparecer completa SI LA PANTALLA SE LO PERMITE"*—: el
+       formulario de Edit mide 762px, así que con un tope de 700 no se vería
+       entero ni en un monitor de dos metros. Medido: con 82vh en una pantalla
+       de 1200px de alto caben 984px, y ese formulario entra completo, que es
+       justo lo que Jose pidió. El 82% se queda porque una ventana tan alta como
+       la pantalla no deja ver que hay algo detrás ni dónde pulsar para cerrarla.
+
+       `overflow-y` sigue estando para lo que de verdad no quepa —en una pantalla
+       baja—, y `scrollbar-gutter:stable` también: reserva el carril para que un
+       formulario que crece, al añadir otro material, no dé un salto lateral
+       cuando aparezca la barra. */
+    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);max-height:82vh;overflow-y:auto;scrollbar-gutter:stable;box-shadow:0 12px 30px rgba(0,0,0,.25)}
     /* Standardized size tiers (scale with viewport via min(), never grow past
        that from content) — every popup uses one of these three instead of an
        ad-hoc per-modal pixel value. Content still picks the tier that fits it
@@ -850,7 +943,7 @@
        stretches to match whatever ancestor happens to be position:relative
        (that used to make it balloon huge in some places, thin in others).
        Caps to 40vw so it can't overflow a narrow/mobile viewport either. */
-    .inc-suggest-box{position:absolute;width:260px;max-width:40vw;max-height:280px;overflow-y:auto;overflow-x:hidden;z-index:1300;background:var(--card);border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
+    .inc-suggest-box{position:absolute;width:260px;max-width:40vw;max-height:280px;overflow-y:auto;overflow-x:hidden;z-index:var(--z-suggest);background:var(--card);border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
     .inc-suggest-hdr{padding:.3rem .7rem;font-size:.68rem;font-weight:700;color:var(--accent2);background:#EFF6FF;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #DBEAFE}
     /* ── EL CUADRO DE POSIBLE DUPLICADO ──────────────────────────────────────
        Dos columnas y una fila por campo, porque comparar dos entregas es leer
@@ -881,7 +974,7 @@
     .inc-suggest-item>span:not(.inc-tag):not(.inc-meta){flex:1 1 100px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .inc-suggest-item .inc-meta{font-size:.72rem;color:var(--muted);margin-left:auto;flex-shrink:0;max-width:100%}
     /* ── CONFIRM DIALOG ── */
-    .cconfirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;display:none;align-items:center;justify-content:center;padding:1rem}
+    .cconfirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:var(--z-confirm);display:none;align-items:center;justify-content:center;padding:1rem}
     .cconfirm-overlay.show{display:flex}
     .cconfirm-dialog{background:var(--card);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:100%;max-width:420px;overflow:hidden;animation:cconfirm-in .18s ease}
     @keyframes cconfirm-in{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
@@ -1003,6 +1096,36 @@
     .acct-btn.open{box-shadow:0 0 0 4px rgba(255,255,255,.16)}
     .acct-menu{display:none;position:absolute;right:0;top:calc(100% + 12px);background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.26);width:320px;max-width:calc(100vw - 24px);z-index:600;overflow:hidden;animation:acct-in .16s ease}
     .acct-menu.open{display:block}
+    /* ── EL MENÚ DEL AVATAR, ABIERTO: LAS TRES COSAS QUE PIDIÓ JOSE ─────────
+     *
+     *   "Este menú debe tener prioridad y posicionarse sobre todo lo demás, ya
+     *    que sólo se abre si damos clic en el avatar y eso significa que
+     *    queremos hacer algo ahí. Entonces al abrir el menú del usuario y hacer
+     *    hover y tenerlo abierto, las tarjetas de atrás no deben abrirse y
+     *    tampoco la app atrás debe moverse o hacer scroll (actualmente lo
+     *    hace)."
+     *
+     * Son tres, y las tres cuelgan de la misma clase en <html>, puesta al abrir
+     * y quitada al cerrar. Una sola llave para un solo estado: si una se
+     * apagara por su cuenta quedaría el menú delante con el mazo abriéndose
+     * debajo, que es medio arreglo.
+     *
+     * 1. LA PRIORIDAD SE LE DA A LA BARRA, NO AL MENÚ. El menú ya declara 600 y
+     *    no le sirve de nada: vive dentro de `.topbar`, que abre su propio
+     *    contexto de apilado, así que hacia fuera vale lo que valga la barra.
+     *    Subir ese 600 a 6000 no habría cambiado nada — y es lo primero que uno
+     *    intenta. Lo que hay que subir es la barra, y sólo mientras el menú
+     *    está abierto: ver --z-topbar-acct en la tabla de capas.
+     * 2. EL FONDO NO SE MUEVE: la misma receta que `html.modal-open`, en <html>
+     *    y no en <body>, por la razón que está escrita allí.
+     * 3. LAS TARJETAS DE ATRÁS NO REACCIONAN. `pointer-events:none`, no un
+     *    apagado en JS: el mazo se abre al pasar el ratón por encima, y
+     *    quitarle el ratón es exactamente lo que se quiere decir. De paso
+     *    tampoco se pueden pulsar, que es lo correcto — están detrás de algo
+     *    que alguien abrió a propósito. */
+    html.acct-open .topbar{z-index:var(--z-topbar-acct)}
+    html.acct-open{overflow:hidden}
+    html.acct-open .deck{pointer-events:none}
     @keyframes acct-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
     .acct-head{padding:1.15rem 1rem .9rem;text-align:center;border-bottom:1px solid var(--border);position:relative}
     /* La marca dentro del menú de la cuenta, en la esquina que Jose marcó.
@@ -1096,7 +1219,7 @@
     .sd-col-hdr{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6rem}
     [data-theme="dark"] .sd-col + .sd-col{border-color:var(--border)}
     /* ── MEDIA PREVIEW LIGHTBOX ── */
-    .media-preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1200;align-items:center;justify-content:center;padding:2rem 1rem}
+    .media-preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:var(--z-lightbox);align-items:center;justify-content:center;padding:2rem 1rem}
     .media-preview-overlay.show{display:flex}
     .media-preview-box{background:var(--card);border-radius:12px;overflow:hidden;width:100%;max-width:900px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4)}
     .media-preview-hdr{display:flex;justify-content:space-between;align-items:center;padding:.6rem .9rem;background:var(--navy);color:#fff;flex-shrink:0}
@@ -1161,10 +1284,85 @@
     /* Las dos celdas de dos líneas de Movements. La de arriba es por la que se
        encuentra la fila; la de abajo se lee después, y por eso va más pequeña y
        en gris — salvo el nombre del material, que es lo que la gente busca. */
-    td.mc-when, td.mc-what{white-space:nowrap;vertical-align:top}
+    td.mc-when, td.mc-what{vertical-align:top}
+    td.mc-when{white-space:nowrap}
     .mc-sub{font-size:.72rem;color:var(--muted);margin-top:.15rem}
-    .mc-main{font-weight:700;margin-top:.15rem;white-space:normal;
-      max-width:22ch;overflow-wrap:anywhere}
+    /* Sin `max-width:22ch`: ahora el ancho lo pone la COLUMNA, no la celda. Un
+       tope en ch dentro de una columna de ancho fijo son dos topes discutiendo,
+       y gana el más pequeño de los dos sin que nadie lo haya decidido. */
+    .mc-main{font-weight:700;margin-top:.15rem;white-space:normal;overflow-wrap:anywhere}
+
+    /* ══ LOS ANCHOS DE LA TABLA DE MOVIMIENTOS ═══════════════════════════════
+       Jose, 2026-09-22, con dos vídeos: *"quiero quitar todos los saltos que da
+       la pantalla y dejar cada cosa en su propio lugar sin que tengan que
+       moverse todas. Cuando cambio de categoría, todas las columnas se mueven
+       horizontalmente, porque no tienen su espacio fijo sino que están
+       condicionadas a la cantidad de caracteres y tamaño de letra."*
+
+       Su diagnóstico es exacto. Una `<table>` normal reparte el ancho según lo
+       que haya DENTRO, así que la misma columna cambia de sitio según qué filas
+       estén filtradas. Medido sobre sus propios fotogramas, la columna Project
+       empezaba en x=476 con un filtro, en x=1318 con otro y en x=415 con un
+       tercero: casi 900px de diferencia por mirar otra categoría. No se puede
+       aprender dónde mirar en una tabla así.
+
+       `table-layout:fixed` es lo que corta la relación entre el contenido y el
+       ancho. A partir de ahí, el reparto es una decisión y no un accidente:
+
+         · CADA COLUMNA LLEVA SU ANCHO, en píxeles, colgado de su propia clase
+           (`mc-<key>`) y no de su posición. Eso importa porque las columnas se
+           pueden reordenar y esconder: un ancho por posición se rompería en
+           cuanto alguien tocara "⚙ Columns".
+         · UNA SOLA COLUMNA SIN ANCHO — `mc-what`, el material. En reparto fijo,
+           la que no declara ancho se queda con TODO lo que sobre, así que es la
+           única que se mueve al esconder o enseñar otra. El nombre del material
+           es lo que más varía de largo y lo que más se lee: es la que tiene que
+           llevarse el hueco.
+         · `min-width` EN LA TABLA, no en las celdas: en reparto fijo un
+           `min-width` de celda no se respeta. Es lo que garantiza que el
+           material nunca se quede sin sitio en una pantalla estrecha; por
+           debajo de eso la tabla se desplaza de lado, que es lo que ya hacía.
+
+       LOS NÚMEROS SON MEDIDOS, no elegidos: se dibujó la tabla con datos del
+       almacén de Jose bajo siete filtros distintos y se tomó el ancho máximo que
+       alcanzaba cada columna. Ver tools/test-columnas.js, que vuelve a medir y
+       falla si alguna columna se mueve al cambiar de filtro.
+
+       ── EL MÍNIMO DE LA TABLA SE CALCULA, NO SE ESCRIBE (v12.12) ────────────
+
+       Aquí había `min-width:1300px` —un número escrito a mano— y los anchos de
+       cada columna estaban en este bloque de CSS. Las dos cosas eran un fallo,
+       y Jose lo encontró en producción tres días después: en su copia de OX
+       tenía ENSEÑADA la columna Supplier, y con ella la suma de los anchos
+       declarados daba 1296px contra un mínimo de 1300. Al material —la única
+       columna elástica— le quedaban **CUATRO PÍXELES**, así que el nombre se
+       dibujaba UNA LETRA POR RENGLÓN y las filas pasaban de 83px a 428px.
+
+       Un número fijo no puede saber cuántas columnas hay a la vista, y eso lo
+       decide cada persona con el ojo de "⚙ Columns". Así que ahora:
+
+         · LOS ANCHOS VIVEN EN `MOV_COLS`, al lado de la columna a la que
+           pertenecen, y se emiten en el `<th>`. Un solo sitio. Antes estaban
+           aquí y la lista de columnas estaba en el JavaScript, así que añadir
+           una columna en un sitio y olvidar el otro daba exactamente este
+           fallo, en silencio.
+         · EL MÍNIMO DE LA TABLA SE RECALCULA EN CADA DIBUJADO:
+
+               mínimo = suma de los anchos que SE VEN + _MOV_MIN_WHAT
+
+       Con eso el material nunca baja de su mínimo: ni enseñando las dieciséis
+       columnas, ni con el editor abierto, ni en la ventana de un teléfono.
+       Cuando no cabe, la tabla se desplaza de lado — que es lo correcto:
+       dieciséis columnas no caben en 960px, y una barra horizontal es mejor que
+       un texto que no se puede leer. */
+    #tableContainer table{table-layout:fixed;width:100%}
+    /* Y lo que no cabe SE PARTE, no se recorta. Es la misma regla que Jose fijó
+       para la tira de reservas: el final de un nombre es donde están la letra y
+       el número que lo distinguen, así que esconderlo con puntos suspensivos es
+       perder justo el dato. El comentario es la excepción y ya lo era: es texto
+       de una persona, puede ser larguísimo, y tiene su ayuda al pasar el ratón. */
+    #tableContainer td{overflow-wrap:anywhere}
+    #tableContainer td.mc-comment{max-width:none}
     .col-bar-right{margin-left:auto;display:inline-flex;align-items:center;gap:.4rem}
     /* Mismo alto, mismo ancho, mismo sitio: sólo cambia el color. */
     .btn.col-open{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -1526,7 +1724,7 @@
        top bar (500) and below every window it can launch (550, 1100, 1200,
        2000). The shield needs no change — it was reading the stack correctly;
        the stack was wrong. */
-    .morning-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:540;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .morning-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:var(--z-morning);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
     .morning-overlay.show{opacity:1;pointer-events:all}
     .morning-popup{background:var(--card);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);max-width:520px;width:95%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(24px);transition:transform .25s}
     .morning-overlay.show .morning-popup{transform:translateY(0)}
@@ -1683,7 +1881,7 @@
        cualquier problema de sitio. scrollbar-width:none porque el resto de la
        app ya oculta las suyas (ver html{scrollbar-width:none}) y una barra
        gris aquí partiría el borde redondeado de las tarjetas. */
-    .deck{position:fixed;right:22px;bottom:22px;z-index:399;display:flex;flex-direction:column;align-items:flex-end;max-width:min(400px,calc(100vw - 44px));padding:16px 12px 0 14px;
+    .deck{position:fixed;right:22px;bottom:22px;z-index:var(--z-deck);display:flex;flex-direction:column;align-items:flex-end;max-width:min(400px,calc(100vw - 44px));padding:16px 12px 0 14px;
           max-height:calc(66.6vh - 22px);overflow-y:auto;overflow-x:visible;
           scrollbar-width:none}
     .deck::-webkit-scrollbar{display:none}
@@ -1914,7 +2112,7 @@
     /* ── Phone/tablet: bell in the topbar instead of the hover deck ── */
     .cfg-bell{display:none;position:relative;background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;width:38px;height:34px;font-size:1rem;cursor:pointer;align-items:center;justify-content:center}
     .cfg-bell-count{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--navy)}
-    .cfg-bell-panel{display:none;position:fixed;top:60px;right:12px;left:12px;max-width:380px;margin-left:auto;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:420;max-height:70vh;overflow-y:auto}
+    .cfg-bell-panel{display:none;position:fixed;top:60px;right:12px;left:12px;max-width:380px;margin-left:auto;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:var(--z-bell);max-height:70vh;overflow-y:auto}
     .cfg-bell-panel.show{display:block}
     .cfg-bell-hdr{display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--text);position:sticky;top:0;background:var(--card)}
     .cfg-bell-hdr button{background:none;border:none;color:var(--muted);font-size:.95rem;cursor:pointer}
@@ -1931,7 +2129,7 @@
     }
     @media (max-width:640px){.deck{right:16px;max-width:calc(100vw - 32px)}.deck-card{--card-w:250px}.sys-card{--card-w:calc(100vw - 60px)}}
     /* Manual merge picker */
-    .app-splash{position:fixed;inset:0;z-index:2000;background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;transition:opacity .45s ease;padding:1.5rem}
+    .app-splash{position:fixed;inset:0;z-index:var(--z-fullscreen);background:var(--navy);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;transition:opacity .45s ease;padding:1.5rem}
     .app-splash.gone{opacity:0;pointer-events:none}
     .splash-mark{display:flex;align-items:center;gap:.6rem;font-size:1.7rem;font-weight:800;letter-spacing:.02em;text-align:center}
     .splash-logo{max-width:min(310px,68vw);max-height:96px;object-fit:contain;
@@ -2007,6 +2205,13 @@
     th.col-edit.col-dragging{opacity:.4}
     th.col-edit.col-drop{outline:2px dashed var(--accent);outline-offset:-3px}
     th.col-edit.col-off{opacity:.45}
+    /* LAS BLOQUEADAS SE VEN COMO UN BLOQUE, no como parte de lo que se reordena.
+       Sin esto se dibujaban idénticas a las demás, con asa incluida, así que
+       parecían arrastrables — y de hecho LO ERAN, porque `lock` sólo impedía
+       esconderlas. Ahora ni se mueven ni lo aparentan: fondo más oscuro, sin
+       asa, y el cursor de siempre en vez del de agarrar. */
+    th.col-edit.col-fija{cursor:default;background:rgba(0,0,0,.28)}
+    th.col-edit.col-fija .col-rename{cursor:text}
     .col-drag{opacity:.6;margin-right:.25rem;cursor:grab}
     .col-rename{width:118px;padding:.2rem .35rem;border:1px solid rgba(255,255,255,.35);border-radius:5px;background:rgba(255,255,255,.12);color:#fff;font-size:.72rem;font-family:inherit;font-weight:700}
     .col-rename:focus{outline:none;border-color:#fff;background:rgba(255,255,255,.2)}
@@ -2043,7 +2248,7 @@
       /* Por encima de todo lo que la app dibuja: el overlay está en 550, el
          cajón en 500, y el aviso de versión en 99999. Una ayuda que se lee
          detrás de la ventana que explica no sirve de nada. */
-      z-index:2147483000}
+      z-index:var(--z-tip)}
     /* `ready` la hace medible sin enseñarla: _tipPlace necesita su tamaño real
        antes de colocarla, y medir algo con display:none devuelve ceros. */
     #acTip.ready{visibility:visible}
@@ -2089,7 +2294,7 @@
       width:min(300px,90vw);text-align:left;
       opacity:0;visibility:hidden;
       transition:opacity .13s ease,transform .13s ease;transform:translateY(-4px);
-      z-index:2147483000}
+      z-index:var(--z-tip)}
     #acPerson.ready{visibility:visible}
     #acPerson.show{opacity:1;transform:translateY(0)}
     .ap-name,.ap-mail{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2325,7 +2530,7 @@
     [data-theme="dark"] .ai-field-row input,[data-theme="dark"] .ai-field-row select{background:#0F172A;color:var(--text)}
     /* Dark mode toggle button */
     /* ── TOAST NOTIFICATIONS ── */
-    #toastContainer{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;align-items:center;gap:.5rem;pointer-events:none}
+    #toastContainer{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);z-index:var(--z-toast);display:flex;flex-direction:column;align-items:center;gap:.5rem;pointer-events:none}
     .toast{background:var(--card);border-radius:10px;padding:.75rem 1.25rem;font-size:.84rem;font-weight:500;display:flex;align-items:flex-start;gap:.55rem;box-shadow:0 8px 32px rgba(0,0,0,.25);border-top:4px solid #94A3B8;min-width:300px;max-width:520px;pointer-events:all;animation:toastIn .25s ease;color:var(--text)}
     .toast.ok  {border-top-color:var(--green)}
     .toast.err {border-top-color:var(--red)}
@@ -2361,7 +2566,7 @@
        Y SE VA AL PULSARLO. Se queda seis segundos, que es lo que Jose pidió
        ("debería permanecer más tiempo sin desaparecer"), y si alguna vez
        estorba basta un clic. Un rato largo sin salida es peor que uno corto. */
-    #progWrap{position:fixed;left:1.25rem;bottom:1.25rem;z-index:9998;
+    #progWrap{position:fixed;left:1.25rem;bottom:1.25rem;z-index:var(--z-progress);
               cursor:pointer;
               display:none;align-items:center;gap:.6rem;
               background:var(--card);color:var(--text);
@@ -3480,8 +3685,16 @@
 </div>
 
 <!-- ══ EDIT MOVEMENT MODAL ════════════════════════════════════════════════════ -->
+<!-- modal-lg, LA MISMA CLASE QUE #moveOverlay, y eso es la mitad de la queja de
+     Jose del 2026-09-22: *"la ventana de Edit es muy pequeña incluso cuando la
+     pantalla es grande."* Lo era literalmente — .modal-md son 640px y la
+     ventana donde se CREÓ ese mismo movimiento usa .modal-lg, 760px. Los mismos
+     campos en 120px menos se apilan más alto, y por eso había que desplazar.
+     Dos formularios para el mismo objeto, con dos tamaños distintos.
+     Está previsto que esta ventana desaparezca y que Edit reabra la de Entry o
+     Exit (ver el backlog); mientras tanto, al menos miden lo mismo. -->
 <div class="overlay" id="editMovOverlay">
-  <div class="modal modal-md">
+  <div class="modal modal-lg">
     <div class="mhdr">
       <h3>✏️ Edit Movement</h3>
       <span id="editMovRowTag" style="font-size:.72rem;background:var(--border);padding:2px 10px;border-radius:10px;color:var(--muted);flex-shrink:0"></span>
@@ -4088,6 +4301,9 @@
 <script>
 // ── Global State ──────────────────────────────────────────────────────────────
 var movements   = [];
+/* Lo pone el servidor en cada carga: existencias en los estantes y CERO
+ * movimientos en el archivo, que es una mezcla imposible. Ver getInitialData. */
+var _archivoVacioConStock = false;
 var stockData   = {};  // pre-calculated by backend: { matId: {warehouseQty, siteQty, ...} }
 var config      = { projects:[], categories:[], suppliers:[], locations:[], trucks:[], minStock:{} };
 var currentMoveType = 'ENTRY';
@@ -4100,7 +4316,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.06';
+var APP_VERSION = '12.14';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -4112,7 +4328,7 @@ var APP_VERSION = '12.06';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '3c1d41ea';
+var APP_BUILD = '3bb713c7';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -4747,24 +4963,70 @@ var STOCK_COLS = [
 //
 // Las dos siguen siendo `lock:true`: no se pueden esconder. Un movimiento sin
 // tipo ni fecha, o sin nombre, no es una fila que sirva para nada.
+/* `w` es el ancho en píxeles, y está AQUÍ y no en el CSS a propósito: es dato de
+ * la columna, como su nombre o su candado. Mientras vivió en un bloque de CSS
+ * aparte, nada obligaba a que las dos listas dijeran lo mismo, y de ahí salió el
+ * fallo de la v12.11 —el mínimo de la tabla era un número escrito a mano que no
+ * sabía cuántas columnas había a la vista—. Ahora la suma se calcula de aquí.
+ *
+ * `what` es la ÚNICA sin `w`: es la elástica, se queda con lo que sobre, y su
+ * suelo es `_MOV_MIN_WHAT`.
+ *
+ * LOS NÚMEROS SON MEDIDOS, no elegidos. 112 y 160 se corrigieron al alza porque
+ * la prueba encontró que se salían: la insignia `⇄ TRANSFER` no cabía en 100px,
+ * y el correo más largo del almacén de Jose mide 135px, que con el relleno de la
+ * celda no entra en 140. */
 var MOV_COLS = [
-  { key:'when',     def:'Type / Date',     lock:true  },
-  { key:'what',     def:'Category / Name', lock:true  },
-  { key:'qty',      def:'Qty',         lock:true  },
-  { key:'unit',     def:'Unit',        lock:false },
-  { key:'po',       def:'PO#',         lock:false },
-  { key:'locFlow',  def:'Src→Dest',    lock:false },
-  { key:'rawLoc',   def:'Raw Loc',     lock:false },
-  { key:'gc',       def:'GC',          lock:false },
-  { key:'project',  def:'Project',     lock:false },
-  { key:'supplier', def:'Supplier',    lock:false },
-  { key:'resp',     def:'Received By', lock:false },
-  { key:'comment',  def:'Comments',    lock:false },
-  { key:'pm',       def:'PM',          lock:false },
-  { key:'sysDate',  def:'Sys Date',    lock:false },
-  { key:'user',     def:'User',        lock:false },
-  { key:'doc',      def:'Doc',         lock:false }
+  { key:'when',     def:'Type / Date',     lock:true,  w:112 },
+  { key:'what',     def:'Category / Name', lock:true          },  // la elástica
+  { key:'qty',      def:'Qty',         lock:true,  w:58  },
+  { key:'unit',     def:'Unit',        lock:false, w:58  },
+  { key:'po',       def:'PO#',         lock:false, w:86  },
+  { key:'locFlow',  def:'Src→Dest',    lock:false, w:150 },
+  { key:'rawLoc',   def:'Raw Loc',     lock:false, w:120 },
+  { key:'gc',       def:'GC',          lock:false, w:110 },
+  { key:'project',  def:'Project',     lock:false, w:140 },
+  { key:'supplier', def:'Supplier',    lock:false, w:120 },
+  { key:'resp',     def:'Received By', lock:false, w:110 },
+  { key:'comment',  def:'Comments',    lock:false, w:150 },
+  { key:'pm',       def:'PM',          lock:false, w:110 },
+  { key:'sysDate',  def:'Sys Date',    lock:false, w:112 },
+  { key:'user',     def:'User',        lock:false, w:160 },
+  { key:'doc',      def:'Doc',         lock:false, w:76  }
 ];
+
+/* EL SUELO DEL MATERIAL, Y ESTÁ MEDIDO.
+ *
+ * 187px es lo que mide la insignia de categoría más larga del almacén de Jose
+ * —`IGU (ISOLATED GLASS UNIT)`— con su relleno. Es una píldora que no se parte,
+ * así que por debajo de eso se sale de su celda: medidos 15 desbordes de 3px
+ * con la columna a 184px, que es justo lo que le tocaba en la v12.11 con las
+ * columnas de fábrica en una pantalla de 1600. 192 deja cinco píxeles de margen
+ * para que la misma letra dibujada en otra máquina no lo tire.
+ *
+ * OJO A LA DEPENDENCIA: este número lo fija el nombre de categoría MÁS LARGO, y
+ * eso es dato del cliente, no nuestro. Un cliente con una categoría más larga
+ * volvería a desbordar. La solución de verdad es el nombre corto de categoría
+ * que Jose aprobó el 2026-09-22 (ver BACKLOG, punto C); cuando exista, este
+ * suelo puede bajar y hay que volver a medirlo, no adivinarlo. */
+var _MOV_MIN_WHAT = 192;
+
+/* LO QUE MIDE UNA CABECERA EN MODO EDICIÓN, medido y no elegido: el asa `⋮⋮`,
+ * el campo de nombre (`.col-rename`, 118px), el ojo o el candado, los huecos
+ * entre ellos y el relleno de la celda.
+ *
+ * El umbral medido es 178, y sale de un detalle que no se ve leyendo: una
+ * columna ESCONDIDA dibuja 🚫 en vez de 👁, y 🚫 es dos píxeles más ancho. Con
+ * 176 las cinco escondidas de fábrica se salían de su celda por un píxel y las
+ * otras once estaban bien — o sea que probar con una columna cualquiera daba
+ * verde. 184 deja seis de margen para otra máquina, y se queda por debajo de
+ * `_MOV_MIN_WHAT` (192), que es lo que hace que a la columna elástica, que en
+ * edición no lleva ancho, también le quepan sus mandos.
+ *
+ * Lo vigila tools/test-columnas.js, que abre el editor y comprueba que CADA ojo
+ * cae dentro de su celda por los cuatro lados — no que el botón exista, que ya
+ * existía mientras Jose no podía pulsarlo. */
+var _COL_EDIT_MIN = 184;
 
 var STOCK_COL_TIPS = {
   levels:       'Everything this material is accounted for as today, in one bar: ' +
@@ -4815,7 +5077,16 @@ var COL_TABLES = {
     // La columna de acciones ya NO va y viene: aparecía y desaparecía con el
     // modo, y eso era justo lo que hacía saltar la tabla al pulsar un botón.
     // Ahora está siempre para quien puede usarla, y para nadie más.
-    tail: function(){ return _movCanAct() ? '<th></th>' : ''; },
+    // CON ANCHO. Sin él era la segunda columna elástica de la tabla, y en
+    // reparto fijo las que no declaran ancho se reparten el hueco A PARTES
+    // IGUALES: el nombre del material se quedaba con la mitad de lo que le
+    // tocaba (100px medidos, para nombres de veinte letras) por culpa de una
+    // columna que sólo lleva dos botones.
+    tail: function(){ return _movCanAct() ? '<th style="width:44px"></th>' : ''; },
+    // El suelo de la columna elástica. Su presencia es lo que dice
+    // "esta tabla reparte en fijo y calcula su mínimo"; Stock no lo declara
+    // porque reparte por contenido y no tiene columna elástica.
+    minWhat: _MOV_MIN_WHAT,
     refresh: function(){ renderMovements(); }                             // rebuilds its own header
   }
 };
@@ -4873,7 +5144,30 @@ function _colOrder(t){
   // on to one that no longer exists.
   var out = saved.filter(function(k){ return known[k]; });
   _defaultColOrder(t).forEach(function(k){ if (out.indexOf(k) === -1) out.push(k); });
-  return out;
+
+  /* LAS BLOQUEADAS VAN DELANTE, Y EN SU ORDEN DE FÁBRICA (v12.13).
+   *
+   * Jose: *"tampoco se debería poder cambiar o mover… deben tener un lugar
+   * específico al ser mostradas."* `lock` significaba sólo "no se puede
+   * esconder": la columna seguía siendo arrastrable, así que Type/Date o
+   * Category/Name podían acabar en cualquier sitio. Ahora significa las dos
+   * cosas, y eso obliga a normalizar también el orden que la gente ya tiene
+   * guardado — si no, a quien hubiera movido una bloqueada le quedaría un orden
+   * que la app ya no le deja reproducir, y el editor pelearía con su propio
+   * guardado en cada dibujado.
+   *
+   * CONSECUENCIA, dicha en voz alta: a quien hubiera arrastrado Type/Date o
+   * Category/Name a otro sitio, le vuelven al principio. Es intencionado —son
+   * lo que un movimiento ES— pero es un cambio que esa persona no pidió. */
+  var fijas = [], libres = [];
+  out.forEach(function(k){
+    var c = _colDef(t, k);
+    (c && c.lock ? fijas : libres).push(k);
+  });
+  fijas.sort(function(a, b){
+    return _defaultColOrder(t).indexOf(a) - _defaultColOrder(t).indexOf(b);
+  });
+  return fijas.concat(libres);
 }
 
 /* UNA COLUMNA DONDE TODAS LAS FILAS DICEN LO MISMO NO ES INFORMACIÓN, ES MARGEN.
@@ -5031,22 +5325,52 @@ function _colHeadRowHtml(t){
     if (!c) return;
     if (hidden[key] && !editing) return;           // gone entirely until edit mode
 
+    var anchoAttr = c.w ? ' style="width:' + c.w + 'px"' : '';
+
     if (editing){
-      html += '<th class="' + cfg.prefix + key + (hidden[key] ? ' col-off' : '') + ' col-edit" ' +
-              'draggable="true" data-col="' + key + '">' +
-        '<span class="col-drag" title="Drag to move">⋮⋮</span>' +
+      /* EN EDICIÓN LA COLUMNA NO MIDE LO QUE MIDE SU DATO, SINO LO QUE MIDEN SUS
+       * MANDOS (v12.13). Jose, con vídeo: *"no se muestra el botón del ojo al
+       * editar, o queda debajo de la columna de al lado."*
+       *
+       * Y era literal: la cabecera en edición lleva asa, campo de nombre y ojo
+       * —medidos, `_COL_EDIT_MIN`— dentro de una celda que en Qty o Unit mide
+       * 58px. Con `white-space:nowrap`, el ojo no se envolvía: se salía de la
+       * celda y la de al lado lo tapaba. O sea que el botón para esconder una
+       * columna era invisible justo en las columnas más estrechas.
+       *
+       * Ensanchar en edición mete barra horizontal mientras el panel está
+       * abierto. Es lo correcto: el editor es un modo aparte, con sus botones
+       * Save y Reset, y un mando que no se puede pulsar es peor que un
+       * desplazamiento. */
+      /* La elástica SIGUE SIENDO ELÁSTICA en edición: se le pone ancho sólo a
+       * la que ya lo tiene. Ponérselo a todas —lo primero que escribí— le daba
+       * a `what` un ancho de 176px y la sacaba del reparto, o sea que el nombre
+       * del material quedaba por DEBAJO de su suelo de 192 justo en el modo que
+       * acabo de arreglar. Lo cazó la prueba, no la lectura. Su suelo lo pone
+       * `minWhat` a través del mínimo de la tabla, y como 192 > 176 los mandos
+       * le caben de sobra; `test-columnas.js` exige que esa relación se cumpla. */
+      var fija = !!c.lock;
+      var anchoEdAttr = c.w ? ' style="width:' + Math.max(c.w, _COL_EDIT_MIN) + 'px"' : '';
+      html += '<th class="' + cfg.prefix + key + (hidden[key] ? ' col-off' : '') +
+              ' col-edit' + (fija ? ' col-fija' : '') + '"' + anchoEdAttr +
+              ' draggable="' + (fija ? 'false' : 'true') + '" data-col="' + key + '">' +
+        /* La bloqueada NO lleva asa: no se puede mover, y un asa es una promesa
+         * de que sí. Antes la llevaba y además funcionaba — `lock` sólo impedía
+         * esconderla, no moverla. */
+        (fija ? '' : '<span class="col-drag" title="Drag to move">⋮⋮</span>') +
         (isAdmin
           ? '<input class="col-rename" data-col="' + key + '" value="' + _escAttr(_colLabel(t, key)) + '" ' +
             'title="Name shown to everyone in this company">'
           : '<span class="col-name-ro">' + _he(_colLabel(t, key)) + '</span>') +
-        (c.lock
-          ? '<span class="col-lock" title="This column cannot be hidden">🔒</span>'
+        (fija
+          ? '<span class="col-lock tip" data-tip="Type, Name and Qty are what a movement IS — ' +
+            'a row without them says nothing. They cannot be hidden or moved.">🔒</span>'
           : '<button class="col-eye" data-col="' + key + '" title="' + (hidden[key] ? 'Show' : 'Hide') + '">' +
             (hidden[key] ? '🚫' : '👁') + '</button>') +
       '</th>';
     } else {
       var tip = cfg.tips[key];
-      html += '<th class="' + cfg.prefix + key + (tip ? ' tip' : '') + '"' +
+      html += '<th class="' + cfg.prefix + key + (tip ? ' tip' : '') + '"' + anchoAttr +
               (tip ? ' data-tip="' + _escAttr(tip) + '"' : '') + '>' +
               _he(_colLabel(t, key)) + '</th>';
     }
@@ -5054,10 +5378,40 @@ function _colHeadRowHtml(t){
   return html + cfg.tail();
 }
 
+/* El mínimo de la tabla, calculado de la cabecera que se acaba de construir.
+ *
+ * Se suman los `width:Npx` del HTML en lugar de recorrer otra vez MOV_COLS, y
+ * es a propósito: así entran también los anchos de la casilla de selección y de
+ * la columna de acciones, que los pone `lead()`/`tail()` y no están en la lista
+ * de columnas. Recorrer la lista los habría dejado fuera —76px— y el material
+ * habría vuelto a quedarse corto, que es EXACTAMENTE la forma del fallo que
+ * esto arregla: dos listas que tienen que decir lo mismo y nada que lo obligue. */
+function _anchoDeclarado(html){
+  var suma = 0, re = /width:(\d+)px/g, m;
+  while ((m = re.exec(html))) suma += Number(m[1]);
+  return suma;
+}
+
+/* Se llama desde LOS DOS sitios que construyen la cabecera: `renderColHead`, y
+ * `renderMovements`, que se dibuja la tabla entera de una pieza y por eso no
+ * pasa por el otro. Que sean dos caminos es justo la forma de fallo que más
+ * veces ha aparecido en este proyecto —una conducta escrita para un camino y
+ * nunca enchufada en los demás—, así que la regla vive en una sola función y
+ * `tools/test-columnas.js` mide los dos caminos por separado. */
+function _fijarMinTabla(t, headHtml){
+  var cfg = _colCfg(t);
+  if (!cfg.minWhat) return;                 // Stock reparte por contenido
+  var row = document.getElementById(cfg.head);
+  var tabla = row && row.closest('table');
+  if (tabla) tabla.style.minWidth = (_anchoDeclarado(headHtml) + cfg.minWhat) + 'px';
+}
+
 function renderColHead(t){
   var row = document.getElementById(_colCfg(t).head);
   if (!row) return;
-  row.innerHTML = _colHeadRowHtml(t);
+  var html = _colHeadRowHtml(t);
+  row.innerHTML = html;
+  _fijarMinTabla(t, html);
   if (_colEdit[t]) _wireColEdit(t);
 }
 
@@ -5149,7 +5503,14 @@ function resetColEdit(t){
 var _colDragKey = null;
 function _wireColEdit(t){
   var cfg = _colCfg(t);
-  document.querySelectorAll('#' + cfg.head + ' th.col-edit').forEach(function(th){
+  /* NI SE ARRASTRAN NI SE SUELTA NADA ENCIMA.
+   *
+   * Quitarles el asa no basta: `draggable` es del elemento, no del asa, así que
+   * una bloqueada sin asa se seguiría arrastrando agarrándola por el nombre. Y
+   * si además se pudiera SOLTAR una libre encima, una columna cualquiera se
+   * colaría entre las tres fijas y el bloque dejaría de ser un bloque.
+   * Por eso este selector excluye `.col-fija` en lugar de filtrar dentro. */
+  document.querySelectorAll('#' + cfg.head + ' th.col-edit:not(.col-fija)').forEach(function(th){
     th.addEventListener('dragstart', function(e){
       _colDragKey = th.getAttribute('data-col');
       th.classList.add('col-dragging');
@@ -7287,8 +7648,29 @@ function renderMovements(){
   // took the column editor off screen with it. The message is a row now, so the
   // headings stay put whatever the filters match.
   if (!total){
-    rows = '<tr><td colspan="'+span+'"><div class="empty-state"><div class="empty-icon">📋</div>'+
-           '<p>No movements match your filters.</p></div></td></tr>';
+    /* DOS VACÍOS QUE NO SON EL MISMO VACÍO.
+     *
+     * "No movements match your filters" es la respuesta correcta cuando un
+     * filtro no encuentra nada. El 26 de septiembre de 2026 fue también la
+     * respuesta a que el trabajo nocturno hubiera BORRADO el archivo entero, y
+     * eso es lo que hizo que el desastre pasara catorce horas inadvertido: la
+     * app se veía normal.
+     *
+     * Existencias sin un solo movimiento es imposible —cada unidad de un estante
+     * llegó por una entrada, y esa entrada es una fila del archivo—, así que
+     * cuando el servidor dice que se da esa mezcla, esta tabla deja de disimular. */
+    rows = _archivoVacioConStock
+      ? '<tr><td colspan="'+span+'"><div class="empty-state"><div class="empty-icon">🚨</div>' +
+        '<p><b>The movement history is empty, but the warehouse is not.</b></p>' +
+        '<p>That cannot happen on its own — every unit on a shelf got there ' +
+        'through an entry, and every entry is a row in the archive. Your ' +
+        'movements are almost certainly still in the backup made at 2am.</p>' +
+        '<p>Do not add movements and do not rebuild anything yet. Open your ' +
+        'spreadsheet and check the <b>MASTER_ARCHIVE_V3</b> tab, then the ' +
+        '<b>ERROR_LOG</b> tab for what the nightly job reported.</p>' +
+        '</div></td></tr>'
+      : '<tr><td colspan="'+span+'"><div class="empty-state"><div class="empty-icon">📋</div>'+
+        '<p>No movements match your filters.</p></div></td></tr>';
   }
 
   var foot = total
@@ -7301,8 +7683,14 @@ function renderMovements(){
     : '';
 
   var tc = document.getElementById('tableContainer');
-  tc.innerHTML = '<table><thead><tr id="movHeadRow">' + _colHeadRowHtml('mov') + '</tr></thead>' +
+  var headHtml = _colHeadRowHtml('mov');
+  tc.innerHTML = '<table><thead><tr id="movHeadRow">' + headHtml + '</tr></thead>' +
                  '<tbody>' + rows + '</tbody>' + foot + '</table>' + loadMoreBtn;
+
+  // El mínimo de la tabla depende de QUÉ columnas se están viendo, y eso cambia
+  // en cada dibujado: con el ojo de "⚙ Columns", con el editor abierto (que las
+  // enseña todas) y con el filtro de categoría (que esconde la suya).
+  _fijarMinTabla('mov', headHtml);
 
   // The header is rebuilt with the table, so its drag/hide/rename handlers have
   // to be attached again each time.
@@ -16744,6 +17132,14 @@ function toggleReservasTira(){
   if (rows) rows.hidden = !_resvAbierta;
   var btn = strip.querySelector('.resv-toggle');
   if (btn) btn.setAttribute('aria-expanded', _resvAbierta ? 'true' : 'false');
+  /* Y EL TEXTO, QUE ERA EL FALLO. Jose, 2026-09-22: *"'click to hide' está
+   * siempre fijo, aun cuando está escondido."* Cierto, y el motivo es que esta
+   * función cambia clases y el atributo `hidden` sobre el DOM que ya está
+   * pintado — nunca volvía a pasar por el sitio donde se decide ese verbo, que
+   * está en _reservasTiraHtml. O sea que la frase decía la verdad exactamente
+   * una vez: al cargar la página. */
+  var verbo = document.getElementById('resvHintToggle');
+  if (verbo) verbo.textContent = '· ' + (_resvAbierta ? 'click to hide' : 'click to show');
 }
 
 /* CUÁNTO OCUPA UNA LETRA, MEDIDO. 8,5px a .76rem en negrita y mayúsculas, que
@@ -16824,21 +17220,48 @@ function _reservasTiraHtml(){
         res.vacias + ' holding nothing</button>'
     : '';
 
+  /* LA CABECERA, REORDENADA POR JOSE EL 2026-09-22.
+   *
+   * Él la escribió así: *"sería bueno que diga: 🔒 Reserved — 441 units · 8
+   * reservations · held across 8 racks · 'i' (nothing here can leave the
+   * warehouse until it is released) · click to hide/show"*. Dos cosas suyas y
+   * dos mías encima:
+   *
+   *   · LOS NÚMEROS PRIMERO, seguidos, sin la frase larga en medio. Es lo que
+   *     se lee de un vistazo, y antes iba partido por una explicación.
+   *   · LA EXPLICACIÓN A UNA ⓘ. Esa frase se lee una vez en la vida y ocupaba
+   *     media cabecera todos los días. Se usa la ⓘ que la app ya tiene
+   *     (.info-ic .tip), no una letra suelta: inventar un icono nuevo para
+   *     esto sería añadir una convención donde ya había una.
+   *   · "click to hide/show" NO: una cosa O la otra, según cómo esté. Ver
+   *     toggleReservasTira, que es donde estaba el fallo que él encontró.
+   *   · Y "N hold nothing" SE QUEDA, aparte y en color: es lo único de esta
+   *     cabecera sobre lo que se puede actuar, y en su formato desaparecía. */
+  var noRetienen = res.vacias
+    ? '<span class="resv-hint-ojo">· ' + res.vacias + ' hold' +
+        (res.vacias === 1 ? 's' : '') + ' nothing</span>'
+    : '';
+
   return '<div class="resv-strip' + (_resvAbierta ? ' abierta' : '') + '">' +
            '<div class="resv-strip-hdr">' +
              '<button class="resv-toggle" data-action="toggle-resv" ' +
                'aria-expanded="' + (_resvAbierta ? 'true' : 'false') + '">' +
                '<span class="resv-caret">▸</span>' +
                '<span>🔒 Reserved — ' + res.unidades.toLocaleString() +
-                 ' unit' + (res.unidades === 1 ? '' : 's') + ' held across ' + res.estantes +
-                 ' rack' + (res.estantes === 1 ? '' : 's') + '</span>' +
-               '<span class="resv-hint">nothing here can leave the warehouse until it is ' +
-                 'released · ' + res.n + ' reservation' + (res.n === 1 ? '' : 's') +
-                 (res.vacias ? ' · ' + res.vacias + ' hold' + (res.vacias === 1 ? 's' : '') +
-                               ' nothing' : '') +
-                 ' · ' + (_resvAbierta ? 'click to hide' : 'click to see them') +
-               '</span>' +
-             '</button>' + limpiar +
+                 ' unit' + (res.unidades === 1 ? '' : 's') + ' · ' +
+                 res.n + ' reservation' + (res.n === 1 ? '' : 's') + ' · in ' +
+                 res.estantes + ' rack' + (res.estantes === 1 ? '' : 's') + '</span>' +
+               noRetienen +
+               // El id existe para poder cambiar SÓLO estas dos palabras al
+               // plegar y desplegar, sin repintar el mapa entero por un verbo.
+               '<span class="resv-hint" id="resvHintToggle">· ' +
+                 (_resvAbierta ? 'click to hide' : 'click to show') + '</span>' +
+             '</button>' +
+             // Fuera del botón a propósito: la ⓘ es enfocable, y un elemento
+             // enfocable dentro de un <button> no es HTML válido.
+             '<span class="info-ic tip resv-info" tabindex="0" data-tip="' +
+               _escAttr('Nothing here can leave the warehouse until it is released.') +
+             '">i</span>' + limpiar +
            '</div>' +
            '<div class="resv-rows"' + (_resvAbierta ? '' : ' hidden') + '>' + filas + '</div>' +
          '</div>';
@@ -20955,6 +21378,11 @@ function _loadCache() {
 
 function _applyData(data) {
   movements          = data.movements          || [];
+  /* EL CANARIO DEL ARCHIVO. Ver el comentario del servidor, en getInitialData.
+   * Va en su propia variable y NO se deduce aquí a partir de `movements` y
+   * `stockData`: la caché de este navegador puede traer movimientos de antes y
+   * taparía justo el caso que hay que ver. Lo decide quien lee la hoja. */
+  _archivoVacioConStock = !!data.archiveVacioConStock;
   stockData          = data.stock              || {};
   config             = data.config             || config;
   userRole           = data.userRole           || 'WAREHOUSE';
@@ -22310,6 +22738,10 @@ function toggleAccountMenu(e){
   if (!menu) return;
   var open = menu.classList.toggle('open');
   if (btn) btn.classList.toggle('open', open);
+  // Una clase en <html> y las tres cosas de Jose caen juntas: la barra sube por
+  // encima del mazo, el fondo deja de moverse, y las tarjetas de atrás dejan de
+  // responder al ratón. Ver el bloque `html.acct-open` en el CSS.
+  document.documentElement.classList.toggle('acct-open', open);
   if (open){
     // Who else is online is only worth asking about while the menu is open.
     google.script.run
@@ -22324,6 +22756,11 @@ function closeAccountMenu(){
   var btn  = document.getElementById('acctBtn');
   if (menu) menu.classList.remove('open');
   if (btn)  btn.classList.remove('open');
+  // Se quita SIEMPRE, incluso si el menú ya estaba cerrado. Esta función es la
+  // que corre al pulsar fuera y al pulsar Escape, y dejarse la clase puesta
+  // significaría la página sin poder moverse y el mazo sin ratón, sin nada
+  // abierto que lo explique — el peor fallo posible de los tres.
+  document.documentElement.classList.remove('acct-open');
 }
 
 // Kept because older buttons still call it by this name.
