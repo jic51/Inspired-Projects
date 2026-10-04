@@ -4,6 +4,87 @@
 //         RETURN logic, custom on-demand notifications, WASTE-only auto-email
 // ════════════════════════════════════════════════════════════════════════════════
 
+// ╔══ ÍNDICE ══ generado por tools/test-indice.js — no editar a mano ══════════╗
+//
+//  Las 68 secciones de este archivo, en el orden en que están.
+//  Para saltar a una: Ctrl+F con su texto, tal cual aparece aquí.
+//
+//  NO SE EDITA A MANO. Lo genera (y lo comprueba) tools/test-indice.js a
+//  partir de las propias cabeceras del archivo — un índice escrito a mano es
+//  otra lista que tiene que coincidir con algo sin que nada lo obligue, y de
+//  esas este código ya se ha cazado dos.
+//
+//   1  THE `#.png` ON THE END IS LOAD-BEARING. DO NOT TIDY IT AWAY.
+//   2  UNA SOLA CARPETA MAESTRA
+//   3  ROUTING
+//   4  PRIVATE DOCUMENT ACCESS
+//   5  GOOGLE SIGN-IN (hybrid, for users outside the company's Workspace)
+//   6  PAID ADD-ON: GMAIL DELIVERY SCANNER
+//   7  THE AI KEY, SET FROM INSIDE THE APP
+//   8  RATE LIMITING
+//   9  AUTH
+//  10  AUTHORIZATION GATE
+//  11  PER-INSTALLATION PERMISSIONS
+//  12  CONFIG LOADER
+//  13  TEXT THAT STAYS TEXT
+//  14  INITIAL DATA
+//  15  STOCK CALCULATION
+//  16  PROCESS MOVEMENT
+//  17  BATCH MOVEMENT ENGINE
+//  18  THE STOCK LOCK
+//  19  ADD MULTI-ENTRY
+//  20  MULTI-MATERIAL EXIT
+//  21  FRESH STOCK QUERY (reads Archive directly, no cache)
+//  22  PACKS: HOW MANY UNITS COME IN A BOX
+//  23  ARCHIVING OLD MOVEMENTS
+//  24  THE TRASH
+//  25  AUTOMATIC BACKUP
+//  26  HOW FULL IS THE SPREADSHEET
+//  27  CHECK-IN — CATCH A STUCK CUSTOMER BEFORE THEY QUIETLY LEAVE
+//  28  REFRESH DERIVED SHEETS
+//  29  RESERVAS
+//  30  MATERIAL LOCKS
+//  31  PM DIRECTORY
+//  32  DOCUMENT UPLOAD
+//  33  RACK PHOTOS
+//  34  DUPLICATE MOVEMENT DETECTION
+//  35  ATTACH AN EXISTING DRIVE FILE
+//  36  MULTI-PHOTO NAMED DOCUMENT GROUPS
+//  37  ADMIN ACTIONS
+//  38  BULK IMPORT (CSV)
+//  39  NO TWO MOVEMENTS MAY SHARE A NAME
+//  40  GIVING EVERY EXISTING MOVEMENT A NAME
+//  41  AUDIT LOG
+//  42  WHAT THE SYSTEM DID ON ITS OWN
+//  43  ERROR LOG
+//  44  NOTIFICATIONS
+//  45  EXPORT
+//  46  CUSTOM MENU
+//  47  THE ACCEPT BUTTON
+//  48  BEGIN GENERATED LEGAL TEXT — node tools/sync-legal.js
+//  49  END GENERATED LEGAL TEXT
+//  50  PROGRAMMATIC DEPLOYMENT — ADVANCED / OWNER-ONLY
+//  51  INSTALLATION CHECK
+//  52  WHICH WAY AN ADJUSTMENT WENT
+//  53  PRESENCE / HEARTBEAT
+//  54  LOCKING
+//  55  USER MANAGEMENT
+//  56  SETTINGS / CONFIG MANAGEMENT
+//  57  COLUMN LABELS AND VISIBILITY
+//  58  COMPANY NAME, DOMAIN AND LOGO
+//  59  WHAT MAKES A LOCATION SAFE TO DELETE
+//  60  WHY ONLY CATEGORIES ARE REWRITTEN INTO THE ARCHIVE
+//  61  MATERIAL MANAGEMENT
+//  62  INCOMING MATERIALS
+//  63  APPLYING ONE FINDING
+//  64  READ AN EMAIL INTO EXPECTED DELIVERIES
+//  65  GMAIL SCANNER
+//  66  MODIFY MOVEMENT
+//  67  MONITORED MATERIALS
+//  68  AI DOCUMENT EXTRACTION
+//
+// ╚════════════════════════════════════════════════════════════════════════════╝
+
 // ⚠️ NAMING RULE — THIS IS A SECURITY BOUNDARY, NOT A STYLE CHOICE ⚠️
 //
 // A helper that must NOT be callable from a browser has to END with an
@@ -46,7 +127,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '12.26';
+var APP_VERSION = '12.32';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -58,7 +139,7 @@ var APP_VERSION = '12.26';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '8093f39d';
+var APP_BUILD = '2814a571';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -1374,9 +1455,25 @@ function serverSecret_() {
 
 // Must EXACTLY match the "Authorized redirect URI" registered in Google Cloud.
 // We read it from a Script Property so it can't drift from what getUrl() guesses
-// (the domain /a/macros/ form vs the /macros/s/ form). Falls back to getUrl().
+// (the domain /a/macros/ form vs the /macros/s/ form).
+//
+/* Y SI NO ESTÁ, LA GUARDADA ANTES QUE LA ADIVINADA — lo encontró el contador de
+ * puertas de test-url-de-la-app el 2026-10-04, buscando el fallo de otra
+ * función. Esta decía "falls back to getUrl()", y en una hoja COPIADA de otra ya
+ * publicada getUrl() devuelve la dirección del script ORIGINAL. O sea: en una
+ * copia sin OAUTH_REDIRECT_URI puesta, el inicio de sesión con Google mandaba a
+ * la gente de vuelta a la app de OTRO, y el fallo que sale es un
+ * redirect_uri_mismatch, que no se parece en nada a su causa.
+ *
+ * `savedWebAppUrl_()` existe veinte líneas más arriba y esta función no la
+ * llamaba: el ayudante escrito y el camino sin conectar, otra vez.
+ *
+ * El orden importa y es deliberado. OAUTH_REDIRECT_URI sigue ganando porque
+ * puede diferir a propósito —un proxy, un intermediario—; después la dirección
+ * que el dueño confirmó; y sólo al final la suposición de Google. */
 function redirectUri_() {
   return PropertiesService.getScriptProperties().getProperty('OAUTH_REDIRECT_URI')
+      || savedWebAppUrl_()
       || ScriptApp.getService().getUrl();
 }
 
@@ -2852,7 +2949,7 @@ function processMovementInner_(ss, action, data, auth) {
   if (action === 'setBackupEnabled') return setBackupEnabled(data, auth);
   if (action === 'runBackupOnDemand') return runBackupOnDemand(data, auth);
   if (action === 'logClientError')  return logClientError(data, auth);
-  if (action === 'loadOlderHistory') return loadOlderHistory(auth);
+  if (action === 'loadOlderHistory') return loadOlderHistory(auth, data);
   if (action === 'getSpaceUsage')   return getSpaceUsage(auth);
   if (action === 'getAiStatus')     return getAiStatus(auth);
   if (action === 'setAiKey')        return setAiKey(data, auth);
@@ -4385,6 +4482,39 @@ function archiveOldMovements(ss, opciones) {
     var cutoffDate   = new Date();
     cutoffDate.setMonth(cutoffDate.getMonth() - cutoffMonths);
 
+    /* ═══ EL SUELO: LO DE ESTE MES NO SE ARCHIVA NUNCA ════════════════════════
+     *
+     * Jose, 2026-10-01: *"el archivado no debe ser un problema para el usuario,
+     * es un problema para nosotros y para que la app sea más rápida, así que la
+     * app debe seguir mostrando los movimientos aunque estén archivados, o por
+     * lo menos mostrar los del último mes sin que el usuario deba pedirlo."*
+     *
+     * Con el corte en 6 meses esto ya se cumple por aritmética: nada de los
+     * últimos seis meses puede cruzar el corte. Pero se cumple POR CASUALIDAD —
+     * depende de un ajuste que el usuario puede bajar, y de que loadConfig
+     * devuelva lo que creemos. Lo que Jose pide no es un número grande, es una
+     * GARANTÍA, y una garantía que depende de una preferencia no es una
+     * garantía.
+     *
+     * Así que es una regla: pase lo que pase en los ajustes, los movimientos de
+     * los últimos 30 días se quedan en la lista reciente. Si alguien pone el
+     * corte en "1 mes" y hoy es día 2, lo de ayer sigue en pantalla.
+     *
+     * No se toca el ajuste del usuario ni se le corrige: se recorta la fecha de
+     * corte para ESTA corrida y el informe lo dice en voz alta. Un ajuste que la
+     * app ignora en silencio es peor que un ajuste que no se puede poner. */
+    var SUELO_DIAS = 30;
+    var suelo = new Date();
+    suelo.setDate(suelo.getDate() - SUELO_DIAS);
+    informe.sueloDias = SUELO_DIAS;
+    informe.sueloAplicado = (cutoffDate > suelo);
+    if (informe.sueloAplicado) {
+      anotar('Cutoff of ' + cutoffMonths + ' month(s) would archive movements from the ' +
+             'last ' + SUELO_DIAS + ' days. It will not: the last ' + SUELO_DIAS +
+             ' days always stay in the recent list.');
+      cutoffDate = suelo;
+    }
+
     // THIS SAID 20, AND 20 STOPPED BEING TRUE THE DAY THE PRICING COLUMNS WERE
     // ADDED. The rows are read at their real width — getDataRange() gives back
     // however many columns the sheet actually has — and were then written into
@@ -4598,8 +4728,28 @@ function archiveOldMovements(ss, opciones) {
       informe.quedariaEnHistoria = contarConDatos_(newHistory);
       return { status: 'dry-run', informe: informe };
     }
+    /* MIGAS DE PAN, Y NO SON DECORACIÓN.
+     *
+     * Jose, 2026-10-01: *"¿qué activa ese error? ¿qué pasa antes y después de
+     * ese error? Ahí está la clave, hay que ver antes, durante y después."*
+     *
+     * Tiene razón y llevaba tres incidentes sin poder contestarle, porque lo
+     * único que quedaba del fallo era el mensaje de Sheets: "los datos tienen 23
+     * y el rango 20". Ese mensaje no dice QUÉ HOJA, ni en qué paso, ni qué
+     * anchos tenía cada una. Sin eso no hay caso que investigar.
+     *
+     * Estas dos líneas dicen, JUSTO ANTES de cada escritura, a qué hoja se va a
+     * escribir, cuántas filas y de cuántas columnas, y de cuántas columnas es la
+     * hoja en ese preciso momento. Si la siguiente línea del registro es el
+     * error, ya sabemos cuál de las dos escrituras fue y con qué números. */
+    anotar('WRITE 1/2 → ' + history.getName() + ': ' + newHistory.length + ' row(s) × ' +
+           colCount + ' col(s) into a sheet that is ' + history.getMaxColumns() + ' wide.');
     escribirHojaCompleta_(history, newHistory, colCount);
+    anotar('WRITE 1/2 done.');
+    anotar('WRITE 2/2 → ' + archive.getName() + ': ' + newActive.length + ' row(s) × ' +
+           colCount + ' col(s) into a sheet that is ' + archive.getMaxColumns() + ' wide.');
     escribirHojaCompleta_(archive, newActive,  colCount);
+    anotar('WRITE 2/2 done.');
 
     /* ── GUARDA 2: volver a contar sobre la HOJA, no sobre la variable ───────
      * Lo de arriba comprueba la aritmética; esto comprueba que lo escrito llegó.
@@ -4608,12 +4758,59 @@ function archiveOldMovements(ss, opciones) {
     var quedanA = contarConDatos_(archive.getDataRange().getValues().slice(1));
     var quedanH = contarConDatos_(history.getDataRange().getValues().slice(1));
     if (quedanA + quedanH !== antes) {
-      var perdidaMsg = 'CHECK THIS NOW: the archive was written and the counts do ' +
-        'not add up. There were ' + antes + ' movements, now ' + (quedanA + quedanH) +
-        ' can be read (archive ' + quedanA + ', history ' + quedanH +
-        '). The backup made at 2am has all of them.';
+      /* ── Y SI FALTAN, SE DEVUELVEN. ───────────────────────────────────────
+       *
+       * Esta guarda DETECTABA la pérdida y no hacía nada con ella: escribía una
+       * línea en ERROR_LOG, mandaba un correo, y dejaba la hoja rota. Es lo que
+       * pasó las tres veces —26/09, 29/09 y 01/10—, y las tres veces Jose se
+       * enteró horas después y tuvo que restaurar a mano desde un backup.
+       *
+       * Darse cuenta de que acabas de perder mil filas y no devolverlas es casi
+       * peor que no darse cuenta: la información para repararlo ESTÁ AHÍ, en
+       * memoria, a dos líneas de distancia. `aData` y `hData` son las dos hojas
+       * tal como estaban antes de tocar nada, y siguen en el ámbito.
+       *
+       * Así que se devuelven. Sin preguntar y sin esperar a nadie.
+       *
+       * ESTO NO DEPENDE DE SABER POR QUÉ FALLÓ, y ésa es la razón de escribirlo
+       * así: llevo tres incidentes sin poder explicar el mecanismo, y mientras
+       * tanto la red tiene que sostener igual. Una reparación que sólo funciona
+       * cuando entiendes la causa no es una red, es una esperanza.
+       *
+       * EL ORDEN AL DESHACER ES EL CONTRARIO AL DE ESCRIBIR, y por el mismo
+       * motivo: primero se repone el archivo —la que perdió filas— porque es la
+       * que deja a alguien sin nada que ver si falla otra vez. Si la reposición
+       * falla, el correo lo dice y el backup de las 2 sigue estando.
+       *
+       * Y se vuelve a contar DESPUÉS de deshacer, para no prometer una
+       * reparación que tampoco llegó. */
+      var perdidaMsg = 'The archive write lost rows. There were ' + antes +
+        ' movements, only ' + (quedanA + quedanH) + ' could be read afterwards ' +
+        '(recent ' + quedanA + ', archived ' + quedanH + ').';
+      var reparado = false;
+      try {
+        escribirHojaCompleta_(archive, aData.slice(1), colCount);
+        escribirHojaCompleta_(history, hData.slice(1), colCount);
+        var trasA = contarConDatos_(archive.getDataRange().getValues().slice(1));
+        var trasH = contarConDatos_(history.getDataRange().getValues().slice(1));
+        reparado = (trasA + trasH === antes);
+        perdidaMsg += reparado
+          ? ' PUT BACK AUTOMATICALLY from memory — all ' + antes + ' are there again ' +
+            '(recent ' + trasA + ', archived ' + trasH + '). Nothing was archived ' +
+            'tonight; the job will try again. Nothing for you to do, but tell ' +
+            'support so the cause gets found.'
+          : ' COULD NOT BE PUT BACK — only ' + (trasA + trasH) + ' are readable now. ' +
+            'STOP: do not add movements and do not rebuild anything. Restore ' +
+            'MASTER_ARCHIVE_V3 and ARCHIVE_HISTORY from the 2am backup.';
+      } catch (re) {
+        perdidaMsg += ' PUTTING THEM BACK ALSO FAILED (' + re.message + '). STOP: ' +
+          'do not add movements and do not rebuild anything. Restore ' +
+          'MASTER_ARCHIVE_V3 and ARCHIVE_HISTORY from the 2am backup.';
+      }
       logError_(ss, 'ERROR', 'backend', 'archiveOldMovements', 'system', perdidaMsg, null, newRequestId_());
       avisarFalloDeArchivo_(ss, perdidaMsg);
+      // Se devuelve el estado real, no 'success': esta noche no se archivó nada.
+      return { status: reparado ? 'rolled-back' : 'lost', total: antes, informe: informe };
     }
 
     /* ── GUARDA 3: DEJAR EL ARCHIVO VACÍO NO ES UN ERROR, PERO HAY QUE DECIRLO ─
@@ -4640,7 +4837,20 @@ function archiveOldMovements(ss, opciones) {
       avisarFalloDeArchivo_(ss, vacioMsg);
     }
 
-    auditLog_(ss, 'ARCHIVE_RECONCILE', 'system', 'cutoff=' + cutoffMonths + 'mo',
+    /* LA VERSIÓN QUEDA ESCRITA EN CADA CORRIDA, y es la línea que habría
+     * ahorrado tres incidentes y dos semanas.
+     *
+     * El 01/10 a las 3:19 este trabajo falló con el mismo error del 26 y del 29.
+     * La pila decía `archiveOldMovements(Code:2148)` — y en la v12.14, que es la
+     * que puso las guardas, esa función está en la 4371 y ocupa unas 300 líneas,
+     * no las ~90 que caben antes de la 2170 donde estaba su disparador. O sea
+     * que LAS GUARDAS NO ESTABAN EN EL CÓDIGO QUE CORRIÓ: el trabajo nocturno
+     * llevaba semanas ejecutando una versión vieja mientras nosotros mirábamos
+     * la nueva.
+     *
+     * Nada en la app decía qué versión había corrido de noche. Ahora sí. */
+    auditLog_(ss, 'ARCHIVE_RECONCILE', 'system',
+      'v' + APP_VERSION + ' · cutoff=' + cutoffMonths + 'mo',
       toArchive.length + ' archived', toRestore.length + ' restored');
     return { status: 'success', archived: toArchive.length, restored: toRestore.length,
              total: antes, informe: informe };
@@ -4652,7 +4862,34 @@ function archiveOldMovements(ss, opciones) {
     informe.stack = String(e.stack || '').split('\n').slice(0, 6).join(' | ');
     anotar('THREW: ' + e.message);
     if (ensayo) return { status: 'error', informe: informe };
-    logError_(ss, 'ERROR', 'backend', 'archiveOldMovements', 'system', e.message, null, newRequestId_());
+
+    /* EL REGISTRO LLEVA AHORA EL CAMINO, NO SÓLO EL FINAL.
+     *
+     * Hasta aquí este catch guardaba `e.message` y nada más, y por eso tres
+     * incidentes seguidos dejaron la misma línea inútil: "los datos tienen 23 y
+     * el rango 20", sin decir qué hoja, en qué paso, ni con qué anchos.
+     *
+     * Ahora se guarda todo lo que `informe` fue anotando hasta el momento de
+     * reventar —los anchos de las dos hojas, el corte, cuántas filas iban a cada
+     * lado, cuál de las dos escrituras se intentó— y la pila con las líneas.
+     * Es exactamente el "antes, durante y después" que pidió Jose, y existe
+     * porque sin él la próxima vez tampoco sabríamos nada.
+     *
+     * Va en el campo de CONTEXTO, no pegado al mensaje: logError_ recorta el
+     * mensaje a 500 caracteres, y pegarlo ahí se habría comido el final — que es
+     * justo la parte que dice dónde murió. */
+    /* UN OBJETO, NO UNA CADENA, y por poco se me cuela: sanitizeErrorContext_
+     * empieza con `if (!obj || typeof obj !== 'object') return ''`, así que un
+     * texto suelto se habría descartado en silencio y este rastro no habría
+     * llegado nunca al registro. Habríamos vuelto a tener la misma línea inútil
+     * creyendo que esta vez sí decía algo. */
+    logError_(ss, 'ERROR', 'backend', 'archiveOldMovements', 'system', e.message, {
+      version: APP_VERSION,     // qué versión corrió DE VERDAD — ver ARCHIVE_RECONCILE
+      steps: informe.pasos.join('  →  ') || '(none)',
+      stack: informe.stack,
+      archiveWidth: informe.archivoAncho, historyWidth: informe.histAncho,
+      modelWidth:   informe.modeloAncho
+    }, newRequestId_());
     // ANTES SÓLO SE REGISTRABA. ERROR_LOG es una pestaña que nadie mira, y por
     // eso el desastre del 26 de septiembre estuvo catorce horas sin que nadie
     // lo supiera. Un trabajo que corre de noche y sin nadie delante tiene que
@@ -4733,6 +4970,13 @@ function archiveOldMovementsTrigger() {
   // archive rewrite on demand and burn the project's execution quota.
   requireOwnerContext_();
   setVerifiedAuth_({ role: 'ADMIN', email: 'system@scheduled-trigger', name: 'Scheduled trigger' });
+  /* ANTES DE NADA, para que conste aunque lo de abajo reviente en la primera
+   * línea. Es la diferencia entre "falló el archivado" y "falló el archivado de
+   * la v12.9 cuando creíamos tener la v12.14". */
+  try {
+    auditLog_(SpreadsheetApp.getActiveSpreadsheet(), 'ARCHIVE_START', 'system',
+              'nightly archive starting · v' + APP_VERSION, '', '');
+  } catch (e) {}
   archiveOldMovements(SpreadsheetApp.getActiveSpreadsheet());
 }
 
@@ -5791,17 +6035,52 @@ function sendDailyReportNow(auth) {
 // export ("Load older history"). Read-only in the UI — rowIdx here refers to
 // ARCHIVE_HISTORY's row, not MASTER_ARCHIVE_V3's, so it's tagged `archived: true`
 // and must never be sent to modifyMovement/updateDocument_.
-function loadOlderHistory(auth) {
+/* DE LO MÁS NUEVO HACIA ATRÁS, Y A TANDAS.
+ *
+ * Jose, 2026-10-01: *"lo que hace es cargar literalmente los movimientos más
+ * viejos... la app sólo carga 56 y luego no puede cargar más; debería ir
+ * cargando más y más cada vez que se apriete el botón, pero desde los más
+ * recientes a los más viejos."*
+ *
+ * Tenía razón en el fondo aunque el síntoma le engañó: la lista SÍ se pintaba
+ * de nuevo a viejo, pero el botón se traía ARCHIVE_HISTORY ENTERO de un golpe y
+ * después decía "ya está cargado". Con 56 filas eso parece que sólo sabe
+ * cargar 56; con 20.000 sería un viaje que no termina.
+ *
+ * Ahora se lee desde el FINAL de la hoja —que es donde están las más nuevas,
+ * porque el archivado escribe ordenado por fecha— y de 300 en 300. `desde` es
+ * cuántas se han traído ya, así que cada pulsación continúa donde se quedó.
+ *
+ * Y se devuelve `quedan`, que es lo que faltaba para que el botón pueda decir
+ * la verdad: "quedan 1.215 más" o "ya están todas". Un botón que no sabe si ha
+ * terminado obliga a la persona a adivinar, que es lo que pasó aquí.
+ *
+ * Se leen SÓLO las filas de la tanda, no la hoja entera: es lo que hace que
+ * esto siga funcionando el día que el histórico tenga años dentro. */
+var OLDER_HISTORY_PAGE = 300;
+
+function loadOlderHistory(auth, data) {
   auth = requireAuth_();   // any registered user; unauthenticated callers are refused
   var seeCosts = canSeeCosts_(auth);
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var history = ensureArchiveHistorySheet_(ss);
-  var data    = history.getDataRange().getValues();
+
+  var ultima = history.getLastRow();
+  var hay    = Math.max(0, ultima - 1);              // sin la cabecera
+  var desde  = Math.max(0, Number(data && data.desde) || 0);
+  if (desde >= hay) return { items: [], total: hay, quedan: 0 };
+
+  var cuantas  = Math.min(OLDER_HISTORY_PAGE, hay - desde);
+  // La tanda, contada desde el final: las `desde` últimas ya se mandaron.
+  var primera  = ultima - desde - cuantas + 1;
+  var ancho    = Math.min(Math.max(history.getLastColumn(), AC_WIDTH), history.getMaxColumns());
+  var filas    = history.getRange(primera, 1, cuantas, ancho).getValues();
+
   var out = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
+  for (var i = 0; i < filas.length; i++) {
+    var row = filas[i];
     if (!row[AC.CATEGORY] && !row[AC.NAME]) continue;
-    var m = parseArchiveRow(row, i + 1);
+    var m = parseArchiveRow(row, primera + i);
     m.archived = true;
     // The second door for costs, and it would have been easy to miss: this
     // returns exactly the same movement objects getInitialData does, from the
@@ -5813,7 +6092,11 @@ function loadOlderHistory(auth) {
     if (!seeCosts) { m.unitCost = null; m.totalCost = null; }
     out.push(m);
   }
-  return out;
+  /* `quedan` cuenta FILAS DE HOJA, no movimientos devueltos: una fila en blanco
+   * se salta arriba pero sigue consumiendo sitio en la tanda, y si `quedan` se
+   * calculara sobre `out` el botón creería que falta una tanda que no existe y
+   * se quedaría pidiéndola para siempre. */
+  return { items: out, total: hay, quedan: Math.max(0, hay - desde - cuantas) };
 }
 
 // ─── REFRESH DERIVED SHEETS ──────────────────────────────────────────────────
@@ -8210,6 +8493,7 @@ function onOpen() {
     .addItem('📁 Tidy up my Drive (one folder for everything)', 'menuOrganizeDrive')
     .addItem('🩺 Check this installation', 'menuCheckInstallation')
     .addItem('🌙 Test the nightly archive (changes nothing)', 'menuProbarArchivado')
+    .addItem('▶️ Archive old movements NOW (asks first)', 'menuArchivarAhora')
     .addItem('🔎 Check if this copy is a clean template', 'menuVerifyMasterTemplate')
     .addItem('💣 Erase everything — make this a blank template', 'menuPrepareMasterTemplate');
 
@@ -9070,6 +9354,27 @@ function selfActivateWebApp_() {
   for (var i = 0; i < entryPoints.length; i++) {
     if (entryPoints[i].webApp) {
       var url = entryPoints[i].webApp.url;
+      /* ANOTARLA, QUE ES EL ÚNICO MOMENTO EN QUE SE SABE CON CERTEZA.
+       *
+       * Jose, 2026-10-04, en la copia DEMO: publicó con este botón, el aviso le
+       * dio una dirección, y "Open WMS App" le dio OTRA — muerta, con la página
+       * de "Sorry, unable to open the file at this time".
+       *
+       * No era un misterio: es el peligro que `checkDeploymentReady` tiene
+       * escrito encima desde hace meses — en una hoja COPIADA de otra ya
+       * publicada, `ScriptApp.getService().getUrl()` devuelve una dirección con
+       * el identificador del script ORIGINAL. Una copia hereda ese enlace y lo
+       * enseña como si fuera suyo.
+       *
+       * La defensa ya existía (la propiedad WEB_APP_URL, que gana sobre
+       * getUrl()), y esta función —la ÚNICA del archivo que conoce la dirección
+       * buena de primera mano, porque acaba de crearla— no la rellenaba. Saber
+       * la respuesta correcta y no apuntarla en el sitio donde todos la buscan
+       * es la misma forma de fallo que el ensayo del archivado sin identidad.
+       *
+       * En try: publicar es lo importante, y que no se pueda anotar no puede
+       * tumbar una publicación que ya ha salido bien. */
+      try { saveWebAppUrl(url); } catch (e3) { Logger.log('saveWebAppUrl: ' + e3.message); }
       try {
         MailApp.sendEmail(Session.getActiveUser().getEmail(), '✅ Your ' + PRODUCT_NAME + ' system is ready',
           'Your warehouse system is live at:\n\n' + url +
@@ -9346,6 +9651,17 @@ function detectFolderPrefixes_() {
  */
 function menuProbarArchivado() {
   var ui = SpreadsheetApp.getUi();
+  /* LA IDENTIDAD, QUE SE ME OLVIDÓ Y DEJÓ EL ENSAYO INÚTIL.
+   *
+   * Jose lo corrió y lo único que sacó fue "Not authenticated", desde
+   * loadConfig. Toda entrada por menú tiene que declarar quién es antes de
+   * tocar nada —menuActivateWebApp y menuCheckInstallation ya lo hacían— porque
+   * `requireAuth_` mira la sesión de la app, no la de Google, y desde un menú no
+   * hay ninguna.
+   *
+   * Un botón de diagnóstico que no arranca es peor que no tenerlo: le hice
+   * perder un día a Jose creyendo que el ensayo le iba a decir algo. */
+  setVerifiedAuth_({ role: 'ADMIN', email: requireOwnerContext_(), name: 'Spreadsheet menu' });
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var r;
   try {
@@ -9355,68 +9671,188 @@ function menuProbarArchivado() {
     return;
   }
 
-  var inf = (r && r.informe) || { pasos: [] };
-  var lineas = [];
+  ui.alert('🌙 Nightly archive — rehearsal',
+           informeDeArchivado_(r, true).join('\n'), ui.ButtonSet.OK);
+}
 
-  lineas.push('RESULT: ' + String(r && r.status || '?').toUpperCase());
-  lineas.push('');
-  lineas.push('NOTHING WAS WRITTEN. This is a rehearsal of tonight\'s job.');
-  lineas.push('');
+/* EL INFORME, ESCRITO UNA VEZ Y LEÍDO POR LOS DOS BOTONES.
+ *
+ * Estaba dentro de menuProbarArchivado y ahí se habría quedado si el botón de
+ * "hazlo ahora" hubiera traído su propio informe: dos textos que describen el
+ * mismo trabajo y que empiezan a divergir el día que uno de los dos se cambia.
+ * Es el mismo patrón que ya nos mordió con las dos listas de pruebas que tenían
+ * que coincidir sin nada que lo obligara.
+ *
+ * Lo único que cambia entre ensayo y corrida de verdad son los tiempos verbales
+ * —"would move" contra "moved"—, y cambian a propósito: un informe que dice
+ * "would" después de haber reescrito las dos hojas le hace creer a quien lo lee
+ * que todavía está a tiempo de arrepentirse.
+ */
+function informeDeArchivado_(r, ensayo) {
+  var inf = (r && r.informe) || { pasos: [] };
+  var L = [];
+
+  L.push('RESULT: ' + String(r && r.status || '?').toUpperCase());
+  L.push('');
+  L.push(ensayo
+    ? 'NOTHING WAS WRITTEN. This is a rehearsal of tonight\'s job.'
+    : 'THIS WAS THE REAL RUN. Both sheets have been rewritten.');
+  L.push('');
 
   if (inf.modeloAncho) {
-    lineas.push('SHEET WIDTHS — this is what the "23 vs 20" error is about');
-    lineas.push('  The row model needs   : ' + inf.modeloAncho + ' columns');
-    lineas.push('  MASTER_ARCHIVE_V3 has : ' + inf.archivoAncho +
-                (inf.archivoAnchoTras && inf.archivoAnchoTras !== inf.archivoAncho
-                  ? ' → widened to ' + inf.archivoAnchoTras : '') +
-                '   (last column in use: ' + inf.archivoUltima + ')');
-    lineas.push('  ARCHIVE_HISTORY has   : ' + inf.histAncho +
-                (inf.histAnchoTras && inf.histAnchoTras !== inf.histAncho
-                  ? ' → widened to ' + inf.histAnchoTras : '') +
-                '   (last column in use: ' + inf.histUltima + ')');
-    lineas.push('');
-    lineas.push('MOVEMENTS RIGHT NOW');
-    lineas.push('  Recent list      : ' + inf.archivoFilas);
-    lineas.push('  Archived history : ' + inf.histFilas);
-    lineas.push('');
+    L.push('SHEET WIDTHS — this is what the "23 vs 20" error is about');
+    L.push('  The row model needs   : ' + inf.modeloAncho + ' columns');
+    L.push('  MASTER_ARCHIVE_V3 has : ' + inf.archivoAncho +
+           (inf.archivoAnchoTras && inf.archivoAnchoTras !== inf.archivoAncho
+             ? ' → widened to ' + inf.archivoAnchoTras : '') +
+           '   (last column in use: ' + inf.archivoUltima + ')');
+    L.push('  ARCHIVE_HISTORY has   : ' + inf.histAncho +
+           (inf.histAnchoTras && inf.histAnchoTras !== inf.histAncho
+             ? ' → widened to ' + inf.histAnchoTras : '') +
+           '   (last column in use: ' + inf.histUltima + ')');
+    L.push('');
+    L.push(ensayo ? 'MOVEMENTS RIGHT NOW' : 'MOVEMENTS BEFORE THIS RUN');
+    L.push('  Recent list      : ' + inf.archivoFilas);
+    L.push('  Archived history : ' + inf.histFilas);
+    L.push('');
   }
 
   if (inf.corteMeses !== undefined) {
-    lineas.push('CUTOFF');
-    lineas.push('  ' + inf.corteMeses + ' month(s) — anything before ' + inf.corteFecha + ' counts as old.');
-    lineas.push('  Would move OUT of the recent list : ' + inf.seArchivan);
-    lineas.push('  Would come back IN                : ' + inf.seDevuelven);
-    lineas.push('  Would stay                        : ' + inf.seQuedan);
-    lineas.push('');
+    L.push('CUTOFF');
+    L.push('  ' + inf.corteMeses + ' month(s) — anything before ' + inf.corteFecha +
+           ' counts as old.');
+    /* EL SUELO SE DICE EN VOZ ALTA CUANDO ACTÚA. Un corte que la app ignora en
+     * silencio es peor que un corte que no se puede poner: la persona cree que
+     * ha configurado algo y la app hace otra cosa. */
+    if (inf.sueloDias && inf.sueloAplicado) {
+      L.push('  ⓘ The last ' + inf.sueloDias + ' days are never archived, whatever the ' +
+             'cutoff says, so');
+      L.push('    the cutoff used here is ' + inf.corteFecha + ' and not the date your ' +
+             'setting asks for.');
+    }
+    L.push((ensayo ? '  Would move OUT of the recent list : '
+                   : '  Moved OUT of the recent list : ') + inf.seArchivan);
+    L.push((ensayo ? '  Would come back IN                : '
+                   : '  Came back IN                 : ') + inf.seDevuelven);
+    L.push((ensayo ? '  Would stay                        : '
+                   : '  Stayed                       : ') + inf.seQuedan);
+    L.push('');
   }
 
   if (inf.quedariaEnArchivo !== undefined) {
-    lineas.push('AFTER TONIGHT IT WOULD LEAVE');
-    lineas.push('  Recent list      : ' + inf.quedariaEnArchivo);
-    lineas.push('  Archived history : ' + inf.quedariaEnHistoria);
+    L.push(ensayo ? 'AFTER TONIGHT IT WOULD LEAVE' : 'IT NOW LEAVES');
+    L.push('  Recent list      : ' + inf.quedariaEnArchivo);
+    L.push('  Archived history : ' + inf.quedariaEnHistoria);
     if (inf.quedariaEnArchivo === 0 && inf.quedariaEnHistoria > 0) {
-      lineas.push('');
-      lineas.push('  ⚠ The recent list would end up EMPTY. Nothing would be lost —');
-      lineas.push('    it all moves to the archived history — but the app will look');
-      lineas.push('    blank until you press "Load Older History". If that is not');
-      lineas.push('    what you want, raise the cutoff in Settings.');
+      L.push('');
+      L.push('  ⚠ The recent list ' + (ensayo ? 'would end up' : 'is now') + ' EMPTY. ' +
+             'Nothing ' + (ensayo ? 'would be' : 'was') + ' lost —');
+      L.push('    it all moves to the archived history — but the app will look');
+      L.push('    blank until you press "Load Older History". If that is not');
+      L.push('    what you want, raise the cutoff in Settings.');
     }
-    lineas.push('');
+    L.push('');
   }
 
   if (inf.error) {
-    lineas.push('✗ WHAT FAILED');
-    lineas.push('  ' + inf.error);
-    if (inf.stack) { lineas.push(''); lineas.push('  ' + inf.stack); }
-    lineas.push('');
+    L.push('✗ WHAT FAILED');
+    L.push('  ' + inf.error);
+    if (inf.stack) { L.push(''); L.push('  ' + inf.stack); }
+    L.push('');
   }
 
   if (inf.pasos && inf.pasos.length) {
-    lineas.push('STEP BY STEP');
-    inf.pasos.forEach(function (t) { lineas.push('  · ' + t); });
+    L.push('STEP BY STEP');
+    inf.pasos.forEach(function (t) { L.push('  · ' + t); });
   }
 
-  ui.alert('🌙 Nightly archive — rehearsal', lineas.join('\n'), ui.ButtonSet.OK);
+  return L;
+}
+
+/* "¿PODEMOS CREAR UN BOTÓN QUE LO HAGA EN ESTE MOMENTO? QUIERO SABER SI
+ * FUNCIONA EN ESTE MISMO MOMENTO." — Jose, 2026-10-01.
+ *
+ * Sí, y hace falta por algo más que la comodidad. Hasta hoy la única forma de
+ * saber si el trabajo nocturno funciona era esperar a las 3 de la mañana y
+ * mirar al día siguiente: **cada intento costaba veinticuatro horas**. Llevamos
+ * tres incidentes a ese ritmo, y dos semanas en las que cada arreglo tardaba un
+ * día en poder comprobarse — y resultó que ni siquiera se estaba comprobando,
+ * porque lo que corría de noche era otro código. Un fallo que sólo se puede
+ * observar una vez al día no se puede investigar.
+ *
+ * ES LA MISMA FUNCIÓN, no una copia "de prueba". Una copia que imita al trabajo
+ * de verdad es exactamente la forma de tener una prueba que pasa mientras el
+ * producto falla — ya nos pasó con la hoja de mentira que guardaba el apóstrofo.
+ *
+ * Enseña el ensayo PRIMERO, con los números, y pide confirmación. Un botón que
+ * reescribe las dos hojas de movimientos no se pulsa a ciegas.
+ */
+function menuArchivarAhora() {
+  var ui = SpreadsheetApp.getUi();
+  setVerifiedAuth_({ role: 'ADMIN', email: requireOwnerContext_(), name: 'Spreadsheet menu' });
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var previo;
+  try {
+    previo = archiveOldMovements(ss, { ensayo: true });
+  } catch (e) {
+    ui.alert('It could not even be rehearsed',
+             String(e && e.message || e) +
+             '\n\nNothing was written. Nothing to undo.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var inf = (previo && previo.informe) || {};
+
+  /* NO PREGUNTAR CUANDO NO HAY NADA QUE HACER. Un "¿seguro?" seguido de "no he
+   * hecho nada" enseña a la gente a pulsar YES sin leer, que es justo lo que no
+   * queremos el día que el aviso sí importe. */
+  if (previo && previo.status === 'noop') {
+    ui.alert('Nothing to archive right now',
+      'No movement crosses the ' + inf.corteMeses + '-month cutoff, so the job ' +
+      'would move nothing in either direction.\n\n' +
+      'Recent list      : ' + inf.archivoFilas + '\n' +
+      'Archived history : ' + inf.histFilas, ui.ButtonSet.OK);
+    return;
+  }
+
+  var resp = ui.alert('Run the archive NOW?',
+    'This runs tonight\'s job right now and rewrites both movement sheets.\n\n' +
+    '  Would move OUT of the recent list : ' + inf.seArchivan + '\n' +
+    '  Would come back IN                : ' + inf.seDevuelven + '\n' +
+    '  Would stay                        : ' + inf.seQuedan + '\n\n' +
+    'Afterwards: ' + inf.quedariaEnArchivo + ' in the recent list, ' +
+    inf.quedariaEnHistoria + ' in the archived history.\n\n' +
+    'NOTHING LEAVES THE SPREADSHEET. Archived movements move to ARCHIVE_HISTORY, ' +
+    'where the app can still read them with "Load Older History". There is also ' +
+    'the 2am backup.\n\nRun it?', ui.ButtonSet.YES_NO);
+
+  if (resp !== ui.Button.YES) {
+    ui.alert('Nothing was done.', 'The archive was not run. Both sheets are ' +
+             'exactly as they were.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var r;
+  try {
+    r = archiveOldMovements(ss);
+  } catch (e) {
+    /* El trabajo relanza después de registrar y avisar — ese comportamiento es
+     * para la corrida de las 3 de la mañana, donde no hay nadie delante. Aquí sí
+     * lo hay, así que se le enseña, y se le dice lo único que de verdad importa
+     * saber en ese momento: el orden de escritura es escribir-y-luego-limpiar,
+     * así que una escritura que revienta no deja la hoja vacía. */
+    ui.alert('▶️ The archive FAILED',
+      String(e && e.message || e) + '\n\n' +
+      'The rows are written BEFORE anything is cleared, so a failed write does ' +
+      'not empty the sheet. Open ERROR_LOG: the newest row carries the version, ' +
+      'the sheet widths and the step-by-step trail up to the exact write that ' +
+      'failed.\n\nSend me that row.', ui.ButtonSet.OK);
+    return;
+  }
+
+  ui.alert('▶️ Archive — real run',
+           informeDeArchivado_(r, false).join('\n'), ui.ButtonSet.OK);
 }
 
 function menuCheckInstallation() {
@@ -9851,9 +10287,48 @@ function menuReconcile() {
   ui.alert('Reconciliation complete.');
 }
 
+/* LA DIRECCIÓN GUARDADA GANA, COMO EN TODAS PARTES MENOS AQUÍ.
+ *
+ * Esta entrada de menú preguntaba a `ScriptApp.getService().getUrl()` y punto,
+ * y era el único sitio del archivo que lo hacía: `checkDeploymentReady` prefiere
+ * la propiedad desde hace meses, y la línea que construye el enlace de los
+ * correos también. Una defensa escrita, probada, y un camino sin conectar.
+ *
+ * Lo que eso produce, medido en la copia DEMO de Jose el 2026-10-04: publicó
+ * con Push Update Live, el aviso le dio una dirección, pulsó "Open WMS App" y
+ * le dio otra distinta que abría "Sorry, unable to open the file at this time".
+ * En una hoja COPIADA de otra ya publicada, getUrl() devuelve una dirección con
+ * el identificador del script ORIGINAL — está escrito encima de
+ * checkDeploymentReady, con la palabra "observed", porque ya nos pasó.
+ *
+ * Y cuando hay que adivinar, se dice que se está adivinando. Una dirección
+ * muerta presentada sin reservas hace perder la tarde buscando el fallo en la
+ * app; la misma dirección con "esto no está confirmado, y así se confirma"
+ * cuesta dos minutos. */
 function menuOpenApp() {
-  var url = ScriptApp.getService().getUrl();
-  SpreadsheetApp.getUi().alert('Open this URL in your browser:\n\n' + url);
+  var ui = SpreadsheetApp.getUi();
+  var p  = PropertiesService.getScriptProperties();
+  var guardada = String(p.getProperty('WEB_APP_URL') || '').trim();
+  var url = guardada, aviso = '';
+
+  if (!url) {
+    try { url = String(ScriptApp.getService().getUrl() || ''); } catch (e) { url = ''; }
+    aviso = '\n\n⚠ THIS ADDRESS IS A GUESS, not a recorded one. On a spreadsheet ' +
+            'copied from another one that was already published, Google hands back ' +
+            'the ORIGINAL file\'s address here — which opens "Sorry, unable to open ' +
+            'the file at this time".\n\n' +
+            'To record the right one: 🔧 Advanced → Push Update Live, which writes ' +
+            'it down for you. Or copy it from Extensions → Apps Script → Deploy → ' +
+            'Manage deployments and paste it into the setup wizard.';
+  }
+
+  if (!url) {
+    ui.alert('No web app address yet',
+      'This copy has not been published. Extensions → Apps Script → Deploy → ' +
+      'New deployment → Web app.', ui.ButtonSet.OK);
+    return;
+  }
+  ui.alert('Open this URL in your browser:\n\n' + url + aviso);
 }
 
 // ─── PRESENCE / HEARTBEAT ────────────────────────────────────────────────────
