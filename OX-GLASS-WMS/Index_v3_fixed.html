@@ -95,7 +95,7 @@
        on a wide window and dropped below it on a narrower one — and the whole
        page shifted as it went. Now the tabs have a line of their own that they
        never leave; they just move toward the middle as the window grows. */
-    .topbar{background:var(--navy);padding:.7rem 1.5rem .6rem;display:flex;flex-direction:column;gap:.55rem;position:sticky;top:0;z-index:var(--z-topbar);border-bottom:3px solid var(--accent)}
+    .topbar{background:var(--navy);padding:.7rem 1.5rem .6rem;display:flex;flex-direction:column;gap:.55rem;position:sticky;top:var(--tb-alto);z-index:var(--z-topbar);border-bottom:3px solid var(--accent)}
     .topbar-row1{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     /* Row two is the tabs and the account cluster TOGETHER, so the circle is
        always beside the tabs rather than stranded on the line above them. The
@@ -596,7 +596,42 @@
        baja—, y `scrollbar-gutter:stable` también: reserva el carril para que un
        formulario que crece, al añadir otro material, no dé un salto lateral
        cuando aparezca la barra. */
-    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);max-height:82vh;overflow-y:auto;scrollbar-gutter:stable;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+    /* ══ LAS BARRAS DE ARRIBA, EN UNA SOLA PILA ════════════════════════════
+       Jose, 2026-10-05: *"poner un label (este sí que se vea como los demás
+       arriba en la pantalla) que diga 'you are off-line' y 'back on-line'."*
+
+       Hasta hoy la app SÓLO decía que estaba caída con un punto de color y un
+       texto al pasar el ratón por encima. Nadie pasa el ratón por un punto: se
+       sigue trabajando, se sigue escribiendo, y lo que se escriba no se guarda.
+       Un estado que puede costarte el trabajo no se cuenta en un `title`.
+
+       Van en una pila y no sueltas porque ya había una barra fija arriba —la
+       del desajuste de versiones— y dos elementos `position:fixed; top:0` se
+       tapan el uno al otro. Con la pila, la segunda se pone debajo de la
+       primera sola. */
+    /* EMPUJA, NO TAPA. La primera versión iba `position:fixed; top:0` —como la
+       del desajuste de versiones, que lleva meses así— y en una pantalla de
+       teléfono eso se come la barra de navegación entera: los botones de las
+       pestañas y el círculo de la cuenta quedan DEBAJO del aviso y no se pueden
+       pulsar. Lo cazó test-responsive-polish, que a 375px se quedó sin poder
+       pulsar el botón de la cuenta.
+       Un aviso que te deja sin app para contarte que la app no va es peor que
+       no tener aviso. Así que ocupa su sitio en la página y la barra de
+       navegación se pega justo debajo (`--tb-alto`, que escribe _barraArriba). */
+    :root{--tb-alto:0px}
+    #topBanners{position:sticky;top:0;left:0;right:0;z-index:99999;display:flex;flex-direction:column}
+    .top-banner{display:flex;align-items:center;justify-content:center;gap:.5rem;
+      font-size:.8rem;font-weight:600;text-align:center;padding:8px 36px;color:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,.3)}
+    .top-banner.warn{background:#b45309}
+    .top-banner.bad{background:var(--red)}
+    .top-banner.good{background:#15803d}
+    .top-banner .tb-x{cursor:pointer;text-decoration:underline;font-weight:600;opacity:.9}
+    /* El aro de la barra de "reconectando": el mismo que el de los botones, para
+       que girar signifique lo mismo en toda la app. */
+    .top-banner .tb-spin{width:12px;height:12px;border:2px solid rgba(255,255,255,.4);
+      border-top-color:#fff;border-radius:50%;display:inline-block;animation:btnspin .7s linear infinite}
+    .modal{--mpad:1.75rem;background:var(--card);border-radius:14px;padding:0 var(--mpad) var(--mpad);width:100%;max-width:min(640px,92vw);max-height:90vh;overflow-y:auto;scrollbar-gutter:stable;box-shadow:0 12px 30px rgba(0,0,0,.25)}
     /* Standardized size tiers (scale with viewport via min(), never grow past
        that from content) — every popup uses one of these three instead of an
        ad-hoc per-modal pixel value. Content still picks the tier that fits it
@@ -658,7 +693,50 @@
        encogerse, y sin `wrap` el texto se desborda por encima del botón de al
        lado. Con `wrap` se baja a la línea siguiente, que es feo pero legible;
        sin él, se pisan. */
-    .modal-actions{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end;margin-top:1.5rem}
+    /* EL PIE VA FIJO ABAJO, igual que .mhdr va fija arriba desde hace meses.
+       Jose, 2026-10-04, con un vídeo de "Add Expected Material": *"si la
+       pantalla tiene espacio para poner toda la ventana, se lo hace; si no
+       tiene espacio, entonces vamos a poner los botones en el marco, fijos,
+       para que el usuario no tenga que hacer scroll para poder dar clic."*
+
+       Y pesa más que la comodidad: EL AVISO DE ERROR VIVE EN ESTE PIE. En su
+       captura de ENTRY, "Material 1 needs a name" sale justo al lado de "Save
+       to System". Con el pie fuera de la pantalla, la persona pulsa guardar, no
+       pasa nada, y el motivo está donde no está mirando. Un mensaje de error
+       que hay que ir a buscar es un mensaje de error que no existe.
+
+       Los márgenes negativos lo llevan hasta los bordes de la ventana —la misma
+       técnica que la cabecera— para que el contenido pase por DEBAJO y no por
+       un lado. */
+    .modal-actions{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:flex-end;
+      /* `bottom` NEGATIVO, no 0: un elemento pegajoso se ancla al borde del área
+       de desplazamiento, que INCLUYE el relleno de abajo de la ventana. Con
+       bottom:0 el pie quedaba flotando 28px por encima del borde y se veía una
+       franja de tarjeta por debajo. Medido: 561 contra 589. */
+      position:sticky;bottom:calc(-1 * var(--mpad));z-index:30;background:var(--card);
+      margin:1.5rem calc(-1 * var(--mpad)) calc(-1 * var(--mpad));
+      padding:.85rem var(--mpad);border-top:1px solid var(--border);
+      border-radius:0 0 14px 14px}
+    /* BOTONES QUE NO CAMBIAN DE TAMAÑO. Jose, en el mismo mensaje: *"debemos
+       estandarizar los botones para que no se hagan más grandes o más
+       pequeños, en especial si hay más botones al lado, porque se mueven o
+       empujan y se ve poco profesional."*
+
+       Dos causas distintas y las dos se tapan aquí: un rótulo largo hacía el
+       botón más ancho que su vecino (de ahí el min-width común), y un rótulo
+       que no cabía se partía en dos líneas y empujaba toda la fila hacia abajo
+       (de ahí el nowrap). Lo de cambiar de ancho al ponerse a girar ya estaba
+       resuelto: _btnBusy fija el ancho ANTES de cambiar el texto. */
+    /* EN EL PIE MANDA EL PIE, no la clase que traiga cada botón. Había pies con
+       un "Cancel" btn-sm de 88px al lado de un "Save" de 120: dos tamaños
+       distintos en la misma fila, que es exactamente lo que Jose llama "se ve
+       poco profesional". Dentro de .modal-actions todos miden igual — el mismo
+       ancho mínimo, el mismo relleno y la misma letra — sea cual sea la clase
+       con la que llegaron. */
+    .modal-actions .btn,
+    .modal-actions .btn.btn-sm{min-width:7.5rem;flex:0 0 auto;
+      padding:.5rem 1rem;font-size:.85rem}
+    .btn{white-space:nowrap}
     /* ── NOTIFY SECTION ── */
     .notify-section{margin-top:1rem;padding:1rem;background:#F8FAFC;border:1px dashed var(--border);border-radius:8px}
     .notify-section label.check-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;font-weight:600;color:var(--navy)}
@@ -1921,6 +1999,9 @@
     .usr-select-cb:disabled{opacity:.3;cursor:not-allowed}
     .user-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem}
     @media(max-width:520px){.user-form-grid{grid-template-columns:1fr}}
+    .user-invite{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text);
+      cursor:pointer;user-select:none;padding:.15rem 0}
+    .user-invite input{width:1rem;height:1rem;accent-color:var(--accent2);cursor:pointer;margin:0}
     /* ── SIMILAR-MATERIAL HINT ── */
     .similar-hint{display:none;margin-top:.3rem;padding:.3rem .6rem;background:#FEF9C3;border:1px solid #FDE68A;border-radius:6px;font-size:.76rem;color:#92400E;align-items:center;gap:.4rem;flex-wrap:wrap}
     .similar-hint.show{display:flex}
@@ -3231,6 +3312,15 @@
           </select>
         </div>
       </div>
+      <!-- Hasta ahora, dar de alta a alguien NO LE DECÍA NADA A NADIE: había que
+           acordarse de mandarle la dirección por otro lado, y para tenerla,
+           abrir la hoja de cálculo. Marcado por defecto porque no avisar es casi
+           siempre un olvido, no una decisión — y se puede desmarcar para el caso
+           real de preparar las cuentas antes de que la gente deba entrar. -->
+      <label class="user-invite" id="uInviteWrap">
+        <input type="checkbox" id="uInvite" checked>
+        <span>Email them the link to the app</span>
+      </label>
       <div id="userFormMsg" style="display:none;margin-top:.5rem;font-size:.78rem;padding:.35rem .6rem;border-radius:6px"></div>
       <div class="modal-actions" style="margin-top:1.1rem">
         <button class="btn btn-ghost" onclick="closeModal('userFormOverlay')">Cancel</button>
@@ -3610,7 +3700,7 @@
         style="font-size:.82rem">
       <div id="incDocPreview" style="margin-top:.55rem"></div>
     </div>
-    <div style="display:flex;gap:.75rem;margin-top:1rem;justify-content:flex-end">
+    <div class="modal-actions" style="margin-top:1rem">
       <button id="btnDeleteIncoming" class="btn btn-danger btn-sm" style="margin-right:auto;display:none" onclick="deleteIncomingItem()">🗑 Delete</button>
       <button class="btn btn-ghost btn-sm" onclick="closeModal('incomingOverlay')">Cancel</button>
       <button class="btn btn-primary" onclick="saveIncomingItem()">💾 Save</button>
@@ -3676,7 +3766,7 @@
       <button class="btn btn-ghost btn-sm" onclick="monitorSelectAll(false)">✕ Clear all</button>
     </div>
     <div class="monitor-grid" id="monitorGrid"></div>
-    <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1rem">
+    <div class="modal-actions" style="margin-top:1rem">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('monitorOverlay')">Cancel</button>
       <button class="btn btn-primary" onclick="saveMonitorSettings()">💾 Save</button>
     </div>
@@ -3875,7 +3965,7 @@
     </div>
 
     <input type="hidden" id="em_rowIdx">
-    <div style="display:flex;gap:.75rem;margin-top:1rem;justify-content:flex-end">
+    <div class="modal-actions" style="margin-top:1rem">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('editMovOverlay')">Cancel</button>
       <button class="btn btn-primary" id="btnSaveEditMov" onclick="saveEditMov()">💾 Save Changes</button>
     </div>
@@ -4341,7 +4431,7 @@
       <label>Allowed transfer destinations <span style="font-weight:400;color:var(--muted)">(optional — leave blank to allow transfer anywhere)</span></label>
       <input type="text" id="lockAllowedDest" list="rackListDest" placeholder="e.g. B2B, C1A — comma-separated">
     </div>
-    <div style="display:flex;gap:.75rem;margin-top:1.25rem;justify-content:flex-end">
+    <div class="modal-actions" style="margin-top:1.25rem">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('lockMatOverlay')">Cancel</button>
       <button class="btn btn-danger btn-sm" id="lockMatSubmit" onclick="submitLockMaterial()">🔒 Reserve</button>
     </div>
@@ -4390,7 +4480,7 @@
       <input type="file" id="riPhotoFiles" accept="image/*" multiple style="display:none" onchange="_onReportIssuePhotos(this.files);this.value=''">
       <div id="riPhotoPreview" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem"></div>
     </div>
-    <div style="display:flex;gap:.75rem;margin-top:1.25rem;justify-content:flex-end">
+    <div class="modal-actions" style="margin-top:1.25rem">
       <button class="btn btn-ghost btn-sm" onclick="closeModal('reportIssueOverlay')">Cancel</button>
       <button class="btn btn-primary btn-sm" id="riSubmitBtn" onclick="submitReportIssue()">Send Report</button>
     </div>
@@ -4420,7 +4510,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.35';
+var APP_VERSION = '12.42';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -4432,7 +4522,7 @@ var APP_VERSION = '12.35';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '1f68611e';
+var APP_BUILD = '7fa7ba83';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -21597,6 +21687,9 @@ function editUser(email) {
   document.getElementById('uName').value  = u.name  || '';
   document.getElementById('uRole').value  = u.role  || 'WAREHOUSE';
   document.getElementById('userFormTitle').textContent = '✏️ Editing: ' + u.email;
+  // Invitar es cosa del alta. A quien ya está dentro no se le manda un "te han
+  // dado acceso" cada vez que se le corrige el nombre.
+  _mostrarInvitar(false);
   // El formulario vive en su propia ventana desde la v11.98, así que hay que
   // abrirla — antes estaba siempre puesta y bastaba con rellenarla.
   document.getElementById('userFormOverlay').classList.add('show');
@@ -21610,7 +21703,15 @@ function resetUserForm() {
   document.getElementById('uName').value     = '';
   document.getElementById('uRole').value     = 'WAREHOUSE';
   document.getElementById('userFormTitle').textContent  = '➕ Add New User';
+  var inv = document.getElementById('uInvite');
+  if (inv) inv.checked = true;
+  _mostrarInvitar(true);
   _userFormMsg('', '');
+}
+
+function _mostrarInvitar(ver) {
+  var w = document.getElementById('uInviteWrap');
+  if (w) w.style.display = ver ? 'flex' : 'none';
 }
 
 function _userFormMsg(msg, type) {
@@ -21632,12 +21733,19 @@ function saveUser() {
   _btnBusy(btn, 'Saving…');
 
   var action  = _editingUser ? 'updateUser' : 'addUser';
-  var payload = { email: email, name: name, role: role, active: true };
+  var invitar = !_editingUser && !!(document.getElementById('uInvite') || {}).checked;
+  var payload = { email: email, name: name, role: role, active: true, invite: invitar };
 
   google.script.run
-    .withSuccessHandler(function() {
+    .withSuccessHandler(function(res) {
       _btnDone(btn, true);
       _userFormMsg(_editingUser ? 'User updated.' : 'User added successfully.', 'ok');
+      /* Lo que diga el servidor, no lo que pedimos. El correo puede no salir
+       * —sin dirección guardada, sin cuota— y decir "invitación enviada" cuando
+       * no se envió nada deja a alguien esperando un correo que no existe.
+       * El aviso tiene que verse, así que la ventana no se cierra con él. */
+      res = res || {};
+
       // The row is patched in place rather than the whole list being fetched
       // again: the browser already knows exactly what changed, and re-reading
       // the sheet to learn it puts a "Loading…" flash over a list of four names.
@@ -21646,10 +21754,27 @@ function saveUser() {
       if (found){ found.name = name; found.role = role; found.active = true; }
       else _usersData.push({ email: email, name: name, role: role, active: true,
                              addedBy: userEmail, addedAt: _isoDate(new Date()) });
-      resetUserForm();
-      closeModal('userFormOverlay');
       _sysCachePut('users', _usersData, true);   // ya está al día, no hay que ir a buscarla
       _renderUsersTable();
+
+      /* El usuario YA ESTÁ DADO DE ALTA cuando se llega aquí, pase lo que pase
+       * con el correo. Por eso la lista se actualiza arriba y sólo después se
+       * mira la invitación: un fallo al avisar no puede hacer que la pantalla
+       * finja que el alta tampoco ocurrió.
+       *
+       * Y se cuenta lo que dijo el servidor, no lo que pedimos. Si no salió
+       * —sin dirección guardada, sin cuota de correo—, la ventana se queda
+       * abierta con el motivo: decir "invitación enviada" cuando no se envió
+       * nada deja a alguien esperando un correo que no existe. */
+      if (invitar && res.invited) {
+        showToast('Invitation emailed to ' + email, 'ok');
+      } else if (invitar && res.inviteNote) {
+        _userFormMsg(res.inviteNote, 'error');
+        _btnReset(btn);
+        return;
+      }
+      resetUserForm();
+      closeModal('userFormOverlay');
     })
     .withFailureHandler(function(err) {
       _btnReset(btn);
@@ -22143,6 +22268,54 @@ function _applyWarehouseRoleLabel(){
 
 // Warn if the backend (Code.gs) and this page (Index.html) were not deployed
 // together. A mismatch is the usual cause of "feature X silently doesn't work".
+/* UNA BARRA ARRIBA, CREADA O ACTUALIZADA EN UN SOLO SITIO.
+ *
+ * `tono`: 'bad' (rojo, algo está mal ahora), 'warn' (ámbar, algo hay que
+ * arreglar), 'good' (verde, ya se arregló y esto se va solo).
+ *
+ * Devuelve el elemento, o lo quita si `html` viene vacío. Idempotente: llamarla
+ * cien veces con el mismo texto no parpadea ni reinicia nada, que es lo que
+ * hace falta cuando quien llama es un latido que corre cada veinte segundos. */
+function _barraArriba(id, tono, html, segundos) {
+  var pila = document.getElementById('topBanners');
+  if (!pila) {
+    pila = document.createElement('div');
+    pila.id = 'topBanners';
+    // AL PRINCIPIO del body, no al final: si va al final, ocupa su sitio DEBAJO
+    // de toda la página y el aviso aparece al pie, donde nadie lo mira.
+    document.body.insertBefore(pila, document.body.firstChild);
+  }
+  var bar = document.getElementById(id);
+  if (!html) { if (bar) { bar.remove(); _medirBarras(); } return null; }
+
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = id;
+    pila.appendChild(bar);
+  }
+  // Sólo se reescribe si de verdad cambió: tocar innerHTML en cada latido
+  // reinicia la animación del aro y la barra "tiembla".
+  if (bar._acTono !== tono) { bar.className = 'top-banner ' + tono; bar._acTono = tono; }
+  if (bar._acHtml !== html) { bar.innerHTML = html; bar._acHtml = html; }
+
+  if (bar._acT) { clearTimeout(bar._acT); bar._acT = null; }
+  if (segundos) bar._acT = setTimeout(function(){
+    if (bar.parentNode) bar.remove();
+    _medirBarras();
+  }, segundos * 1000);
+  _medirBarras();
+  return bar;
+}
+
+/* CUÁNTO MIDE LA PILA, para que la barra de navegación se pegue justo debajo en
+ * vez de debajo del borde de la ventana. Sin esto, con un aviso puesto la
+ * navegación se queda medio tapada en cuanto se hace scroll. */
+function _medirBarras() {
+  var pila = document.getElementById('topBanners');
+  var alto = pila ? Math.round(pila.getBoundingClientRect().height) : 0;
+  document.documentElement.style.setProperty('--tb-alto', alto + 'px');
+}
+
 function _checkVersionMatch(serverVersion, serverBuild) {
   var existing = document.getElementById('versionMismatchBanner');
   var verBad   = serverVersion && serverVersion !== APP_VERSION;
@@ -22157,17 +22330,14 @@ function _checkVersionMatch(serverVersion, serverBuild) {
     return;
   }
   if (existing) return; // already showing
-  var bar = document.createElement('div');
-  bar.id = 'versionMismatchBanner';
-  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b45309;' +
-    'color:#fff;font-size:.8rem;font-weight:600;text-align:center;padding:8px 36px;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,.3)';
-  bar.innerHTML = (verBad
+  /* Pasa por la pila como la de la conexión. Antes se dibujaba a mano con su
+   * propio `position:fixed; top:0`, así que con las dos a la vez una tapaba a la
+   * otra — y la que tapaba era precisamente la de "estás sin conexión". */
+  _barraArriba('versionMismatchBanner', 'warn', (verBad
       ? '⚠ Version mismatch — App v' + APP_VERSION + ' vs Server v' + serverVersion
       : '⚠ These two files are from different builds — App ' + APP_BUILD + ' vs Server ' + serverBuild) +
     '. Redeploy BOTH files (Code.gs and Index.html) with a <b>New version</b>. ' +
-    '<span style="cursor:pointer;text-decoration:underline" onclick="this.parentNode.remove()">dismiss</span>';
-  document.body.appendChild(bar);
+    '<span class="tb-x" onclick="this.parentNode.remove()">dismiss</span>');
   console.warn('MISMATCH: frontend=' + APP_VERSION + '/' + APP_BUILD +
                ' backend=' + serverVersion + '/' + serverBuild);
 }
@@ -23201,7 +23371,41 @@ function setConnStatus(status){
     offline: '● Offline — click to retry'
   };
   btn.title = labels[status] || '';
+
+  /* ── Y AHORA SE DICE EN GRANDE, QUE ES LO QUE PEDÍA JOSE ─────────────────
+   *
+   * El punto y su `title` llevaban meses siendo la ÚNICA señal de que la app
+   * estaba caída. Nadie pasa el ratón por encima de un punto: se sigue
+   * trabajando, se sigue escribiendo, y lo que se escriba no se guarda. Un
+   * estado que te puede costar el trabajo no se cuenta en un texto escondido.
+   *
+   * CUÁNDO SALE Y CUÁNDO NO:
+   *
+   *  · `offline` → barra roja, y SE QUEDA. No se va sola ni se puede cerrar:
+   *    mientras siga caída, el aviso sigue siendo verdad. Un aviso que se cierra
+   *    sobre un problema que continúa es peor que no tenerlo.
+   *  · `online` → sólo si VENÍA CAÍDA sale el "Back online", en verde y durante
+   *    cinco segundos. Si no venía caída no sale nada: el arranque normal pasa
+   *    por `loading → online` y saludar con "Back online" al abrir la app sería
+   *    contar una caída que nunca ocurrió.
+   *  · `stale` y `loading` no ponen barra. "Estoy comprobando" no es una mala
+   *    noticia, y una barra por cada comprobación sería ruido cada veinte
+   *    segundos. */
+  var estabaCaida = (_connUltimo === 'offline');
+  if (status === 'offline') {
+    _barraArriba('connBanner', 'bad',
+      '<span class="tb-spin"></span> You are offline — nothing you type can be saved ' +
+      'until the connection comes back. The app keeps retrying on its own.');
+  } else if (status === 'online') {
+    if (estabaCaida) _barraArriba('connBanner', 'good', '✓ Back online', 5);
+    else _barraArriba('connBanner', 'good', '');
+  }
+  _connUltimo = status;
 }
+/* El estado anterior, para saber si una vuelta a verde es una RECUPERACIÓN o
+ * simplemente el arranque. Sin esto, abrir la app saludaría con "Back online"
+ * cada vez. */
+var _connUltimo = null;
 
 // Check every 60 s — if last load > 5 min ago, mark stale.
 //

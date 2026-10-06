@@ -127,7 +127,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '12.35';
+var APP_VERSION = '12.42';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -139,7 +139,7 @@ var APP_VERSION = '12.35';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '1f68611e';
+var APP_BUILD = '7fa7ba83';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -1733,12 +1733,84 @@ function setVerifiedAuth_(auth) { _verifiedAuth = auth; return auth; }
 //   'ADMIN' → ADMIN only
 //   'WRITE' → ADMIN or WAREHOUSE (blocks VIEWER)
 //   omitted → any registered, signed-in user
+/* ── CUÁNTOS RECHAZOS SEGUIDOS SON UN AVISO Y NO UN DEDO TORPE ───────────────
+ * Diez en diez minutos. Por debajo es alguien que se equivocó de cuenta o que
+ * dejó una pestaña vieja abierta; por encima ya no es un accidente. */
+var ACCESO_RECHAZOS_AVISO = 10;
+
+/* ── QUEDA ESCRITO QUIÉN LLAMÓ A LA PUERTA Y NO PUDO ENTRAR ──────────────────
+ *
+ * Jose, 2026-10-05, sobre la lista de seguridad: le tocaba el turno a esto.
+ *
+ * Hasta hoy un rechazo no dejaba rastro EN NINGUNA PARTE. La puerta funcionaba
+ * —se cerraba— pero nadie sabía nunca que alguien la había empujado, así que un
+ * intento de entrar a la fuerza y un día tranquilo se veían exactamente igual
+ * desde dentro. Eso no es una cerradura, es una cerradura sin mirilla.
+ *
+ * TRES DECISIONES, Y LAS TRES IMPORTAN:
+ *
+ *  1. SE APUNTA UNA VEZ POR PERSONA Y MINUTO. Una pestaña vieja reintenta sola
+ *     cada veinte segundos; sin tope, un solo navegador olvidado llenaría el
+ *     registro de miles de líneas iguales y taparía lo que hay que ver. Lo que
+ *     importa es que alguien lo intentó, no cuántas veces rebotó su latido.
+ *  2. A LOS DIEZ EN DIEZ MINUTOS SE AVISA AL DUEÑO, y como mucho una vez por
+ *     hora. Un registro que nadie abre no avisa de nada — es la misma lección
+ *     del ERROR_LOG, que estuvo catorce horas con el desastre dentro sin que
+ *     nadie lo mirara.
+ *  3. NUNCA LANZA. Esto corre dentro del camino que ya está rechazando a
+ *     alguien: si fallara, convertiría un "no puedes pasar" limpio en un error
+ *     raro, y el rechazo es lo único que de verdad tiene que ocurrir.
+ *
+ * Y el correo del dueño se saca de `Session.getEffectiveUser()`, no de
+ * `loadConfig()`: loadConfig llama a requireAuth_, que es justo quien nos acaba
+ * de llamar a nosotros con una sesión rechazada. Habría lanzado dentro del
+ * registro del rechazo.
+ */
+function registrarAccesoDenegado_(auth, motivo) {
+  try {
+    var quien = (auth && auth.email) ? String(auth.email) : '(no session)';
+
+    /* PRIMERO SE CUENTA, DESPUÉS SE DECIDE QUÉ ESCRIBIR. El orden no es un
+     * detalle: la primera versión empezaba con el tope de escritura y se salía
+     * por ahí, así que el contador del aviso NUNCA pasaba de uno y el correo no
+     * se mandaba jamás. Lo cazó la prueba antes de salir de aquí. */
+    var cruzoElUmbral = !throttle_('denegadocuenta', quien, ACCESO_RECHAZOS_AVISO, 600);
+
+    // Una línea por persona y minuto: el latido de una pestaña olvidada
+    // reintenta solo cada veinte segundos y llenaría el registro.
+    if (throttle_('denegado', quien, 1, 60)) {
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      try { auditLog_(ss, 'ACCESS_DENIED', quien, motivo, '', ''); } catch (e1) {}
+    }
+
+    if (!cruzoElUmbral) return;
+    if (!throttle_('denegadocorreo', quien, 1, 3600)) return;   // un correo por hora
+
+    var dueno = '';
+    try { dueno = Session.getEffectiveUser().getEmail(); } catch (e2) {}
+    if (!dueno) return;
+    MailApp.sendEmail(dueno,
+      '⚠ ' + PRODUCT_NAME + ' — repeated sign-in attempts were refused',
+      'Someone has been refused access to your warehouse app ' +
+      ACCESO_RECHAZOS_AVISO + ' or more times in the last ten minutes.\n\n' +
+      'Account: ' + quien + '\n' +
+      'Reason:  ' + motivo + '\n\n' +
+      'If that is one of your people, add them in the app: ⚙️ App Settings → ' +
+      'Manage Users. If it is not, there is nothing to do — they were refused ' +
+      'every time, and this message is only so you know it happened.\n\n' +
+      'Every refusal is written down in the AUDIT_LOG tab of your spreadsheet, ' +
+      'under ACCESS_DENIED.');
+  } catch (e) { /* nunca lanza: ver arriba */ }
+}
+
 function requireAuth_(minRole) {
   var a = _verifiedAuth;
   if (!a || !a.email || a.role === 'NO_SESSION') {
+    registrarAccesoDenegado_(a, 'No signed-in session');
     throw new Error('Not authenticated. Please sign in and use the app from its own page.');
   }
   if (a.role === 'DENIED') {
+    registrarAccesoDenegado_(a, 'Not registered in this installation');
     throw new Error('Access denied. Your account (' + a.email + ') is not registered in this system.');
   }
   if (minRole === 'ADMIN' && a.role !== 'ADMIN') throw new Error('Admin only.');
@@ -1913,7 +1985,24 @@ function getUserRole(sessionToken) {
   var ss        = SpreadsheetApp.getActiveSpreadsheet();
   var userEmail = email.toLowerCase().trim();
 
-  // ── 1. Check USERS_V3 (new in-app user management) ─────────────────────
+  /* ── 1. USERS_V3 MANDA, Y MANDA TAMBIÉN CUANDO DICE QUE NO ────────────────
+   *
+   * Encontrado el 2026-10-05 comprobando si de verdad se puede quitar el acceso
+   * a alguien. Esta parte decía:
+   *
+   *     if (uEmail === userEmail && isActive) return { ...rol... };
+   *
+   * y si estaba PERO DESACTIVADO, el bucle seguía, salía por abajo y caía en la
+   * lista vieja de CONFIG. **Y en CONFIG está todo el mundo**: es la lista de la
+   * que se migró. O sea que en cualquier instalación migrada —la de OX Glass
+   * entre ellas— desmarcar a alguien en Manage Users NO LE QUITABA EL ACCESO.
+   * La pantalla decía "desactivado" y el servidor le dejaba entrar igual.
+   *
+   * No es una puerta sin guardia: es una guardia que decía que sí.
+   *
+   * Ahora, si el correo aparece en USERS_V3, ESA FILA DECIDE: activo → su rol;
+   * desactivado → DENIED, y no se mira la lista vieja. La lista vieja queda para
+   * lo único que debe cubrir: correos que nunca llegaron a USERS_V3. */
   var usersSheet = ss.getSheetByName('USERS_V3');
   if (usersSheet && usersSheet.getLastRow() > 1) {
     var uRows = usersSheet.getDataRange().getValues();
@@ -1921,29 +2010,164 @@ function getUserRole(sessionToken) {
       var uEmail  = String(uRows[u][1] || '').toLowerCase().trim(); // col B
       var uActive = uRows[u][6];                                    // col G
       var isActive = (uActive === true || String(uActive).toUpperCase() === 'TRUE' || uActive === '');
-      if (uEmail && uEmail === userEmail && isActive) {
-        return {
-          role:     String(uRows[u][3] || 'WAREHOUSE').toUpperCase().trim(), // col D
-          email:    email,
-          name:     String(uRows[u][2] || '').trim()                         // col C
-        };
+      if (uEmail && uEmail === userEmail) {
+        if (isActive) {
+          return {
+            role:     String(uRows[u][3] || 'WAREHOUSE').toUpperCase().trim(), // col D
+            email:    email,
+            name:     String(uRows[u][2] || '').trim()                         // col C
+          };
+        }
+        // Está en la lista y está apagado. Se acabó: no se cae a la de abajo.
+        return { role: 'DENIED', email: email };
       }
     }
   }
 
-  // ── 2. Fallback: CONFIG sheet (legacy rows) ──────────────────────────────
+  /* ── 2. LA LISTA VIEJA DE CONFIG — QUE AHORA SE CONVIERTE EN LA NUEVA ──────
+   *
+   * Jose, 2026-10-05, con dos capturas de su hoja: *"¿por qué tenemos 2 listas
+   * de lo mismo? ¿No sería mejor hacer una sola? Mejor hagámoslo profesional,
+   * arreglémoslo para que no haya errores ni goteos de seguridad."*
+   *
+   * Tiene razón, y el goteo era éste: CONFIG tiene correos y roles en las
+   * columnas F y G —de donde se migró cuando nació USERS_V3— y **seguía dando
+   * acceso**. En su copia, diecinueve personas que entran, que la pantalla de
+   * usuarios NO LISTA, y a las que por tanto **no se les puede quitar el acceso
+   * desde la app**. Un permiso que no se puede retirar no es un permiso: es una
+   * llave perdida.
+   *
+   * ── POR QUÉ NO SE BORRA Y YA ────────────────────────────────────────────
+   *
+   * Porque esa gente trabaja. Quitar la lista vieja de un día para otro deja
+   * mañana sin app a quien sólo estaba ahí, y en una instalación a medio migrar
+   * ésos son usuarios legítimos. El riesgo de romperle el día a alguien es más
+   * real que el de un correo de más en una hoja que sólo ve el dueño.
+   *
+   * ── LO QUE HACE EN SU LUGAR: LA PUERTA SE CIERRA SOLA ───────────────────
+   *
+   * Quien llega por la lista vieja entra —como siempre— **y queda escrito en
+   * USERS_V3 en el mismo momento**. A partir de ahí es un usuario de verdad:
+   * sale en Manage Users, tiene su interruptor, y el dueño puede apagarlo. La
+   * lista vieja deja de ser una puerta trasera permanente y pasa a ser lo que
+   * debió ser siempre: un camino de ida, que se recorre una vez por persona.
+   *
+   * Y cuando una instalación ya no tenga correos sueltos en CONFIG, esta rama
+   * no se ejecuta nunca. Ese es el día en que se puede borrar — con datos, no
+   * con fe.
+   *
+   * ── TRES CUIDADOS ──────────────────────────────────────────────────────
+   *
+   *   · Se escribe DENTRO DE UN try. Esto corre en el camino por el que entra
+   *     todo el mundo: si apuntar fallara, no puede impedir el acceso de quien
+   *     tiene derecho a entrar.
+   *   · Se escribe UNA VEZ. En cuanto la fila existe, la rama de arriba
+   *     contesta y aquí no se vuelve a pasar.
+   *   · Entra como ACTIVO y con el rol que tenía. No se aprovecha la migración
+   *     para cambiarle nada a nadie: lo que había es lo que hay, sólo que ahora
+   *     se ve. */
   var cfg = ss.getSheetByName(SHEETS.CONFIG);
   if (cfg) {
     var cRows = cfg.getDataRange().getValues();
     for (var c = 1; c < cRows.length; c++) {
       var cEmail = String(cRows[c][5] || '').toLowerCase().trim();
       if (cEmail && cEmail === userEmail) {
-        return { role: String(cRows[c][6] || 'WAREHOUSE').toUpperCase().trim(), email: email, name: '' };
+        var rolViejo = String(cRows[c][6] || 'WAREHOUSE').toUpperCase().trim();
+        try { adoptarUsuarioDeConfig_(ss, email, rolViejo); } catch (eMig) {
+          Logger.log('adoptarUsuarioDeConfig_: ' + eMig.message);
+        }
+        return { role: rolViejo, email: email, name: '' };
       }
     }
   }
 
   return { role: 'DENIED', email: email };
+}
+
+/* ── LAS DOS LISTAS, MIRADAS DE UNA VEZ ──────────────────────────────────────
+ *
+ * `adoptarUsuarioDeConfig_` convierte a la gente según va entrando, que está
+ * bien pero es lento: a quien no entre hoy no se le ve hoy. Esto mira las dos
+ * listas enteras de golpe y, si se le pide, las junta.
+ *
+ * Devuelve lo que hay que SABER, no sólo lo que hizo:
+ *   · migrados        — los que estaban sólo en la lista vieja (ya en USERS_V3)
+ *   · rolesDistintos  — el mismo correo con dos roles. Manda USERS_V3; que la
+ *                       otra diga otra cosa no cambia nada, pero confunde a
+ *                       quien abra la hoja, así que se dice.
+ *   · corruptas       — filas de USERS_V3 cuya columna de correo no es un
+ *                       correo. En la copia de Jose hay varias con nombres de
+ *                       persona dentro ("AVERY NDIAYE"). No dan acceso —nunca
+ *                       van a coincidir— pero salen en la pantalla de usuarios.
+ *
+ * NO BORRA NADA. Ni filas corruptas, ni la lista vieja. Borrar una fila de
+ * usuarios automáticamente es la clase de ayuda que deja a alguien sin trabajar
+ * un martes por la mañana.
+ */
+function revisarUsuarios_(ss, migrar) {
+  var out = { migrados: [], rolesDistintos: [], corruptas: [], soloEnConfig: [] };
+  var sheet = ensureUsersSheet_(ss);
+
+  var enUsers = {};
+  if (sheet.getLastRow() > 1) {
+    var uRows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
+    for (var i = 0; i < uRows.length; i++) {
+      var val = String(uRows[i][1] || '').trim();
+      if (!val) continue;
+      if (val.indexOf('@') === -1) {
+        out.corruptas.push({ fila: i + 2, valor: val.substring(0, 40) });
+        continue;
+      }
+      enUsers[val.toLowerCase()] = String(uRows[i][3] || '').toUpperCase().trim();
+    }
+  }
+
+  var cfg = ss.getSheetByName(SHEETS.CONFIG);
+  if (!cfg) return out;
+  var cRows = cfg.getDataRange().getValues();
+  for (var c = 1; c < cRows.length; c++) {
+    var correo = String(cRows[c][5] || '').trim();
+    if (!correo || correo.indexOf('@') === -1) continue;
+    var rol = String(cRows[c][6] || 'WAREHOUSE').toUpperCase().trim();
+    var clave = correo.toLowerCase();
+    if (enUsers[clave] === undefined) {
+      out.soloEnConfig.push(correo);
+      if (migrar && adoptarUsuarioDeConfig_(ss, correo, rol)) {
+        out.migrados.push(correo);
+        enUsers[clave] = rol;            // para no duplicar si aparece dos veces
+      }
+    } else if (enUsers[clave] !== rol) {
+      out.rolesDistintos.push({ email: correo, users: enUsers[clave], config: rol });
+    }
+  }
+  return out;
+}
+
+/* Mete en USERS_V3 a quien llegó por la lista vieja, para que el dueño lo vea y
+ * pueda quitarle el acceso. Vuelve a comprobar que no esté antes de escribir:
+ * dos pestañas de la misma persona pueden entrar a la vez, y dos filas con el
+ * mismo correo harían que apagar una no sirviera de nada. */
+function adoptarUsuarioDeConfig_(ss, email, rol) {
+  var sheet = ensureUsersSheet_(ss);
+  var buscado = String(email || '').toLowerCase().trim();
+  if (!buscado) return false;
+  if (sheet.getLastRow() > 1) {
+    var filas = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < filas.length; i++) {
+      if (String(filas[i][0] || '').toLowerCase().trim() === buscado) return false;
+    }
+  }
+  sheet.appendRow([
+    'USR-' + Date.now(), email, '', rol || 'WAREHOUSE',
+    'migrated from CONFIG', new Date(), true
+  ]);
+  try {
+    auditLog_(ss, 'USER_MIGRATED', 'system',
+      email + ' was signing in through the old CONFIG list and is now a real ' +
+      'user row — switch them off in Manage Users if they should not have access',
+      rol || 'WAREHOUSE', '');
+  } catch (e) {}
+  return true;
 }
 
 // ─── CONFIG LOADER ───────────────────────────────────────────────────────────
@@ -9435,13 +9659,114 @@ function saveWebAppUrl(url) {
 // docs/INSTALL-GUIDE.md instead.
 var _WEBAPP_DEPLOYMENT_MARKER = PRODUCT_NAME + ' Web App';
 
+/* ── UN ENLACE QUE SE PULSA, NO QUE SE COPIA ─────────────────────────────────
+ *
+ * Jose, 2026-10-05, con una captura del aviso de "Update published!": *"¿hay
+ * alguna forma de que el usuario sólo pueda dar clic en el link para ir a la
+ * app en lugar de tener que copiar el link, ir al navegador y pegarlo?"*
+ *
+ * Sí, y la razón de que no lo fuera es tonta: `ui.alert` **sólo sabe enseñar
+ * texto plano**. Una dirección dentro de un alert de Sheets no es un enlace, es
+ * una ristra de letras. Y encima la caja es estrecha, así que la dirección sale
+ * cortada con una barra de scroll horizontal — que es exactamente lo que se ve
+ * en su captura. Para seleccionarla entera hay que arrastrar a ciegas.
+ *
+ * Lo que sí sabe enseñar un enlace es `showModalDialog` con HTML. Dentro del
+ * recuadro de Sheets el HTML corre en un iframe cerrado, así que el enlace
+ * necesita `target="_blank"` para poder abrir algo; sin eso no hace nada y
+ * parece roto.
+ *
+ * ── POR QUÉ SIGUE EXISTIENDO EL ALERT DE ANTES ─────────────────────────────
+ *
+ * `showModalDialog` necesita el permiso `script.container.ui`, y hay copias que
+ * NO lo tienen: el editor de Apps Script esconde `appsscript.json`, así que
+ * quien actualiza pegando sólo Code e Index se queda con el manifiesto viejo.
+ * Eso ya nos mordió una vez —está contado entero en `showSetupWizardDialog`.
+ *
+ * Si esa ventana no se puede abrir, lo que NO puede pasar es que la persona se
+ * quede sin la dirección. Así que el alert de texto sigue ahí, de red: peor,
+ * pero nunca ausente. Un adorno que puede dejarte sin el dato no es una mejora.
+ *
+ * ── Y EL BOTÓN DE COPIAR ───────────────────────────────────────────────────
+ *
+ * `navigator.clipboard` está bloqueado en bastantes iframes cerrados, y cuando
+ * falla lo hace en silencio: el botón dice "Copied" y el portapapeles está
+ * vacío. Por eso se intenta primero el camino viejo (`execCommand`, que dentro
+ * de un diálogo de Sheets funciona) y **el botón sólo dice que copió cuando
+ * algo contestó que sí**. Mentirle a alguien sobre si tiene la dirección le
+ * manda a pegar la nada en la barra del navegador. */
+function pintarEnlaceEnVentana_(titulo, url, intro, aviso) {
+  var ui = SpreadsheetApp.getUi();
+  var u  = escHtml_(url);
+  var html =
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank">' +
+    '<style>' +
+      'body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;' +
+        'color:#1F2937;margin:0;padding:18px 20px 16px}' +
+      'p{margin:0 0 12px}' +
+      '.go{display:block;text-align:center;background:#2563EB;color:#fff;text-decoration:none;' +
+        'font-weight:600;font-size:15px;padding:12px 16px;border-radius:8px;margin:0 0 14px}' +
+      '.go:hover{background:#1D4ED8}' +
+      '.row{display:flex;gap:8px;align-items:center}' +
+      'input{flex:1;min-width:0;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;' +
+        'padding:8px 10px;border:1px solid #D1D5DB;border-radius:6px;background:#F9FAFB;color:#374151}' +
+      'button{border:1px solid #D1D5DB;background:#fff;color:#374151;font-size:13px;font-weight:600;' +
+        'padding:8px 14px;border-radius:6px;cursor:pointer;white-space:nowrap}' +
+      'button:hover{background:#F3F4F6}' +
+      '.note{font-size:12px;color:#6B7280;margin:12px 0 0}' +
+      '.warn{font-size:12px;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;' +
+        'border-radius:6px;padding:9px 11px;margin:12px 0 0}' +
+    '</style></head><body>' +
+    (intro ? '<p>' + escHtml_(intro) + '</p>' : '') +
+    '<a class="go" href="' + u + '" target="_blank" rel="noopener">Open ' + escHtml_(PRODUCT_NAME) + ' →</a>' +
+    '<div class="row"><input id="u" type="text" readonly value="' + u + '">' +
+    '<button id="c" onclick="copiar()">Copy link</button></div>' +
+    '<p class="note">Opens in a new tab. Bookmark it once and you will not need ' +
+      'this spreadsheet again.</p>' +
+    (aviso ? '<p class="warn">' + escHtml_(aviso) + '</p>' : '') +
+    '<script>' +
+      'function copiar(){' +
+        'var i=document.getElementById("u"),b=document.getElementById("c"),ok=false;' +
+        'i.focus();i.select();i.setSelectionRange(0,i.value.length);' +
+        'try{ok=document.execCommand("copy");}catch(e){ok=false;}' +
+        'if(ok){hecho(b);return;}' +
+        'try{navigator.clipboard.writeText(i.value).then(function(){hecho(b);},' +
+          'function(){fallo(b);});}catch(e){fallo(b);}' +
+      '}' +
+      'function hecho(b){b.textContent="Copied";setTimeout(function(){b.textContent="Copy link";},2000);}' +
+      /* Cuando no se puede copiar se dice, y se deja el texto seleccionado para
+       * que Ctrl+C funcione. Es lo contrario de decir "Copied" y no copiar. */
+      'function fallo(b){b.textContent="Press Ctrl+C";' +
+        'setTimeout(function(){b.textContent="Copy link";},3000);}' +
+    '<\/script></body></html>';
+  ui.showModalDialog(
+    HtmlService.createHtmlOutput(html).setWidth(480).setHeight(aviso ? 330 : 250),
+    titulo);
+}
+
+/* El mismo aviso, en la caja de texto de siempre. Se usa cuando la ventana no
+ * se puede abrir — nunca para ahorrarse la ventana. */
+function avisoDeEnlaceEnTexto_(titulo, url, intro, aviso) {
+  SpreadsheetApp.getUi().alert(titulo,
+    (intro ? intro + '\n\n' : '') + url + (aviso ? '\n\n' + aviso : ''),
+    SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+function mostrarEnlaceDeLaApp_(titulo, url, intro, aviso) {
+  try { pintarEnlaceEnVentana_(titulo, url, intro, aviso); }
+  catch (e) {
+    Logger.log('pintarEnlaceEnVentana_: ' + (e && e.message));
+    avisoDeEnlaceEnTexto_(titulo, url, intro, aviso);
+  }
+}
+
 function menuActivateWebApp() {
   var ui = SpreadsheetApp.getUi();   // throws outside the Sheets UI — the real gate
   setVerifiedAuth_({ role: 'ADMIN', email: requireOwnerContext_(), name: 'Spreadsheet menu' });
   try {
     var url = selfActivateWebApp_();
-    ui.alert('✅ Update published!\n\n' + url +
-      '\n\nThis URL never changes — running this again republishes to the same address.');
+    mostrarEnlaceDeLaApp_('✅ Update published!', url,
+      'This address never changes — publishing again updates the same one.', '');
   } catch (e) {
     ui.alert('Could not publish automatically: ' + e.message +
       '\n\nThis is expected unless this copy is linked to a standard Google Cloud project.' +
@@ -9455,10 +9780,37 @@ function menuActivateWebApp() {
 function selfActivateWebApp_() {
   var projectId = ScriptApp.getScriptId();
 
+  /* LA VERSIÓN LLEVA SU NOMBRE; LA IMPLEMENTACIÓN, NO. Y la diferencia importa.
+   *
+   * Jose, 2026-10-04, con la captura de "Manage deployments": *"la app funciona
+   * al hacer el deploy, pero le pone el mismo nombre a cada deploy, debemos
+   * hacer que se diferencie: el número de la versión o el código."*
+   *
+   * Tiene razón en lo que ve —una lista de "Acopio Web App" repetidos no dice
+   * nada— pero el nombre que hay que cambiar NO es el que él señala.
+   *
+   * `_findWebAppDeploymentId_` encuentra NUESTRA implementación comparando su
+   * descripción con esta constante, letra por letra. Es la única forma que tiene
+   * de saber cuál de todas hay que actualizar. Si la descripción de la
+   * implementación llevara la versión, a la siguiente publicación ya no
+   * coincidiría, no la encontraría, **crearía una implementación nueva — y una
+   * implementación nueva es una DIRECCIÓN NUEVA**. Todos los marcadores de todo
+   * el almacén dejarían de funcionar, y el aviso seguiría diciendo "esta
+   * dirección no cambia nunca".
+   *
+   * La VERSIÓN sí es libre: es la foto congelada, se archiva una por
+   * publicación, y su descripción es justo lo que se lee en el desplegable
+   * "Versión 117 del 4 oct 2026". Ahí es donde falta saber cuál es cuál, y ahí
+   * es donde se pone. */
   var versionNumber = _scriptApiRequest_(projectId, 'versions', 'post',
-    { description: _WEBAPP_DEPLOYMENT_MARKER }).versionNumber;
+    { description: PRODUCT_NAME + ' v' + APP_VERSION +
+                   (typeof APP_BUILD === 'string' && APP_BUILD ? ' · build ' + APP_BUILD : '') +
+                   ' · ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm')
+    }).versionNumber;
 
   var deploymentId = _findWebAppDeploymentId_(projectId);
+  // La descripción de la implementación NO LLEVA VERSIÓN, a propósito: es la
+  // llave con la que se la vuelve a encontrar. Ver el comentario de arriba.
   var configBody = { versionNumber: versionNumber, description: _WEBAPP_DEPLOYMENT_MARKER };
 
   // create takes the config fields directly; update wraps them in
@@ -10096,8 +10448,36 @@ function menuCheckInstallation() {
                   ' restored. Column widths and tab order left as you have them.');
   }
 
+  /* ── LAS DOS LISTAS DE USUARIOS ──────────────────────────────────────────
+   * Aquí y no en otro sitio porque ésta es la función que la gente ejecuta
+   * cuando quiere saber si su instalación está sana, y "hay gente entrando que
+   * tu pantalla de usuarios no enseña" es exactamente eso. */
+  var usrChk = null;
+  try { usrChk = revisarUsuarios_(SpreadsheetApp.getActiveSpreadsheet(), true); } catch (e) {}
+  if (usrChk && usrChk.migrados.length) {
+    repaired.push('User list — ' + usrChk.migrados.length + ' person(s) were signing in ' +
+      'through the OLD list in CONFIG, where you could not see or stop them. They are ' +
+      'now real users: ' + usrChk.migrados.slice(0, 6).join(', ') +
+      (usrChk.migrados.length > 6 ? ' …and ' + (usrChk.migrados.length - 6) + ' more' : '') +
+      '. Open ⚙️ App Settings → Manage Users and switch off anyone who should not be there.');
+  }
+
   var lines = [];
   if (repaired.length) lines.push('REPAIRED AUTOMATICALLY\n  • ' + repaired.join('\n  • ') + '\n');
+  if (usrChk && (usrChk.rolesDistintos.length || usrChk.corruptas.length)) {
+    lines.push('THE USER LIST NEEDS A LOOK');
+    usrChk.rolesDistintos.forEach(function (d) {
+      lines.push('  • ' + d.email + ' is ' + d.users + ' in Manage Users but ' + d.config +
+                 ' in the old CONFIG list.\n      Manage Users is the one that counts. ' +
+                 'The old row is ignored now, but tidy it up so it cannot confuse anyone.');
+    });
+    usrChk.corruptas.forEach(function (c) {
+      lines.push('  • Row ' + c.fila + ' of USERS_V3 has "' + c.valor + '" where an email ' +
+                 'should be.\n      It can never match anybody, so it grants nothing — but it ' +
+                 'shows up in Manage Users. Fix or delete that row.');
+    });
+    lines.push('');
+  }
   if (triggerNotes.length) {
     lines.push('SCHEDULED JOBS THAT NEED ATTENTION');
     triggerNotes.forEach(function (n) { lines.push(n); });
@@ -10446,7 +10826,11 @@ function menuOpenApp() {
       'New deployment → Web app.', ui.ButtonSet.OK);
     return;
   }
-  ui.alert('Open this URL in your browser:\n\n' + url + aviso);
+  /* El aviso se pasa aparte y no pegado a la dirección: dentro de la caja de
+   * texto iban los dos en la misma ristra, y la advertencia de que la dirección
+   * puede estar MAL quedaba detrás de cien caracteres de dirección, que es
+   * donde nadie la lee. */
+  mostrarEnlaceDeLaApp_('🚀 Open ' + PRODUCT_NAME, url, '', aviso.replace(/^\n+/, ''));
 }
 
 // ─── PRESENCE / HEARTBEAT ────────────────────────────────────────────────────
@@ -10660,7 +11044,84 @@ function addUser(data, auth) {
   var id  = 'USR-' + now.getTime();
   sheet.appendRow([id, textCell_(email), textCell_(name), textCell_(role), auth.email, now, true]);
   auditLog_(ss, 'ADD_USER', auth.email, email + ' as ' + role, '', '');
-  return { status: 'success', id: id };
+
+  var inv = (data.invite === false) ? { enviado: false, motivo: '' }
+                                    : invitarUsuario_(ss, email, name, role, auth);
+  return { status: 'success', id: id, invited: inv.enviado, inviteNote: inv.motivo };
+}
+
+/* ── CÓMO LLEGA LA DIRECCIÓN A QUIEN ACABA DE ENTRAR ─────────────────────────
+ *
+ * Jose: *"debemos reducir al máximo (100%) la necesidad del usuario de ir al
+ * sheet."* Pues el primer día de un usuario era justo lo contrario: se le daba
+ * de alta y **la app no le decía nada a nadie**. Alguien tenía que acordarse de
+ * mandarle la dirección por su cuenta — y para tenerla, abrir la hoja.
+ *
+ * Así que el alta manda la invitación. Tres cosas que importan:
+ *
+ *   · SI FALLA EL CORREO, EL USUARIO QUEDA DADO DE ALTA IGUAL. El alta ya está
+ *     escrita cuando se llega aquí, y avisar es un extra. Un extra que deshace
+ *     lo principal es un fallo, no un extra.
+ *   · SI NO HAY DIRECCIÓN GUARDADA, NO SE INVENTA NINGUNA. `ScriptApp.getService()
+ *     .getUrl()` devuelve la del script ORIGINAL en una hoja copiada —ya nos costó
+ *     una tarde— y mandarle a alguien una dirección muerta en su primer correo es
+ *     peor que no mandarle nada. Se dice que no se mandó y por qué.
+ *   · SE DICE LA VERDAD AL QUE INVITA. La respuesta lleva si salió o no, para que
+ *     la pantalla no ponga "Invitation sent" cuando no se mandó nada. */
+function invitarUsuario_(ss, email, name, role, auth) {
+  var url = savedWebAppUrl_();
+  if (!url) {
+    return { enviado: false, motivo: 'No invitation was sent: this installation has ' +
+      'no saved app address yet. Open 🏭 ' + PRODUCT_NAME + ' → 🔧 Advanced → Push ' +
+      'Update Live in the spreadsheet, which records it.' };
+  }
+  var empresa = '';
+  try { empresa = String((companySettings_() || {}).name || '').trim(); } catch (e) {}
+  var deQuien = String((auth && auth.name) || '').trim() || String((auth && auth.email) || '');
+  var queHace = (role === 'VIEWER')    ? 'You can see everything in the warehouse, and you cannot change it.'
+              : (role === 'ADMIN')     ? 'You have full access, including settings and users.'
+              :                          'You can record movements in and out of the warehouse.';
+  try {
+    MailApp.sendEmail({
+      to: email,
+      subject: 'You have been added to ' + (empresa ? empresa + ' — ' : '') + PRODUCT_NAME,
+      name: (empresa || PRODUCT_NAME) + ' — ' + PRODUCT_NAME,
+      replyTo: String((auth && auth.email) || ''),
+      body:
+        (name ? 'Hi ' + name + ',\n\n' : 'Hi,\n\n') +
+        deQuien + ' has given you access to ' + (empresa ? empresa + "'s " : 'the ') +
+        'warehouse system.\n\n' +
+        'Open it here:\n' + url + '\n\n' +
+        'Sign in with this Google account: ' + email + '\n' +
+        queHace + '\n\n' +
+        'Bookmark that address — it is the only thing you need. You do not need ' +
+        'the spreadsheet.\n',
+      htmlBody:
+        '<div style="font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;color:#1F2937">' +
+        '<p>' + (name ? 'Hi ' + escHtml_(name) + ',' : 'Hi,') + '</p>' +
+        '<p>' + escHtml_(deQuien) + ' has given you access to ' +
+          (empresa ? escHtml_(empresa) + "'s" : 'the') + ' warehouse system.</p>' +
+        '<p><a href="' + escHtml_(url) + '" style="display:inline-block;background:#2563EB;' +
+          'color:#fff;text-decoration:none;font-weight:600;padding:11px 22px;border-radius:8px">' +
+          'Open ' + escHtml_(PRODUCT_NAME) + '</a></p>' +
+        '<p style="font-size:13px;color:#374151">Sign in with this Google account: <b>' +
+          escHtml_(email) + '</b><br>' + escHtml_(queHace) + '</p>' +
+        '<p style="font-size:13px;color:#6B7280">Bookmark that address — it is the only ' +
+          'thing you need. You do not need the spreadsheet.</p>' +
+        '<p style="font-size:12px;color:#9CA3AF;word-break:break-all">' + escHtml_(url) + '</p>' +
+        '</div>'
+    });
+    try { auditLog_(ss, 'USER_INVITED', String((auth && auth.email) || ''), email, role, ''); } catch (e) {}
+    return { enviado: true, motivo: '' };
+  } catch (e) {
+    try {
+      logError_(ss, 'WARN', 'backend', 'invitarUsuario_', String((auth && auth.email) || ''),
+        'Could not email the invitation to ' + email + ': ' + (e && e.message), null, '');
+    } catch (e2) {}
+    return { enviado: false, motivo: 'The user was added, but the invitation email could ' +
+      'not be sent (' + (e && e.message ? e.message : 'unknown reason') + '). Send them ' +
+      'the app address yourself.' };
+  }
 }
 
 function updateUser(data, auth) {
