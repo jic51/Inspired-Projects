@@ -4510,7 +4510,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.42';
+var APP_VERSION = '12.47';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -4522,7 +4522,7 @@ var APP_VERSION = '12.42';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '7fa7ba83';
+var APP_BUILD = '54c1ca20';
 var userRole = 'WAREHOUSE';
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
@@ -9797,6 +9797,135 @@ function _stripTags(err){
  * Devuelve true si se ocupó del error. Corrige el stock conocido con lo que el
  * servidor acaba de decir, repinta el formulario y explica qué pasó.
  */
+/* ── UNA UBICACIÓN QUE NO EXISTE ─────────────────────────────────────────────
+ *
+ * El servidor rechaza meter material en un sitio que no está en la lista — el
+ * fallo de `A1p` que Jose encontró el 05/10, que la app guardaba tal cual y
+ * dejaba material en una estantería que no existe.
+ *
+ * Aquí no se enseña el rechazo y ya. Un error rojo que dice "esa ubicación no
+ * existe" deja a alguien de bodega con el material en la mano, delante de una
+ * pantalla que no le ofrece nada: o abre los ajustes —si es que puede—, o
+ * abandona el movimiento. Las dos salidas son malas, y la segunda es la que
+ * pasa.
+ *
+ * Así que se ofrece lo que quería hacer:
+ *   · Si lo tecleado se parece a una que SÍ existe, se propone ésa primero. Es
+ *     el caso de verdad: `A1p` con `A1A`, `A1B` y `A1C` en la lista.
+ *   · Si además tiene permiso para tocar el catálogo, puede crearla y seguir.
+ *   · Y si no lo tiene, se le dice A QUIÉN pedírselo, en vez de dejarle
+ *     mirando una puerta cerrada.
+ *
+ * Devuelve true si se ha hecho cargo del error. */
+function _ubicacionDesconocida(err, reintentar){
+  var msg = (err && err.message) || String(err || '');
+  var i = msg.indexOf('UNKNOWN_LOCATION|');
+  if (i === -1) return false;
+
+  var partes  = msg.substring(i).split('|');
+  var tecleada = (partes[1] || '').trim();
+  var parecida = (partes[2] || '').trim();
+  var puede    = (userRole === 'ADMIN') ||
+                 (userRole === 'WAREHOUSE' && !!(rolePerms || {}).canManageCatalog);
+
+  if (parecida) {
+    _showConfirm({
+      icon: '📍',
+      title: 'No such location: ' + tecleada,
+      message: 'There is no "' + tecleada + '" in your warehouse.\n\n' +
+               'Did you mean ' + parecida + '?',
+      confirmText: 'Use ' + parecida,
+      onConfirm: function(){ _ponerUbicacion(parecida); }
+    });
+    return true;
+  }
+  if (puede) {
+    _showConfirm({
+      icon: '📍',
+      title: 'No such location: ' + tecleada,
+      message: 'There is no "' + tecleada + '" in your warehouse yet.\n\n' +
+               'Create it as a new location and save this movement?',
+      confirmText: 'Create ' + tecleada,
+      onConfirm: function(){
+        _cfgAddValue('locations', tecleada, function(ok, e2){
+          if (!ok){ showToast('Could not create it: ' + e2, 'err', 6000); return; }
+          /* La lista local se actualiza antes de reintentar: si no, el
+           * desplegable seguiría sin ofrecerla y el siguiente movimiento
+           * volvería a chocar con lo mismo que acabamos de arreglar. */
+          if (config && Array.isArray(config.locations) &&
+              !config.locations.some(function(l){ return String(l.name).toUpperCase() === tecleada.toUpperCase(); })) {
+            config.locations.push({ name: tecleada, type: 'RACK' });
+            var dlDest = document.getElementById('rackListDest');
+            if (dlDest) { var op = document.createElement('option'); op.value = tecleada; dlDest.appendChild(op); }
+          }
+          showToast('Location ' + tecleada + ' created', 'ok');
+          if (typeof reintentar === 'function') reintentar();
+        });
+      }
+    });
+    return true;
+  }
+  _showConfirm({
+    icon: '📍',
+    title: 'No such location: ' + tecleada,
+    message: 'There is no "' + tecleada + '" in your warehouse, and material ' +
+             'cannot be put somewhere that does not exist.\n\n' +
+             'Check the rack label, or ask an admin to add it in ' +
+             'App Settings → Locations.',
+    confirmText: 'OK',
+    soloAviso: true
+  });
+  return true;
+}
+
+/* ── UNA CATEGORÍA QUE NO ESTÁ EN EL CATÁLOGO ────────────────────────────────
+ *
+ * No se puede llegar aquí tecleando: la categoría es un desplegable cerrado. Si
+ * el servidor la rechaza es porque la pantalla y el catálogo **no dicen lo
+ * mismo** — normalmente porque alguien la borró en Ajustes mientras esta
+ * ventana estaba abierta, o porque el material entró por una importación.
+ *
+ * Por eso aquí no se ofrece "créala y sigue" como con las ubicaciones: lo que
+ * hace falta es **volver a cargar lo que el servidor dice que hay**, no empujar
+ * más datos. Ofrecer crear una categoría para salir del paso es cómo se acaba
+ * con dos categorías que son la misma. */
+function _categoriaDesconocida(err){
+  var msg = (err && err.message) || String(err || '');
+  var i = msg.indexOf('UNKNOWN_CATEGORY|');
+  if (i === -1) return false;
+  var partes   = msg.substring(i).split('|');
+  var tecleada = (partes[1] || '').trim();
+  var parecida = (partes[2] || '').trim();
+  _showConfirm({
+    icon: '📦',
+    title: 'No such category: ' + tecleada,
+    message: 'The category "' + tecleada + '" is not in your catalog' +
+             (parecida ? ', and the closest one you do have is ' + parecida + '.' : '.') +
+             '\n\nA category is half of a material\'s identity here, so material ' +
+             'cannot be filed under one that does not exist.\n\n' +
+             'Reload the page to get the current list, then pick again.',
+    confirmText: 'OK',
+    soloAviso: true
+  });
+  return true;
+}
+
+/* Deja la ubicación corregida donde estaba la mala. Qué casilla es depende del
+ * tipo de movimiento, y es la misma regla que usa el servidor: el destino,
+ * salvo cuando el movimiento sólo tiene origen. */
+function _ponerUbicacion(valor){
+  var ids = ['destLoc', 'em_destLoc', 'sourceLoc', 'em_sourceLoc'];
+  for (var i = 0; i < ids.length; i++){
+    var el = document.getElementById(ids[i]);
+    if (el && el.offsetParent !== null && String(el.value || '').trim()){
+      el.value = valor;
+      el.focus();
+      return;
+    }
+  }
+  showToast('Type ' + valor + ' in the location box and save again', 'info', 6000);
+}
+
 function _shortStockFix(err){
   var info = _shortStockInfo(err);
   if (!info) return false;
@@ -10470,6 +10599,8 @@ async function submitMovement(){
         // ── Otro se llevó el material mientras esta ventana estaba abierta ─
         _btnReset(btn);
         _setModalBusy('moveOverlay', false);
+        if (_categoriaDesconocida(err)) return;
+        if (_ubicacionDesconocida(err, function(){ _doSubmit(force); })) return;
         if (_shortStockFix(err)) return;
         // ── Any other error ────────────────────────────────────────────────
         showToast('Error: ' + _stripTags(err), 'err', 6000);
@@ -13393,9 +13524,22 @@ function _aiSaveKey(){
   if (msg) { msg.style.color = 'var(--muted)'; msg.textContent = 'Checking the key with Google…'; }
   _btnBusy(btn, 'Checking…');
   google.script.run
-    .withSuccessHandler(function(){
+    /* GUARDADA NO ES LO MISMO QUE COMPROBADA, y decir "on" en los dos casos
+     * es la mentira pequeña que luego cuesta un día. Cuando Google está
+     * saturado el servidor guarda la clave y avisa de que no pudo comprobarla
+     * (ver setAiKey); si aquí se dijera "Document reader is on" igual, la
+     * persona se iría convencida de que funciona y se enteraría de que no
+     * delante de un proveedor. */
+    .withSuccessHandler(function(res){
       if (inp) inp.value = '';
-      showToast('Document reader is on.', 'ok');
+      var sinComprobar = res && res.verified === false;
+      if (sinComprobar) {
+        if (msg) { msg.style.color = 'var(--amber, #B45309)'; msg.textContent = res.message || ''; }
+        showToast('Key saved — Google was too busy to check it.', 'warn', 6000);
+      } else {
+        if (msg) msg.textContent = '';
+        showToast('Document reader is on.', 'ok');
+      }
       _loadAiStatus();
     })
     .withFailureHandler(function(e){
@@ -14965,7 +15109,73 @@ function _pmDirDelete(name) {
   });
 }
 
+/* ── UN RENOMBRE A LA VEZ, Y SIN TIRAR LO QUE ALGUIEN ESCRIBIÓ ───────────────
+ *
+ * Jose, 2026-10-06, con un vídeo de la pestaña de Categorías: *"al dar clic en
+ * editar se habilitan todas las categorías y se pueden editar todas al mismo
+ * tiempo, pero al guardar sólo se puede dar clic en 1 a la vez, y cuando esa
+ * una se guarda, las demás ya se desactivan del modo edición y SE BORRA EL
+ * CAMBIO QUE SE HIZO."*
+ *
+ * Exacto, y la última parte es la grave. Lo que pasaba:
+ *
+ *   · `_cfgStartEdit` abría una fila y **no cerraba las demás**, así que se
+ *     podían abrir todas y escribir en todas.
+ *   · Guardar una llama al servidor y, al volver, `_applyCfgChangeLocally`
+ *     **repinta la pestaña entera** — se lleva por delante los demás recuadros
+ *     y lo tecleado dentro.
+ *
+ * Así que la app **ofrecía un trabajo que no podía entregar**: dejaba escribir
+ * cinco renombres y guardaba uno, tirando los otros cuatro sin avisar. Es la
+ * misma familia que el resto de los fallos de esta semana —prometer algo y
+ * hacer otra cosa en silencio— sólo que aquí lo que se pierde es lo que la
+ * persona acaba de teclear.
+ *
+ * ── POR QUÉ UNO A LA VEZ Y NO "GUARDAR TODOS" ──────────────────────────────
+ *
+ * Porque renombrar una categoría **reescribe cada fila del archivo** que la
+ * usaba y después rehace la caché de existencias. Cinco de golpe son cinco de
+ * esas pasadas, y si la tercera falla queda media tanda aplicada y nadie sabe
+ * cuál. Guardar de uno en uno es lo correcto; lo que estaba mal era fingir que
+ * se podía empezar de cinco.
+ *
+ * ── Y NO SE CIERRA UNO QUE TENGA CAMBIOS ───────────────────────────────────
+ *
+ * Cerrar el recuadro abierto para abrir otro sería el mismo pecado más
+ * pequeño: tirar lo tecleado, sólo que de a uno. Si lo abierto está sin tocar,
+ * se cierra y ya; si tiene algo escrito, **no se abre el nuevo** y se lleva el
+ * cursor al que estaba a medias. */
+function _cfgEditAbierto() {
+  var scope = document.getElementById('settingsTabContent');
+  if (!scope) return null;
+  var cajas = scope.querySelectorAll('[id^="cfgEdit-"]');
+  for (var k = 0; k < cajas.length; k++) {
+    if (cajas[k].style.display === 'none') continue;
+    var inp = cajas[k].querySelector('.cfg-item-input');
+    var li  = cajas[k].closest ? cajas[k].closest('.cfg-item') : null;
+    var original = li ? String(li.dataset.val || '') : '';
+    var ahora    = inp ? String(inp.value || '') : '';
+    return { caja: cajas[k], input: inp,
+             cambiado: ahora.trim().toUpperCase() !== original.trim().toUpperCase(),
+             id: cajas[k].id };
+  }
+  return null;
+}
+
 function _cfgStartEdit(tab, i) {
+  var abierto = _cfgEditAbierto();
+  if (abierto && abierto.id !== 'cfgEdit-' + tab + '-' + i) {
+    if (abierto.cambiado) {
+      showToast('Finish the one you are editing first — saving it would discard ' +
+                'this one.', 'warn', 5000);
+      if (abierto.input) { abierto.input.focus(); abierto.input.select(); }
+      return;
+    }
+    // Sin tocar: se cierra y no se pierde nada.
+    var partes = abierto.id.split('-');
+    _cfgCancelEdit(partes[1], partes[2]);
+  }
+
   var nm  = document.getElementById('cfgName-'+tab+'-'+i);
   var ed  = document.getElementById('cfgEdit-'+tab+'-'+i);
   if (nm) nm.style.display = 'none';
@@ -16766,7 +16976,10 @@ function updateMatList(){
 // offered, because its own history counted as proof it was on the list.
 function _cfgKnownValues(type){
   var set = {};
-  ((type === 'suppliers' ? config.suppliers : config.projects) || []).forEach(function(v){
+  var lista = (type === 'suppliers')  ? config.suppliers
+            : (type === 'categories') ? config.categories
+            :                           config.projects;
+  (lista || []).forEach(function(v){
     var k = String(v || '').trim().toUpperCase();
     if (k) set[k] = true;
   });
@@ -16898,7 +17111,16 @@ function _recomputeCfgDeck(){
   // whatever is oldest in the loaded window.
   for (var i = movements.length - 1; i >= 0; i--){
     var m = movements[i];
-    [['projects', m.project], ['suppliers', m.supplier]].forEach(function(pair){
+    /* LAS CATEGORÍAS TAMBIÉN, desde la v12.45, y por una consecuencia que no es
+     * evidente: la categoría es un DESPLEGABLE CERRADO en el formulario, así
+     * que un material cuya categoría no esté en la lista **no se puede ni
+     * seleccionar para sacarlo**. Está dentro y es intocable.
+     *
+     * No se podía teclear desde la app —de ahí que no estuviera aquí— pero una
+     * importación trae la categoría que venga en el fichero. El resultado era
+     * material importado, invisible en el catálogo, y sin forma de moverlo. */
+    [['projects', m.project], ['suppliers', m.supplier],
+     ['categories', m.category]].forEach(function(pair){
       var type = pair[0], val = String(pair[1] || '').trim();
       if (!val) return;
       var key = _cfgKey(type, val);
@@ -17593,17 +17815,27 @@ function refreshDropdowns(){
   var rackNames = config.locations
     .filter(function(l){ return String(l.type || '').toUpperCase() !== 'ARCHIVED'; })
     .map(function(l){ return l.name; });
-  var rackSet   = Array.from(new Set(
-    rackNames.concat(
-      movements.map(function(m){ return m.sourceLoc; }).filter(Boolean),
-      movements.map(function(m){ return m.destLoc; }).filter(Boolean)
-    )
-  )).sort();
-  rackSet.forEach(function(r){
-    [rd1, rd2].forEach(function(dl){
-      var o = document.createElement('option'); o.value = r; dl.appendChild(o);
-    });
-  });
+  /* ── LAS DOS LISTAS DEJAN DE SER LA MISMA ──────────────────────────────
+   *
+   * Hasta la v12.43 las dos se llenaban igual: las ubicaciones de la lista MÁS
+   * todas las que aparecieran en cualquier movimiento. Eso tiene sentido para
+   * el ORIGEN —si hay material en un sitio, hay que poder sacarlo de ahí,
+   * aunque ese sitio sea uno que nunca debió existir— y ninguno para el
+   * DESTINO: ofrecer `A1P` para meter material es ofrecer el fallo otra vez.
+   *
+   * Y desde la v12.43 el servidor rechaza meter material en un sitio que no
+   * está en la lista, así que una sugerencia así ya no sería sólo mala idea:
+   * sería un camino que la pantalla ofrece y el servidor corta. Una lista que
+   * propone lo que luego se rechaza es peor que una lista corta.
+   *
+   * Es la misma asimetría que hay en el servidor, y por el mismo motivo: meter
+   * material donde no existe es el fallo; sacarlo de ahí es limpiarlo. */
+  var deMovimientos = movements.map(function(m){ return m.sourceLoc; }).filter(Boolean)
+    .concat(movements.map(function(m){ return m.destLoc; }).filter(Boolean));
+  var origenSet  = Array.from(new Set(rackNames.concat(deMovimientos))).sort();
+  var destinoSet = Array.from(new Set(rackNames)).sort();
+  origenSet.forEach(function(r){ var o = document.createElement('option'); o.value = r; rd1.appendChild(o); });
+  destinoSet.forEach(function(r){ var o = document.createElement('option'); o.value = r; rd2.appendChild(o); });
 
   var sd = document.getElementById('supplierList'); sd.innerHTML = '';
   var supSet = Array.from(new Set(config.suppliers.concat(movements.map(function(m){ return m.supplier; }).filter(Boolean)))).sort();

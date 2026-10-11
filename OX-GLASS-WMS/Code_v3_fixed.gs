@@ -127,7 +127,7 @@
 // Version handshake — bump this whenever Code.gs and Index.html change together.
 // getInitialData() returns it; the frontend compares against its own APP_VERSION
 // and warns if they differ (i.e. one file was deployed without the other).
-var APP_VERSION = '12.42';
+var APP_VERSION = '12.47';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -139,7 +139,7 @@ var APP_VERSION = '12.42';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '7fa7ba83';
+var APP_BUILD = '54c1ca20';
 
 // The browser-tab icon every installation gets unless it sets FAVICON_URL.
 // See the note in doGet for why one shared mark rather than each customer's
@@ -566,7 +566,15 @@ function ensureCoreSheets_(ss) {
   if (repaired.length) {
     try { auditLog_(ss, 'REPAIR_HEADERS', 'system', repaired.join(', '), '', ''); } catch (e) {}
   }
-  return created;
+  /* Las DOS listas, no sólo la de hojas creadas.
+   *
+   * Hasta la v12.44 esto devolvía `created` a secas, y daba igual porque el
+   * único que llamaba —el asistente de instalación— ni lo miraba. Desde que
+   * "Check installation" también llama, lo reparado importa tanto como lo
+   * creado: una instalación de meses no crea ninguna hoja y sí puede recuperar
+   * los nombres de sus columnas, y si no se devuelven, el arreglo ocurre y
+   * nadie se entera. */
+  return { created: created, repaired: repaired };
 }
 
 /* ═══ EL FORMATO ESTÁNDAR DE LA HOJA ═════════════════════════════════════════
@@ -891,7 +899,7 @@ function saveSetupWizard(data) {
     var email = String(u.email || '').toLowerCase().trim();
     if (!email || email.indexOf('@') === -1 || existing[email]) return;
     var role = String(u.role || 'WAREHOUSE').toUpperCase().trim();
-    if (['ADMIN','WAREHOUSE','VIEWER'].indexOf(role) === -1) role = 'WAREHOUSE';
+    if (ROLES.indexOf(role) === -1) role = 'WAREHOUSE';
     users.appendRow(['USR-' + (now.getTime() + i), textCell_(email),
                      textCell_(String(u.name || '').trim()), role, actor, now, true]);
     existing[email] = true;
@@ -1481,37 +1489,87 @@ function setAiKey(data, auth) {
   // the Generative Language API switched off fails identically to no key at
   // all — days later, in front of somebody trying to read an email. Better to
   // find out here, in the one place where the person can still fix it.
+  //
+  // UN SOLO MODELO, y antes probaba cuatro. `geminiFetch_` recorre la lista de
+  // respaldo hasta que uno conteste, y eso es lo correcto PARA TRABAJAR: si
+  // Google retira un modelo, la app sigue. Pero PARA COMPROBAR UNA CLAVE no
+  // aporta nada —si la clave está mal, está mal para los cuatro— y lo que sí
+  // hace es multiplicar por cuatro el tiempo que la rueda da vueltas. Jose,
+  // 2026-10-07: *"lleva mucho tiempo verificando con Google, así que creo que
+  // está mal"*. Creyó que la clave fallaba porque tardaba. Tardaba por esto.
   var probe;
   try {
     probe = geminiFetch_({
       contents: [{ parts: [{ text: 'Reply with the single word: ok' }] }],
       generationConfig: { maxOutputTokens: 5 }
-    }, key);
+    }, key, true);
   } catch (e) {
     throw new Error('Could not reach Google to check the key: ' + e.message);
   }
 
   var code = probe.getResponseCode();
+
+  /* ── UN 503 NO ES UNA SENTENCIA SOBRE LA CLAVE ────────────────────────────
+   *
+   * Jose, 2026-10-07, con la captura: `Google rejected that key (HTTP 503)`.
+   * GOOGLE NO RECHAZÓ LA CLAVE. Un 503 es "estoy saturado"; un 429, "ahora no".
+   * Ninguno de los dos mira la clave siquiera. La suya podía estar perfecta.
+   *
+   * Y creyéndose el mensaje borró claves que funcionaban y se pasó un día
+   * sacando otras: *"creo que vamos a tener que empezar de nuevo… no entiendo
+   * nada"*. Ese "no entiendo nada" no era suyo: era de una frase nuestra que
+   * afirmaba algo que no sabía.
+   *
+   * ASÍ QUE AQUÍ SE GUARDA. Rechazar una clave por un fallo pasajero de Google
+   * deja a la persona sin poder avanzar por algo que no ha hecho ella, y a
+   * cambio de nada: la comprobación existe para cazar una clave MALA, y esto
+   * no demuestra que lo sea. Se guarda, se dice en voz alta que no se pudo
+   * comprobar, y si luego falla de verdad, el sitio donde se usa ya traduce el
+   * error bien desde hace meses.
+   *
+   * La traducción de los códigos YA ESTABA ESCRITA en geminiErrorText_ —con un
+   * comentario encima que nombra a Jose topándose con este mismo 503 en otra
+   * pantalla— y esta función no la llamaba: se armaba su propio texto a mano y
+   * decía "rejected" para todo lo que no fuera 200. Quinto caso del patrón de
+   * siempre: la respuesta correcta escrita en el archivo y nunca llamada. */
+  if (code === 429 || code >= 500) {
+    p.setProperty('GEMINI_API_KEY', key);
+    auditLog_(ss, 'AI_KEY', auth.email, 'GEMINI_API_KEY', 'set', 'saved, not verified (Google busy)');
+    return {
+      status: 'success', configured: true, hint: '…' + key.slice(-4), verified: false,
+      message: 'Key saved — but Google was too busy to check it just now, so we could ' +
+               'not confirm it works.\n\nThis is on Google\'s side, not yours. Try the ' +
+               'document reader in a few minutes; if it still fails, come back and paste ' +
+               'the key again.'
+    };
+  }
+
+  // Lo que sí es una sentencia sobre la clave: 400 y 403. Mal copiada, o la
+  // "Generative Language API" apagada en su proyecto.
   if (code !== 200) {
-    var why = 'Google rejected that key (HTTP ' + code + ').';
-    if (code === 400 || code === 403) {
-      why += '\n\nThe usual causes: the key was copied incompletely, or the ' +
-             '"Generative Language API" is not enabled on the Google project ' +
-             'the key belongs to.';
-    }
-    throw new Error(why);
+    var errTxt = '';
+    try {
+      var eo = JSON.parse(probe.getContentText() || '{}');
+      errTxt = (eo.error && eo.error.message) ? eo.error.message : '';
+    } catch (e2) {}
+    throw new Error(geminiErrorText_(code, errTxt || ('HTTP ' + code)));
   }
 
   p.setProperty('GEMINI_API_KEY', key);
   // Never the key itself, not even partially, into a sheet anyone can open.
   auditLog_(ss, 'AI_KEY', auth.email, 'GEMINI_API_KEY', 'set', 'verified against Google');
-  return { status: 'success', configured: true, hint: '…' + key.slice(-4) };
+  return { status: 'success', configured: true, hint: '…' + key.slice(-4), verified: true };
 }
 
 // One call, trying each model until one answers. Returns the HTTPResponse of
 // the first success, or of the last attempt so the caller can report something.
-function geminiFetch_(requestBody, apiKey) {
-  var models = geminiModels_();
+//
+// `unSoloModelo` — para COMPROBAR una clave, no para trabajar. Recorrer la
+// lista de respaldo cuando lo que se quiere saber es si la clave vale sólo
+// multiplica la espera: una clave mala lo es para todos los modelos. Ver
+// setAiKey.
+function geminiFetch_(requestBody, apiKey, unSoloModelo) {
+  var models = unSoloModelo ? [geminiModel_()] : geminiModels_();
   var last = null;
   for (var i = 0; i < models.length; i++) {
     last = UrlFetchApp.fetch(geminiUrl_(models[i], apiKey), {
@@ -1803,6 +1861,42 @@ function registrarAccesoDenegado_(auth, motivo) {
   } catch (e) { /* nunca lanza: ver arriba */ }
 }
 
+/* ── QUIÉN PUEDE ESCRIBIR, DICHO COMO UNA LISTA DE QUIÉN SÍ ──────────────────
+ *
+ * Encontrado el 2026-10-05 mirando qué costaría el *"otro tipo de usuario"* que
+ * pidió Jose. **No era un fallo ese día. Lo habría sido el día siguiente a que
+ * existiera un rol más**, y por eso se arregla antes y no después.
+ *
+ * `requireAuth_` decidía si podías escribir así:
+ *
+ *     if (minRole === 'WRITE' && a.role === 'VIEWER') throw ...
+ *
+ * Eso no pregunta *"¿puede éste escribir?"*. Pregunta *"¿es VIEWER?"*. Con tres
+ * roles da el mismo resultado, así que nunca se notó. Pero **cualquier rol
+ * nuevo habría pasado la guardia de escritura sin que nadie lo decidiera**,
+ * sólo por no llamarse VIEWER — y en una app de almacén eso es permiso para
+ * mover material.
+ *
+ * Es la tercera vez este mes del mismo patrón: **una guardia que dice que sí.**
+ * El goteo de CONFIG en los usuarios era igual, y la lista vieja de usuarios
+ * también. Una lista de excluidos sólo es correcta mientras nadie añada nada;
+ * una de admitidos lo es siempre.
+ *
+ * ── Y POR QUÉ UNA SOLA CONSTANTE ──────────────────────────────────────────
+ *
+ * Los roles válidos estaban escritos a mano en DOS sitios —`addUser` y el
+ * asistente de instalación— y ahora harían falta en tres. Tres copias de la
+ * misma lista es exactamente el fallo que llevamos todo el mes arreglando en
+ * otros sitios: **dos cosas que tienen que coincidir sin que nada lo obligue.**
+ * Aquí la coincidencia decide quién entra, así que vale la pena la constante. */
+var ROLES = ['ADMIN', 'WAREHOUSE', 'VIEWER'];
+
+/* Los que pueden escribir en el almacén. VIEWER no está, y ésa es la frase
+ * entera: lo de sólo lectura es lo que significa. Un rol que se añada mañana
+ * **no escribe hasta que alguien lo ponga aquí a propósito**, que es justo lo
+ * contrario de lo que pasaba antes. */
+var ROLES_QUE_ESCRIBEN = ['ADMIN', 'WAREHOUSE'];
+
 function requireAuth_(minRole) {
   var a = _verifiedAuth;
   if (!a || !a.email || a.role === 'NO_SESSION') {
@@ -1814,7 +1908,7 @@ function requireAuth_(minRole) {
     throw new Error('Access denied. Your account (' + a.email + ') is not registered in this system.');
   }
   if (minRole === 'ADMIN' && a.role !== 'ADMIN') throw new Error('Admin only.');
-  if (minRole === 'WRITE'  && a.role === 'VIEWER') {
+  if (minRole === 'WRITE' && ROLES_QUE_ESCRIBEN.indexOf(a.role) === -1) {
     throw new Error('Read-only access — you can view data but cannot record movements.');
   }
   return a;
@@ -3618,7 +3712,112 @@ function dataStamp_() {
   } catch (e) { return ''; }
 }
 
-function addMovementsBatch_(ss, archive, movements, auth) {
+/* ── UNA UBICACIÓN QUE NO EXISTE NO ES UNA UBICACIÓN ─────────────────────────
+ *
+ * Jose, 2026-10-05, con dos capturas: escribió `A1p` en el estante de un ENTRY
+ * —una ubicación que no existe— y **la app la guardó tal cual**. En el mapa del
+ * almacén apareció `A1P` como una ubicación más, con material dentro.
+ *
+ * Es peor que un nombre mal escrito. Un nombre mal escrito se corrige; **una
+ * ubicación inventada no está en ninguna estantería**. El material consta en un
+ * sitio al que nadie puede ir. Y es por donde entra la mitad de la suciedad que
+ * luego persigue "Check my data": un campo libre donde debería haber una lista
+ * cerrada produce `A1P`, `A1 P` y `A-1-P`, y el stock de un estante acaba
+ * repartido en tres sitios que nadie suma.
+ *
+ * ══ LA REGLA, Y NO ES "VALIDAR LAS DOS CASILLAS" ══════════════════════════
+ *
+ * **Se comprueba el lado por el que el material LLEGA. Nunca el lado por el que
+ * se va.** Es la diferencia entre cerrar el agujero y tapiar la puerta con la
+ * gente dentro:
+ *
+ *   · Meter material en un sitio que no existe es EL FALLO. Se rechaza.
+ *   · Sacar material de un sitio que no existe es LIMPIAR EL FALLO. Si también
+ *     se rechazara, las unidades que la app ya metió en `A1P` se quedarían ahí
+ *     **para siempre, sin forma de sacarlas desde la app** — y el arreglo sería
+ *     peor que el problema que arregla.
+ *
+ * Por tipo de movimiento, qué lado es el de llegada (sacado de
+ * applyMovementToSnapshot_, que es quien de verdad lo decide):
+ *
+ *   ENTRY     el destino; o el origen si el destino va vacío
+ *   RETURN    el destino
+ *   TRANSFER  el destino SOLAMENTE — el origen puede ser el sitio inventado
+ *             que se está vaciando, y vaciarlo es justo lo que se quiere
+ *   ADJUST    el destino, y sólo cuando es él el que está relleno: ese ajuste
+ *             hace APARECER material. El ajuste a la baja no se comprueba
+ *   EXIT      ninguno
+ *   WASTE     ninguno
+ *
+ * ══ Y UNA CASILLA VACÍA NO ES UN ERROR ════════════════════════════════════
+ *
+ * Recibir material y no decir todavía en qué estante va es un caso real —el
+ * motor lo guarda como `UNASSIGNED`— y lleva funcionando desde siempre.
+ * Convertir eso en un error al arreglar otra cosa sería romper lo que funciona
+ * para arreglar lo que no. */
+function mapaDeUbicaciones_(cfg) {
+  var mapa = {};
+  var lista = (cfg && cfg.locations) || [];
+  for (var i = 0; i < lista.length; i++) {
+    var nombre = String((lista[i] && lista[i].name) || '').trim();
+    if (nombre) mapa[normalizeString(nombre)] = nombre;
+  }
+  return mapa;
+}
+
+/** Qué valor tiene que existir para este movimiento, o '' si ninguno. */
+function ubicacionDeLlegada_(mt, src, dest) {
+  if (mt === 'ENTRY')    return dest || src;
+  if (mt === 'RETURN')   return dest;
+  if (mt === 'TRANSFER') return dest;
+  if (mt === 'ADJUST')   return (dest && !src) ? dest : '';
+  return '';
+}
+
+/* La ubicación conocida que más se parece a lo que se tecleó, o ''.
+ *
+ * Importa más de lo que parece: el mensaje "A1P no existe" deja a alguien
+ * mirando la pantalla, y "A1P no existe, ¿querías decir A1B?" lo resuelve en un
+ * segundo. El fallo real de Jose fue teclear `A1p` existiendo `A1A`, `A1B` y
+ * `A1C` — un carácter de diferencia.
+ *
+ * Distancia de edición con un tope de dos: por encima de eso ya no es una
+ * errata y sugerir algo lejano confunde más de lo que ayuda. */
+function sugerirUbicacion_(buscada, mapa) {
+  var objetivo = normalizeString(buscada);
+  var mejor = '', mejorD = 3;
+  Object.keys(mapa).forEach(function (clave) {
+    var d = distanciaEdicion_(objetivo, clave, mejorD);
+    if (d < mejorD) { mejorD = d; mejor = mapa[clave]; }
+  });
+  return mejor;
+}
+
+/** Levenshtein con tope: en cuanto toda una fila pasa del tope, se abandona. */
+function distanciaEdicion_(a, b, tope) {
+  if (a === b) return 0;
+  if (Math.abs(a.length - b.length) >= tope) return tope;
+  var fila = [], i, j;
+  for (j = 0; j <= b.length; j++) fila[j] = j;
+  for (i = 1; i <= a.length; i++) {
+    var anterior = fila[0];
+    fila[0] = i;
+    var minFila = i;
+    for (j = 1; j <= b.length; j++) {
+      var tmp = fila[j];
+      fila[j] = Math.min(
+        fila[j] + 1,
+        fila[j - 1] + 1,
+        anterior + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+      anterior = tmp;
+      if (fila[j] < minFila) minFila = fila[j];
+    }
+    if (minFila >= tope) return tope;
+  }
+  return fila[b.length];
+}
+
+function addMovementsBatch_(ss, archive, movements, auth, opciones) {
   var EMPTY = { status: 'success', firstRowIdx: null, rowCount: 0, fileError: null, emailError: null, availableByMat: {} };
   if (!movements || !movements.length) return EMPTY;
 
@@ -3666,8 +3865,31 @@ function addMovementsBatch_(ss, archive, movements, auth) {
     // written back to CONFIG only after the archive write is VERIFIED further
     // down — never before, so a cost blend can never be recorded for a
     // movement that did not actually save.
-    var avgCostMap  = loadConfig().avgCost || {};
+    var cfgAhora    = loadConfig();
+    var avgCostMap  = cfgAhora.avgCost || {};
     var costTouched = {};   // matId -> true, for the ones this batch actually changes
+
+    /* Las ubicaciones que existen de verdad, de la misma lectura de CONFIG que
+     * ya se hacía para los costes: ni un viaje más a Google.
+     *
+     * `crearUbicaciones` lo pasa SÓLO la importación, y por una razón concreta:
+     * importar es decirle a la app "esto es mi almacén tal como está", así que
+     * las estanterías que nombra el fichero son las que hay. Rechazarlas sería
+     * exigirle a alguien que teclee cuarenta ubicaciones a mano antes de poder
+     * meter sus datos — y entonces no importa nadie. Lo que no se hace es
+     * crearlas EN SILENCIO: se devuelven para que la pantalla las cuente. */
+    var ubicaciones = mapaDeUbicaciones_(cfgAhora);
+    var crearUbic   = !!(opciones && opciones.crearUbicaciones);
+    var ubicNuevas  = [];
+    // Las categorías, de la misma lectura. Es la mitad del nombre interno de
+    // cada material, así que una que no esté en la lista parte unas existencias
+    // en dos sin que nadie lo vea.
+    var categorias  = {};
+    (cfgAhora.categories || []).forEach(function (c) {
+      var n = String(c || '').trim();
+      if (n) categorias[normalizeString(n)] = n;
+    });
+    var catNuevas   = [];
 
     // ── Validate every movement against the live snapshot, build its row ─────
     for (var i = 0; i < movements.length; i++) {
@@ -3745,6 +3967,73 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       var dest    = String(d.destLoc   || '').toUpperCase().trim();
       var srcKey  = normalizeString(src);
       var destKey = normalizeString(dest);
+
+      /* ── LA CATEGORÍA, Y SÓLO AL ENTRAR ───────────────────────────────────
+       *
+       * La categoría no es una etiqueta: **es la mitad del nombre interno del
+       * material** (`getMaterialId` = categoría + nombre). Una categoría
+       * distinta no es el mismo material mal clasificado: es OTRO material, con
+       * sus propias existencias. Un `WINDOWS` donde debía decir `WINDOW` parte
+       * el stock en dos y nadie los suma nunca.
+       *
+       * ── POR QUÉ ESTO NO ES LO MISMO QUE PROYECTO Y PROVEEDOR ─────────────
+       *
+       * Al mirarlo resultó más pequeño de lo que decía la nota del backlog, y
+       * conviene que quede escrito para no "arreglar" lo que ya está decidido:
+       *
+       *   · **Proyecto y proveedor** son campos libres A PROPÓSITO: una obra o
+       *     un proveedor nuevos aparecen cada semana, y el de bodega es quien se
+       *     entera primero. Ya tienen su mecanismo —la baraja de valores sin
+       *     registrar que ve el admin, con su "+ Add it"— y es blando a
+       *     propósito. Cerrarlos sería pelearse con el trabajo de verdad.
+       *   · **La categoría no es un campo libre**: en la pantalla es un
+       *     desplegable cerrado. Desde la app no se puede teclear una que no
+       *     exista.
+       *
+       * Entonces, ¿qué queda? **Lo que no pasa por la pantalla.** Una
+       * importación trae la categoría que venga en el fichero, y una llamada
+       * hecha a mano al servidor puede mandar cualquier cosa. El navegador
+       * decide qué OFRECE; el servidor decide qué PERMITE — y aquí no decidía
+       * nada.
+       *
+       * ── Y SÓLO AL ENTRAR, POR LO MISMO QUE LAS UBICACIONES ──────────────
+       *
+       * Un ENTRY es lo único que mete un material nuevo en el sistema con su
+       * identidad. Un EXIT, un TRANSFER o un ajuste trabajan sobre material que
+       * YA está dentro — a veces con una categoría que no está registrada,
+       * precisamente porque esto no existía. Comprobarlos también dejaría ese
+       * material encerrado, que es el mismo error que no cometimos con `A1P`. */
+      if (mt === 'ENTRY' && cat) {
+        var catKey = normalizeString(cat);
+        if (!categorias[catKey]) {
+          if (crearUbic) {
+            categorias[catKey] = cat;
+            catNuevas.push(cat);
+          } else {
+            throw new Error('UNKNOWN_CATEGORY|' + cat + '|' +
+                            sugerirUbicacion_(cat, categorias));
+          }
+        }
+      }
+
+      // ── La ubicación por la que LLEGA el material tiene que existir ────────
+      var llega = ubicacionDeLlegada_(mt, src, dest);
+      if (llega) {
+        var llegaKey = normalizeString(llega);
+        if (!ubicaciones[llegaKey]) {
+          if (crearUbic) {
+            ubicaciones[llegaKey] = llega;
+            ubicNuevas.push(llega);
+          } else {
+            /* Con tubería y no en prosa, como DUPLICATE_MOVEMENT: la pantalla
+             * tiene que poder OFRECER crearla en vez de enseñar un texto rojo
+             * que deja a la persona sin salida. Lo de después de la tubería no
+             * se enseña nunca tal cual. */
+            throw new Error('UNKNOWN_LOCATION|' + llega + '|' +
+                            sugerirUbicacion_(llega, ubicaciones));
+          }
+        }
+      }
 
       // Duplicate guard — only when not forced. Scans recent rows of the
       // archive snapshot we already read (no extra read).
@@ -4077,7 +4366,11 @@ function addMovementsBatch_(ss, archive, movements, auth) {
       emailError:     emailError,
       refreshError:   refreshError,
       availableByMat: availableByMat,
-      stockAfter:     stockAfter
+      stockAfter:     stockAfter,
+      // Sólo tiene algo cuando quien llamó pidió `crearUbicaciones` — es decir,
+      // la importación. Vacío en cualquier otro caso, por construcción.
+      ubicacionesCreadas: ubicNuevas,
+      categoriasCreadas:  catNuevas
     };
 
   } finally {
@@ -6102,24 +6395,98 @@ function ensureDailyReportTrigger_() {
     if (triggers[i].getHandlerFunction() === 'dailyReportTrigger') { found = triggers[i]; break; }
   }
 
+  var p = PropertiesService.getScriptProperties();
   if (!cfg.enabled) {
     if (found) ScriptApp.deleteTrigger(found);
-    PropertiesService.getScriptProperties().deleteProperty('DAILY_REPORT_TRIGGER_HOUR');
+    p.deleteProperty('DAILY_REPORT_TRIGGER_HOUR');
+    p.deleteProperty('DAILY_REPORT_MODE');
     return 'off';
   }
 
-  // La hora a la que el disparador vivo fue creado. El objeto Trigger no la
-  // sabe decir, así que se guarda al crearlo — sin eso no hay forma de
-  // distinguir "instalado a las 20" de "instalado a las 9".
-  var p = PropertiesService.getScriptProperties();
-  var installedHour = parseInt(p.getProperty('DAILY_REPORT_TRIGGER_HOUR'), 10);
-
-  if (found && installedHour === cfg.hour) return 'unchanged';
+  /* ── EL DISPARADOR CORRE CADA HORA Y LA HORA LA DECIDE EL CÓDIGO ──────────
+   *
+   * Jose, 2026-10-06, con dos capturas: los ajustes decían **4:00 PM** y el
+   * correo llegaba a las **2:53 AM**, dos días seguidos. Y su proyecto está en
+   * GMT-06:00 Denver, que es la zona correcta — así que no era eso.
+   *
+   * ── LO QUE PASABA ───────────────────────────────────────────────────────
+   *
+   * Esta función guardaba en una propiedad la hora a la que había creado el
+   * disparador, y la próxima vez comparaba **la propiedad** con los ajustes: si
+   * coincidían, no tocaba nada. Pero la propiedad no es el disparador: es una
+   * NOTA SOBRE el disparador, escrita aparte, y **nada comprueba nunca que las
+   * dos digan lo mismo**. En cuanto se separaron —y se separaron—, la nota
+   * decía "a las 16" mientras el disparador de verdad salía a las 2, y esta
+   * función miraba la nota, decía "ya está bien" y se iba.
+   *
+   * Es el mismo patrón que llevamos todo el mes encontrando: **dos cosas que
+   * tienen que coincidir sin que nada lo obligue.** Las dos listas de usuarios,
+   * el sitemap escrito a mano, el sello del sitio. Aquí es peor, porque **el
+   * objeto Trigger de Apps Script no sabe decir a qué hora corre**: no hay
+   * forma de preguntárselo, así que la nota no se puede verificar ni queriendo.
+   *
+   * ── EL ARREGLO: NO GUARDAR UNA NOTA QUE NO SE PUEDE COMPROBAR ────────────
+   *
+   * El disparador pasa a correr **cada hora**, y `runDailyReport_` mira el reloj
+   * y decide si le toca. La hora deja de ser una propiedad de un objeto que no
+   * se puede inspeccionar y pasa a ser **un dato que se lee, se compara y se
+   * puede probar**.
+   *
+   * Lo que eso arregla, además del fallo:
+   *   · Cambiar la hora en Ajustes **ya no requiere tocar el disparador**. No
+   *     hay nada que pueda quedarse desincronizado porque no hay dos sitios.
+   *   · Una instalación rota como la de Jose se arregla sola la próxima vez
+   *     que alguien guarde los ajustes o abra "Check installation", sin que
+   *     nadie tenga que saber por qué se rompió.
+   *
+   * ── LO QUE CUESTA, DICHO CON NÚMEROS ────────────────────────────────────
+   *
+   * Veinticuatro arranques al día en vez de uno. Cada uno lee tres propiedades,
+   * compara dos números y se va: menos de un segundo. Una cuenta normal de Apps
+   * Script tiene **90 minutos diarios** de tiempo de disparadores, así que esto
+   * gasta del orden de medio minuto. No es gratis y no es nada. */
+  var MODO = 'cadahora/v1';
+  if (found && p.getProperty('DAILY_REPORT_MODE') === MODO) return 'unchanged';
 
   if (found) ScriptApp.deleteTrigger(found);
-  ScriptApp.newTrigger('dailyReportTrigger').timeBased().everyDays(1).atHour(cfg.hour).create();
-  p.setProperty('DAILY_REPORT_TRIGGER_HOUR', String(cfg.hour));
+  ScriptApp.newTrigger('dailyReportTrigger').timeBased().everyHours(1).create();
+  p.setProperty('DAILY_REPORT_MODE', MODO);
+  // Ya no significa nada: la hora vive sólo en DAILY_REPORT_HOUR. Se borra para
+  // que nadie la lea dentro de un año creyendo que dice algo.
+  p.deleteProperty('DAILY_REPORT_TRIGGER_HOUR');
   return found ? 'rescheduled' : 'installed';
+}
+
+/* ── DE QUÉ DÍA INFORMA ──────────────────────────────────────────────────────
+ *
+ * Jose, 2026-10-06: *"está enviando los movimientos del día 6 a las 2 am, cuando
+ * el trabajo de ese día aún no ha empezado… y el del día anterior, a la misma
+ * hora, dice que no hay movimientos, pero ayer sí hubo, entre las 7 am y las
+ * 4 pm."*
+ *
+ * Éste es un fallo aparte del de la hora, y no se arregla moviendo el reloj:
+ * el informe filtraba por **el día en que el correo se está enviando**, dando
+ * por hecho que sale por la tarde. Las dos cosas juntas producían el peor
+ * resultado posible: **los movimientos de un día de trabajo no los informaba
+ * nunca ningún correo**, y el que llegaba decía que no había pasado nada. Un
+ * informe que miente en silencio es peor que uno que falta.
+ *
+ * La regla, en una frase: **un correo de la mañana informa del día que acabó;
+ * uno de la tarde, del día que está acabando.** El corte es el mediodía.
+ *
+ * Se puede decir en voz alta y se puede probar, que es lo que le faltaba. */
+function diaDelInforme_(hora, ahora, tz) {
+  var d = new Date(ahora.getTime());
+  if (hora < 12) d.setDate(d.getDate() - 1);
+  return Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+}
+
+/** La fecha como la escribe Estados Unidos. Jose: *"la fecha debe estar siempre
+ *  en formato de EE. UU., la del título y la del mensaje."* El 6 de octubre
+ *  salía `06/10/2026`, que se lee como 10 de junio. */
+function fechaUS_(ymd) {
+  var p = String(ymd || '').split('-');
+  return (p.length === 3) ? (p[1] + '/' + p[2] + '/' + p[0]) : String(ymd || '');
 }
 
 /**
@@ -6133,7 +6500,9 @@ function dailyReportTrigger() {
   try {
     requireOwnerContext_();
     setVerifiedAuth_({ role: 'ADMIN', email: 'system@scheduled-trigger', name: 'Scheduled trigger' });
-    runDailyReport_();
+    // `true` = "me llama el reloj". Esto corre CADA HORA desde la v12.44, y es
+    // runDailyReport_ quien mira si toca. Ver ensureDailyReportTrigger_.
+    runDailyReport_(true);
   } catch (e) {
     // Un disparador que lanza le manda al dueño un aviso de fallo cada noche,
     // que es peor resultado que la llamada que acaba de bloquear.
@@ -6141,12 +6510,17 @@ function dailyReportTrigger() {
   }
 }
 
-/** Los movimientos de HOY, en la zona horaria de la instalación. */
-function dailyReportMovements_(ss) {
+/** Los movimientos DEL DÍA QUE SE PIDE, en la zona horaria de la instalación.
+ *
+ * El día llega de fuera y no se calcula aquí: antes esta función miraba "hoy" y
+ * era lo que hacía que un correo de madrugada informara de un día vacío. Quien
+ * sabe de qué día hay que informar es `diaDelInforme_`, y lo sabe con una regla
+ * escrita; esta función sólo filtra. */
+function dailyReportMovements_(ss, dia) {
   var archive = ss.getSheetByName(SHEETS.ARCHIVE);
   if (!archive || archive.getLastRow() < 2) return [];
   var tz    = Session.getScriptTimeZone();
-  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var today = dia || Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   var rows  = archive.getDataRange().getValues();
   var out   = [];
   for (var i = 1; i < rows.length; i++) {
@@ -6179,18 +6553,38 @@ function dailyReportMovements_(ss) {
   return out;
 }
 
-function runDailyReport_() {
+/* `programado` es true cuando llama el disparador de cada hora, y false cuando
+ * un admin pulsa "Send one now". El de la hora tiene que comprobar que le toca;
+ * el botón, no — quien lo pulsa ya ha decidido que quiere el correo ahora. */
+function runDailyReport_(programado) {
   var cfg = dailyReportSettings_();
   if (!cfg.enabled) return 'disabled';
+
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var tz  = Session.getScriptTimeZone();
+  var p   = PropertiesService.getScriptProperties();
+  var now = new Date();
+
+  if (programado) {
+    var horaAhora = parseInt(Utilities.formatDate(now, tz, 'H'), 10);
+    if (horaAhora !== cfg.hour) return 'not-yet';
+
+    /* Y una sola vez por día. Un disparador de Apps Script puede ejecutarse dos
+     * veces —se reintenta si el primer intento falla a medias— y dos correos
+     * idénticos del mismo día hacen dudar de los dos. Se apunta el día que se
+     * mandó, no la hora: es lo que de verdad no debe repetirse. */
+    var marca = Utilities.formatDate(now, tz, 'yyyy-MM-dd') + '@' + cfg.hour;
+    if (p.getProperty('DAILY_REPORT_LAST') === marca) return 'already-sent';
+    p.setProperty('DAILY_REPORT_LAST', marca);
+  }
 
   var to = dailyReportRecipients_();
   if (!to.length) return 'no-recipients';   // encendido sin nadie a quien mandarlo
 
-  var ss   = SpreadsheetApp.getActiveSpreadsheet();
-  var movs = dailyReportMovements_(ss);
+  var dia  = diaDelInforme_(cfg.hour, now, tz);
+  var movs = dailyReportMovements_(ss, dia);
   var cs   = companySettings_();
-  var tz   = Session.getScriptTimeZone();
-  var hoy  = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy');
+  var hoy  = fechaUS_(dia);
 
   var IN  = { ENTRY: 1, RETURN: 1 };
   var OUT = { EXIT: 1, WASTE: 1 };
@@ -6369,6 +6763,8 @@ function sendDailyReportNow(auth) {
   if (!cfg.enabled) return { ok: false, message: 'The daily report is off. Turn it on first.' };
   var to = dailyReportRecipients_();
   if (!to.length) return { ok: false, message: 'Nobody would receive it — add at least one address.' };
+  // Sin `true`: quien pulsa el botón ya ha decidido que lo quiere ahora, así
+  // que no se le comprueba la hora ni se le aplica el "una vez al día".
   runDailyReport_();
   return { ok: true, message: 'Sent to ' + to.join(', ') };
 }
@@ -8057,9 +8453,50 @@ function commitImport(data, auth) {
     };
   });
 
-  var res = addMovementsBatch_(ss, archive, movements, auth);
+  var res = addMovementsBatch_(ss, archive, movements, auth, { crearUbicaciones: true });
+  /* Las ubicaciones que traía el fichero y no existían se dan de alta, porque
+   * importar es decir "esto es mi almacén". Pero SE ESCRIBEN EN LA LISTA y se
+   * cuentan: una importación que crea quince estanterías en silencio deja a
+   * alguien con quince sitios que no sabe que tiene. */
+  /* Las categorías que traía el fichero y no existían, igual que las
+   * ubicaciones: se dan de alta, se escriben en la lista y se cuentan. Y aquí
+   * importa MÁS que en las ubicaciones, por un motivo que no es obvio: la
+   * categoría es un desplegable cerrado en la pantalla, así que un material
+   * cuya categoría no esté en la lista **no se puede ni seleccionar para
+   * sacarlo**. Importado y, acto seguido, intocable. */
+  var catCreadas = res.categoriasCreadas || [];
+  if (catCreadas.length) {
+    try {
+      var cfgSheet2 = ss.getSheetByName(SHEETS.CONFIG);
+      var catYa = (loadConfig().categories || []);
+      writeConfigColumn_(cfgSheet2, 1, catYa.concat(catCreadas));
+      auditLog_(ss, 'CATEGORIES_CREATED', auth.email,
+        catCreadas.length + ' category(ies) came in with an import: ' +
+        catCreadas.join(', '), '', '');
+    } catch (eCat) {
+      logError_(ss, 'WARN', 'backend', 'commitImport/categories', auth.email,
+        'Could not record the imported categories: ' + (eCat && eCat.message), null, '');
+    }
+  }
+
+  var creadas = res.ubicacionesCreadas || [];
+  if (creadas.length) {
+    try {
+      var cfgSheet = ss.getSheetByName(SHEETS.CONFIG);
+      var yaHay = (loadConfig().locations || []).map(function (l) { return l.name; });
+      writeConfigColumns_(cfgSheet, 3, [yaHay.concat(creadas),
+        (loadConfig().locations || []).map(function (l) { return l.type || 'RACK'; })
+          .concat(creadas.map(function () { return 'RACK'; }))]);
+      auditLog_(ss, 'LOCATIONS_CREATED', auth.email,
+        creadas.length + ' location(s) came in with an import: ' + creadas.join(', '), '', '');
+    } catch (eLoc) {
+      logError_(ss, 'WARN', 'backend', 'commitImport/locations', auth.email,
+        'Could not record the imported locations: ' + (eLoc && eLoc.message), null, '');
+    }
+  }
   auditLog_(ss, 'BULK_IMPORT', auth.email, rows.length + ' row(s) imported', '', '');
-  return { status: 'success', rowCount: res.rowCount };
+  return { status: 'success', rowCount: res.rowCount, newLocations: creadas,
+           newCategories: catCreadas };
 }
 
 function runReconciliation_(ss) {
@@ -10336,6 +10773,45 @@ function menuCheckInstallation() {
     missing.push(g);
   });
 
+  /* ── LAS HOJAS Y SUS CABECERAS ──────────────────────────────────────────
+   *
+   * Jose, 2026-10-06, con dos capturas: `RESERVATIONS` y `AUDIT_LOG` sin
+   * nombres en las columnas, sólo la fila azul en blanco.
+   *
+   * Y lo que arregla eso YA ESTABA ESCRITO. `ensureCoreSheets_` tiene los
+   * nombres de las dos, y `fillMissingHeaders_` sabe rellenar los huecos de una
+   * hoja que ya existe sin tocar lo que tenga texto. **Lo que faltaba era
+   * alguien que las llamara**: buscado en el archivo, `ensureCoreSheets_`
+   * aparecía UNA SOLA VEZ, dentro del asistente de instalación. O sea que una
+   * instalación que ya existía —la de Jose, la de cualquier cliente— no iba a
+   * recibir esos nombres nunca, por mucho que el código los tuviera.
+   *
+   * Cuarto caso este mes del mismo patrón: **una protección escrita y nunca
+   * ejecutada.** Y el más irónico, porque el comentario que hay encima de
+   * `fillMissingHeaders_` cuenta exactamente este daño: que Jose estuvo a punto
+   * de borrar las columnas Unit Cost y Total Cost de su archivo porque sus
+   * cabeceras estaban en blanco y no había forma de saber qué eran. El arreglo
+   * escrito para ese daño no podía llegar a la hoja donde el daño ocurrió.
+   *
+   * Aquí es donde va, y no en otro sitio: ésta es la función que la gente
+   * ejecuta cuando quiere saber si su instalación está sana, y "a dos de tus
+   * pestañas les faltan los nombres de las columnas" es exactamente eso.
+   *
+   * No toca nada que tenga texto, así que es seguro sobre datos existentes. */
+  try {
+    var hojas = ensureCoreSheets_(SpreadsheetApp.getActiveSpreadsheet());
+    if (hojas && hojas.created && hojas.created.length) {
+      repaired.push('Missing tabs created: ' + hojas.created.join(', '));
+    }
+    if (hojas && hojas.repaired && hojas.repaired.length) {
+      repaired.push('Column names filled in: ' + hojas.repaired.join(', ') +
+        ' — a column with no name looks like junk, and sooner or later somebody ' +
+        'deletes it.');
+    }
+  } catch (eHojas) {
+    repaired.push('Could not check the tabs: ' + (eHojas && eHojas.message));
+  }
+
   // Repair what can be repaired without asking, and only that.
   if (!String(p.getProperty('SESSION_SECRET') || '').trim()) {
     serverSecret_();                      // creates it
@@ -11025,7 +11501,7 @@ function addUser(data, auth) {
   var name  = String(data.name  || '').trim();
   var role  = String(data.role  || 'WAREHOUSE').toUpperCase().trim();
   if (!email || email.indexOf('@') === -1) throw new Error('Valid email required.');
-  if (['ADMIN','WAREHOUSE','VIEWER'].indexOf(role) === -1) throw new Error('Invalid role.');
+  if (ROLES.indexOf(role) === -1) throw new Error('Invalid role.');
 
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ensureUsersSheet_(ss);
