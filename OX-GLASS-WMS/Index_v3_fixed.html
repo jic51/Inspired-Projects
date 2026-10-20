@@ -525,6 +525,20 @@
     .badge-purple{background:var(--purple-bg);color:var(--purple)}
     .badge-gray{background:#F3F4F6;color:#6B7280}
     .badge-dark{background:#1F2937;color:#F9FAFB}
+    /* ── LA MARCA DE BONEYARD ──────────────────────────────────────────────
+     * Sublínea bajo el nombre, con el mismo tamaño y el mismo aire que la del
+     * proyecto que ya vivía ahí — son hermanas y tienen que leerse como tales.
+     * Lo único distinto es el color: ámbar, que en esta app significa «algo
+     * que mirar», no «algo que está mal». Rojo sería mentira: una sobra no es
+     * un problema, es material pagado esperando obra. */
+    /* El botón de la foto, dentro de la ventana de escanear. Ancho entero
+       porque es la acción principal cuando no hay vídeo, y con aire arriba
+       para que no se pegue al recuadro de la cámara cuando sí lo hay. */
+    .sc-foto{margin-top:var(--sp-5);display:flex}
+    .sc-foto .btn{flex:1}
+    .bone-marca{display:inline-block;margin-top:2px;font-size:.72rem;
+      color:#b45309;font-weight:600}
+    :root[data-theme="dark"] .bone-marca{color:#fbbf24}
     .badge-slate{background:#E2E8F0;color:var(--steel)}
     .badge-teal{background:#CCFBF1;color:#0F766E}
     .badge-pink{background:#FCE7F3;color:#BE185D}
@@ -905,6 +919,68 @@
        navegación se pega justo debajo (`--tb-alto`, que escribe _barraArriba). */
     :root{--tb-alto:0px}
     #topBanners{position:sticky;top:0;left:0;right:0;z-index:99999;display:flex;flex-direction:column}
+
+    /* ── LAS QUE FLOTAN, Y POR QUÉ NO TODAS ────────────────────────────────
+     *
+     * Jose, 14/10, con vídeo: *"funciona bien, pero me gustaría hacerlo menos
+     * invasivo y más profesional"*. Y tenía razón: lo que molesta no es el
+     * color, es que la franja OCUPA SITIO. Al aparecer empuja la app entera
+     * hacia abajo y al irse la sube — el contenido salta dos veces por un
+     * aviso de cinco segundos.
+     *
+     * PERO NO SE PUEDEN FLOTAR TODAS, y el comentario de arriba dice por qué:
+     * una versión anterior flotaba, y en un teléfono el aviso se comía la
+     * barra de navegación entera — los botones quedaban DEBAJO y no se podían
+     * pulsar. Lo cazó `test-responsive-polish` a 375 px.
+     *
+     * La diferencia está en QUÉ aviso:
+     *
+     *  · EL DE VERSIONES se queda ocupando su sitio. Vive meses, es la única
+     *    señal de que los dos archivos no son del mismo juego, y no puede
+     *    taparse ni perderse.
+     *  · LOS DE CONEXIÓN flotan. Son de estado y no llevan nada que pulsar
+     *    —sólo texto y un aro—, así que con `pointer-events:none` lo de debajo
+     *    SIGUE SIENDO PULSABLE. Eso es lo que mata el fallo viejo: el aviso ya
+     *    no es una pared, es una pegatina.
+     *
+     * Y la forma: ancho máximo, esquinas redondeadas y centrado, en vez de
+     * franja de borde a borde. Jose pidió que se vieran «como los toast que
+     * aparecen frente a la pantalla en la parte de arriba». */
+    /* `--tb-alto` es lo que reservó la pila que SÍ ocupa sitio. Sin esto, la
+     * píldora flotante se pone encima del aviso de versiones y lo tapa — que
+     * es exactamente lo que no puede pasarle a ése. Lo cazó
+     * `test-barra-conexion`, que comprueba que las dos van una debajo de la
+     * otra y sin solaparse. */
+    #topToasts{position:fixed;top:calc(var(--tb-alto) + 10px);left:0;right:0;z-index:var(--z-toast);
+      display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);
+      pointer-events:none;padding:0 var(--sp-5)}
+    /* ── DOS LÍNEAS, Y LA FORMA ES PARTE DEL MENSAJE ────────────────────────
+     *
+     * Jose, 15/10: *"lo bajes, lo hagas más alto y menos ancho"*, con el
+     * título grande arriba y la instrucción debajo.
+     *
+     * Y la forma hace trabajo aquí, no es gusto: un aviso de conexión tiene
+     * DOS cosas que decir y no son iguales. Qué pasa —«estás sin conexión»—
+     * se lee de un vistazo desde lejos y a veces es lo único que hace falta.
+     * Qué hacer —«no guardes nada todavía»— se lee de cerca y sólo si la
+     * primera te hizo parar. Metidas en un renglón compiten; apiladas, cada
+     * una se lee cuando toca.
+     *
+     * Deja de ser píldora: dos renglones dentro de un óvalo quedan apretados
+     * contra el borde curvo. Esquinas redondeadas normales y ya. */
+    #topToasts .top-banner{border-radius:12px;padding:.7rem 1.4rem;
+      max-width:min(420px,100%);box-shadow:var(--sh-3);
+      flex-direction:column;align-items:center;gap:.15rem;
+      animation:tt-entra .18s ease both}
+    /* El título: lo que se lee desde lejos. */
+    #topToasts .tb-tit{font-size:1rem;font-weight:800;letter-spacing:.01em;
+      display:flex;align-items:center;gap:var(--sp-3)}
+    /* Y la instrucción, al tamaño de antes y sin negrita — Jose lo pidió así,
+     * y tiene razón: si las dos líneas gritan, no grita ninguna. */
+    #topToasts .tb-sub{font-size:.8rem;font-weight:400;line-height:1.35;
+      opacity:.95;text-wrap:balance}
+    @keyframes tt-entra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){#topToasts .top-banner{animation:none}}
     .top-banner{display:flex;align-items:center;justify-content:center;gap:var(--sp-3);
       font-size:.8rem;font-weight:600;text-align:center;padding:8px 36px;color:#fff;
       box-shadow:0 2px 8px rgba(0,0,0,.3)}
@@ -993,6 +1069,38 @@
     .field{display:flex;flex-direction:column;gap:.3rem}
     .field label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
     #lockMatOverlay .field label{color:var(--text)}
+    /* EL CANDADO. Un botón normal, no uno apagado: se puede pulsar y contesta.
+       Apagarlo con `disabled` lo dejaría gris y mudo, que es justo lo que no
+       queremos — la gracia es que al pulsarlo cuente qué hace esa función. */
+    /* GRIS CLARO Y QUE SE NOTE. Jose, 19/10: *"me gusta que están de color gris
+       pero debes hacerlas MÁS GRISES para que se distinga bien"*. A .72 se
+       distinguía poco de un botón normal; a .4 se lee de un vistazo que no es
+       para ahora. Al pasar el ratón sube sólo un poco: lo justo para que se vea
+       que contesta, sin fingir que está disponible. */
+    .pro-lock{position:relative;opacity:.4;filter:grayscale(1)}
+    .pro-lock:hover{opacity:.62}
+    .pro-lock::after{content:'🔒';font-size:.7em;margin-left:var(--sp-1);opacity:.85}
+
+    /* UNA ZONA ENTERA APAGADA. El `pointer-events:none` de los HIJOS es lo que
+       impide empezar: un `<input type="file">` de dentro ya no abre el
+       explorador. La zona sí recibe el clic, y enseña la oferta. */
+    .pro-off{opacity:.4;filter:grayscale(1);cursor:pointer;position:relative}
+    .pro-off *{pointer-events:none!important}
+    .pro-off::after{content:'🔒 Acopio Pro';position:absolute;top:var(--sp-2);right:var(--sp-3);
+      font-size:.7rem;letter-spacing:.04em;color:var(--muted);pointer-events:none}
+
+    /* El enlace de dentro del aviso flotante. Tiene que destacar sobre el
+       fondo de color del aviso, que puede ser cualquiera. */
+    .toast-pro{color:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+    #proOverlay .modal-actions{display:flex;gap:var(--sp-3);justify-content:flex-end;align-items:center}
+    #proOverlay a.btn{text-decoration:none;display:inline-flex;align-items:center}
+    /* UN SOLO BOTÓN, Y ES EL AZUL. Jose: *"sólo el azul debe ser un botón... la
+       otra opción debe ser sólo texto con hipervínculo. Así el usuario se fija
+       más en el botón ACOPIO PRO"*. Dos botones compiten; un botón y un enlace
+       no. */
+    .pro-notnow{font-size:.82rem;color:var(--muted);cursor:pointer;text-decoration:underline;
+      margin-right:var(--sp-2)}
+    .pro-notnow:hover{color:var(--text)}
     .field input,.field select,.field textarea{padding:var(--sp-4) var(--sp-5);border:1px solid var(--border);border-radius:6px;font-family:inherit;transition:.15s}
     .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring-accent)}
     /* `flex-wrap:wrap` no es adorno: es lo que impide que los botones se
@@ -1546,6 +1654,64 @@
     .acct-actions{padding:var(--sp-2)}
     .acct-item{width:100%;display:flex;align-items:center;gap:var(--sp-4);background:none;border:none;border-radius:10px;padding:.55rem .7rem;font-size:.85rem;font-weight:600;font-family:inherit;color:var(--text);cursor:pointer;text-align:left;transition:.12s}
     .acct-item:hover{background:var(--bg)}
+    /* ── LA VENTANA DE NOVEDADES ───────────────────────────────────────────
+     *
+     * Jose la pidió el 13/10, y la pidió DESPUÉS de que yo le dijera que no a
+     * otra cosa. Conviene dejar escrita la diferencia, porque desde fuera se
+     * parecen:
+     *
+     *   LO QUE DIJE QUE NO: un aviso cada cierto tiempo diciendo «hay
+     *   actualizaciones, contáctanos». Aparece PORQUE PASÓ EL TIEMPO. No
+     *   cambió nada para quien lo lee. Interrumpe su trabajo para pedirle algo
+     *   que nos conviene a nosotros. Eso es publicidad.
+     *
+     *   LO QUE ES ESTO: aparece el día que SU app cambió de versión, y cuenta
+     *   lo que cambió en la app que tiene delante. Aparece PORQUE LES PASÓ
+     *   ALGO, dice algo verdadero sobre lo que están mirando, y no pide nada.
+     *   Eso es un recibo.
+     *
+     * La pregunta que separa las dos: ¿sale porque algo les pasó a ellos, o
+     * porque pasó el tiempo para nosotros?
+     *
+     * Y LA PIEZA QUE LA HACE NO SER UNA INTERRUPCIÓN es la última que pidió
+     * Jose: se puede cerrar, pero queda en un sitio permanente. Se cierra sin
+     * pensar PRECISAMENTE porque se sabe dónde encontrarla. Un aviso que no se
+     * puede recuperar obliga a leerlo; uno que sí, se puede ignorar sin coste.
+     */
+    .nv-art{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:var(--sp-5) 0 var(--sp-6)}
+    .nv-fila{display:flex;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);font-size:var(--fs-sm);line-height:var(--lh-normal)}
+    .nv-fila+.nv-fila{border-top:1px solid var(--border)}
+    .nv-marca{flex:0 0 auto;font-weight:800;font-size:var(--fs-xs);letter-spacing:.04em;
+              padding:var(--pad-pildora);border-radius:var(--r-pildora);white-space:nowrap}
+    .nv-antes .nv-marca{background:var(--red-bg);color:var(--red)}
+    .nv-antes  code,.nv-antes  span.nv-txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--red)}
+    .nv-ahora{background:var(--green-bg)}
+    .nv-ahora .nv-marca{background:var(--green);color:#fff}
+    .nv-ahora .nv-txt{color:var(--text);font-weight:600}
+    .nv-txt{overflow-wrap:anywhere}
+    /* 180 ms y seis píxeles. Lo que enseñan los reels: las cosas caras se
+     * mueven poco. Un «antes y después» que salta llama la atención sobre el
+     * movimiento en vez de sobre el cambio. */
+    .overlay.show .nv-ahora{animation:nv-entra .18s ease both .12s}
+    @keyframes nv-entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){.overlay.show .nv-ahora{animation:none}}
+    .nv-lista{margin:0;padding-left:var(--sp-7);display:flex;flex-direction:column;gap:var(--sp-3)}
+    .nv-lista li{font-size:var(--fs-lg);line-height:var(--lh-amplia);color:var(--text)}
+    .nv-ver{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--fs-xs);
+            color:var(--muted);letter-spacing:.02em}
+    .nv-pie{margin-top:var(--sp-7);padding-top:var(--sp-5);border-top:1px solid var(--border);
+            font-size:var(--fs-sm);color:var(--muted);line-height:var(--lh-normal)}
+    .nv-pie a{color:var(--accent2);font-weight:600}
+    .nv-acciones{display:flex;gap:var(--sp-4);flex-wrap:wrap;align-items:center;margin-top:var(--sp-6)}
+    /* El punto de «sin leer». Va en el botón de la cuenta y en su línea del
+     * menú, porque el menú está cerrado la mayor parte del tiempo y un aviso
+     * que sólo se ve al abrir no avisa de nada. */
+    .nv-punto{display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:var(--accent);flex:0 0 auto;margin-left:auto}
+    .acct-btn{position:relative}
+    .acct-btn.nv-hay::after{content:'';position:absolute;top:-2px;right:-2px;
+              width:10px;height:10px;border-radius:50%;background:#F59E0B;
+              border:2px solid var(--navy)}
     .acct-foot{padding:.55rem var(--sp-6) .7rem;text-align:center;font-size:.67rem;color:var(--muted);border-top:1px solid var(--border)}
     .acct-legal{margin-top:var(--sp-1);display:flex;gap:.35rem;justify-content:center;align-items:center}
     .acct-legal a{color:var(--muted);text-decoration:none;font-weight:600}
@@ -3271,12 +3437,45 @@
       .alert-banner-actions button,.morning-popup-hdr button,.rack-drawer-hdr button,
       .rm-btn,.sys-card-x,.cfg-card-add,.cfg-card-skip{min-height:var(--h-btn-sm);min-width:var(--h-btn-sm)}
       .rm-btn,.alert-banner-actions button{min-height:var(--h-btn-md)}
-      /* The connection dot keeps its size and gains a 44px hit area around it.
-         A pseudo-element with no paint of its own still takes the tap, so the
-         design does not change at all — the target simply stops being the size
-         of the dot. */
-      .conn-btn{position:relative}
-      .conn-btn::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%}
+      /* ── EL PUNTO DE CONEXIÓN Y SU ÁREA DE TOQUE ──────────────────────
+       *
+       * Jose, 15/10: *"el botón verde al lado del avatar siempre está muy
+       * lejos y se traslapa con las pestañas al hacer la pantalla más
+       * pequeña, no me gusta"*.
+       *
+       * Lo del traslape era esto. El punto mide 10 px y ganaba un área de
+       * toque de 44 px con un `::after` ABSOLUTO, o sea pintado FUERA del
+       * sitio que el elemento ocupa: sobresalía unos 17 px por cada lado y
+       * robaba los toques de lo que tuviera al lado. En una pantalla estrecha
+       * lo que tiene al lado son las pestañas.
+       *
+       * El arreglo es dejar de robar sitio y RESERVARLO: el botón mide 44 px
+       * de verdad, con fondo transparente, y el punto de 10 px lo pinta un
+       * `::before` en el centro. Se ve exactamente igual, el dedo tiene los
+       * mismos 44 px, y ahora el hueco está en el reparto — así que nada se
+       * le puede poner debajo.
+       *
+       * Lo de «muy lejos» es otra cosa y es de diseño: el punto debería vivir
+       * PEGADO al avatar, como la bolita de presencia de cualquier app de
+       * mensajería, en vez de flotar entre las pestañas y la cuenta. Eso
+       * mueve una pieza de sitio y está anotado en la lista para decidirlo. */
+      .conn-btn{position:relative;width:44px;height:44px;background:transparent}
+      .conn-btn::before{content:'';position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;
+        background:inherit;transition:background .3s,box-shadow .3s}
+      /* El color vive en el punto, no en la caja: la caja es transparente y de
+         44 px, y pintarla la convertiría en un círculo verde enorme. */
+      .conn-btn.online::before {background:#10B981}
+      .conn-btn.stale::before  {background:#F59E0B}
+      .conn-btn.loading::before{background:#9CA3AF}
+      .conn-btn.offline::before{background:#EF4444}
+      .conn-btn.online,.conn-btn.stale,.conn-btn.loading,.conn-btn.offline{background:transparent}
+      /* La animación se la queda el punto; en la caja de 44 px latiría un
+         círculo invisible y no se vería nada. */
+      .conn-btn.stale  {animation:none}
+      .conn-btn.offline{animation:none}
+      .conn-btn.stale::before  {animation:pulse-stale 1.5s ease-in-out infinite}
+      .conn-btn.offline::before{animation:pulse-offline 1s ease-in-out infinite}
       /* Anything a finger has to land on inside a modal, too. */
       .modal input,.modal select,.modal textarea,.modal-type-bar button{min-height:var(--h-btn-lg)}
     }
@@ -3443,9 +3642,13 @@
        recuadro vacío parece una etiqueta a medio hacer.
        Qué se codifica ahí es una decisión aparte y más grande que el hueco: lo
        que lleve dentro decide PARA QUÉ sirve escanearlo. */
-    .lbl-code{margin-top:auto;height:34mm;border:.3mm dashed #bbb;border-radius:2mm;
-      display:flex;align-items:center;justify-content:center;
-      font-size:3.2mm;color:#bbb;letter-spacing:.1em;text-transform:uppercase}
+    /* El hueco del QR. Era un recuadro de puntos que decía «QR / BARCODE»;
+     * desde la v12.66 lleva el código de verdad. Sin borde ni fondo: una
+     * impresora térmica quema lo negro, y un marco alrededor de un QR es tinta
+     * que no dice nada y un sitio más donde el papel puede quedar sucio. */
+    .lbl-code{margin-top:auto;height:34mm;display:flex;align-items:center;
+      justify-content:center}
+    .lbl-code svg{display:block;width:30mm;height:30mm}
 
     @media print{
       /* El papel, tal cual. Sin esto Chrome asume Letter con márgenes. */
@@ -3458,11 +3661,73 @@
       #labelSheet{display:block !important}
       .lbl{page-break-inside:avoid;break-inside:avoid}
       /* En papel el hueco del código no lleva contorno ni texto: es espacio. */
-      .lbl-code{border:none;color:transparent}
+      /* En papel ya no hay nada que esconder aquí: el recuadro de puntos se
+       * fue con el QR de verdad. */
     }
 
     /* La vista previa dentro del cuadro: la etiqueta de verdad, encogida, para
        que se vea lo que va a salir antes de gastar papel. */
+    /* ── LA ETIQUETA DE UBICACIÓN ──────────────────────────────────────────
+     *
+     * TODO EN PORCENTAJES, ni un milímetro. Ésa es la diferencia con la de
+     * material y el motivo está en el comentario de `_locLabelHtml`: la
+     * impresora de Jose sólo ofrece A4, así que la página no se puede elegir y
+     * lo único que se puede hacer es llenarla, sea la que sea.
+     *
+     * La hoja usa `100vw`/`100vh` y no `100%`: en impresión, el porcentaje se
+     * mide contra el padre —que arrastra los márgenes de body— mientras que
+     * las unidades de ventana se miden contra la PÁGINA. Es la diferencia
+     * entre llenar el papel y llenar lo que quede después de los márgenes. */
+    .lloc-hoja{width:100vw;height:100vh;display:flex;flex-direction:column;
+      box-sizing:border-box;padding:3%;background:#fff;overflow:hidden}
+    .lloc-hoja + .lloc-hoja{page-break-before:always;break-before:page}
+    /* Cada etiqueta, un tercio exacto. `flex:1 1 0` y no `height:33.33%`: con
+     * altura en porcentaje, tres redondeos hacia arriba desbordan la hoja y la
+     * tercera etiqueta se va a una página de sobra. */
+    .lloc{flex:1 1 0;min-height:0;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:1.5%;overflow:hidden}
+    .lloc-vacia{visibility:hidden}
+    /* El QR manda sobre el alto, y el `aspect-ratio` lo mantiene cuadrado: un
+     * QR estirado no lo lee nadie. 70% del alto de la celda son ~36 mm en una
+     * hoja de 4×6, que es lo medido. */
+    .lloc-qr{height:70%;aspect-ratio:1;flex:0 0 auto;line-height:0}
+    .lloc-qr svg{width:100%;height:100%;display:block}
+    /* El nombre, pequeño por decisión de Jose del 14/10, sabiendo que un QR de
+     * 36 mm se lee a un brazo y no desde el pasillo. Los racks ya están
+     * rotulados a lo grande; esto es la confirmación de que la pegatina es de
+     * ese rack, no el rótulo.
+     * En `em` sobre el alto de la celda no se puede, así que va en `vh`: así
+     * crece y mengua con la página igual que el código. */
+    .lloc-name{font-size:2.4vh;font-weight:800;letter-spacing:.08em;
+      text-align:center;line-height:1.1;max-width:94%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* ── ESCANEAR ──────────────────────────────────────────────────────────
+     * El vídeo manda y por eso tiene alto fijo en `vh`: dejarlo crecer con la
+     * imagen hace que la ventana salte de tamaño en cuanto la cámara decide su
+     * resolución, que es distinta en cada teléfono. */
+    .sc-modal{max-width:min(520px,94vw)}
+    .sc-cam{position:relative;background:#000;border-radius:10px;overflow:hidden;
+      height:min(46vh,340px);margin-bottom:var(--sp-5)}
+    .sc-cam video{width:100%;height:100%;object-fit:cover;display:block}
+    /* La mira. No recorta nada —se lee de toda la imagen— pero dice dónde
+     * apuntar, que es lo que hace que alguien encuadre a la primera. */
+    .sc-mira{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);
+      width:58%;aspect-ratio:1;border:2px solid rgba(255,255,255,.9);border-radius:12px;
+      box-shadow:0 0 0 9999px rgba(0,0,0,.28);pointer-events:none}
+    .sc-leido{display:flex;flex-direction:column;gap:var(--sp-3);min-height:3.2rem}
+    .sc-item{display:flex;align-items:center;gap:var(--sp-4);font-size:var(--fs-lg)}
+    .sc-tag{font-size:var(--fs-2xs);font-weight:800;letter-spacing:.06em;
+      padding:var(--pad-pildora);border-radius:var(--r-pildora);flex:0 0 auto}
+    .sc-mat{background:var(--accent);color:#fff}
+    .sc-loc{background:var(--green);color:#fff}
+    .sc-vacio{font-size:var(--fs-sm);color:var(--muted)}
+    .sc-aviso{font-size:var(--fs-sm);color:var(--yellow)}
+    .sc-acciones{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)}
+    .sc-accion{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+      text-align:left;width:100%}
+    .sc-pista{font-size:var(--fs-xs);font-weight:400;opacity:.8}
+    .lbl-papel{margin:var(--sp-3) 0 0;font-size:var(--fs-xs);color:var(--muted);
+      line-height:var(--lh-normal);text-align:left}
     #labelPreview{display:flex;gap:var(--sp-4);overflow-x:auto;padding:var(--sp-3) 0 .2rem}
     #labelPreview .lbl{flex:none;transform:scale(.42);transform-origin:top left;
       width:101.6mm;height:152.4mm;border:1px solid var(--border);border-radius:3mm;
@@ -3548,6 +3813,138 @@
 })();
 </script>
 
+<!-- ══ EL VIGILANTE DEL ARRANQUE ═══════════════════════════════════════════════
+
+     14/10/2026. Las dos instalaciones de Jose se quedaron congeladas en
+     «Connecting to your spreadsheet…» y ninguna de las tres protecciones que
+     la app ya tenía para esto dijo nada. Vale la pena anotar por qué, porque
+     la causa no es un descuido: es una forma de fallo que se repite.
+
+     LAS TRES PROTECCIONES, Y DÓNDE VIVEN:
+
+       1. El cartel rojo `#jsVersionTag` que dice «JS NOT LOADED». Existe desde
+          hace meses y su comentario dice, con estas palabras, «si el script no
+          corre, esto es lo único en la página que lo dice». Es verdad — y la
+          pantalla de carga, que llegó después, LO TAPA ENTERO.
+       2. El `window.addEventListener('error')` del final del archivo, que baja
+          la pantalla de carga y enseña el fallo. Vive DENTRO del mismo
+          `bloque de script` al que protege: si ese bloque no compila, el oyente no se
+          registra nunca.
+       3. La rotación de frases de la pantalla de carga, que a los ~20 segundos
+          ofrece un botón de «↻ Reload». También vive dentro del mismo bloque.
+
+     Las tres se caen juntas por lo mismo: UN `bloque de script` QUE NO COMPILA NO
+     EJECUTA NI UNA LÍNEA. No la primera, no la última, ninguna. Y este archivo
+     tiene un solo bloque de veintidós mil líneas, así que un carácter de más
+     en cualquier sitio —un pegado que llegó a medias es la forma más común—
+     apaga la app entera y deja la pantalla de carga puesta para siempre,
+     mintiendo: dice «conectando» cuando quiere decir «me morí antes de
+     empezar». Encaja con lo que se vio en los registros de Apps Script: `doGet`
+     anotado y NINGÚN `getInitialData` después. El servidor estaba perfecto.
+
+     POR ESO ESTO VA EN SU PROPIO bloque de script, y es lo único que hace falta
+     entender de este bloque: cada bloque se compila por separado. Un error en
+     el grande no toca a este pequeño. Es la única manera de que haya alguien
+     vivo para contar que el otro no lo está.
+
+     Reglas que hay que respetar al tocarlo:
+       · No llama a NADA del archivo grande (ni showToast, ni _hideSplash, ni
+         una variable suya). Si lo hiciera, moriría con él y no serviría.
+       · Se queda corto a propósito. Cuanto menos código, menos sitio donde
+         fallar justo cuando es el único que queda.
+       · El aviso lo escribe en la pantalla de carga, que es lo que la persona
+         está mirando. Pintarlo detrás sería repetir el fallo del punto 1.  -->
+<script>
+(function(){
+  /* OCHO SEGUNDOS. No mide lo que tarda el servidor —eso son 10-20 segundos y
+   * es normal—, mide lo que tarda el navegador en COMPILAR el archivo, que en
+   * un teléfono de bodega son décimas. Si a los ocho segundos la bandera no
+   * está puesta, no es que el servidor vaya lento: es que el código nunca
+   * arrancó. */
+  var SEGUNDOS = 8;
+  window.__acopioArranco = false;
+
+  /* EL ERROR, CAZADO Y PUESTO EN PANTALLA. Esto es lo que faltaba.
+   *
+   * Un error de compilación en un bloque POSTERIOR dispara `window.onerror` en
+   * uno anterior — el bloque roto no ejecuta nada, pero el navegador sí avisa.
+   * Así que desde aquí se puede saber exactamente dónde se partió, que es la
+   * única pregunta que importa cuando esto pasa.
+   *
+   * Y va en pantalla, no sólo a la consola. Jose tuvo que abrir DevTools, dar
+   * con la pestaña y mandarme una foto para que yo supiera el número de línea;
+   * sin eso estuve dos días adivinando entre hipótesis que no eran. Lo que
+   * cuesta un renglón aquí costó dos días allí. */
+  var fallo = null;
+  window.addEventListener('error', function(e){
+    if (!fallo && e) fallo = {
+      msg: String(e.message || 'error'),
+      linea: e.lineno || 0,
+      col: e.colno || 0
+    };
+  }, true);
+
+  setTimeout(function(){
+    if (window.__acopioArranco) return;          // todo bien, el grande corrió
+
+    /* QUÉ DECIR. Tres casos, y se distinguen de verdad en vez de adivinarse:
+     *
+     *  · Hay un error cazado → se dice DÓNDE. Es lo único accionable y es un
+     *    dato, no una hipótesis.
+     *  · No hay error pero `google.script` existe → el archivo llegó entero
+     *    pero no corrió. Ahí sí, lo más probable es un pegado a medias.
+     *  · No existe `google.script` → no se pudo bajar la librería de Google.
+     *    La red o Google. Volver a pegar el archivo no arreglaría nada.
+     *
+     * El primer caso ANTES decía «casi siempre significa que el archivo se
+     * pegó a medias», y eso estaba mal: lo decía con error cazado o sin él, y
+     * mandaba a repetir un pegado que puede no ser la causa. Una protección
+     * que da un consejo seguro sobre algo que no ha comprobado hace perder más
+     * tiempo del que ahorra. */
+    var nuestro = !!(window.google && window.google.script);
+    var titulo = fallo ? 'The app stopped while loading.'
+               : nuestro ? 'This copy of the app did not start.'
+               : 'Could not reach Google.';
+    var detalle = fallo
+      ? 'Its code stopped at line ' + fallo.linea + ', column ' + fallo.col +
+        ' — ' + fallo.msg + '. Send this screen to support: the line ' +
+        'number is what identifies the problem. Your data is untouched.'
+      : nuestro
+      ? 'The page loaded but its code never ran. The most likely cause is a ' +
+        'file pasted incompletely — paste Index.html again, whole, and deploy.'
+      : 'The page loaded but the Google script library did not. Check the ' +
+        'connection and reload. Nothing is wrong with your data.';
+
+    var nota = document.getElementById('splashNote');
+    if (nota) {
+      nota.innerHTML = '<b>' + titulo + '</b>';
+      var p = document.createElement('div');
+      p.style.cssText = 'margin-top:.5rem;max-width:30rem;font-size:.78rem;' +
+        'line-height:1.45;opacity:.85';
+      p.textContent = detalle;
+      nota.insertAdjacentElement('afterend', p);
+
+      /* Y una salida, siempre. Quedarse mirando un texto sin nada que pulsar
+       * es media protección. */
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '↻ Reload';
+      btn.style.cssText = 'margin-top:.7rem;background:rgba(255,255,255,.15);' +
+        'border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;' +
+        'padding:.4rem .9rem;font-size:.78rem;font-weight:600;cursor:pointer';
+      btn.onclick = function(){ window.location.reload(); };
+      p.insertAdjacentElement('afterend', btn);
+    }
+
+    /* La barra deja de fingir que avanza. Una barra que sigue creciendo
+     * debajo de «no arrancó» se contradice a sí misma — y en este caso ni
+     * siquiera está creciendo: su reloj también murió con el bloque grande. */
+    var f = document.getElementById('splashFill');
+    if (f) { f.style.width = '100%'; f.style.background = '#e5484d'; }
+  }, SEGUNDOS * 1000);
+})();
+</script>
+
 <!-- ══ TOPBAR ══════════════════════════════════════════════════════════════════ -->
 <div class="topbar">
  <div class="topbar-row1">
@@ -3619,6 +4016,17 @@
           <button class="acct-item" id="btnWeekSchedule" onclick="closeAccountMenu();openWeekSchedule()">☀️ <span>This week's arrivals</span></button>
           <button class="acct-item" id="btnSettings"  onclick="closeAccountMenu();openSettingsModal()" style="display:none">⚙️ <span>App Settings</span></button>
           <button class="acct-item" id="btnUsersMgmt" onclick="closeAccountMenu();openUsersModal()"    style="display:none">👥 <span>Manage Users</span></button>
+          <!-- Sin filtro de rol: lo que cambió en la app lo tiene que poder
+               leer quien la usa, no sólo quien la administra. Y el punto de
+               novedad vive AQUÍ y en el círculo de la cuenta, porque el menú
+               está cerrado casi siempre y un aviso que sólo se ve al abrir no
+               avisa de nada. -->
+          <!-- Sin filtro de rol por el mismo motivo que «This week's arrivals»:
+               escanear es de bodega, no de administración. Lo que se pueda
+               HACER después con lo leído lo decide el formulario que se abre,
+               que ya tiene sus permisos. -->
+          <button class="acct-item" id="btnEscanear" onclick="closeAccountMenu();_escAbrir()">📷 <span>Scan a label</span></button>
+          <button class="acct-item" id="btnNovedades" onclick="closeAccountMenu();abrirNovedades()">✨ <span>What's new</span><span class="nv-punto" id="nvPunto" style="display:none"></span></button>
           <button class="acct-item" id="btnReportIssue" onclick="closeAccountMenu();openReportIssueModal()">🐞 <span>Report a problem</span></button>
           <button class="acct-item" id="btnDarkMode" onclick="toggleDarkMode()"><span id="darkIcon">🌙</span> <span id="darkLabel">Dark mode</span></button>
           <button class="acct-item" id="acctSwitch" onclick="_signOut()" style="display:none">⇄ <span>Switch account</span></button>
@@ -3660,6 +4068,62 @@
      no shared address to send them to, and a policy nobody can open is the
      same as not having one. Source of truth is legal/*.md in the repo — change
      it there and re-generate. -->
+<!-- ══ WHAT'S NEW ════════════════════════════════════════════════════════════
+     El texto viaja DENTRO del archivo, no se descarga. Dos motivos y los dos
+     son de Jose: funciona sin internet, y nadie tiene que salir de la app para
+     enterarse de lo que cambió en la app. El enlace al final es opcional —para
+     quien quiera la nota entera— y apunta SÓLO a la versión de esta ventana,
+     no al historial desde el principio. -->
+<!-- ══ ESCANEAR ══════════════════════════════════════════════════════════════
+     El vídeo ocupa casi todo y lo leído vive debajo, no encima: una lista
+     flotando sobre la imagen tapa justo lo que hay que apuntar. -->
+<div class="overlay" id="scanOverlay">
+  <div class="modal modal-md sc-modal">
+    <div class="mhdr">
+      <h3>Scan</h3>
+      <button class="modal-x" onclick="_escCerrar()" title="Close">✕</button>
+    </div>
+    <div class="sc-cam">
+      <!-- `playsinline` o iOS lo abre a pantalla completa y se lleva la app por
+           delante. `muted` porque sin él algunos navegadores no dejan empezar
+           el vídeo sin un gesto más. -->
+      <video id="scanVideo" playsinline muted autoplay></video>
+      <div class="sc-mira"></div>
+    </div>
+    <!-- ── LA FOTO, QUE ES EL CAMINO QUE SÍ FUNCIONA ───────────────────────
+         Jose, 15/10: *"pero si puedo tomar fotos a los documentos para
+         escanearlos, ¿cómo no se puede usar la app para escanear un código
+         QR?"*. Tenía razón y yo había concluido de más.
+
+         `getUserMedia` —el vídeo en vivo— SÍ está bloqueado por el iframe de
+         Apps Script. Pero esto es otra cosa: un `input type=file` con
+         `capture`, que entrega el trabajo a la CÁMARA NATIVA del teléfono y
+         devuelve un archivo. No pasa por la política de permisos del iframe
+         porque no pide la cámara: pide un archivo. La app ya lo usa desde hace
+         versiones para las fotos de los documentos y de «Report a problem».
+
+         Y lo de después ya estaba: `BarcodeDetector.detect()` acepta una
+         imagen igual que un vídeo, y el repuesto —jsQR— lee de un canvas, que
+         es justo lo que hace `test-qr` para comprobar nuestras etiquetas. -->
+    <div class="sc-foto">
+      <button class="btn btn-primary" id="scanFotoBtn" type="button">📸 Take a photo of the label</button>
+      <input type="file" id="scanFotoInput" accept="image/*" capture="environment" style="display:none">
+    </div>
+    <div id="scanLeido" class="sc-leido"></div>
+    <div id="scanAcciones" class="sc-acciones"></div>
+  </div>
+</div>
+
+<div class="overlay" id="novedadesOverlay">
+  <div class="modal modal-md">
+    <div class="mhdr">
+      <h3 id="nvTitulo">What's new</h3>
+      <button class="modal-x" onclick="cerrarNovedades()" title="Close">✕</button>
+    </div>
+    <div id="nvCuerpo"></div>
+  </div>
+</div>
+
 <div class="overlay" id="legalOverlay">
   <div class="modal modal-md">
     <div class="mhdr">
@@ -3885,6 +4349,25 @@
           <select id="movCatFilter"><option value="">All Categories</option></select>
           <button id="btnExportCSV" class="btn btn-ghost btn-sm">⬇ CSV</button>
           <button id="btnLoadOlderHistory" class="btn btn-ghost btn-sm">📜 Load Older History</button>
+          <!-- ESCANEAR VIVE AQUÍ, JUNTO A LO QUE HACE.
+               Jose, 15/10: *"sería mucho más útil, práctico y fácil para el
+               usuario que utiliza celular... así sólo el usuario entra y
+               empieza a trabajar"*.
+
+               Y el sitio es éste por un motivo y no por gusto: escanear SIEMPRE
+               acaba en un Entry o en un Exit. Estaba sólo en el menú de la
+               cuenta, que son dos toques y un objetivo pequeño para un dedo con
+               guante, y los dos botones a los que lleva estaban en otra
+               pantalla. Puesto donde ya se trabaja, el rodeo desaparece.
+
+               Sigue TAMBIÉN en el menú de la cuenta: no cuesta nada y es donde
+               se busca lo que no se usa a diario.
+
+               Empieza oculto y lo enciende `_escPintarBoton()` sólo donde haya
+               cámara. Un botón que no puede hacer nada enseña el producto como
+               roto, y en un escritorio sin cámara eso es la mayoría de las
+               veces. -->
+          <button id="btnEscanearMov" class="btn btn-ghost" style="display:none">📷 Scan label</button>
           <button id="btnEntry" class="btn btn-primary">+ Entry (IN)</button>
           <button id="btnExit" class="btn btn-danger">− Exit (OUT)</button>
         </div>
@@ -4303,6 +4786,18 @@
       </div>
       <div id="labelsList" style="max-height:min(38vh,260px);overflow:auto;text-align:left;margin-top:.3rem"></div>
       <div id="labelPreview"></div>
+      <!-- ── EL TAMAÑO DE PAPEL, DICHO ANTES DE IMPRIMIR ───────────────────
+           Jose, 13/10, con un vídeo de cuatro minutos: su impresora térmica SÍ
+           sale en el cuadro de impresión de Android —«Jadens Printer»— pero el
+           tamaño de papel estaba en **ISO A4**, así que la etiqueta salía del
+           tamaño correcto en medio de una hoja enorme. No era un fallo de la
+           app ni de Chrome: era un desplegable.
+
+           Este aviso existe porque ese desplegable está a dos toques de
+           distancia y nadie lo mira hasta que ya gastó papel. En el móvil se
+           dice entero; en el ordenador basta recordar la medida, porque ahí el
+           tamaño se elige una vez y se queda. -->
+      <p class="lbl-papel" id="labelsPaper"></p>
     </div>
     <div class="cconfirm-footer">
       <button class="cconfirm-cancel" id="labelsSkip" onclick="_labelsClose()">Not now</button>
@@ -4744,6 +5239,35 @@
         <input type="text" id="mProj" list="projList" data-cfg-new="projects">
         <datalist id="projList"></datalist>
       </div>
+      <!-- ── DE QUÉ OBRA VUELVE (RETURN), Y POR QUÉ ES UN CAMPO APARTE ──────
+           Jose, 15/10: *"eso nos dice qué sobró de qué proyecto y dónde se lo
+           usó"*.
+
+           El RETURN ya existía y ya hacía lo correcto con el stock. Lo que no
+           existía era el dato: el formulario pedía el origen como texto libre
+           en «From (Site / Project / Address)» —una columna de UBICACIÓN— y
+           escondía el proyecto a propósito. El origen se escribía y no se podía
+           agrupar.
+
+           NO SE REUTILIZA `mProj`, y el motivo es de significado, no de
+           comodidad: `mProj` es «la obra PARA la que es este movimiento», y una
+           devolución no es PARA una obra, es DE una obra. Si se guardaran en la
+           misma columna, el motor de stock —que hace `s.project = m.project`—
+           etiquetaría el material con la obra de la que volvió, cuando lo que
+           pasa es justo lo contrario: ya está en bodega y sin asignar.
+
+           Y en una SALIDA los dos conviven: `mProj` dice a dónde va y esto de
+           dónde salió. Una fila, las dos preguntas de Jose. -->
+      <div class="field" id="mOrigProjField" style="display:none">
+        <label id="origProjLabel">Came back from (project)</label>
+        <input type="text" id="mOrigProj" list="projList" data-cfg-new="projects">
+        <!-- La lista de la SALIDA es distinta de la de la devolución, y a
+             propósito: al devolver, el origen puede ser cualquier obra; al
+             sacar, sólo las obras de las que QUEDA algo, con cuánto queda al
+             lado. Ofrecer las 25 obras cuando sólo dos tienen sobras es
+             invitar a elegir una que no existe. -->
+        <datalist id="boneList"></datalist>
+      </div>
       <div class="field" id="mRespFieldWrap">
         <label id="respLabel">Received By</label>
         <input type="text" id="mResp">
@@ -4783,7 +5307,7 @@
       </div>
       <!-- Doc groups rendered here by JS -->
       <div id="docGroupsContainer"></div>
-      <button class="btn btn-ghost btn-sm" onclick="addDocGroup()" style="margin-top:.35rem;font-size:.8rem">+ Add Document</button>
+      <button id="btnAddDoc" class="btn btn-ghost btn-sm" onclick="addDocGroup()" style="margin-top:.35rem;font-size:.8rem">+ Add Document</button>
       <div id="aiExtractStatus" style="display:none;margin-top:.5rem;font-size:.78rem;padding:.4rem .6rem;border-radius:6px;background:var(--purple-bg);color:var(--purple)"></div>
       <!-- Hidden file input (kept for AI extract compatibility) -->
       <input type="file" id="legacyFileInput" class="mFile" accept="image/*,.pdf,video/*" style="display:none">
@@ -4896,6 +5420,56 @@
 <input type="file" id="rackPhotoFileInput" accept="image/*" style="display:none">
 
 <!-- ══ LOCK MATERIAL (ADMIN) ═══════════════════════════════════════════════════ -->
+<!-- ── LA VENTANA DEL CANDADO ─────────────────────────────────────────────────
+     Sólo aparece en la versión básica. No es un muro, es una oferta: dice qué
+     hace la función y dónde está, con palabras de lo que se gana y no de lo que
+     falta. Ver BASIC_PRO. -->
+<!-- ── QUIÉN ERES, PREGUNTADO UNA SOLA VEZ ────────────────────────────────────
+     Sólo en la versión básica, y sólo mientras no haya respuesta. Ver
+     basicIdentidad_ en Code.gs para por qué se pregunta en vez de saberlo. -->
+<div class="overlay" id="quienOverlay">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3>👋 Before you start</h3>
+    </div>
+    <p style="font-size:.9rem;color:var(--text);margin:.1rem 0 1rem;line-height:1.5">
+      Who is recording movements here? This signs every movement you record, so your
+      history has your name on it from day one.
+    </p>
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="quienNombre" placeholder="Jose Castro" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Your email</label>
+      <input type="email" id="quienEmail" placeholder="you@company.com" maxlength="120">
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);margin:.6rem 0 0;line-height:1.45">
+      It is written only into your own spreadsheet. Nothing is sent anywhere, and nobody
+      else can open this app.
+    </p>
+    <div id="quienError" style="display:none;font-size:.8rem;color:var(--danger);margin-top:.5rem"></div>
+    <div class="modal-actions" style="margin-top:1.25rem">
+      <span class="pro-notnow" onclick="_quienSaltar()">Skip for now</span>
+      <button class="btn btn-primary btn-sm" id="quienSave" type="button" onclick="_quienGuardar()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="proOverlay">
+  <div class="modal modal-sm">
+    <div class="mhdr">
+      <h3 id="proTitulo">Acopio Pro</h3>
+      <button class="modal-x" onclick="closeModal('proOverlay')" title="Close">✕</button>
+    </div>
+    <p id="proTexto" style="font-size:.9rem;color:var(--text);margin:.1rem 0 1rem;line-height:1.5"></p>
+    <div class="modal-actions" style="margin-top:1.25rem">
+      <span class="pro-notnow" onclick="closeModal('proOverlay')">Not now</span>
+      <a id="proEnlace" class="btn btn-primary btn-sm" href="https://www.acopio.net/" target="_blank" rel="noopener">Check Acopio Pro</a>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="lockMatOverlay">
   <div class="modal modal-sm">
     <div class="mhdr">
@@ -4996,7 +5570,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.62';
+var APP_VERSION = '12.78';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -5008,8 +5582,15 @@ var APP_VERSION = '12.62';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = '710571f1';
+var APP_BUILD = 'c3500714';
 var userRole = 'WAREHOUSE';
+/* QUÉ EDICIÓN ES. La manda el servidor con los datos iniciales; el navegador
+ * NO la declara por su cuenta a propósito. Si hubiera una constante aquí y otra
+ * en Code.gs, serían dos líneas que hay que cambiar a la vez para hacer una
+ * versión gratis sin que nada obligue a cambiar las dos — y fallar sólo una da
+ * una app que esconde los botones pero deja las puertas del servidor abiertas,
+ * o al revés. Las dos mitades fallarían en silencio. Ver ACOPIO_BASIC. */
+var APP_BASIC = false;
 // Toggles ADMIN turned on for the WAREHOUSE role — see Code_v3_fixed.gs's
 // DEFAULT_ROLE_PERMS for what each one defaults to and why. Never trusted for
 // anything that matters: every action this gates in the UI is re-checked by
@@ -7124,6 +7705,11 @@ function _setFavicon(href){
  * por su cuenta.
  */
 var PRODUCT_SITE = 'https://www.acopio.net';
+/* El correo al que se escribe por soporte. Vive aquí, al lado de la dirección
+ * del sitio, porque las dos cosas se enseñan bajo la misma condición: sólo
+ * mientras el producto siga llamándose como lo hicimos. Una sola copia para
+ * que no se queden distintas. */
+var ACOPIO_SOPORTE = 'joseisrael5101@gmail.com';
 
 function _syncProductLinks(productName){
   var custom = String(productName || '').trim();
@@ -7633,6 +8219,10 @@ function _activeTab() {
 }
 
 function showTab(tab, btnId){
+  /* UNA PESTAÑA ESCONDIDA TAMPOCO SE ABRE. Ver `_basicPestanaFuera`: la
+   * pestaña activa sobrevive en `sessionStorage`, así que sin esto se puede
+   * llegar a una sección cuyo botón ya no existe y quedarse ahí. */
+  if (_basicPestanaFuera(tab)) { tab = 'movements'; btnId = 'btn-movements'; }
   _clearRowModes();     // Edit / Delete never survive leaving the screen they were armed on
   // Y la selección de movimientos tampoco, por el mismo motivo y con las mismas
   // palabras. Es la línea que faltaba: en la v11.59 las casillas SUSTITUYERON a
@@ -8355,7 +8945,7 @@ function renderStock(){
     // row can never drift out of step with the header it sits under.
     var cells = {
       category:     '<td class="sc-category">'+catBadge(s.category)+'</td>',
-      name:         '<td class="sc-name"><strong>'+_he(s.name)+'</strong>'+(s.project&&s.project!=='GENERIC'?'<br><span style="font-size:.72rem;color:var(--muted)">'+_he(s.project)+'</span>':'')+'</td>',
+      name:         '<td class="sc-name"><strong>'+_he(s.name)+'</strong>'+(s.project&&s.project!=='GENERIC'?'<br><span style="font-size:.72rem;color:var(--muted)">'+_he(s.project)+'</span>':'')+_boneyardMarca(s)+'</td>',
       levels:       _levelsCell(s),
       location:     '<td class="sc-location" style="color:var(--muted);font-size:.78rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(locTip)+'">'+lockMark+_he(locTxt)+'</td>',
       status:       '<td class="sc-status">'+stockBadge(s)+'</td>',
@@ -8705,7 +9295,25 @@ function renderMovements(){
       locFlow:  '<td class="mc-locFlow" style="font-size:.78rem;color:var(--muted)">'+_he(locDisplay)+'</td>',
       rawLoc:   '<td class="mc-rawLoc" style="font-size:.75rem;color:var(--muted)">'+_he(srcDest)+'</td>',
       gc:       '<td class="mc-gc" style="font-size:.78rem">'+_he(m.gc||'—')+'</td>',
-      project:  '<td class="mc-project" style="font-size:.78rem">'+_he(m.project||'—')+'</td>',
+      /* ── «DÓNDE SE USÓ» Y «DE DÓNDE SALIÓ», EN LA MISMA CELDA ────────────
+       *
+       * La columna de proyecto dice a dónde va. Si la cantidad salió del
+       * boneyard, debajo y en pequeño dice de qué obra sobró. Una fila
+       * contesta las dos preguntas de Jose a la vez, que es justo por lo que
+       * son dos columnas en la hoja y no una.
+       *
+       * En una DEVOLUCIÓN no hay destino —vuelve a la bodega— así que la
+       * celda enseña sólo el origen, y la flecha hacia atrás dice de qué se
+       * trata sin gastar una palabra. */
+      project:  (function(){
+        var destino = m.project || '';
+        var origen  = m.originProject || '';
+        if (!origen) return '<td class="mc-project" style="font-size:.78rem">'+_he(destino||'—')+'</td>';
+        var arriba = destino ? _he(destino) : '<span style="color:var(--muted)">—</span>';
+        return '<td class="mc-project" style="font-size:.78rem">' + arriba +
+          '<br><span class="bone-marca" title="Left over from this project">↩ ' +
+          _he(origen) + '</span></td>';
+      })(),
       supplier: '<td class="mc-supplier" style="font-size:.78rem">'+_he(m.supplier||'—')+'</td>',
       resp:     '<td class="mc-resp" style="font-size:.78rem">'+_he(m.responsible||'—')+'</td>',
       comment:  '<td class="mc-comment" style="font-size:.78rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+_escAttr(m.comments||'')+'">'+_he(m.comments||'—')+'</td>',
@@ -9895,6 +10503,12 @@ function openMoveModal(type){
   // returns, once it has its own material to prefill.
   _rdwPrefillActive = null;
 
+  /* Y sin puntero de boneyard de la apertura anterior, por el mismo motivo que
+   * la tarjeta de entrantes de ahí abajo: un puntero que sobrevive a la
+   * ventana que lo eligió acabaría colgado del siguiente movimiento, diciendo
+   * que una salida cualquiera viene de una devolución que nadie mencionó. */
+  _boneyardOrigenMov = '';
+
   // Y sin tarjeta pendiente colgando de la apertura anterior. Mismo motivo que
   // la línea de arriba, y aquí importa más: si alguien abre la entrada desde
   // una tarjeta, la cierra sin guardar y más tarde registra OTRA entrada
@@ -9961,6 +10575,108 @@ function openMoveModal(type){
   _focusMoveName();
 }
 
+/* LA MARCA DE BONEYARD EN LA TABLA — «qué sobró de dónde», de un vistazo.
+ *
+ * Va debajo del nombre, como la sublínea del proyecto que ya estaba ahí, y no
+ * en una columna nueva: es un dato que la mayoría de los materiales no tiene,
+ * y una columna vacía en el 95% de las filas cuesta ancho a todas para servir
+ * a unas pocas.
+ *
+ * Y ES UN ESTADO, NO UNA CATEGORÍA. El material sigue siendo WINDOW SCREEN;
+ * lo que dice la marca es que 40 de sus unidades sobraron de BLACK HOUSE 2.
+ * Si fuera una categoría, el mismo window screen estaría partido en dos filas
+ * y el total de la pantalla no sería el total de la bodega. */
+function _boneyardMarca(s){
+  var b = (s && s.boneyard) || {};
+  var obras = Object.keys(b).filter(function(p){ return b[p] > 0; });
+  if (!obras.length) return '';
+  /* La de más unidades primero: si hay que cortar, que lo que se vea sea lo
+   * que más pesa. */
+  obras.sort(function(a, c){ return b[c] - b[a]; });
+  var total = obras.reduce(function(a, p){ return a + b[p]; }, 0);
+  var detalle = obras.map(function(p){ return p + ': ' + b[p]; }).join(' · ');
+  var texto = obras.length === 1
+    ? total + ' left over from ' + obras[0]
+    : total + ' left over from ' + obras.length + ' projects';
+  return '<br><span class="bone-marca" title="' + _escAttr(detalle) + '">↩ ' +
+         _he(texto) + '</span>';
+}
+
+/* ── EL BONEYARD EN LA SALIDA ───────────────────────────────────────────────
+ *
+ * Jose, 15/10: *"eso nos dice qué sobró de qué proyecto y DÓNDE SE LO USÓ"*.
+ * La primera mitad la contesta el RETURN; ésta es la segunda.
+ *
+ * El puntero al movimiento del que sale. Se busca entre los movimientos que el
+ * navegador ya tiene, así que no cuesta ni una llamada al servidor: la
+ * devolución más reciente de ESE material con ESE origen. Con él, «¿de dónde
+ * salió esta ventana de LAKESHORE?» sube por la cadena hasta el PO y el precio.
+ *
+ * Vive fuera de la función porque lo lee `submitMovement` al armar el envío, y
+ * se limpia en cada apertura del modal — un puntero que sobrevive a la ventana
+ * que lo eligió acabaría colgado del movimiento siguiente. */
+var _boneyardOrigenMov = '';
+
+/* Cuántas sobras hay de un material, por obra de origen. Devuelve `{}` si no
+ * hay ninguna, que es el caso normal y por eso es el barato. */
+function _boneyardDe(cat, name){
+  if (!cat || !name) return {};
+  var k = _normKey(cat) + '|||' + _normKey(name);
+  return (stockData[k] && stockData[k].boneyard) || {};
+}
+
+/* Enciende o apaga el campo según lo que haya. Se la llama al elegir material
+ * y al cambiar de tipo: las dos cosas pueden hacer que la respuesta cambie. */
+function _boneyardSync(){
+  if (currentMoveType !== 'EXIT') return;
+  var cat  = (document.getElementById('mType') || {}).value || '';
+  var name = (document.getElementById('mName') || {}).value || '';
+  var bone = _boneyardDe(cat, name);
+  var obras = Object.keys(bone);
+  if (!obras.length){ _origProjMostrar(false); return; }
+
+  /* La lista con la CANTIDAD al lado, no sólo el nombre. Quien está sacando
+   * material necesita saber si le alcanza antes de elegir, no después de
+   * guardar — y el aviso de «te pasaste» llega cuando ya escribió todo. */
+  var dl = document.getElementById('boneList');
+  if (dl){
+    dl.innerHTML = obras.map(function(p){
+      return '<option value="' + _he(p) + '">' + _he(p) + ' — ' + bone[p] + ' available</option>';
+    }).join('');
+  }
+  _origProjMostrar(true, 'Taken from boneyard (leave blank if it is normal stock)');
+}
+
+/* EL CAMPO DE «DE QUÉ OBRA VIENE», ENCENDIDO EN UN SOLO SITIO.
+ *
+ * Lo usan dos pantallas con etiquetas distintas —la devolución dice «came back
+ * from», la salida de boneyard dice «taken from»— y las dos tienen que poder
+ * apagarlo. Una función en vez de cuatro líneas repetidas por rama, porque
+ * cuatro líneas repetidas por rama son cuatro sitios donde olvidarse de una. */
+function _origProjMostrar(on, etiqueta){
+  var campo = document.getElementById('mOrigProjField');
+  var lbl   = document.getElementById('origProjLabel');
+  var inp   = document.getElementById('mOrigProj');
+  if (!campo) return;
+  campo.style.display = on ? 'flex' : 'none';
+  if (on && etiqueta && lbl) lbl.textContent = etiqueta;
+  if (on && inp) {
+    /* La lista depende de la pantalla. En la SALIDA sólo las obras que tienen
+     * sobras de este material; en la DEVOLUCIÓN, la lista de proyectos entera
+     * —y con `data-cfg-new` puesto, porque se puede devolver de una obra que
+     * todavía no está en la lista y hay que poder añadirla sin salir—. */
+    var salida = (currentMoveType === 'EXIT');
+    inp.setAttribute('list', salida ? 'boneList' : 'projList');
+    if (salida) inp.removeAttribute('data-cfg-new');
+    else        inp.setAttribute('data-cfg-new', 'projects');
+  }
+  /* Al apagarlo se VACÍA. Si no, el valor escrito en una devolución viajaría
+   * escondido hasta el siguiente guardado de otro tipo — un campo invisible
+   * con contenido es la forma más silenciosa de escribir un dato que nadie
+   * eligió. */
+  if (!on) { var inp = document.getElementById('mOrigProj'); if (inp) inp.value = ''; }
+}
+
 function setModalType(type){
   currentMoveType = type.toUpperCase();
 
@@ -10003,6 +10719,12 @@ function setModalType(type){
   gcField.style.display  = 'flex';
   poField.style.display  = 'flex';
   projField.style.display = 'flex';
+  /* El de origen vuelve a esconderse en CADA cambio de tipo, igual que todo lo
+   * demás de este bloque. El comentario de ahí abajo sobre el «Reason for
+   * Waste» que no se renombraba cuenta exactamente lo que pasa cuando algo de
+   * aquí se enciende y nadie lo apaga: una pantalla hereda el campo de la
+   * anterior y pide algo que no tiene sentido pedirle. */
+  _origProjMostrar(false);
   fileSection.style.display = 'none';
   notifySection.style.display = 'none';
   entryLocsSection.style.display = 'none';
@@ -10087,6 +10809,11 @@ function setModalType(type){
     respLabel.textContent = 'Taken By / Given To';
     mStatus.value = 'Out';
     _initMultiExitSection();
+    /* El campo de boneyard en la SALIDA no se enciende aquí sino cuando se
+     * elige el material: hasta entonces no se sabe si ese material tiene
+     * sobras, y un campo que pregunta por algo que no existe es un campo que
+     * se contesta mal. Lo hace `_boneyardSync`, colgada del nombre. */
+    _boneyardSync();
 
   } else if (type === 'TRANSFER'){
     // TRANSFER uses the multi-pair rows section instead of the single src/dest fields
@@ -10106,13 +10833,20 @@ function setModalType(type){
 
   } else if (type === 'RETURN'){
     srcField.style.display  = 'flex';
-    srcLabel.textContent    = 'From (Site / Project / Address)';
+    /* La etiqueta deja de decir «Project» porque el proyecto ya tiene su
+     * propio campo debajo. Pedir lo mismo en dos sitios con nombres parecidos
+     * es cómo se consigue que la mitad de las devoluciones lo escriban en el
+     * campo que no agrupa — que es exactamente lo que llevaba pasando. */
+    srcLabel.textContent    = 'From (site or address)';
     destField.style.display = 'flex';
     destLabel.textContent   = 'Return to Rack';
     supField.style.display  = 'none';
     gcField.style.display   = 'none';
     poField.style.display   = 'none';
     projField.style.display = 'none';
+    /* Y EL QUE SÍ AGRUPA. Es lo único que esta versión añade al RETURN, y es
+     * todo lo que hacía falta para contestar «qué sobró de qué obra». */
+    _origProjMostrar(true, 'Came back from (project)');
     dateLabel.textContent = 'Date Returned';
     respLabel.textContent = 'Returned By';
     mStatus.value = 'In Stock';
@@ -10629,6 +11363,53 @@ function _ponerUbicacion(valor){
   showToast('Type ' + valor + ' in the location box and save again', 'info', 6000);
 }
 
+/* ── UN SOLO SITIO QUE DECIDE QUÉ HACER CON UN ERROR MARCADO ────────────────
+ *
+ * El servidor marca ciertos rechazos con tubería —`UNKNOWN_LOCATION|P|B`,
+ * `UNKNOWN_CATEGORY|…`, `INSUFFICIENT_STOCK|…`— para que la PANTALLA pueda
+ * ofrecer la salida en vez de enseñar un texto rojo. Lo de después de la
+ * tubería no se enseña nunca tal cual.
+ *
+ * ESO ERA LA INTENCIÓN. LO QUE PASABA ERA OTRA COSA, y Jose lo grabó el 13/10:
+ *
+ *     ✕ Error: UNKNOWN_LOCATION|P|B [ID: 3ce2353a]
+ *
+ * en un toast rojo de seis segundos, en el formulario de entrada con varios
+ * materiales. Parece que la app se rompió. No se rompió: rechazó bien y lo
+ * contó mal.
+ *
+ * LA CAUSA: la cadena de manejadores estaba escrita TRES VECES, una por cada
+ * camino de guardado, y sólo UNA de las tres la tenía completa.
+ *
+ *     addMovement     categoría · ubicación · stock corto     ← completa
+ *     addMultiEntry   sólo duplicado                          ← la del vídeo
+ *     addMultiExit    sólo stock corto
+ *
+ * Tres copias de una lista que tienen que coincidir sin que nada lo obligue.
+ * Es el décimo caso de este patrón en el proyecto.
+ *
+ * Y LO PEOR: ESTABA PREDICHO POR ESCRITO. El comentario del manejador de
+ * `addMultiEntry` decía, palabra por palabra: *"hoy ninguna acción de este
+ * camino lanza un error marcado, así que no se veía —pero la asimetría es la
+ * trampa, no el síntoma: el día que el servidor marque un error de entrada, el
+ * usuario leería SYSTEM_BUSY| en su pantalla"*. Llegó el día. No fue
+ * SYSTEM_BUSY, fue UNKNOWN_LOCATION. Alguien escribió el fallo exacto que iba
+ * a ocurrir y lo dejó escrito en vez de arreglarlo.
+ *
+ * Así que ahora la cadena vive AQUÍ, una vez. Los tres caminos la llaman. El
+ * cuarto que alguien añada la llamará también, o no compilará su intención:
+ * no hay lista que copiar y por tanto no hay lista que se quede corta.
+ *
+ * Devuelve true si se ha hecho cargo del error y no hay que enseñar nada más.
+ * `reintentar` es opcional: sólo los caminos que pueden volver a intentarlo
+ * solos lo pasan. */
+function _errorConocido(err, reintentar){
+  if (_categoriaDesconocida(err)) return true;
+  if (_ubicacionDesconocida(err, reintentar)) return true;
+  if (_shortStockFix(err)) return true;
+  return false;
+}
+
 function _shortStockFix(err){
   var info = _shortStockInfo(err);
   if (!info) return false;
@@ -11010,6 +11791,35 @@ async function submitMovement(){
   var name = (document.getElementById('mName').value || '').trim();
   if (!name){ alert('Please enter a material name'); return; }
 
+  /* ── LA DEVOLUCIÓN TIENE QUE DECIR DE DÓNDE VUELVE ────────────────────────
+   *
+   * Obligatorio, y es una decisión, no un descuido: si se deja opcional la
+   * mitad de las devoluciones se guardan en blanco y el dato no sirve para
+   * nada —que es exactamente la situación que esta versión viene a arreglar—.
+   * Y quien está devolviendo material SIEMPRE sabe de dónde viene; es lo único
+   * que tiene delante.
+   *
+   * El campo acepta texto libre además de la lista, así que una obra que no
+   * esté dada de alta, o una dirección suelta, se escriben igual. Lo que no se
+   * puede es no contestar.
+   *
+   * Se comprueba AQUÍ y no en el servidor a propósito: es calidad de dato, no
+   * seguridad. Una llamada directa a la API podría saltárselo, y eso está
+   * bien — el importador de historia vieja entra por ahí y sus filas no tienen
+   * origen que poner. Bloquearlo en el servidor rompería la importación para
+   * defender una estadística. */
+  if (currentMoveType === 'RETURN'){
+    var _op = ((document.getElementById('mOrigProj') || {}).value || '').trim();
+    if (!_op){
+      alert('Which project is this coming back from?\n\n' +
+            'This is what lets the app tell you later what was left over from ' +
+            'where, and where it ended up being used.');
+      var _opEl = document.getElementById('mOrigProj');
+      if (_opEl) _opEl.focus();
+      return;
+    }
+  }
+
   // ── ENTRY: gather multi-location rows (legacy path — no longer reached) ───
   var entryLocations = [];
   if (currentMoveType === 'ENTRY'){
@@ -11193,6 +12003,44 @@ async function submitMovement(){
 
   var proj = (document.getElementById('mProj').value || '').trim();
 
+  /* ── EL BONEYARD, RESUELTO JUSTO ANTES DE ENVIAR ──────────────────────────
+   *
+   * Dos cosas pasan aquí y las dos tienen que pasar AHORA, con el formulario
+   * ya completo: avisar si se está sacando más sobra de la que hay, y buscar
+   * el puntero al movimiento del que sale.
+   *
+   * El aviso NO bloquea. Puede haber sobras legítimas que la app no contó —
+   * devoluciones de antes de la v12.72, o historia importada— y negarse a
+   * guardar por una cuenta que la propia app sabe incompleta sería impedir
+   * trabajar por culpa de un dato nuestro. Avisa y deja decidir, igual que el
+   * aviso de «te pasaste del estante» que ya existe unas líneas más arriba. */
+  var origProj = ((document.getElementById('mOrigProj') || {}).value || '').trim();
+  _boneyardOrigenMov = '';
+  if (origProj && currentMoveType === 'EXIT') {
+    var bone = _boneyardDe(cat, name);
+    var hay  = bone[_normKey(origProj)] || bone[origProj.toUpperCase()] || bone[origProj] || 0;
+    if (hay && qty > hay) {
+      if (!confirm('You are taking ' + qty + ' but only ' + hay +
+                   ' are recorded as left over from ' + origProj +
+                   '.\n\nSave anyway? The rest will be counted as normal stock.')) return;
+    }
+    /* El puntero: la devolución MÁS RECIENTE de este material con este origen.
+     * Se busca en lo que el navegador ya tiene, así que no cuesta una llamada.
+     * Si no se encuentra —historia archivada— se manda vacío: el proyecto de
+     * origen, que es el HECHO, se guarda igual. Ésa es la razón de que sean
+     * dos columnas y no una. */
+    var kMat = _normKey(cat) + '|||' + _normKey(name);
+    for (var bi = movements.length - 1; bi >= 0; bi--) {
+      var bm = movements[bi];
+      if (bm.moveType !== 'RETURN') continue;
+      if (!bm.movId) continue;
+      if ((_normKey(bm.category) + '|||' + _normKey(bm.name)) !== kMat) continue;
+      if (_normKey(bm.originProject || '') !== _normKey(origProj)) continue;
+      _boneyardOrigenMov = bm.movId;
+      break;
+    }
+  }
+
   // Build the payload once; _doSubmit can be called with forceSubmit=true on retry
   var payload = {
     moveType:         currentMoveType,
@@ -11210,6 +12058,12 @@ async function submitMovement(){
     locations:         currentMoveType === 'ENTRY'    ? entryLocations    : null,
     exitLocations:     currentMoveType === 'EXIT'     ? exitLocations     : null,
     transferLocations: currentMoveType === 'TRANSFER' ? transferLocations : null,
+    /* El boneyard. Se manda siempre y el servidor decide si significa algo:
+     * sólo lo guarda en RETURN y EXIT. Filtrar aquí ADEMÁS de allí serían dos
+     * sitios que tienen que decidir lo mismo, y el que se quedara viejo lo
+     * haría en silencio. */
+    originProject:    (document.getElementById('mOrigProj') || {}).value || '',
+    fromMov:          _boneyardOrigenMov || '',
     supplier:         document.getElementById('mSup').value,
     comments:         comments,
     status:           document.getElementById('mStatus').value,
@@ -11305,9 +12159,7 @@ async function submitMovement(){
         // ── Otro se llevó el material mientras esta ventana estaba abierta ─
         _btnReset(btn);
         _setModalBusy('moveOverlay', false);
-        if (_categoriaDesconocida(err)) return;
-        if (_ubicacionDesconocida(err, function(){ _doSubmit(force); })) return;
-        if (_shortStockFix(err)) return;
+        if (_errorConocido(err, function(){ _doSubmit(force); })) return;
         // ── Any other error ────────────────────────────────────────────────
         showToast('Error: ' + _stripTags(err), 'err', 6000);
       })
@@ -12573,7 +13425,7 @@ function submitMultiExit(){
         // Otro se llevó el material mientras esta ventana estaba abierta. Va
         // DESPUÉS del aviso de duplicado y antes del error genérico: los dos
         // son rechazos legítimos, pero éste trae el número bueno consigo.
-        if (_shortStockFix(err)) return;
+        if (_errorConocido(err, function(){ doSubmit(force); })) return;
         showToast('Error: '+_stripTags(err),'err',6000);
       })
       .processMovement('addMultiExit', _h({
@@ -12787,12 +13639,14 @@ function submitMultiEntry(){
           });
           return;
         }
-        // _stripTags, igual que la salida. Era la única de las dos que
-        // enseñaba el texto crudo: la entrada decía 'Error: ' + msg y la
-        // salida ya pasaba por aquí. Hoy ninguna acción de este camino lanza
-        // un error marcado, así que no se veía —pero la asimetría es la
-        // trampa, no el síntoma: el día que el servidor marque un error de
-        // entrada, el usuario leería SYSTEM_BUSY| en su pantalla.
+        /* ÉSTE ES EL CAMINO DEL VÍDEO DEL 13/10. El comentario que había aquí
+         * decía: *"hoy ninguna acción de este camino lanza un error marcado,
+         * así que no se veía —pero la asimetría es la trampa, no el síntoma:
+         * el día que el servidor marque un error de entrada, el usuario leería
+         * SYSTEM_BUSY| en su pantalla"*. Llegó el día, y lo que leyó fue
+         * `UNKNOWN_LOCATION|P|B`. La predicción estaba bien; lo que faltó fue
+         * actuar sobre ella. Ver `_errorConocido`. */
+        if (_errorConocido(err, function(){ _doMultiSubmit(force); })) return;
         showToast('Error: ' + _stripTags(err), 'err', 6000);
       })
       .processMovement('addMultiEntry', _h(payload));
@@ -14772,14 +15626,18 @@ function _clearRowModes(){
 function _renderSettingsTab(tab) {
   _syncSettingsTabButtons(tab);
   var content = document.getElementById('settingsTabContent');
-  if (tab === 'materials')   { _renderMaterialsTab(); return; }
-  if (tab === 'errorlog')    { _renderErrorLogTab(); return; }
-  if (tab === 'system')      { _renderSystemTab(); return; }
-  if (tab === 'pmdirectory') { _renderPmDirectoryTab(); return; }
-  if (tab === 'import')      { _renderImportTab(); return; }
-  if (tab === 'locations')   { _renderLocationsTab(); return; }
-  if (tab === 'company')     { _renderCompanyTab(); return; }
-  if (tab === 'permissions') { _renderPermissionsTab(); return; }
+  /* CADA PINTADA REHACE EL CONTENIDO, así que el apagado hay que rehacerlo
+   * también — y DESPUÉS, no antes. Jose encontró la pestaña de sistema con
+   * todas sus opciones pulsables: *"todas están disponibles, si doy clic
+   * muestran un mensaje que parece de error"*. El mensaje llegaba tarde. */
+  if (tab === 'materials')   { _renderMaterialsTab();   _basicApagarAjuste(tab); return; }
+  if (tab === 'errorlog')    { _renderErrorLogTab();    _basicApagarAjuste(tab); return; }
+  if (tab === 'system')      { _renderSystemTab();      _basicApagarAjuste(tab); return; }
+  if (tab === 'pmdirectory') { _renderPmDirectoryTab(); _basicApagarAjuste(tab); return; }
+  if (tab === 'import')      { _renderImportTab();      _basicApagarAjuste(tab); return; }
+  if (tab === 'locations')   { _renderLocationsTab();   _basicApagarAjuste(tab); return; }
+  if (tab === 'company')     { _renderCompanyTab();     _basicApagarAjuste(tab); return; }
+  if (tab === 'permissions') { _renderPermissionsTab(); _basicApagarAjuste(tab); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
@@ -14793,7 +15651,7 @@ function _renderSettingsTab(tab) {
       // "CLIFTONPLACEBLDNGH". Catching those automatically would need matching
       // loose enough to also group genuinely different jobs, and a wrong merge
       // rewrites history, so the judgement stays with a person.
-      (mergeable ? '<input type="checkbox" class="cfg-pick" data-val="'+_he(v)+'" title="Select to merge">' : '') +
+      (mergeable ? '<input type="checkbox" class="cfg-pick" data-val="'+_he(v)+'" title="Select to print a label, or to merge">' : '') +
       '<span class="cfg-item-name" id="cfgName-'+tab+'-'+i+'">'+v+'</span>' +
       '<div id="cfgEdit-'+tab+'-'+i+'" style="display:none;flex:1;display:none;gap:.35rem;align-items:center">' +
         '<input class="cfg-item-input" id="cfgInp-'+tab+'-'+i+'" value="'+_he(v)+'">' +
@@ -15001,7 +15859,7 @@ function _renderLocGroup(type, use){
         ? items.map(function(l){
             var why = _locWhyKept(l.name, use);
             return '<li class="loc-item" draggable="true" data-name="' + _he(l.name) + '">' +
-              '<input type="checkbox" class="loc-pick" data-name="' + _he(l.name) + '" title="Select to merge">' +
+              '<input type="checkbox" class="loc-pick" data-name="' + _he(l.name) + '" title="Select to print a label, or to merge">' +
               '<span class="loc-grip">⠿</span><span>' + _he(l.name) + '</span>' +
               // LAS RESERVAS, SITIO 3 DE 3 (Settings → Locations). Aquí se
               // razona POR UBICACIÓN —qué hay en este estante, se puede borrar,
@@ -15235,22 +16093,55 @@ function _wireLocMerge(){
       function(cb){ return cb.getAttribute('data-name'); });
   }
 
+  function todas(){
+    return Array.prototype.map.call(document.querySelectorAll('.loc-pick'),
+      function(cb){ return cb; });
+  }
+
   function draw(){
     var sel = picked();
-    if (sel.length < 2){ bar.innerHTML = ''; bar.classList.remove('show'); return; }
+    /* ── DESDE UNA, NO DESDE DOS ──────────────────────────────────────────
+     * Esta barra nació para FUSIONAR, que necesita dos, así que no aparecía
+     * con una marcada. Imprimir no necesita dos — y dije en su momento que
+     * eso lo hacía coherente, lo cual era quedarse corto: Jose preguntó *"¿y
+     * si el cliente quiere imprimir todas de una vez? ¿debe hacerlo una por
+     * una?"*. No hay ninguna razón para limitarlo.
+     *
+     * Así que la barra sale desde UNA, con imprimir siempre, y el bloque de
+     * fusionar sólo cuando hay dos o más. Fusionar sí necesita dos; imprimir
+     * no necesita ninguna excusa. */
+    if (!sel.length){ bar.innerHTML = ''; bar.classList.remove('show'); return; }
     bar.classList.add('show');
+    var marcables = todas().length;
     bar.innerHTML =
-      '<span class="cfg-pick-count">' + sel.length + ' selected — keep which one?</span>' +
-      '<select id="locMergeKeep">' +
-        sel.map(function(v){ return '<option value="' + _he(v) + '">' + _he(v) + '</option>'; }).join('') +
-      '</select>' +
-      '<button class="btn btn-primary btn-sm" id="locMergeBtn">Merge</button>' +
+      '<span class="cfg-pick-count">' + sel.length + ' selected</span>' +
+      '<button class="btn btn-primary btn-sm" id="locPrintBtn">🏷 Print labels</button>' +
+      (sel.length < marcables
+        ? '<button class="btn btn-ghost btn-sm" id="locPickAll">Select all</button>' : '') +
+      (sel.length >= 2
+        ? '<span class="cfg-pick-count">keep which one?</span>' +
+          '<select id="locMergeKeep">' +
+            sel.map(function(v){ return '<option value="' + _he(v) + '">' + _he(v) + '</option>'; }).join('') +
+          '</select>' +
+          '<button class="btn btn-sm" id="locMergeBtn">Merge</button>'
+        : '') +
       '<button class="btn btn-ghost btn-sm" id="locMergeClear">Clear</button>';
+
+    document.getElementById('locPrintBtn').addEventListener('click', function(){
+      _locLabelsPrint(picked());
+    });
+
+    var todasBtn = document.getElementById('locPickAll');
+    if (todasBtn) todasBtn.addEventListener('click', function(){
+      todas().forEach(function(cb){ cb.checked = true; });
+      draw();
+    });
 
     document.getElementById('locMergeClear').addEventListener('click', function(){
       document.querySelectorAll('.loc-pick:checked').forEach(function(cb){ cb.checked = false; });
       draw();
     });
+    if (sel.length < 2) return;
 
     document.getElementById('locMergeBtn').addEventListener('click', function(){
       var into = document.getElementById('locMergeKeep').value;
@@ -18604,9 +19495,191 @@ function _cfgAddInline(type, value, hintEl){
   });
 }
 
-// 'change' rather than 'input': it fires on blur and on picking a datalist
-// suggestion, so the prompt appears once the value is settled instead of
-// flickering on every keystroke.
+/* ── LA UBICACIÓN QUE NO EXISTE, AVISADA MIENTRAS SE ESCRIBE ─────────────────
+ *
+ * Jose, 13/10, en vídeo: *"la app no avisa ni dice nada con una location que
+ * no existe, hasta que se trata de guardar, eso no es útil, debe informar que
+ * la locación no existe, y tal vez ofrecer crearla."*
+ *
+ * Y tenía razón por un motivo peor que el que dijo: en el vídeo el formulario
+ * llega a componer el CORREO DE AVISO —*"152 UNIT(s) of MIRRORS → p9a"*— con
+ * una ubicación que no existe. Todo el formulario se comporta como si `p9a`
+ * fuera un sitio real hasta el segundo en que se pulsa guardar.
+ *
+ * ESTE AVISO NO SUSTITUYE AL RECHAZO DEL SERVIDOR, y es importante decirlo: la
+ * lista de ubicaciones de aquí es una copia que puede estar vieja —alguien
+ * acaba de crear un estante en otra pestaña—, así que quien decide sigue
+ * siendo el servidor. Esto es cortesía temprana, no validación. Por eso NO
+ * bloquea el botón de guardar: si la copia local se equivoca, el servidor
+ * acepta y no ha estorbado nadie.
+ *
+ * SE PARECE AL «+ Add it» DE LOS PROYECTOS A PROPÓSITO: mismas clases, mismo
+ * sitio bajo el campo, mismo botón. Dos avisos que dicen «esto no está en tu
+ * lista» no deberían verse distintos según el campo.
+ *
+ * SE DISPARA EN `change` Y EN `focusout`, que es la pareja que le faltaba al
+ * de proyectos y que costó un vídeo descubrir: `change` solo no vuelve cuando
+ * entras y sales sin tocar el texto. */
+
+function _ubicacionesConocidas(){
+  var set = {};
+  ((config && config.locations) || []).forEach(function(l){
+    var k = String((l && l.name) || l || '').trim().toUpperCase();
+    if (k) set[k] = true;
+  });
+  return set;
+}
+
+/* La más parecida, para proponerla. Mismo criterio que `sugerirUbicacion_` del
+ * servidor en lo que importa —el caso real es `A1p` contra `A1A`, una letra
+ * distinta— sin traerse el algoritmo entero: aquí sólo hay que acertar lo
+ * evidente, y si no acierta, el aviso sigue sirviendo sin sugerencia. */
+function _ubicacionParecida(txt, conocidas){
+  var t = String(txt || '').trim().toUpperCase();
+  if (!t) return '';
+  var nombres = Object.keys(conocidas), mejor = '', mejorD = 99;
+  for (var i = 0; i < nombres.length; i++){
+    var n = nombres[i];
+    if (Math.abs(n.length - t.length) > 1) continue;
+    var d = 0, j = 0, k = 0;
+    while (j < t.length && k < n.length){
+      if (t[j] !== n[k]) d++;
+      j++; k++;
+    }
+    d += Math.abs(t.length - n.length);
+    if (d > 0 && d < mejorD){ mejorD = d; mejor = n; }
+  }
+  return mejorD <= 1 ? mejor : '';
+}
+
+function _esCampoDeUbicacion(el){
+  if (!el || el.tagName !== 'INPUT') return false;
+  if (el.id === 'lockAllowedDest') return false;   // lleva varias separadas por comas
+  var lista = el.getAttribute('list') || '';
+  if (lista === 'rackList' || lista === 'rackListDest') return true;
+  return !!(el.classList && (el.classList.contains('loc-rack') ||
+                             el.classList.contains('el-rack')));
+}
+
+function _quitarAvisoUbic(input){
+  var sig = input.nextElementSibling;
+  if (sig && sig.classList && sig.classList.contains('ubic-hint')) sig.remove();
+}
+
+function _avisarUbicacion(input){
+  _quitarAvisoUbic(input);
+  var val = String(input.value || '').trim();
+  if (!val) return;
+  var conocidas = _ubicacionesConocidas();
+  /* Sin lista cargada todavía no se opina: decir «no existe» porque aún no ha
+   * llegado la configuración sería mentir con cara de ayuda. */
+  if (!Object.keys(conocidas).length) return;
+  if (conocidas[val.toUpperCase()]) return;
+
+  var puede = (userRole === 'ADMIN') ||
+              (userRole === 'WAREHOUSE' && !!(rolePerms || {}).canManageCatalog);
+  var parecida = _ubicacionParecida(val, conocidas);
+
+  var hint = document.createElement('div');
+  hint.className = 'cfg-new-hint ubic-hint';
+  var txt = document.createElement('span');
+  txt.textContent = '📍 ' + val + ' is not a location in your warehouse yet.';
+  hint.appendChild(txt);
+
+  if (parecida){
+    var bUsar = document.createElement('button');
+    bUsar.type = 'button';
+    bUsar.className = 'cfg-new-add';
+    bUsar.textContent = 'Use ' + parecida;
+    bUsar.addEventListener('click', function(){
+      input.value = parecida;
+      _quitarAvisoUbic(input);
+      /* Los dos eventos a mano: cambiar `value` por código no los dispara, y de
+       * ellos cuelgan el total por ubicación y la vista previa del correo. */
+      input.dispatchEvent(new Event('input',  { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.focus();
+    });
+    hint.appendChild(bUsar);
+  }
+
+  if (puede){
+    var bNueva = document.createElement('button');
+    bNueva.type = 'button';
+    bNueva.className = 'cfg-new-add';
+    bNueva.textContent = '+ Create ' + val;
+    bNueva.addEventListener('click', function(){
+      _btnBusy(bNueva, 'Creating…');
+      _cfgAddValue('locations', val, function(ok, e2){
+        if (!ok){ _btnLabel(bNueva, '+ Create ' + val);
+                  showToast('Could not create it: ' + e2, 'err', 6000); return; }
+        /* La copia local primero, por lo mismo que en `_ubicacionDesconocida`:
+         * si no, el desplegable seguiría sin ofrecerla y el siguiente material
+         * volvería a chocar con lo que acabamos de arreglar. */
+        if (config && Array.isArray(config.locations) &&
+            !config.locations.some(function(l){
+              return String(l.name).toUpperCase() === val.toUpperCase(); })){
+          config.locations.push({ name: val, type: 'RACK' });
+          ['rackList', 'rackListDest'].forEach(function(id){
+            var dl = document.getElementById(id);
+            if (dl){ var op = document.createElement('option'); op.value = val; dl.appendChild(op); }
+          });
+        }
+        hint.innerHTML = '<span class="cfg-new-ok">✓ ' + _he(val) + ' added to your locations</span>';
+        setTimeout(function(){ if (hint.parentNode) hint.remove(); }, 2500);
+      });
+    });
+    hint.appendChild(bNueva);
+  } else {
+    var quien = document.createElement('span');
+    quien.textContent = 'Ask an admin to add it in App Settings → Locations.';
+    hint.appendChild(quien);
+  }
+
+  input.insertAdjacentElement('afterend', hint);
+}
+
+document.addEventListener('change', function(e){
+  if (_esCampoDeUbicacion(e.target)) _avisarUbicacion(e.target);
+});
+document.addEventListener('focusin', function(e){
+  if (_esCampoDeUbicacion(e.target)) _quitarAvisoUbic(e.target);
+});
+document.addEventListener('focusout', function(e){
+  if (_esCampoDeUbicacion(e.target)) _avisarUbicacion(e.target);
+});
+
+/* ── CUÁNDO APARECE Y CUÁNDO SE VA EL «+ Add it» ─────────────────────────────
+ *
+ * 'change' y no 'input': dispara al salir del campo y al elegir del
+ * desplegable, así que el cartel sale cuando el valor está decidido en vez de
+ * parpadear en cada tecla. Eso sigue bien.
+ *
+ * EL FALLO QUE JOSE GRABÓ EL 13/10, Y LA CAUSA EXACTA. Faltaba la pareja de
+ * `focusin`. La secuencia era:
+ *
+ *   1. escribes un proyecto nuevo y sales  → `change` dispara → sale el cartel
+ *   2. vuelves a pinchar en el casillero   → `focusin` lo borra
+ *   3. sales SIN tocar el texto            → `change` NO DISPARA, porque el
+ *                                            valor no cambió
+ *
+ * Y entonces no queda ningún evento que pueda traerlo de vuelta: `change` sólo
+ * volverá a disparar si el texto cambia otra vez. El cartel se iba **para
+ * siempre** en cuanto pinchabas dos veces en el mismo campo. La tarjeta del
+ * mazo seguía ahí —vive en `_typedCfgAdds`, que no se tocó— y por eso parecía
+ * que el proyecto se había creado a medias: el mazo lo ofrecía, el formulario
+ * no.
+ *
+ * Borrar al entrar está BIEN y se queda: un cartel que dice «proyecto nuevo»
+ * mientras estás editando el nombre habla de un valor que ya no es el que hay.
+ * Lo que faltaba era volver a mirar AL SALIR, pase lo que pase con el texto.
+ *
+ * `focusout` cubre los dos casos —cambió y no cambió— así que `change` queda
+ * casi de adorno. Se deja porque elegir del desplegable con el ratón da el
+ * cartel sin esperar a salir del campo, y eso se nota.
+ *
+ * `_maybeOfferCfgAdd` empieza por `_clearCfgHint`, así que que los dos eventos
+ * disparen seguidos no dibuja dos carteles. */
 document.addEventListener('change', function(e){
   var el = e.target;
   if (el && el.getAttribute && el.getAttribute('data-cfg-new')) _maybeOfferCfgAdd(el);
@@ -18614,6 +19687,10 @@ document.addEventListener('change', function(e){
 document.addEventListener('focusin', function(e){
   var el = e.target;
   if (el && el.getAttribute && el.getAttribute('data-cfg-new')) _clearCfgHint(el);
+});
+document.addEventListener('focusout', function(e){
+  var el = e.target;
+  if (el && el.getAttribute && el.getAttribute('data-cfg-new')) _maybeOfferCfgAdd(el);
 });
 
 function refreshDropdowns(){
@@ -19837,6 +20914,10 @@ function _handleRackPhotoFileChange(){
 
 // ── Material Locks (ADMIN) ───────────────────────────────────────────────────
 function openLockModal(matId, cat, name, rack){
+  /* Apartar material es de Pro. Esto no es un botón fijo —se llega desde una
+   * fila de la tabla de existencias— así que el candado va aquí, donde se abre
+   * la ventana, y no en una lista de identificadores. */
+  if (APP_BASIC) { _proPitch('reservas'); return; }
   document.getElementById('lockMatId').value      = matId;
   document.getElementById('lockMatCat').value     = cat;
   document.getElementById('lockMatName').value    = name;
@@ -21881,6 +22962,443 @@ function _labelsFromEntry(materiales, compartido){
  *  caben unos 12 caracteres. De ahí los escalones. Lo que NO se toca es el
  *  tamaño de los cortos: Jose fue explícito — "no le cambies el tamaño" — y son
  *  los que se leen de lejos. */
+/* ─────────────────────────────────────────────────────────────────────────────
+ * UN CODIFICADOR DE QR, ENTERO, DENTRO DEL ARCHIVO.
+ *
+ * ESTE ARCHIVO ES LA FUENTE. Se copia tal cual dentro de `Index_v3_fixed.html`
+ * —`tools/test-qr.js` comprueba que las dos copias son idénticas— y vive
+ * también aquí suelto porque así se puede probar en Node contra un
+ * DECODIFICADOR DE VERDAD, que es la única forma honesta de saber si un QR
+ * escanea. Un QR mal hecho se dibuja igual de bonito que uno bueno.
+ *
+ * POR QUÉ NO UNA LIBRERÍA NI UN SERVICIO
+ *
+ *  · Un servicio tipo `api.qrserver.com` manda el identificador del material
+ *    de un cliente a un tercero cada vez que se imprime una etiqueta, y deja
+ *    de funcionar sin internet. Las dos cosas son inaceptables aquí: Jose
+ *    dijo *"no publicar nada que tenga información importante de acopio o
+ *    mía"* y una bodega imprime etiquetas con el wifi caído.
+ *  · Una librería externa en la app significa una etiqueta `<script src>` en
+ *    una aplicación que es UN SOLO ARCHIVO a propósito, y que se instala
+ *    copiando y pegando.
+ *
+ * QUÉ ABARCA, Y QUÉ NO
+ *
+ *  · Modo BYTE (ISO-8859-1), que es lo que necesitamos: `ACP1:...`.
+ *  · Nivel de corrección M (~15%). En una etiqueta térmica que va a vivir en
+ *    un estante con polvo, L es poco y Q desperdicia sitio.
+ *  · Versiones 1 a 10 — hasta 216 bytes de datos. El texto más largo que
+ *    pondremos ronda los 90.
+ *  · No hay modo numérico ni alfanumérico: comprimirían más, y por 90 bytes
+ *    no vale el código que haría falta mantener.
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Aritmética en GF(256), que es lo que hace funcionar la corrección ─────── */
+var QR_EXP = new Array(512), QR_LOG = new Array(256);
+(function(){
+  var x = 1;
+  for (var i = 0; i < 255; i++){
+    QR_EXP[i] = x;
+    QR_LOG[x] = i;
+    x <<= 1;
+    if (x & 0x100) x ^= 0x11D;          // el polinomio del estándar
+  }
+  for (var j = 255; j < 512; j++) QR_EXP[j] = QR_EXP[j - 255];
+})();
+
+function qrMul(a, b){
+  if (a === 0 || b === 0) return 0;
+  return QR_EXP[QR_LOG[a] + QR_LOG[b]];
+}
+
+/* El polinomio generador de `grado` términos. */
+function qrGenPoly(grado){
+  var p = [1];
+  for (var i = 0; i < grado; i++){
+    var n = new Array(p.length + 1);
+    for (var k = 0; k < n.length; k++) n[k] = 0;
+    for (var j = 0; j < p.length; j++){
+      n[j]     ^= qrMul(p[j], 1);
+      n[j + 1] ^= qrMul(p[j], QR_EXP[i]);
+    }
+    p = n;
+  }
+  return p;
+}
+
+/* División polinómica: devuelve los `grado` codewords de corrección. */
+function qrEC(datos, grado){
+  var gen = qrGenPoly(grado);
+  var resto = datos.slice();
+  for (var i = 0; i < grado; i++) resto.push(0);
+  for (var k = 0; k < datos.length; k++){
+    var coef = resto[k];
+    if (!coef) continue;
+    for (var j = 0; j < gen.length; j++) resto[k + j] ^= qrMul(gen[j], coef);
+  }
+  return resto.slice(datos.length);
+}
+
+/* ── Las tablas del estándar, sólo nivel M y versiones 1-10 ───────────────── */
+/*  [total de codewords, EC por bloque, bloques g1, datos g1, bloques g2, datos g2] */
+var QR_M = {
+  1:  [ 26, 10, 1, 16, 0,  0],
+  2:  [ 44, 16, 1, 28, 0,  0],
+  3:  [ 70, 26, 1, 44, 0,  0],
+  4:  [100, 18, 2, 32, 0,  0],
+  5:  [134, 24, 2, 43, 0,  0],
+  6:  [172, 16, 4, 27, 0,  0],
+  7:  [196, 18, 4, 31, 0,  0],
+  8:  [242, 22, 2, 38, 2, 39],
+  9:  [292, 22, 3, 36, 2, 37],
+  10: [346, 26, 4, 43, 1, 44]
+};
+var QR_ALIN = {
+  1: [], 2: [6,18], 3: [6,22], 4: [6,26], 5: [6,30],
+  6: [6,34], 7: [6,22,38], 8: [6,24,42], 9: [6,26,46], 10: [6,28,50]
+};
+
+function qrDatosDe(v){
+  var t = QR_M[v];
+  return t[2] * t[3] + t[4] * t[5];
+}
+
+/* ── Texto → codewords ───────────────────────────────────────────────────── */
+function qrBytes(txt){
+  var out = [];
+  for (var i = 0; i < txt.length; i++){
+    var c = txt.charCodeAt(i);
+    /* Modo byte es ISO-8859-1. Cualquier cosa por encima de 255 no cabe, y
+     * callarse y escribir basura sería peor que no imprimir: la etiqueta
+     * saldría con un QR que escanea y dice otra cosa. */
+    if (c > 255) throw new Error('QR: character out of range: ' + txt[i]);
+    out.push(c);
+  }
+  return out;
+}
+
+function qrVersionPara(n){
+  for (var v = 1; v <= 10; v++){
+    var cab = (v <= 9) ? 8 : 16;                  // bits de longitud en modo byte
+    if (qrDatosDe(v) * 8 >= 4 + cab + n * 8) return v;
+  }
+  throw new Error('QR: too much data (' + n + ' bytes)');
+}
+
+function qrCodewords(txt){
+  var bytes = qrBytes(txt);
+  var v     = qrVersionPara(bytes.length);
+  var cab   = (v <= 9) ? 8 : 16;
+  var bits  = [];
+  function meter(valor, n){
+    for (var i = n - 1; i >= 0; i--) bits.push((valor >> i) & 1);
+  }
+  meter(4, 4);                                    // modo byte
+  meter(bytes.length, cab);
+  for (var i = 0; i < bytes.length; i++) meter(bytes[i], 8);
+
+  var cap = qrDatosDe(v) * 8;
+  for (var t = 0; t < 4 && bits.length < cap; t++) bits.push(0);   // terminador
+  while (bits.length % 8) bits.push(0);
+
+  var cw = [];
+  for (var b = 0; b < bits.length; b += 8){
+    var n = 0;
+    for (var k = 0; k < 8; k++) n = (n << 1) | bits[b + k];
+    cw.push(n);
+  }
+  /* Relleno alterno del estándar. */
+  var relleno = [0xEC, 0x11], r = 0;
+  while (cw.length < qrDatosDe(v)) cw.push(relleno[r++ % 2]);
+
+  /* Bloques, corrección, y el ENTRELAZADO — que es la parte que se olvida y
+   * produce un QR que se dibuja bien y no decodifica. */
+  var t2 = QR_M[v], ecN = t2[1];
+  var bloques = [], ecs = [], pos = 0;
+  function trocear(cuantos, tam){
+    for (var i = 0; i < cuantos; i++){
+      var d = cw.slice(pos, pos + tam); pos += tam;
+      bloques.push(d); ecs.push(qrEC(d, ecN));
+    }
+  }
+  trocear(t2[2], t2[3]);
+  trocear(t2[4], t2[5]);
+
+  var fuera = [], max = Math.max(t2[3], t2[5]);
+  for (var c = 0; c < max; c++)
+    for (var bq = 0; bq < bloques.length; bq++)
+      if (c < bloques[bq].length) fuera.push(bloques[bq][c]);
+  for (var e = 0; e < ecN; e++)
+    for (var bq2 = 0; bq2 < ecs.length; bq2++) fuera.push(ecs[bq2][e]);
+
+  return { version: v, cw: fuera };
+}
+
+/* ── La matriz ───────────────────────────────────────────────────────────── */
+function qrMatriz(txt){
+  var r = qrCodewords(txt), v = r.version, n = 17 + 4 * v;
+  var m = [], fijo = [];
+  for (var i = 0; i < n; i++){
+    m.push(new Array(n).fill(0));
+    fijo.push(new Array(n).fill(false));
+  }
+  function poner(x, y, val){ m[y][x] = val ? 1 : 0; fijo[y][x] = true; }
+
+  function buscador(ox, oy){
+    for (var y = -1; y <= 7; y++) for (var x = -1; x <= 7; x++){
+      var px = ox + x, py = oy + y;
+      if (px < 0 || py < 0 || px >= n || py >= n) continue;
+      var dentro = (x >= 0 && x <= 6 && (y === 0 || y === 6)) ||
+                   (y >= 0 && y <= 6 && (x === 0 || x === 6)) ||
+                   (x >= 2 && x <= 4 && y >= 2 && y <= 4);
+      poner(px, py, dentro);
+    }
+  }
+  buscador(0, 0); buscador(n - 7, 0); buscador(0, n - 7);
+
+  /* Temporización */
+  for (var i2 = 8; i2 < n - 8; i2++){
+    poner(i2, 6, i2 % 2 === 0);
+    poner(6, i2, i2 % 2 === 0);
+  }
+
+  /* Alineación — nunca encima de un buscador */
+  var al = QR_ALIN[v];
+  for (var a = 0; a < al.length; a++) for (var b = 0; b < al.length; b++){
+    var cx = al[a], cy = al[b];
+    if ((cx <= 8 && cy <= 8) || (cx <= 8 && cy >= n - 9) || (cx >= n - 9 && cy <= 8)) continue;
+    for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++)
+      poner(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }
+
+  poner(8, n - 8, true);                          // el módulo oscuro, siempre
+
+  /* Sitio reservado del formato (se escribe después, con la máscara elegida) */
+  for (var k = 0; k <= 8; k++){
+    if (k !== 6){ fijo[8][k] = true; fijo[k][8] = true; }
+  }
+  for (var k2 = 0; k2 < 8; k2++){
+    fijo[8][n - 1 - k2] = true;
+    fijo[n - 1 - k2][8] = true;
+  }
+  /* y el de la versión, a partir de la 7 */
+  if (v >= 7){
+    for (var y2 = 0; y2 < 6; y2++) for (var x2 = 0; x2 < 3; x2++){
+      fijo[y2][n - 11 + x2] = true;
+      fijo[n - 11 + x2][y2] = true;
+    }
+  }
+
+  /* Los datos, en zigzag desde abajo a la derecha */
+  var cw = r.cw, bit = 0, arriba = true;
+  for (var col = n - 1; col > 0; col -= 2){
+    if (col === 6) col--;                         // la columna de temporización
+    for (var paso = 0; paso < n; paso++){
+      var fila = arriba ? (n - 1 - paso) : paso;
+      for (var c2 = 0; c2 < 2; c2++){
+        var x3 = col - c2;
+        if (fijo[fila][x3]) continue;
+        var val = 0;
+        if (bit < cw.length * 8){
+          val = (cw[bit >> 3] >> (7 - (bit & 7))) & 1;
+        }
+        m[fila][x3] = val;
+        bit++;
+      }
+    }
+    arriba = !arriba;
+  }
+  return { m: m, n: n, v: v, fijo: fijo };
+}
+
+function qrMascara(k, x, y){
+  switch (k){
+    case 0: return (y + x) % 2 === 0;
+    case 1: return y % 2 === 0;
+    case 2: return x % 3 === 0;
+    case 3: return (y + x) % 3 === 0;
+    case 4: return (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0;
+    case 5: return ((y * x) % 2) + ((y * x) % 3) === 0;
+    case 6: return (((y * x) % 2) + ((y * x) % 3)) % 2 === 0;
+    default: return (((y + x) % 2) + ((y * x) % 3)) % 2 === 0;
+  }
+}
+
+function qrPenaliza(m, n){
+  var p = 0, i, j, run, oscuros = 0;
+  function serie(get){
+    for (i = 0; i < n; i++){
+      run = 1;
+      for (j = 1; j < n; j++){
+        if (get(i, j) === get(i, j - 1)) run++;
+        else { if (run >= 5) p += 3 + (run - 5); run = 1; }
+      }
+      if (run >= 5) p += 3 + (run - 5);
+    }
+  }
+  serie(function(i2, j2){ return m[i2][j2]; });     // filas
+  serie(function(i2, j2){ return m[j2][i2]; });     // columnas
+
+  for (i = 0; i < n - 1; i++) for (j = 0; j < n - 1; j++){
+    var s = m[i][j] + m[i][j+1] + m[i+1][j] + m[i+1][j+1];
+    if (s === 0 || s === 4) p += 3;
+  }
+
+  var patron = [1,0,1,1,1,0,1];
+  function busca(get){
+    for (i = 0; i < n; i++) for (j = 0; j <= n - 7; j++){
+      var ok = true;
+      for (var k = 0; k < 7; k++) if (get(i, j + k) !== patron[k]) { ok = false; break; }
+      if (!ok) continue;
+      var antes = true, despues = true;
+      for (var k2 = 1; k2 <= 4; k2++){
+        if (j - k2 < 0 || get(i, j - k2) !== 0) { antes = false; break; }
+      }
+      for (var k3 = 0; k3 < 4; k3++){
+        if (j + 7 + k3 >= n || get(i, j + 7 + k3) !== 0) { despues = false; break; }
+      }
+      if (antes || despues) p += 40;
+    }
+  }
+  busca(function(i2, j2){ return m[i2][j2]; });
+  busca(function(i2, j2){ return m[j2][i2]; });
+
+  for (i = 0; i < n; i++) for (j = 0; j < n; j++) if (m[i][j]) oscuros++;
+  var pct = oscuros * 100 / (n * n);
+  p += Math.floor(Math.abs(pct - 50) / 5) * 10;
+  return p;
+}
+
+function qrFormato(mascara){
+  /* Nivel M = 00. BCH(15,5) y el XOR del estándar. */
+  var datos = (0 << 3) | mascara, resto = datos << 10;
+  for (var i = 4; i >= 0; i--){
+    if (resto & (1 << (i + 10))) resto ^= 0x537 << i;
+  }
+  return ((datos << 10) | resto) ^ 0x5412;
+}
+
+function qrVersionBits(v){
+  var resto = v << 12;
+  for (var i = 5; i >= 0; i--){
+    if (resto & (1 << (i + 12))) resto ^= 0x1F25 << i;
+  }
+  return (v << 12) | resto;
+}
+
+/** Texto → matriz de 0/1 lista para pintar. */
+function qrGenerar(txt){
+  var base = qrMatriz(txt), n = base.n, v = base.v, fijo = base.fijo;
+  var mejor = null, mejorP = Infinity, mejorK = 0;
+
+  for (var k = 0; k < 8; k++){
+    var m = base.m.map(function(f){ return f.slice(); });
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++)
+      if (!fijo[y][x] && qrMascara(k, x, y)) m[y][x] ^= 1;
+
+    /* El formato tiene que estar puesto ANTES de puntuar: sus módulos cuentan
+     * para las series y para la proporción de oscuros. Puntuar sin él elige
+     * una máscara por un dibujo que no es el que se imprime. */
+    var fmt = qrFormato(k);
+    for (var i = 0; i < 15; i++){
+      var bit = (fmt >> i) & 1;
+      if (i < 6)       m[i][8] = bit;
+      else if (i === 6) m[7][8] = bit;
+      else if (i === 7) m[8][8] = bit;
+      else if (i === 8) m[8][7] = bit;
+      else              m[8][14 - i] = bit;
+
+      if (i < 8) m[8][n - 1 - i] = bit;
+      else       m[n - 15 + i][8] = bit;
+    }
+    m[n - 8][8] = 1;
+
+    if (v >= 7){
+      var vb = qrVersionBits(v);
+      for (var b = 0; b < 18; b++){
+        var bb = (vb >> b) & 1;
+        m[Math.floor(b / 3)][n - 11 + (b % 3)] = bb;
+        m[n - 11 + (b % 3)][Math.floor(b / 3)] = bb;
+      }
+    }
+
+    var p = qrPenaliza(m, n);
+    if (p < mejorP){ mejorP = p; mejor = m; mejorK = k; }
+  }
+  return { m: mejor, n: n, version: v, mascara: mejorK };
+}
+
+/** La matriz, como un SVG cuadrado que se escala solo. Sin imágenes, sin
+ *  canvas y sin fuentes: una etiqueta térmica es blanco y negro puro, y un SVG
+ *  de rectángulos sale nítido a cualquier tamaño de impresión. */
+function qrSvg(txt, lado){
+  var q = qrGenerar(txt), n = q.n, borde = 4;      // zona tranquila del estándar
+  var total = n + borde * 2;
+  var p = [];
+  for (var y = 0; y < n; y++){
+    var x = 0;
+    while (x < n){
+      if (!q.m[y][x]) { x++; continue; }
+      var ancho = 0;
+      while (x + ancho < n && q.m[y][x + ancho]) ancho++;
+      p.push('M' + (x + borde) + ' ' + (y + borde) + 'h' + ancho + 'v1h-' + ancho + 'z');
+      x += ancho;
+    }
+  }
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + total + ' ' + total +
+         '" width="' + lado + '" height="' + lado + '" shape-rendering="crispEdges">' +
+         '<rect width="' + total + '" height="' + total + '" fill="#fff"/>' +
+         '<path d="' + p.join('') + '" fill="#000"/></svg>';
+}
+
+/* ── LO QUE VA DENTRO DEL QR ─────────────────────────────────────────────────
+ *
+ * Primer paso de los códigos, 2026-10-13. Jose: *"empieza con el QR."*
+ *
+ * EL CÓDIGO ES NUESTRO, NO DEL FABRICANTE DEL MATERIAL. Ésa es la decisión que
+ * hace que esto sirva desde el primer día: no hace falta que nadie etiquete
+ * nada que venga de fábrica, ni que exista un código de barras del producto.
+ * El QR lleva lo que la app ya sabe del bulto.
+ *
+ * EL FORMATO VA POR LÍNEAS Y NO POR SEPARADOR, y eso costó pensarlo diez
+ * segundos de más: con `ACP1:CAT|||NOMBRE:UBICACIÓN`, un nombre de material
+ * con dos puntos —«PANEL 1/4": CLEAR»— parte el código por donde no es. Un
+ * salto de línea NO PUEDE aparecer en ninguno de estos campos, porque todos
+ * salen de `<input>` de una sola línea. Así que el separador imposible es el
+ * salto de línea, y el análisis es un `split`.
+ *
+ *     ACP1
+ *     <categoría>
+ *     <nombre>
+ *     <ubicación>
+ *     <id del movimiento>      ← sólo si lo hay
+ *
+ * La primera línea es la VERSIÓN DEL FORMATO. El día que haya que cambiarlo
+ * —añadir un campo, cambiar el orden— las etiquetas viejas ya impresas siguen
+ * diciendo `ACP1` y el lector sabrá leerlas. Una etiqueta pegada a un estante
+ * dura años; el formato que la escribió, no necesariamente. */
+function _labelQrTexto(r){
+  var partes = ['ACP1',
+    String(r.category || ''),
+    String(r.name || ''),
+    String(r.loc || '')];
+  if (r.movId) partes.push(String(r.movId));
+  return partes.join('\n');
+}
+
+/** El QR de una etiqueta. Si por lo que sea no se pudiera generar, la etiqueta
+ *  sale SIN él y con el hueco vacío — nunca se cae la impresión entera por el
+ *  código: el papel con el nombre y el estante ya sirve, y un error aquí
+ *  dejaría a alguien de bodega sin etiqueta ninguna. */
+function _labelQr(r){
+  try {
+    return qrSvg(_labelQrTexto(r), '30mm');
+  } catch (e) {
+    try { console.warn('label QR:', e && e.message); } catch (e2) {}
+    return '';
+  }
+}
+
 function _labelValClass(v){
   var n = String(v || '').length;
   if (n <= 12) return '';          // B1B, P4C, A4A, WAREHOUSE  — 10mm, sin tocar
@@ -21929,8 +23447,602 @@ function _labelHtml(r){
         (r.po ? '<div>PO <b>' + _he(r.po) + '</b></div>' : '') +
         (pie.length ? '<div class="lbl-dim">' + pie.join(' · ') + '</div>' : '') +
       '</div>' +
-      '<div class="lbl-code">QR / barcode</div>' +
+      '<div class="lbl-code">' + _labelQr(r) + '</div>' +
     '</div>';
+}
+
+/* ══ LA ETIQUETA DE UBICACIÓN ════════════════════════════════════════════════
+ *
+ * Jose, 14/10. Es la OTRA mitad de poder escanear: la etiqueta del material va
+ * pegada al bulto, ésta va pegada al estante. Con las dos se puede decir «este
+ * bulto va a ese sitio» sin teclear nada.
+ *
+ * ── POR QUÉ NO SE PARECE EN NADA A LA DE MATERIAL ──────────────────────────
+ *
+ * Jose: *"no deben ser igual que las etiquetas de los materiales, deben
+ * diferenciarse"*, y yo añadí que debían ser IMPOSIBLES de confundir, no sólo
+ * distintas: dos papeles blancos con un QR acaban pegados al revés algún día.
+ * Por eso ésta es APAISADA (ancha y baja) y la de material es vertical. Se
+ * distinguen de lejos y sin leer.
+ *
+ * ── LA REGLA QUE MÁS IMPORTA: AQUÍ NO VA NADA QUE CADUQUE ──────────────────
+ *
+ * Ni cantidad, ni fecha, ni PO, ni qué material hay ahí. Una etiqueta de rack
+ * se pega una vez y vive años; si llevara el contenido, estaría mintiendo al
+ * día siguiente. Sólo el nombre y el código. La de material es justo lo
+ * contrario: es la foto de un bulto en un momento.
+ *
+ * ── EL TAMAÑO DEL CÓDIGO, Y LA DISCUSIÓN QUE HUBO ──────────────────────────
+ *
+ * La distancia a la que se lee un QR son unas DIEZ VECES su ancho. A 36 mm se
+ * lee desde unos 36 cm — un brazo. Jose quería que «se leyeran de lejos», y le
+ * dije que para leer a dos metros haría falta un QR de 20 cm, más grande que
+ * la propia hoja de 4×6. Decidió dejar el nombre pequeño sabiendo eso: los
+ * racks ya están rotulados a lo grande, así que quien busca el estante no usa
+ * esta pegatina — la usa quien ya está delante, con el teléfono en la mano.
+ *
+ * 36 mm son 1,09 mm por módulo: casi el triple del suelo de 0,40 al que un
+ * teléfono empieza a fallar, y 8 puntos por módulo a 203 ppp.
+ *
+ * ── «EN PROPORCIÓN DE PÁGINA», QUE ES LA PARTE QUE NO SE VE ────────────────
+ *
+ * La hoja NO se dibuja en milímetros. Se dibuja en fracciones: cada etiqueta
+ * ocupa el ancho entero y un tercio del alto, sea cual sea la página.
+ *
+ * El motivo es la impresora de Jose: su servicio de Android ofrece UN SOLO
+ * tamaño de papel, ISO A4. Con medidas fijas pasaban dos encogidos seguidos
+ * —la etiqueta quedaba de sello en medio de una A4, y después la impresora
+ * encogía esa A4 entera para meterla en la pegatina de 4×6—. En proporción
+ * sólo hay un encogido, y el contenido viaja con él.
+ *
+ * EL MARGEN DE SEGURIDAD del 6% es por lo único que no sabemos: si ese
+ * servicio ESCALA la A4 a la pegatina o la RECORTA. Si escala, el margen
+ * sobra y no molesta. Si recorta, el margen es lo que salva el contenido. Una
+ * impresión de prueba lo dirá; mientras tanto se paga el seguro barato. */
+
+function _locLabelQrTexto(nombre){
+  /* Mismo criterio que la etiqueta de material: la primera línea es la versión
+   * del formato, y es `ACPL1` y no `ACP1` para que el lector sepa de un vistazo
+   * si lo que tiene delante es un bulto o un sitio. Y por líneas, porque un
+   * nombre de ubicación puede llevar espacios y guiones pero nunca un salto. */
+  return 'ACPL1\n' + String(nombre || '');
+}
+
+function _locLabelHtml(nombre){
+  var txt = String(nombre || '');
+  var qr  = '';
+  try { qr = qrSvg(_locLabelQrTexto(txt), '100%'); }
+  catch (e) { try { console.warn('location QR:', e && e.message); } catch (e2) {} }
+  return '<div class="lloc">' +
+           '<div class="lloc-qr">' + qr + '</div>' +
+           '<div class="lloc-name">' + _he(txt) + '</div>' +
+         '</div>';
+}
+
+/* Las hojas, de tres en tres. Devuelve el HTML entero del taco a imprimir.
+ * Si la última hoja va a medias se rellena con huecos VACÍOS y no con nada:
+ * sin ellos las dos etiquetas de la última hoja se estirarían a la mitad de la
+ * página cada una, que es el tamaño que no tiene el adhesivo. */
+var LOC_POR_HOJA = 3;
+
+function _locSheetHtml(nombres){
+  var hojas = [];
+  for (var i = 0; i < nombres.length; i += LOC_POR_HOJA){
+    var trozo = nombres.slice(i, i + LOC_POR_HOJA);
+    var celdas = trozo.map(_locLabelHtml);
+    while (celdas.length < LOC_POR_HOJA) celdas.push('<div class="lloc lloc-vacia"></div>');
+    hojas.push('<div class="lloc-hoja">' + celdas.join('') + '</div>');
+  }
+  return hojas.join('');
+}
+
+/* ══ LEER LOS CÓDIGOS ════════════════════════════════════════════════════════
+ *
+ * Jose, 14/10: la cámara. Tercer paso de tres —imprimir, leer, actuar— y el
+ * que convierte las etiquetas en algo que sirve.
+ *
+ * ── LA SEPARACIÓN QUE HACE QUE ESTO SE PUEDA PROBAR ────────────────────────
+ *
+ * La cámara no se puede probar aquí: ni `getUserMedia` ni `BarcodeDetector`
+ * existen en el navegador con el que corre la suite. Así que todo lo que
+ * decide algo vive SEPARADO de la cámara y recibe TEXTO:
+ *
+ *   `_escLeer(texto)`      → qué es esto
+ *   `_escRecibir(texto)`   → qué tengo ahora y qué puedo ofrecer
+ *   `_escAcciones()`       → los botones que tocan
+ *
+ * La cámara sólo hace una cosa: convertir fotogramas en texto y llamar a
+ * `_escRecibir`. Si mañana el texto llega de un lector de mano por USB, de un
+ * pegado, o de una foto de la galería, nada de esto cambia.
+ *
+ * ── Y NO GUARDA NADA ───────────────────────────────────────────────────────
+ *
+ * Escanear RELLENA un formulario, no lo manda. Dos motivos y los dos pesan:
+ * la persona confirma en una pantalla que ya conoce, y aquí no se duplica la
+ * lógica de guardar —que es donde están el candado, los duplicados y el stock
+ * corto—. Un escáner que guarda solo es un escáner que un día guarda lo que no
+ * era.
+ */
+
+/** Qué es lo que se acaba de leer. Devuelve siempre algo: lo que no entendemos
+ *  también es una respuesta, y decirlo es mejor que quedarse callado. */
+function _escLeer(texto){
+  var t = String(texto == null ? '' : texto);
+  var lineas = t.split('\n');
+  var marca = (lineas[0] || '').trim();
+
+  if (marca === 'ACP1'){
+    return { tipo: 'material',
+             category: (lineas[1] || '').trim(),
+             name:     (lineas[2] || '').trim(),
+             loc:      (lineas[3] || '').trim(),
+             movId:    (lineas[4] || '').trim(),
+             crudo: t };
+  }
+  if (marca === 'ACPL1'){
+    return { tipo: 'ubicacion', name: (lineas[1] || '').trim(), crudo: t };
+  }
+  /* Cualquier otro QR del mundo: el de una caja, el de un cartel, el del wifi.
+   * Se dice que no es nuestro en vez de intentar adivinar. */
+  return { tipo: 'ajeno', crudo: t };
+}
+
+/* Lo leído en esta sesión de escaneo. Uno de cada: volver a escanear un
+ * material SUSTITUYE al anterior en vez de acumular, porque apuntar a otra
+ * etiqueta es cambiar de idea, no añadir. */
+var _escSesion = { material: null, ubicacion: null, ultimo: null };
+
+function _escReset(){
+  _escSesion = { material: null, ubicacion: null, ultimo: null };
+}
+
+/** Recibe un texto leído. Devuelve qué pasó, para que la pantalla lo cuente. */
+function _escRecibir(texto){
+  var leido = _escLeer(texto);
+  if (leido.tipo === 'ajeno'){
+    _escSesion.ultimo = { estado: 'ajeno' };
+    return { estado: 'ajeno', leido: leido };
+  }
+  /* Leer DOS VECES el mismo código no es un suceso: la cámara dispara varias
+   * veces por segundo sobre la misma etiqueta. Sin esto, la pantalla
+   * parpadearía y el aviso sonaría en bucle. */
+  var yaEsta = (leido.tipo === 'material')
+    ? (_escSesion.material && _escSesion.material.crudo === leido.crudo)
+    : (_escSesion.ubicacion && _escSesion.ubicacion.crudo === leido.crudo);
+  if (yaEsta) return { estado: 'repetido', leido: leido };
+
+  if (leido.tipo === 'material') _escSesion.material = leido;
+  else                           _escSesion.ubicacion = leido;
+  _escSesion.ultimo = { estado: 'nuevo', tipo: leido.tipo };
+  return { estado: 'nuevo', leido: leido };
+}
+
+/** Qué se puede hacer con lo que hay escaneado ahora mismo.
+ *
+ *  LA COMBINACIÓN DICE CASI SIEMPRE QUÉ MOVIMIENTO ES, y por eso el orden en
+ *  que se escanea importa: bulto y luego estante es «llevo esto allí». Si los
+ *  dos llegaran a la vez no se sabría cuál es origen y cuál destino.
+ *
+ *  Devuelve una lista de {id, texto, pista}. La pantalla la pinta; quién hace
+ *  qué está en `_escHacer`. */
+function _escAcciones(){
+  var m = _escSesion.material, u = _escSesion.ubicacion;
+  var out = [];
+
+  if (m && u){
+    out.push({ id: 'mover', texto: '⇄ Move to ' + u.name,
+               pista: m.name + (m.loc ? ' · from ' + m.loc : '') });
+    return out;
+  }
+  if (m){
+    out.push({ id: 'sacar',  texto: '↑ Take out',  pista: m.name });
+    out.push({ id: 'mover',  texto: '⇄ Move it',
+               pista: 'or scan a rack label to say where' });
+    return out;
+  }
+  if (u){
+    out.push({ id: 'ver', texto: '📍 See what is in ' + u.name,
+               pista: 'or scan a material label to move it here' });
+  }
+  return out;
+}
+
+/** Hace lo que se eligió. NO guarda: abre el formulario que corresponde, ya
+ *  relleno, y la persona confirma. */
+function _escHacer(id){
+  var m = _escSesion.material, u = _escSesion.ubicacion;
+  _escCerrar();
+
+  if (id === 'ver' && u){ openRackDrawer(u.name); return; }
+  if (!m) return;
+
+  if (id === 'sacar'){
+    openMoveModal('EXIT');
+    _prefillMoveModalMaterial('EXIT', m.category, m.name, m.loc);
+    return;
+  }
+  if (id === 'mover'){
+    openMoveModal('TRANSFER');
+    _prefillMoveModalMaterial('TRANSFER', m.category, m.name, m.loc);
+    /* El destino sólo si se escaneó un estante. Rellenarlo «por si acaso»
+     * pondría en el formulario un sitio que nadie señaló, y eso es lo que
+     * convierte un atajo en un error con prisa. */
+    if (u){
+      var dest = document.querySelector('#transferRowsContainer .transfer-row .tr-dest');
+      if (dest){
+        dest.value = u.name;
+        dest.dispatchEvent(new Event('input',  { bubbles: true }));
+        dest.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  }
+}
+
+/* ── LA CÁMARA ───────────────────────────────────────────────────────────── */
+
+var _escStream = null, _escDetector = null, _escTimer = null;
+
+/** ¿Se puede escanear en este navegador? Se contesta ANTES de pedir la cámara:
+ *  encender la cámara para después decir que no se sabe leer es gastarle la
+ *  batería y la paciencia a alguien. */
+function _escSePuede(){
+  if (typeof BarcodeDetector === 'undefined') return 'sin-lector';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return 'sin-camara';
+  if (!window.isSecureContext) return 'sin-https';
+  /* ── Y LA QUE FALTABA: QUE ADEMÁS DE EXISTIR, ESTÉ PERMITIDA ─────────────
+   *
+   * Jose, 15/10, con vídeo: el botón salía en su teléfono, la ventana se abría
+   * con su mira dibujada, decía «Point the camera at a label»… y el recuadro
+   * estaba NEGRO. Chrome no llegó a pedir permiso de cámara.
+   *
+   * Las tres comprobaciones de arriba miran si las APIs EXISTEN. Y existen: el
+   * teléfono tiene `BarcodeDetector`, tiene `getUserMedia` y la conexión es
+   * segura. Lo que no hay es PERMISO, y ésa era la pregunta.
+   *
+   * Apps Script sirve esta página dentro de un iframe de otro origen
+   * (googleusercontent.com). Desde Chrome 64, un iframe de otro origen no
+   * tiene cámara salvo que la página que lo incrusta se la conceda con
+   * `allow="camera"` — y quien incrusta este iframe es Google, no nosotros.
+   * La llamada falla con `NotAllowedError`, el mismo error que si el usuario
+   * hubiera dicho que no, y por eso parecía un problema de permisos del
+   * teléfono cuando no lo era.
+   *
+   * `allowsFeature('camera')` lo contesta ANTES de encender nada, así que el
+   * botón puede esconderse y el mensaje puede decir la verdad en vez de
+   * enseñar un rectángulo negro con un texto que pide apuntar la cámara.
+   *
+   * Se consulta con cuidado: el nombre de la API cambió —`featurePolicy` en
+   * los Chrome viejos, `permissionsPolicy` en los nuevos— y en los navegadores
+   * donde no existe ninguna de las dos no se concluye nada. Dar por bloqueado
+   * lo que no se pudo preguntar apagaría la función en sitios donde sí anda. */
+  var pol = document.permissionsPolicy || document.featurePolicy;
+  try {
+    if (pol && typeof pol.allowsFeature === 'function' && !pol.allowsFeature('camera')) {
+      return 'iframe-sin-camara';
+    }
+  } catch (e) {}
+  return 'si';
+}
+
+function _escMensajeNo(motivo){
+  if (motivo === 'sin-lector')
+    return 'This browser cannot read codes. On a phone, open Acopio in Chrome — ' +
+           'that is where scanning works today. You can still type the material in by hand.';
+  if (motivo === 'sin-camara')
+    return 'No camera available on this device.';
+  /* EL MENSAJE QUE DICE LA VERDAD. Antes, en este caso, no había mensaje: se
+   * abría la ventana con un rectángulo negro y «Point the camera at a label».
+   * La persona miraba su teléfono buscando el permiso que nunca le pidieron.
+   *
+   * No se le pide que arregle nada porque NO PUEDE: lo bloquea la página de
+   * Google que contiene a la app. Decir «dale permiso a la cámara» mandaría a
+   * alguien a pelearse diez minutos con los ajustes de Chrome para nada. */
+  /* EL TEXTO CAMBIÓ EN LA v12.74, Y LO PROVOCÓ UNA PREGUNTA DE JOSE.
+   *
+   * Decía que la cámara no se podía usar aquí y que se escribiera a mano. Era
+   * verdad a medias, y la mitad que faltaba era la importante: lo bloqueado es
+   * el VÍDEO EN VIVO; la FOTO funciona y lee las mismas etiquetas. */
+  if (motivo === 'iframe-sin-camara')
+    return 'The live camera cannot run here: Google serves this app inside a ' +
+           'frame that does not allow it, and nothing you or the app can do from ' +
+           'this screen changes that. Use the photo button instead — it opens ' +
+           'your phone camera and reads the same labels.';
+  return 'Scanning needs a secure connection (https).';
+}
+
+/* EL BOTÓN DE LA PANTALLA DE MOVIMIENTOS, ENCENDIDO SÓLO DONDE SIRVE.
+ *
+ * El del menú de la cuenta se queda siempre: está escondido, no estorba, y si
+ * alguien lo pulsa donde no hay cámara `_escAbrir` le explica por qué —que es
+ * mejor que no encontrarlo nunca y pensar que la app no sabe escanear.
+ *
+ * Éste no. Está en la fila de Entry y Exit, a la vista todo el día, y un botón
+ * permanentemente a la vista que no puede hacer nada enseña el producto como
+ * roto. En un escritorio sin cámara eso sería la mayoría de las veces.
+ *
+ * Se mira en cada carga y no una sola vez al arrancar: `BarcodeDetector` y la
+ * cámara no cambian, pero el contexto seguro sí —la misma app abierta por
+ * http y por https— y es gratis volver a preguntarlo. */
+function _escPintarBoton(){
+  var b = document.getElementById('btnEscanearMov');
+  if (!b) return;
+  /* Y el rol, no sólo la cámara. Escanear termina SIEMPRE en un Entry o en un
+   * Exit, así que a quien tiene prohibido guardar no se le ofrece el atajo
+   * para llegar al formulario: sería un camino que acaba en una puerta
+   * cerrada. Es la misma regla que esconde Entry y Exit a su lado. */
+  /* BASTA CON QUE HAYA LECTOR. Antes exigía `=== 'si'`, o sea vídeo en vivo, y
+   * eso escondía el botón justo donde la app vive —dentro del iframe de Apps
+   * Script, que bloquea el vídeo— aunque la FOTO funcione perfectamente ahí.
+   * Un botón escondido por una puerta cerrada cuando la de al lado está
+   * abierta es peor que no tener el botón: quita lo que sí se puede hacer. */
+  var puede = (_escSePuede() !== 'sin-lector') && (userRole !== 'VIEWER');
+  b.style.display = puede ? '' : 'none';
+}
+
+function _escAbrir(){
+  var motivo = _escSePuede();
+
+  /* ── DOS PUERTAS, NO UNA ──────────────────────────────────────────────────
+   *
+   * Antes esto se cerraba en banda ante cualquier impedimento, y eso cerraba
+   * también la puerta que SÍ funciona. Jose lo vio de inmediato: *"si puedo
+   * tomar fotos a los documentos, ¿cómo no se puede escanear un QR?"*.
+   *
+   *   · VÍDEO EN VIVO (`getUserMedia`) — lee solo, apuntando. Es mejor, y es
+   *     lo que el iframe de Apps Script bloquea.
+   *   · FOTO (`input type=file` con `capture`) — tres toques, y NO pasa por la
+   *     política del iframe, porque no pide la cámara: pide un archivo.
+   *
+   * Lo único que impide las dos a la vez es no tener lector de códigos. Todo
+   * lo demás deja abierta la segunda, así que la ventana se abre igual y lo
+   * que cambia es qué se enseña dentro. */
+  if (motivo === 'sin-lector'){
+    _showConfirm({ icon: '📷', title: 'Cannot scan here',
+                   message: _escMensajeNo(motivo), confirmText: 'OK', soloAviso: true });
+    return;
+  }
+
+  _escReset();
+  _escPintar();
+  var ov = document.getElementById('scanOverlay');
+  if (ov) ov.classList.add('show');
+
+  var cam = document.querySelector('.sc-cam');
+  if (motivo !== 'si'){
+    /* Sin vídeo: se esconde el recuadro en vez de dejarlo en negro pidiendo que
+     * apuntes la cámara, que es exactamente lo que grabó Jose. */
+    if (cam) cam.style.display = 'none';
+    _escPintar(_escMensajeNo(motivo));
+    return;
+  }
+  if (cam) cam.style.display = '';
+
+  navigator.mediaDevices.getUserMedia({
+    /* La trasera. Sin esto, un teléfono abre la frontal y hay que darle la
+     * vuelta al bulto para enseñárselo a la pantalla. */
+    video: { facingMode: { ideal: 'environment' } }, audio: false
+  }).then(function(stream){
+    _escStream = stream;
+    var v = document.getElementById('scanVideo');
+    if (!v) return;
+    v.srcObject = stream;
+    v.play().catch(function(){});
+    _escDetector = new BarcodeDetector({ formats: ['qr_code'] });
+    _escLatido();
+  }).catch(function(e){
+    /* YA NO SE CIERRA LA VENTANA. Antes un fallo de cámara la cerraba entera y
+     * se llevaba por delante el botón de la foto, que sigue funcionando. Se
+     * apaga el vídeo, se dice por qué, y queda lo que sí sirve. */
+    if (cam) cam.style.display = 'none';
+    _escPintar('The live camera could not start. Use the photo button below — ' +
+               'that reads the same labels.');
+    try { console.warn('scan:', e && e.message); } catch (e2) {}
+  });
+}
+
+/* Cuatro veces por segundo. Más no lee mejor —el autofoco de un teléfono tarda
+ * más que eso— y calienta el aparato sin ganar nada. */
+var ESC_MS = 250;
+
+function _escLatido(){
+  if (!_escStream) return;
+  var v = document.getElementById('scanVideo');
+  if (!v || !_escDetector){ _escTimer = setTimeout(_escLatido, ESC_MS); return; }
+  _escDetector.detect(v).then(function(res){
+    /* `detect` devuelve una LISTA. Se procesan todos los que vea, que es lo
+     * que permite leer un bulto y un estante sin volver a apuntar — pero ojo:
+     * leerlos en la misma foto NO es el camino recomendado, porque el único
+     * repuesto que tendríamos donde no exista esta API se atraganta con dos
+     * códigos a la vez. Se aceptan si llegan; no se piden. */
+    (res || []).forEach(function(c){
+      var r = _escRecibir(c.rawValue);
+      if (r.estado === 'nuevo'){ _escPintar(); _escPitar(); }
+      else if (r.estado === 'ajeno') _escPintar('That code is not an Acopio label.');
+    });
+  }).catch(function(){}).then(function(){
+    _escTimer = setTimeout(_escLatido, ESC_MS);
+  });
+}
+
+/* ── LEER DESDE UNA FOTO ────────────────────────────────────────────────────
+ *
+ * El camino que funciona dentro de Apps Script, y lo encontró Jose preguntando
+ * lo evidente: *"si puedo tomar fotos a los documentos, ¿cómo no se puede
+ * escanear un QR?"*.
+ *
+ * Yo había concluido de más. Lo que está bloqueado es `getUserMedia` —el vídeo
+ * en vivo— porque la app corre en un iframe de otro origen y Google no le
+ * concede la cámara. Un `input type=file` con `capture` NO pide la cámara:
+ * pide un ARCHIVO, y de abrir la cámara se encarga el teléfono por su cuenta.
+ * La app ya lo usaba para las fotos de documentos; nadie se dio cuenta de que
+ * era también la puerta de los códigos.
+ *
+ * LO QUE SE PIERDE Y LO QUE SE GANA. El vídeo en vivo lee solo, apuntando; esto
+ * son tres toques por lectura. Para treinta seguidas es peor. Para las que se
+ * hacen de verdad en una bodega, funciona HOY y sin montar nada fuera.
+ *
+ * El vídeo en vivo se queda en el código: donde la política SÍ lo permita
+ * —fuera del iframe, el día que la app viva en otro sitio— sigue siendo mejor.
+ * Los dos caminos acaban en `_escRecibir`, que es donde está toda la decisión. */
+function _escFoto(file){
+  if (!file) return;
+  _escPintar('Reading the photo…');
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function(){
+    /* A un tamaño de trabajo: una foto de teléfono son doce megapíxeles y
+     * decodificar eso entero tarda y no hace falta. 1400 px de lado largo deja
+     * módulos de sobra para un código impreso a 30 mm. */
+    var esc = Math.min(1, 1400 / Math.max(img.width, img.height));
+    var cv = document.createElement('canvas');
+    cv.width  = Math.max(1, Math.round(img.width  * esc));
+    cv.height = Math.max(1, Math.round(img.height * esc));
+    var cx = cv.getContext('2d');
+    cx.drawImage(img, 0, 0, cv.width, cv.height);
+    URL.revokeObjectURL(url);
+    _escDeLaImagen(cv);
+  };
+  img.onerror = function(){
+    URL.revokeObjectURL(url);
+    _escPintar('That file is not a photo this app can read.');
+  };
+  img.src = url;
+}
+
+/* El lector, sobre el canvas de la foto. Es el MISMO `BarcodeDetector` que usa
+ * el vídeo en vivo: `detect()` acepta una imagen igual que acepta un vídeo, así
+ * que los dos caminos leen con lo mismo y acaban en `_escRecibir`. Si se
+ * separaran, una etiqueta podría leerse por un camino y no por el otro y nadie
+ * sabría por qué.
+ *
+ * NO HAY REPUESTO, Y ESO ES UNA DECISIÓN. Escribí uno con jsQR y lo quité al
+ * darme cuenta de que jsQR NO está en la app: habría sido una protección
+ * escrita y nunca ejecutada, que es el fallo que llevamos toda la semana
+ * persiguiendo. Y no se puede añadir sin romper una regla que está escrita
+ * arriba, junto al codificador: esta app es UN SOLO ARCHIVO a propósito,
+ * porque se instala copiando y pegando. Una etiqueta `<script src>` rompe eso,
+ * y acabamos de pasar dos días con un pegado roto.
+ *
+ * Qué significa en la práctica: donde no hay `BarcodeDetector` —hoy, sobre
+ * todo Safari— no se escanea, y `_escSePuede` lo dice ANTES con un mensaje que
+ * manda a Chrome. Eso es honesto; un repuesto que no existe, no. */
+function _escDeLaImagen(cv){
+  function entregar(textos){
+    var algo = false;
+    (textos || []).forEach(function(t){
+      if (!t) return;
+      algo = true;
+      var r = _escRecibir(t);
+      if (r.estado === 'nuevo'){ _escPintar(); _escPitar(); }
+      else if (r.estado === 'ajeno') _escPintar('That code is not an Acopio label.');
+    });
+    /* El mensaje dice QUÉ HACER, no sólo que no salió. Las tres causas de una
+     * foto ilegible son siempre las mismas y las tres tienen arreglo en el
+     * siguiente intento. */
+    if (!algo) _escPintar('No code found in that photo. Get closer, hold the phone ' +
+                          'steady, and keep the whole code inside the picture.');
+  }
+  try {
+    new BarcodeDetector({ formats: ['qr_code'] }).detect(cv).then(function(res){
+      entregar((res || []).map(function(c){ return c.rawValue; }));
+    }).catch(function(){ entregar([]); });
+  } catch (e) { entregar([]); }
+}
+
+/* Un pitido corto al leer. En una bodega con guantes y ruido, la confirmación
+ * que sirve es la que se oye: mirar la pantalla obliga a bajar el bulto. */
+function _escPitar(){
+  try {
+    var A = window.AudioContext || window.webkitAudioContext;
+    if (!A) return;
+    var ctx = new A(), osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.frequency.value = 880; g.gain.value = 0.07;
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.08);
+    setTimeout(function(){ try { ctx.close(); } catch (e) {} }, 300);
+  } catch (e) {}
+}
+
+function _escCerrar(){
+  if (_escTimer){ clearTimeout(_escTimer); _escTimer = null; }
+  if (_escStream){
+    try { _escStream.getTracks().forEach(function(t){ t.stop(); }); } catch (e) {}
+    _escStream = null;
+  }
+  _escDetector = null;
+  var v = document.getElementById('scanVideo');
+  if (v) { try { v.srcObject = null; } catch (e) {} }
+  var ov = document.getElementById('scanOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+/** Pinta lo leído y los botones. Se llama desde el latido, así que no puede
+ *  reconstruir lo que no cambió: tocar el DOM cuatro veces por segundo haría
+ *  que los botones no se pudieran ni pulsar. */
+function _escPintar(aviso){
+  var caja = document.getElementById('scanLeido');
+  var acc  = document.getElementById('scanAcciones');
+  if (!caja || !acc) return;
+
+  var m = _escSesion.material, u = _escSesion.ubicacion;
+  var html = '';
+  if (m) html += '<div class="sc-item"><span class="sc-tag sc-mat">MATERIAL</span>' +
+                 '<span>' + _he(m.name) + (m.loc ? ' <b>· ' + _he(m.loc) + '</b>' : '') + '</span></div>';
+  if (u) html += '<div class="sc-item"><span class="sc-tag sc-loc">RACK</span>' +
+                 '<span>' + _he(u.name) + '</span></div>';
+  if (!m && !u) html = '<div class="sc-vacio">Point the camera at a label.</div>';
+  if (aviso) html += '<div class="sc-aviso">' + _he(aviso) + '</div>';
+  if (caja._ac !== html){ caja.innerHTML = html; caja._ac = html; }
+
+  var botones = _escAcciones().map(function(a){
+    return '<button type="button" class="btn sc-accion" data-esc="' + _he(a.id) + '">' +
+             _he(a.texto) + '<span class="sc-pista">' + _he(a.pista || '') + '</span>' +
+           '</button>';
+  }).join('');
+  if (acc._ac !== botones){
+    acc.innerHTML = botones;
+    acc._ac = botones;
+    Array.prototype.forEach.call(acc.querySelectorAll('[data-esc]'), function(b){
+      b.addEventListener('click', function(){ _escHacer(b.getAttribute('data-esc')); });
+    });
+  }
+}
+
+/** Imprime las etiquetas de las ubicaciones que se pasen. Reutiliza
+ *  `#labelSheet` y su regla de impresión —lo demás del <body> desaparece— que
+ *  ya está probada; lo único propio es lo que se mete dentro. */
+function _locLabelsPrint(nombres){
+  nombres = (nombres || []).filter(function(n){ return String(n || '').trim(); });
+  if (!nombres.length) return;
+  var hoja = document.getElementById('labelSheet');
+  if (!hoja) return;
+
+  var paginas = Math.ceil(nombres.length / LOC_POR_HOJA);
+  _showConfirm({
+    icon: '🏷️',
+    title: 'Print ' + nombres.length + ' location label' + (nombres.length === 1 ? '' : 's'),
+    /* Se dice CUÁNTAS HOJAS antes de imprimir, no después. Sesenta racks son
+     * veinte hojas de adhesivo, y enterarse cuando ya están saliendo es tarde:
+     * el papel térmico viene en rollo y no se devuelve. */
+    message: nombres.length + ' label' + (nombres.length === 1 ? '' : 's') +
+             ', ' + LOC_POR_HOJA + ' per sheet — ' + paginas + ' sheet' +
+             (paginas === 1 ? '' : 's') + '.\n\n' +
+             'Paper size: 4×6 in (101.6 × 152.4 mm). On a phone, check Paper size ' +
+             'in the print dialog before you print.',
+    confirmText: '🖨 Print',
+    onConfirm: function(){
+      hoja.innerHTML = _locSheetHtml(nombres);
+      hoja.classList.add('hoja-ubicaciones');
+      setTimeout(function(){
+        try { window.print(); }
+        catch (e) { showToast('Could not open the print dialog.', 'err'); }
+        setTimeout(function(){
+          hoja.innerHTML = '';
+          hoja.classList.remove('hoja-ubicaciones');
+        }, 1000);
+      }, 60);
+    }
+  });
 }
 
 function _openLabels(rows, alCerrar){
@@ -21958,6 +24070,7 @@ function _openLabels(rows, alCerrar){
   var lead = document.getElementById('labelsLead');
   var list = document.getElementById('labelsList');
   if (!lead || !list){ _labelsDone(); return; }
+  _labelsPintarPapel();
   lead.textContent = _labelRows.length === 1
     ? 'One label, 4"×6". Untick it if this one does not need one.'
     : _labelRows.length + ' labels, 4"×6" — one per rack. Untick the ones that ' +
@@ -22089,6 +24202,22 @@ function _labelsAll(si){
   if (!list) return;
   list.querySelectorAll('input[data-lbl]').forEach(function(cb){ cb.checked = !!si; });
   _labelsRedraw();
+}
+
+/* El aviso del papel. En una pantalla pequeña se asume teléfono y se dice
+ * dónde está el ajuste; en una grande, sólo la medida. No se mira el sistema
+ * operativo sino el ancho, por lo mismo de siempre: lo que cambia la respuesta
+ * es el cuadro de impresión que vas a ver, y el de Android sale en pantallas
+ * pequeñas. */
+function _labelsPintarPapel(){
+  var el = document.getElementById('labelsPaper');
+  if (!el) return;
+  var movil = window.innerWidth < 769;
+  el.textContent = movil
+    ? 'Paper size must be 4×6 in (101.6 × 152.4 mm). On a phone, open Paper ' +
+      'size in the print dialog and pick it — it usually opens on A4, and then ' +
+      'the label prints small in the middle of a big page.'
+    : 'Paper size: 4×6 in (101.6 × 152.4 mm).';
 }
 
 function _labelsPrint(){
@@ -23453,6 +25582,7 @@ function loadDataFromGoogle(skipCache, quiet){
   if (cached && cached.userRole) {
     _applyData(cached);
     userRole  = cached.userRole  || userRole;
+    if (cached.basic === true) APP_BASIC = true;
     userEmail = cached.userEmail || userEmail;
     _setAccountIdentity(cached.userName, userEmail, userRole, true);   // stale: fresh data still on the way
     applyRoleUI();
@@ -23467,6 +25597,43 @@ function loadDataFromGoogle(skipCache, quiet){
     if (sr) sr.insertAdjacentHTML('afterbegin',
       '<div style="padding:.5rem 0 1rem;color:var(--muted);font-size:.85rem;display:flex;align-items:center;gap:.5rem">'+
       '<span class="spin-hg">⏳</span> Connecting to Google Sheets... this may take 10-20 seconds.</div>');
+  }
+
+  /* SIN LIBRERÍA DE APPS SCRIPT NO HAY NADA QUE PEDIR, Y HAY QUE DECIRLO.
+   *
+   * `google.script.run` no es nuestro: lo pone una librería que el navegador
+   * baja de los servidores de Google al cargar la página. Si esa descarga
+   * falla —red de bodega, un cortafuegos, un mal rato de Google— `google` no
+   * existe y esta línea reventaba con «Cannot read properties of undefined
+   * (reading 'run')», que no le dice nada a nadie y encima se registraba como
+   * un fallo NUESTRO en ERROR_LOG.
+   *
+   * Explicado, y sin levantar la mano: no se reporta al servidor, porque para
+   * reportarlo hace falta justo lo que falta. Se baja la pantalla de carga
+   * —que si no se queda puesta para siempre— y se dice qué pasa con el aviso
+   * de conexión, que es el sitio donde ya se cuentan estas cosas. */
+  /* `typeof google` y no `window.google`: ésta es la comprobación que no da por
+   * hecho que exista `window`. En un navegador las dos son lo mismo, pero
+   * `test-load-race` ejecuta esta función en un contexto pelado de Node donde
+   * `google` es global y `window` no existe — así que `window.google` reventaba
+   * con «window is not defined» DENTRO de la puerta que existe para no
+   * reventar. Una guardia que necesita que su alrededor esté entero no es una
+   * guardia. */
+  if (typeof google === 'undefined' || !(google.script && google.script.run)) {
+    _loadBusy = false;
+    try { _hideSplash(); } catch (e) {}
+    try { setLoading(false); } catch (e) {}
+    try { setConnStatus('offline'); } catch (e) {}
+    try {
+      /* VEINTE SEGUNDOS, no cero. `showToast` hace `duration || 3500`, así que
+       * un cero —que es como se escribe «quédate» en media interfaz— sale como
+       * tres segundos y medio. El aviso que de verdad se queda hasta que vuelva
+       * la conexión es la píldora de `setConnStatus('offline')` de arriba; esto
+       * es la explicación larga, y con veinte segundos se lee de sobra. */
+      showToast('Could not load the Google script library, so the app cannot ' +
+                'reach your spreadsheet. Check the connection and reload.', 'err', 20000);
+    } catch (e) {}
+    return;
   }
 
   google.script.run
@@ -23549,6 +25716,19 @@ function loadDataFromGoogle(skipCache, quiet){
         try { checkMorningPopup();        } catch(e){ console.error('checkMorningPopup:', e); }
         try { _offerSetupIfUnconfigured(data); } catch(e){ console.error('_offerSetupIfUnconfigured:', e); }
         try { _showSetupNudge();          } catch(e){ console.error('_showSetupNudge:', e); }
+        /* La última de la cola, y a propósito: lo que llegó hoy a la bodega
+         * —el popup de la mañana— manda sobre lo que cambió en la app. Y
+         * `_nvAlArrancar` comprueba por sí misma que no haya ninguna ventana
+         * abierta antes de salir, así que llegar la última no basta: también
+         * se aparta si algo se abrió después. */
+        try { _nvAlArrancar();            } catch(e){ console.error('_nvAlArrancar:', e); }
+        /* AQUÍ SE CIERRA LA PROMESA DEL AVISO VERDE, y el sitio importa: esto
+         * es el final del camino de una carga que SE APLICÓ —pasó las dos
+         * carreras, se pintó y se repasaron las ventanas abiertas—, no el de
+         * una que se pidió. Ponerlo arriba, junto a la llamada, sería repetir
+         * exactamente el fallo que esto arregla: decir «ya está al día»
+         * mientras todavía viene en camino. */
+        try { _connDatosAlDia();          } catch(e){ console.error('_connDatosAlDia:', e); }
       } catch(outerErr) {
         setConnStatus('offline');
         var sr2 = document.getElementById('statsRow');
@@ -23569,8 +25749,32 @@ function loadDataFromGoogle(skipCache, quiet){
 }
 
 // ── Charts Load ───────────────────────────────────────────────────────────────
-google.charts.load('current', {packages:['corechart']});
-google.charts.setOnLoadCallback(function(){ chartsReady = true; drawInventoryCharts(); });
+//
+// DOS GRÁFICAS NO PUEDEN TUMBAR UN ALMACÉN, y hasta la v12.70 podían.
+//
+// `google.charts` no lo pone Apps Script: lo baja un `<script src>` de
+// `gstatic.com`, que es un tercero. En la red de una bodega eso falla —un
+// cortafuegos, un wifi malo, un mal rato de Google— y entonces `google.charts`
+// no existe y estas dos líneas reventaban AQUÍ, a mitad del bloque grande.
+//
+// Y un error a mitad de bloque se lleva por delante todo lo que viene después,
+// que resulta ser casi todo: la caché, el reloj de la pantalla de carga, el
+// oyente de errores del final y la propia llamada de arranque
+// `loadDataFromGoogle()`. La app entera muerta, y la pantalla de carga puesta
+// para siempre diciendo «conectando», por dos tartas de colores.
+//
+// Envuelto, el peor caso es quedarse sin gráficas: `chartsReady` se queda en
+// `false` y `drawInventoryCharts` ya sabe no dibujar. Las cifras, la tabla, los
+// movimientos y los formularios —todo lo que se usa para trabajar— siguen ahí.
+try {
+  google.charts.load('current', {packages:['corechart']});
+  google.charts.setOnLoadCallback(function(){ chartsReady = true; drawInventoryCharts(); });
+} catch (e) {
+  /* Sin consola no queda rastro de por qué faltan las gráficas, y en silencio
+   * parecería un fallo nuestro. No se enseña nada al usuario: alguien de bodega
+   * no puede hacer nada con esto, y la app sigue sirviendo para su trabajo. */
+  console.warn('Google Charts no cargó; la app sigue sin gráficas:', e && e.message);
+}
 
 // ── SessionStorage Cache ──────────────────────────────────────────────────────
 var _CACHE_KEY   = 'oxwms_data_v3';
@@ -23603,6 +25807,10 @@ function _applyData(data) {
   stockData          = data.stock              || {};
   config             = data.config             || config;
   _ordenarCatalogos(config);
+  /* ANTES que el rol, y antes de pintar nada: `applyRoleUI` ya decide qué se ve
+   * y necesita saber en qué edición está cuando llegue. */
+  APP_BASIC          = (data.basic === true);
+  if (data.basicPreguntarQuien === true) { try { _quienPreguntar(); } catch (e) {} }
   userRole           = data.userRole           || 'WAREHOUSE';
   if (data.rolePerms) rolePerms = data.rolePerms;
   if (data.warehouseRoleLabel) warehouseRoleLabel = data.warehouseRoleLabel;
@@ -23681,11 +25889,15 @@ function _applyWarehouseRoleLabel(){
  * Devuelve el elemento, o lo quita si `html` viene vacío. Idempotente: llamarla
  * cien veces con el mismo texto no parpadea ni reinicia nada, que es lo que
  * hace falta cuando quien llama es un latido que corre cada veinte segundos. */
-function _barraArriba(id, tono, html, segundos) {
-  var pila = document.getElementById('topBanners');
+function _barraArriba(id, tono, html, segundos, flotante) {
+  /* `flotante` manda el aviso a la pila que NO ocupa sitio. Ver la nota larga
+   * de `#topToasts` en el CSS: sólo pueden flotar los avisos sin nada que
+   * pulsar, porque lo que los hace inofensivos es `pointer-events:none`. */
+  var pilaId = flotante ? 'topToasts' : 'topBanners';
+  var pila = document.getElementById(pilaId);
   if (!pila) {
     pila = document.createElement('div');
-    pila.id = 'topBanners';
+    pila.id = pilaId;
     // AL PRINCIPIO del body, no al final: si va al final, ocupa su sitio DEBAJO
     // de toda la página y el aviso aparece al pie, donde nadie lo mira.
     document.body.insertBefore(pila, document.body.firstChild);
@@ -23696,8 +25908,12 @@ function _barraArriba(id, tono, html, segundos) {
   if (!bar) {
     bar = document.createElement('div');
     bar.id = id;
-    pila.appendChild(bar);
   }
+  /* Se reubica SIEMPRE, no sólo al crearla. Si un aviso cambia de pila entre
+   * dos llamadas —porque alguien le pase `flotante` de forma distinta— la
+   * primera versión lo dejaba donde nació: flotando cuando debía empujar, o al
+   * revés. Mover un nodo que ya está donde toca no cuesta nada. */
+  if (bar.parentNode !== pila) pila.appendChild(bar);
   // Sólo se reescribe si de verdad cambió: tocar innerHTML en cada latido
   // reinicia la animación del aro y la barra "tiembla".
   if (bar._acTono !== tono) { bar.className = 'top-banner ' + tono; bar._acTono = tono; }
@@ -24663,14 +26879,27 @@ document.addEventListener('DOMContentLoaded', function(){
   // Open modal buttons
   _safeOn('btnEntry','click', function(){ openMoveModal('ENTRY'); });
   _safeOn('btnExit','click',  function(){ openMoveModal('EXIT'); });
+  _safeOn('btnEscanearMov','click', function(){ _escAbrir(); });
+  /* El botón abre el selector y el selector hace el trabajo. `value=''` al
+   * final para que sacar DOS fotos seguidas de la misma etiqueta vuelva a
+   * disparar `change`: sin eso, la segunda foto idéntica no avisa de nada y
+   * parece que la app se quedó colgada. */
+  _safeOn('scanFotoBtn','click', function(){
+    var i = document.getElementById('scanFotoInput'); if (i) i.click();
+  });
+  _safeOn('scanFotoInput','change', function(){
+    var f = this.files && this.files[0];
+    this.value = '';
+    _escFoto(f);
+  });
 
   // Project selector
   _safeOn('projectSelector','change', renderProjectView);
 
   // Modal fields
   _safeOn('mType','change', function(){ updateMatList(); checkStock(); });
-  _safeOn('mName','input',  function(){ checkStock(); updateNotifyPreview(); validateExitRows(); autoFillExitRows(); renderTransferLocPicker(); validateTransferRows(); triggerSimilarCheck(); });
-  _safeOn('mType','change', function(){ validateExitRows(); autoFillExitRows(); renderTransferLocPicker(); validateTransferRows(); });
+  _safeOn('mName','input',  function(){ checkStock(); updateNotifyPreview(); validateExitRows(); autoFillExitRows(); renderTransferLocPicker(); validateTransferRows(); triggerSimilarCheck(); _boneyardSync(); });
+  _safeOn('mType','change', function(){ validateExitRows(); autoFillExitRows(); renderTransferLocPicker(); validateTransferRows(); _boneyardSync(); });
   _safeOn('mQty','input',   updateNotifyPreview);
   _safeOn('mUnit','change', updateNotifyPreview);
   _safeOn('mProj','input',  updateNotifyPreview);
@@ -24695,6 +26924,11 @@ document.addEventListener('DOMContentLoaded', function(){
   _safeOn('attachOverlay','click', function(e){ closeIfOutside(e,'attachOverlay'); });
   _safeOn('rackPhotoFileInput','change', _handleRackPhotoFileChange);
   _safeOn('lockMatOverlay','click', function(e){ closeIfOutside(e,'lockMatOverlay'); });
+  /* EL CLIC EN LA OFERTA NO LLEGA AL DOCUMENTO. Jose, 19/10: *"al hacer clic en
+   * el popup (no en los botones) se guarda el menú del avatar"*. El clic subía
+   * hasta el manejador que cierra los menús abiertos, así que leer la oferta
+   * cerraba por detrás el menú desde el que se había llegado a ella. */
+  _safeOn('proOverlay','click', function(e){ e.stopPropagation(); });
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') closeMediaPreview();
   });
@@ -24707,6 +26941,365 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // ── Role-based UI ─────────────────────────────────────────────────────────────
+/* ── LO QUE NO ESTÁ EN LA VERSIÓN BÁSICA ─────────────────────────────────────
+ *
+ * Esconder, no desactivar. Un botón gris que no hace nada invita a preguntar
+ * qué le pasa; uno que no está no se echa de menos. Quien quiera lo de arriba
+ * ya se lo va a encontrar en la landing, no en un botón apagado.
+ *
+ * ── Y ESTO SOLO NO APAGA NADA ───────────────────────────────────────────────
+ *
+ * Esto es la mitad de la pantalla. La otra mitad está en el servidor
+ * (`basicNiega_`), y hacen falta las dos: esconder un botón no cierra la
+ * puerta que ese botón llamaba. Ver el comentario de ACOPIO_BASIC en Code.gs.
+ */
+var BASIC_FUERA = {
+  /* Lo que se ESCONDE: fontanería que no vende nada.
+   *
+   * Nadie sube a Pro por un botón de soporte ni por un reconstructor de
+   * existencias. Un candado aquí no es una oferta, es una puerta cerrada más —
+   * y con veinte puertas cerradas la app deja de parecer una herramienta y
+   * parece una demostración caducada. */
+  botones: ['btnReportIssue', 'btnDataCheck', 'btnRebuildStock', 'btnMovIdFill'],
+
+  /* Jose, 19/10, repasando la app entera: *"también se muestra PERMISSIONS,
+   * ¿por qué? eso no tiene sentido"* y *"no debe haber DIRECTORY ¿verdad?"*.
+   * Las dos fuera: sin usuarios no hay permisos que repartir ni directorio de
+   * jefes de obra a quien avisar. `import` necesita Drive.
+   *
+   * `errorlog` SE QUEDA — él mismo dijo que está bien, y es verdad: un registro
+   * de errores no es una función de pago, es cómo se pide ayuda. */
+  ajustes: ['permissions', 'pmdirectory', 'import'],
+  pestanas: []
+};
+
+/* ── LO QUE SE VE PERO NO SE PUEDE EMPEZAR ───────────────────────────────────
+ *
+ * Jose, 19/10, y es la frase que corrige el error de diseño:
+ *
+ *   *"se le dice al cliente lo que no se puede hacer ANTES de que lo termine de
+ *   hacer, justo al momento de empezar"*.
+ *
+ * La versión anterior dejaba elegir la imagen, escribir el destinatario del
+ * correo, adjuntar el documento y marcar las etiquetas — y avisaba AL GUARDAR.
+ * Peor: el movimiento se guardaba y el documento no, así que quedaba a medias y
+ * con un error encima. Eso no es un aviso, es una trampa.
+ *
+ * Esto son ZONAS enteras, no botones: la sección de documentos de una entrada,
+ * la de avisos por correo, la pestaña de sistema. Se pintan en gris claro, no
+ * se puede tocar nada de dentro, y el clic en la zona enseña la oferta.
+ */
+var BASIC_PRO_ZONAS = {
+  fileSection:   'fotos',    // adjuntar documentos a una entrada
+  notifySection: 'correo'    // avisar por correo al guardar
+};
+
+/* Las pestañas de ajustes se pintan cada vez que se entra en ellas, así que no
+ * basta con apagarlas una vez: hay que volver a hacerlo después de cada
+ * pintada. Ver la llamada al final de `_renderSettingsTab`. */
+var BASIC_PRO_AJUSTES = { system: 'respaldo' };
+
+/**
+ * Deja una zona entera a la vista pero intocable: gris claro, nada de dentro
+ * recibe el ratón, y el clic en la zona enseña la oferta.
+ *
+ * EL TRUCO ESTÁ EN EL CSS, no aquí: `.pro-off *` apaga el ratón de los hijos y
+ * la propia zona lo conserva. Así un `<input type="file">` dentro deja de
+ * abrir el explorador de archivos —que es justo lo que Jose no quería— sin
+ * tener que ir control por control.
+ */
+function _basicApagarZona(el, clave){
+  if (!el || el.getAttribute('data-pro') === clave) return;
+  el.setAttribute('data-pro', clave);
+  el.classList.add('pro-off');
+  el.addEventListener('click', function(ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+    _proPitch(clave);
+  }, true);   // en captura: llega antes que cualquier manejador de dentro
+}
+
+/* ── LO QUE SÍ SE ENSEÑA, CON CANDADO ────────────────────────────────────────
+ *
+ * Jose, 19/10: *"que tal si cuando alguien intenta subir una imagen en básico,
+ * la app le dice que esa función solo está disponible en Pro"*.
+ *
+ * Tiene razón y yo había decidido lo contrario. Mi argumento era «esconder, no
+ * desactivar: un botón gris invita a preguntar qué le pasa», y eso valía contra
+ * un botón MUDO. Un botón que EXPLICA no es lo mismo, y mi razón no le aplica.
+ *
+ * Lo que sí aplica es para qué existe la versión gratis: **vender Pro**. Si
+ * nunca ven que se pueden subir fotos, nunca van a querer subir fotos — y
+ * esconder deja la versión gratis sin ninguna superficie de venta.
+ *
+ * Y el momento en que pulsan uno de estos botones es el de MÁXIMA INTENCIÓN que
+ * vamos a tener nunca: alguien que acaba de descubrir solo que necesita eso.
+ *
+ * `que` es lo que se GANA, no lo que falta. «Not available in Basic» es un
+ * muro; «Attach photos and PDFs to any movement» es una oferta. Mismo trabajo,
+ * resultado opuesto.
+ */
+var BASIC_PRO = {
+  fotos:     { titulo: '📎 Photos and documents',
+               que: 'Attach photos, PDFs and delivery notes to any movement, and find them again from the movement itself.' },
+  etiquetas: { titulo: '🏷️ Labels and QR codes',
+               que: 'Print a label for any material or rack, with a code that opens straight to it.' },
+  escanear:  { titulo: '📷 Scan a label',
+               que: 'Point your phone at a label and the app finds the material and fills the form for you.' },
+  reservas:  { titulo: '🔒 Reserve material',
+               que: 'Hold material for a job so nobody takes it out by mistake, with the reason written down.' },
+  usuarios:  { titulo: '👥 Your team',
+               que: 'Give your crew their own access, decide who can do what, and see who recorded every movement.' },
+  llegadas:  { titulo: '🚚 Expected deliveries',
+               que: 'Record what is coming before it arrives, and see at a glance what landed and what is late.' },
+  respaldo:  { titulo: '🌙 Automatic backup',
+               que: 'A copy of everything, made on its own every night and kept in your own Drive.' },
+  /* El lector de correos va aparte y con su propio mensaje: vende muchísimo y
+   * no cabe en la frase genérica. */
+  correo:    { titulo: '📧 Read it from the email',
+               que: 'Paste a supplier email and the app fills in what is arriving — supplier, items, quantities and dates.' }
+};
+
+/* Qué botón abre qué oferta. Un botón puede estar en la lista y no existir en
+ * la pantalla: se comprueba antes de tocarlo. */
+var BASIC_PRO_BOTONES = {
+  btnAddDoc:                 'fotos',
+  btnAiExtract:              'fotos',
+  btnMovLabels:              'etiquetas',
+  btnEscanear:               'escanear',
+  btnEscanearMov:            'escanear',
+  btnUsersMgmt:              'usuarios',
+  btnAddIncoming:            'llegadas',
+  btnDeleteIncoming:         'llegadas',
+  btnWeekSchedule:           'llegadas',
+  btnMonitorSettings:        'llegadas',
+  btnMonitorSettingsToolbar: 'llegadas',
+  btnBackupNow:              'respaldo',
+  btnFromEmail:              'correo',
+  btnReadEmail:              'correo'
+};
+
+/**
+ * Enseña la oferta — entera la primera vez, callada después.
+ *
+ * LA FRECUENCIA ES LO QUE DECIDE SI ESTO VENDE O MOLESTA. Un mensaje la primera
+ * vez es información; el mismo mensaje la décima vez es acoso, y quien lo sufre
+ * desinstala. Alguien que pulse «adjuntar foto» diez veces al día no puede
+ * recibir diez ventanas.
+ *
+ * El recuerdo vive en `localStorage`, que es del navegador de esa persona y no
+ * sale de ahí. Si falla —ventana privada, datos bloqueados— se cae del lado
+ * bueno: enseña la ventana. Perder el recuerdo es una molestia; perder la
+ * oferta es perder la venta.
+ */
+function _proPitch(clave){
+  var f = BASIC_PRO[clave];
+  if (!f) return;
+
+  var visto = false;
+  try { visto = !!localStorage.getItem('acopio_pro_' + clave); } catch (e) {}
+
+  if (visto) { _proToast(clave); return; }
+  try { localStorage.setItem('acopio_pro_' + clave, '1'); } catch (e) {}
+
+  var t = document.getElementById('proTitulo');
+  var x = document.getElementById('proTexto');
+  var a = document.getElementById('proEnlace');
+  /* EL TÍTULO DICE QUE ES DE PRO, Y ESO FALTABA.
+   *
+   * Jose, 19/10: *"sale una descripción del producto pero no se especifica que
+   * eso sólo está disponible en la opción Pro, no dice nada de eso, es
+   * confuso"*. Tenía razón y era el peor fallo de la ventana: explicaba la
+   * función sin decir nunca por qué no la tiene. */
+  if (t) t.textContent = f.titulo + ' is part of Acopio Pro';
+  if (x) x.textContent = f.que + ' Check this and more in Acopio Pro.';
+  if (a) a.href = _proUrl(clave);
+
+  var ov = document.getElementById('proOverlay');
+  if (ov) ov.classList.add('show');
+}
+
+/**
+ * La dirección, con el nombre de la función detrás.
+ *
+ * Es el único dato que la versión básica puede darnos: no tiene permiso para
+ * salir a internet —que es justo lo que la hace instalable sin sustos— pero
+ * ABRIR una página no es una petición nuestra. Así las estadísticas del sitio
+ * dicen qué función empuja gente hacia Pro, sin rastrear a nadie.
+ *
+ * VA A LA RAÍZ, y no a `/pro`: esa página no existe, y habría sido un 404 justo
+ * en el momento de más interés. El día que exista, se cambia esta línea.
+ */
+function _proUrl(clave){
+  return 'https://www.acopio.net/?de=' + encodeURIComponent(clave);
+}
+
+/**
+ * El recordatorio callado, a partir de la segunda vez.
+ *
+ * NO SE VA MIENTRAS EL RATÓN ESTÉ ENCIMA — idea de Jose, 19/10: *"podemos hacer
+ * que el toast no desaparezca si el usuario hace hover, así podemos resaltar
+ * Acopio Pro y al dar clic lo enviamos"*. Un aviso de cuatro segundos con un
+ * enlace dentro es un enlace que nadie llega a pulsar.
+ *
+ * Y DURA MÁS DE ENTRADA, porque en un teléfono no hay ratón que poner encima.
+ * Sin eso, la mitad de la gente —la que llega desde un vídeo, con el móvil— no
+ * alcanzaría nunca el enlace. El hover es una mejora para quien tiene ratón, no
+ * la única forma de llegar.
+ */
+function _proToast(clave){
+  var f = BASIC_PRO[clave];
+  if (!f) return;
+  var cont = document.getElementById('toastContainer');
+  if (!cont) return;
+
+  var el = document.createElement('div');
+  el.className = 'toast info';
+  el.innerHTML =
+    '<span class="toast-icon">🔒</span>' +
+    '<span class="toast-msg">' + _he(f.titulo) + ' is part of ' +
+      '<a class="toast-pro" href="' + _he(_proUrl(clave)) + '" target="_blank" rel="noopener">Acopio Pro</a>' +
+    '</span>' +
+    '<button class="toast-close" type="button">✕</button>';
+  cont.appendChild(el);
+
+  var reloj = null;
+  function irse(){ try { el.remove(); } catch (e) {} }
+  function contar(ms){ clearTimeout(reloj); reloj = setTimeout(irse, ms); }
+
+  el.querySelector('.toast-close').addEventListener('click', function(){
+    clearTimeout(reloj); irse();
+  });
+  el.addEventListener('mouseenter', function(){ clearTimeout(reloj); });
+  el.addEventListener('mouseleave', function(){ contar(2500); });
+
+  contar(9000);
+}
+
+/**
+ * Pregunta quién es, una sola vez.
+ *
+ * Se llama cuando el servidor dice que no hay respuesta guardada. SE PUEDE
+ * SALTAR: quien no quiera dar su nombre sigue con los movimientos firmados
+ * como `BASIC`, que también es verdad. Obligar aquí sería poner un formulario
+ * delante de un producto que se regala, y es el primer minuto.
+ */
+function _quienPreguntar(){
+  var ov = document.getElementById('quienOverlay');
+  if (ov) ov.classList.add('show');
+}
+
+function _quienSaltar(){
+  try { closeModal('quienOverlay'); } catch (e) {}
+}
+
+function _quienGuardar(){
+  var nom   = (document.getElementById('quienNombre') || {}).value || '';
+  var email = (document.getElementById('quienEmail')  || {}).value || '';
+  var err   = document.getElementById('quienError');
+  var btn   = document.getElementById('quienSave');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      userEmail = (r && r.email) || '';
+      try { _setAccountIdentity((r && r.name) || '', userEmail, userRole, false); } catch (e) {}
+      try { closeModal('quienOverlay'); } catch (e) {}
+      try { showToast('Saved. Your movements will be signed with your name.', 'ok'); } catch (e) {}
+    })
+    .withFailureHandler(function(e){
+      if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+      /* EL MENSAJE ENTERO Y A LA VISTA, no un aviso que se va. Es un formulario
+       * de dos campos: si algo no le gustó, hay que poder leerlo al lado del
+       * campo y corregirlo. */
+      if (err) { err.textContent = (e && e.message) ? e.message : String(e); err.style.display = ''; }
+    })
+    .saveBasicIdentity({ name: nom, email: email });
+}
+
+/**
+ * Pone el candado en los botones que se quedan a la vista.
+ *
+ * SE REEMPLAZA EL `onclick`, no se añade un oyente. Estos botones llevan su
+ * acción escrita en el propio HTML (`onclick="openEmailImport()"`), y un oyente
+ * añadido correría ADEMÁS de ella: saldría la oferta Y se intentaría hacer lo
+ * que no se puede. Asignar la propiedad pisa la del HTML, que es lo que hace
+ * falta.
+ */
+function _basicCandado(){
+  Object.keys(BASIC_PRO_BOTONES).forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    var clave = BASIC_PRO_BOTONES[id];
+    el.style.display = '';
+    if (el.getAttribute('data-pro') === clave) return;   // ya puesto
+    el.setAttribute('data-pro', clave);
+    el.classList.add('pro-lock');
+    el.onclick = function(ev){
+      if (ev && ev.preventDefault) ev.preventDefault();
+      _proPitch(clave);
+      return false;
+    };
+  });
+}
+
+/**
+ * Quita de la pantalla lo que la versión básica no lleva, y pone el candado en
+ * lo que sí se enseña.
+ *
+ * Se llama desde `applyRoleUI` y no desde el arranque, porque la edición llega
+ * con los datos: al arrancar todavía no se sabe.
+ */
+function _basicPintar(){
+  if (!APP_BASIC) return;
+  BASIC_FUERA.botones.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  BASIC_FUERA.pestanas.forEach(function(par){
+    var b = document.getElementById(par[1]);
+    if (b) b.style.display = 'none';
+  });
+  BASIC_FUERA.ajustes.forEach(function(t){
+    var b = document.querySelector('[data-tab="' + t + '"]');
+    if (b) b.style.display = 'none';
+  });
+  Object.keys(BASIC_PRO_ZONAS).forEach(function(id){
+    _basicApagarZona(document.getElementById(id), BASIC_PRO_ZONAS[id]);
+  });
+  _basicCandado();
+}
+
+/**
+ * Lo mismo para una pestaña de ajustes, que se pinta de nuevo cada vez.
+ * La llama `_renderSettingsTab` al final, una vez por pintada.
+ */
+function _basicApagarAjuste(tab){
+  if (!APP_BASIC) return;
+  var clave = BASIC_PRO_AJUSTES[tab];
+  if (!clave) return;
+  _basicApagarZona(document.getElementById('settingsTabContent'), clave);
+}
+
+/**
+ * ¿Está esta pestaña fuera de la versión básica?
+ *
+ * EXISTE POR UN FALLO QUE NO HABRÍA SALIDO HASTA ESTAR INSTALADO. La pestaña
+ * activa se guarda en `sessionStorage` y se restaura al recargar, así que se
+ * podría llegar a una sección cuyo botón ya no está y quedarse ahí sin salida.
+ *
+ * `Incoming` ya no se esconde —es una de las que se enseñan con candado— pero
+ * la sección sigue sin poder funcionar, así que la pestaña tampoco se abre:
+ * se enseña la oferta y se queda donde estaba.
+ */
+function _basicPestanaFuera(tab){
+  if (!APP_BASIC) return false;
+  if (tab === 'incoming') { _proPitch('llegadas'); return true; }
+  return BASIC_FUERA.pestanas.some(function(par){ return par[0] === tab; });
+}
+
 function applyRoleUI(){
   var isViewer = (userRole === 'VIEWER');
   var isAdmin  = (userRole === 'ADMIN');
@@ -24715,6 +27308,12 @@ function applyRoleUI(){
     var el = document.getElementById(id);
     if (el) el.style.display = isViewer ? 'none' : '';
   });
+  /* El de escanear va en la misma fila y tiene DOS motivos para no estar, no
+   * uno: el rol y la cámara. Por eso no entra en la lista de arriba —que sólo
+   * mira el rol y le pondría `display:''` a un botón que no puede hacer nada
+   * en un escritorio—. `_escPintarBoton` los junta y es el único sitio donde
+   * se decide. */
+  _escPintarBoton();
   // Admin-only: Incoming button + Monitor settings gear
   var addInc = document.getElementById('btnAddIncoming');
   if (addInc) addInc.style.display = isAdmin ? '' : 'none';
@@ -24756,6 +27355,15 @@ function applyRoleUI(){
   if (sw) sw.style.display = _sessionToken ? '' : 'none';
 
   _setAccountIdentity(_lastUserName, userEmail, userRole, false);
+
+  /* AL FINAL, Y NO AL PRINCIPIO. Todo lo de arriba decide por ROL qué se ve, y
+   * varias de esas líneas tocan botones que la versión básica quiere dejar a la
+   * vista con candado — `_escPintarBoton`, por ejemplo, esconde el de escanear
+   * cuando no hay cámara. Puesto antes, cualquiera de ellas lo deshacía.
+   *
+   * La edición manda sobre el rol porque es una capa más abajo: el rol decide
+   * qué puede hacer esta persona, la edición decide qué existe. */
+  _basicPintar();
 }
 
 // ── Connection status ─────────────────────────────────────────────────────────
@@ -24799,15 +27407,91 @@ function setConnStatus(status){
    *    segundos. */
   var estabaCaida = (_connUltimo === 'offline');
   if (status === 'offline') {
+    /* FLOTANDO, desde la v12.69, y en DOS LÍNEAS desde la v12.71.
+     *
+     * EL TEXTO, Y UNA CORRECCIÓN A LO QUE SE PIDIÓ. Jose escribió *"your data
+     * can be updated"*, y eso dice justo lo contrario de lo que pasa: sin
+     * conexión lo que NO se puede es guardar. Se le dijo y lo aprobó. Lo que
+     * queda dice las dos cosas que hacen falta y ninguna más: que nada de lo
+     * que se escriba quedará registrado, y que hay que mirar la conexión
+     * ANTES de mover nada — que es el momento en el que todavía se puede
+     * evitar el problema.
+     *
+     * Y SIGUE SIN PODERSE CERRAR. Mientras la conexión siga caída el aviso
+     * sigue siendo verdad, y un aviso que se cierra sobre un problema que
+     * continúa es peor que no tenerlo. */
+    /* LA TERCERA FRASE NO ESTABA EN LO QUE PIDIÓ JOSE, Y SE QUEDA.
+     *
+     * `test-barra-conexion` se puso roja al quitarla, con el motivo escrito
+     * desde hace meses: «para que nadie recargue a lo loco». Quien lee que no
+     * se guarda nada y NO sabe que la app reintenta sola, recarga la página —
+     * y recargar sin conexión es cómo se pierde lo que había en un formulario
+     * a medio llenar. El aro que gira lo insinúa; un aro no es una frase.
+     *
+     * Es la segunda vez que la quito y la segunda que esta prueba la devuelve.
+     * Queda dicho aquí para que no haya una tercera. */
+    _connEsperandoDatos = false;   // una caída cancela cualquier promesa pendiente
     _barraArriba('connBanner', 'bad',
-      '<span class="tb-spin"></span> You are offline — nothing you type can be saved ' +
-      'until the connection comes back. The app keeps retrying on its own.');
+      '<div class="tb-tit"><span class="tb-spin"></span>You\'re offline</div>' +
+      '<div class="tb-sub">Nothing you save will be recorded. Check your ' +
+      'connection before making any movement. The app keeps retrying on its own.</div>',
+      0, true);
   } else if (status === 'online') {
-    if (estabaCaida) _barraArriba('connBanner', 'good', '✓ Back online', 5);
-    else _barraArriba('connBanner', 'good', '');
+    /* ── LA VUELTA, EN DOS TIEMPOS, Y ÉSTE ERA UN FALLO DE VERDAD ──────────
+     *
+     * Jose, 15/10: *"es necesario que la app se haya actualizado y esté con
+     * los datos correctos en el momento de que el toast verde haya
+     * desaparecido"*. Tenía razón, y lo que había era peor que feo: era
+     * mentira.
+     *
+     * `_pulseOk` enseñaba el verde y DESPUÉS pedía los datos. El verde duraba
+     * seis segundos y una carga de Apps Script tarda entre diez y veinte, así
+     * que en el caso normal el aviso se iba ANTES de que llegara nada. Poner
+     * «data has been updated» encima de eso es firmar un papel que la app no
+     * cumple: alguien que acaba de recuperar la conexión lee que está al día,
+     * mira una cifra vieja y actúa sobre ella.
+     *
+     * Ahora son dos estados y el segundo lo enciende la carga, no un reloj:
+     *
+     *   1. «You are back online · Updating…», sin cuenta atrás. Se queda
+     *      mientras de verdad esté actualizando.
+     *   2. Cuando la carga se APLICA —lo avisa `_connDatosAlDia()` desde
+     *      `loadDataFromGoogle`— el texto pasa a «Data has been updated in
+     *      the app» y AHÍ empiezan los seis segundos.
+     *
+     * Si la carga no llega nunca, el verde se queda en «Updating…» y no
+     * miente: no promete lo que no ha pasado. */
+    if (estabaCaida) {
+      _connEsperandoDatos = true;
+      _barraArriba('connBanner', 'good',
+        '<div class="tb-tit">✓ You are back online</div>' +
+        '<div class="tb-sub"><span class="tb-spin"></span> Updating…</div>',
+        0, true);
+    } else if (!_connEsperandoDatos) {
+      /* Sin caída previa no hay nada que celebrar — y si HAY una espera en
+       * curso no se borra, que es lo que pasaba antes: el latido llamaba a
+       * esto cada veinte segundos y se llevaba por delante el aviso de la
+       * recuperación a medias. */
+      _barraArriba('connBanner', 'good', '', 0, true);
+    }
   }
   _connUltimo = status;
 }
+
+/* LO QUE CIERRA LA PROMESA. Lo llama `loadDataFromGoogle` cuando una carga
+ * queda APLICADA en pantalla, no cuando se pide. Si no hay recuperación en
+ * curso no hace nada: una carga normal no tiene por qué sacar ningún aviso. */
+function _connDatosAlDia(){
+  if (!_connEsperandoDatos) return;
+  _connEsperandoDatos = false;
+  _barraArriba('connBanner', 'good',
+    '<div class="tb-tit">✓ You are back online</div>' +
+    '<div class="tb-sub">Data has been updated in the app.</div>',
+    6, true);
+}
+/* `true` entre que se recupera la conexión y que llegan los datos. Vive fuera
+ * de `setConnStatus` porque quien lo apaga es la carga, no el estado. */
+var _connEsperandoDatos = false;
 /* El estado anterior, para saber si una vuelta a verde es una RECUPERACIÓN o
  * simplemente el arranque. Sin esto, abrir la app saludaría con "Back online"
  * cada vez. */
@@ -25019,6 +27703,325 @@ var LEGAL_DOCS = {
 <p>Jose Castro — joseisrael5101@gmail.com</p>` }
 };
 /* ─── END GENERATED LEGAL HTML ─── */
+
+/* ══ WHAT'S NEW ═══════════════════════════════════════════════════════════════
+ *
+ * POR QUÉ EXISTE, Y POR QUÉ NO ES EL AVISO QUE RECHAZAMOS
+ *
+ * Escribimos dos notas por versión —inglés y español—, las publicamos, y
+ * dentro de la app había CERO enlaces que llevaran ahí: un cliente nunca se
+ * enteraba de lo que mejoraba. El soporte mensual se justifica justo con eso.
+ *
+ * Jose había propuesto antes un aviso periódico diciendo «hay actualizaciones,
+ * contáctanos», y le dije que no. La diferencia cabe en una pregunta:
+ *
+ *     ¿sale porque algo les pasó a ELLOS, o porque pasó el tiempo para
+ *     NOSOTROS?
+ *
+ * Lo primero es información. Lo segundo es publicidad. Esta ventana sale el
+ * día que SU app cambió de número de versión, cuenta lo que cambió en la app
+ * que tienen delante, y no pide nada. La línea de soporte va al final, en voz
+ * baja, porque en ese momento sí viene a cuento: «esto cambió; si necesitas
+ * ayuda con ello, aquí».
+ *
+ * LAS CUATRO REGLAS QUE LA HACEN SOPORTABLE
+ *
+ *  1. SÓLO SI HUBO UN CAMBIO DE VERSIÓN DE VERDAD. Se compara con la última
+ *     que vio ESTE navegador.
+ *  2. NUNCA EN LA PRIMERA VISITA. Sin versión guardada no se enseña nada: se
+ *     apunta la actual y se calla. Enseñarle «lo que cambió» a alguien que
+ *     entra por primera vez es contarle el final de una película que no ha
+ *     visto.
+ *  3. SE PUEDE CERRAR Y QUEDA EN UN SITIO FIJO. Ésta es la pieza que pidió
+ *     Jose y es la que la convierte en algo que no interrumpe: se cierra sin
+ *     pensar PRECISAMENTE porque se sabe dónde encontrarla. Menú de la cuenta
+ *     → What's new, siempre, con o sin novedad.
+ *  4. EL TEXTO VIAJA EN EL ARCHIVO. Funciona sin internet y nadie tiene que
+ *     salir de la app. El enlace de abajo es para quien quiera la nota entera,
+ *     y apunta a ESTA versión, no al historial desde el principio.
+ *
+ * MANTENIMIENTO: esta lista es una VENTANA DE LAS ÚLTIMAS CUATRO, no el
+ * historial. Al publicar una versión se añade arriba y se quita la de abajo.
+ * Si creciera sin fin, cada cliente se descargaría años de notas para leer
+ * una. `tools/test-novedades.js` comprueba que la primera entrada es la
+ * versión actual y que no hay más de cuatro.
+ *
+ * EL «ANTES Y DESPUÉS» NO ES UNA ILUSTRACIÓN: son las dos cadenas de verdad,
+ * la que salía y la que sale. Jose pidió que se viera algo de lo que cambió, y
+ * un dibujo bonito se separa del texto a la primera versión que nadie redibuja.
+ * Esto no puede separarse porque sale de la misma entrada.
+ */
+
+var NOVEDADES = [
+  { ver: '12.78',
+    titulo: 'Nothing half-done, and no surprises at the end',
+    puntos: [
+      'In the free edition you could pick a photo, write who to email, attach a document \u2014 and only find out <i>on save</i> that none of it would happen. Worse: the movement saved and the document did not.',
+      'Now anything that belongs to Acopio Pro is <b>greyed out and cannot be started</b>. One tap tells you what it does and how to get it, before you have put any work into it.',
+      'Editing a movement no longer fails. It was saving the change and <i>then</i> trying to email about it, which left a red error sitting on top of a change that had already happened.',
+      'And the app asks your name once, so every movement you record carries it \u2014 ready for the day you move up.',
+      'None of this exists in the paid edition.'
+    ],
+    antes:  'You could start anything, and find out at the end that it did not happen',
+    ahora:  'What you cannot finish, you cannot start' },
+
+  { ver: '12.77',
+    titulo: 'The free edition opens now',
+    puntos: [
+      'It did not. It drew the screen and then died asking for data, with <i>Not authenticated</i>. Nothing in the paid edition was affected \u2014 that switch is off in your copy.',
+      'The cause was two of our own decisions meeting: the free edition has no sign-in, so it has no email address to show, and the door read \u201cno email\u201d as \u201cnobody signed in\u201d.',
+      'In the free edition the door is the deployment itself \u2014 Google only lets the owner of the copy open it \u2014 so the email was never the proof. The rest of the door is untouched: roles, read-only and refused accounts behave exactly as before.',
+      'A test now runs that door in both editions with a user who has no email, so this cannot come back quietly.'
+    ],
+    antes:  'The free edition drew its screen and then stopped, asking you to sign in to something that has no sign-in',
+    ahora:  'It opens' },
+
+  { ver: '12.76',
+    titulo: 'The free edition now shows what it is missing',
+    puntos: [
+      'In <b>Acopio Basic</b>, the Pro features are no longer hidden. The button is there, marked with a \u{1F512}, and pressing it says what that feature does.',
+      'It says what you <i>get</i>, not what you lack \u2014 and it never interrupts what you were doing. A movement still saves, with or without the photo.',
+      'The full message appears <b>once</b>. After that it is a quiet one-line note. A reminder shown every time is not a reminder, it is nagging.',
+      'The paid edition is unaffected: none of this exists in your copy.'
+    ],
+    antes:  'A free edition that quietly lacked things, and never said so',
+    ahora:  'It tells you what else it can do, at the moment you want it' },
+  { ver: '12.74',
+    titulo: 'Scanning works after all — with a photo',
+    puntos: [
+      'Open <b>Scan label</b> and tap <b>Take a photo of the label</b>. Your phone camera opens, you take the picture, and the app reads the code from it.',
+      'The live viewfinder is what Google blocks inside this app. A photo is not blocked, because it is not the app asking for your camera — it is your phone handing back a picture, the same way the app already takes photos of documents.',
+      'Everything after the read is unchanged: it offers what you can do with that label and fills the form. It still never saves on its own.'
+    ],
+    antes:  'A black box asking you to point a camera that was never allowed to turn on',
+    ahora:  'Take the picture, and it reads the label' },
+];
+
+var NV_CLAVE = 'acopio_novedades_vista';
+
+function _nvVista(){
+  try { return localStorage.getItem(NV_CLAVE) || ''; } catch (e) { return ''; }
+}
+function _nvGuardar(v){
+  try { localStorage.setItem(NV_CLAVE, v); } catch (e) {}
+}
+
+/* Hay novedad cuando la versión de este archivo no es la última que vio este
+ * navegador. No se compara «mayor que»: una vuelta atrás a una versión
+ * anterior también es un cambio que conviene contar. */
+function _nvHayNovedad(){
+  var vista = _nvVista();
+  return !!vista && vista !== APP_VERSION;
+}
+
+function _nvPintarPunto(){
+  var hay = _nvHayNovedad();
+  var btn = document.getElementById('acctBtn');
+  var pt  = document.getElementById('nvPunto');
+  if (btn) btn.classList.toggle('nv-hay', hay);
+  if (pt)  pt.style.display = hay ? 'inline-block' : 'none';
+}
+
+/* El ancla de la nota publicada. Se construye con el número de versión y no se
+ * guarda escrita en cada entrada: una dirección escrita a mano al lado de un
+ * número es otra pareja que tiene que coincidir sin que nada lo obligue, y de
+ * ésas ya llevamos diez contadas. `tools/test-novedades.js` comprueba contra
+ * el changelog publicado que el ancla existe. */
+function _nvEnlace(ver){
+  return PRODUCT_SITE + '/changelog.html#v' + String(ver).replace('.', '-');
+}
+
+/* ── LA MARCA BLANCA MANDA TAMBIÉN AQUÍ ──────────────────────────────────────
+ *
+ * Si un cliente renombró el producto, su gente está usando algo que no se
+ * llama Acopio. Mandarles a acopio.net —o al correo de Jose— desde dentro de
+ * esa app sería contarles de dónde sale, que es justo lo que la marca blanca
+ * existe para no hacer. Es la misma regla que ya cumple `_syncProductLinks`
+ * con el nombre del header, y conviene que la cumplan las dos cosas o
+ * ninguna: una app renombrada con un enlace a acopio.net en una esquina es
+ * peor que una sin renombrar.
+ *
+ * LO QUE CAMBIÓ SÍ SE ENSEÑA IGUAL. Lo que desaparece es de dónde viene: la
+ * ventana queda con su título, su antes y después y su lista, sin enlace y sin
+ * correo. Quien quiera más, le pregunta a quien le vendió la app. */
+function _nvEsDeFabrica(){
+  var custom = String((window.company && company.productName) || '').trim();
+  return !custom || custom === PRODUCT;
+}
+
+function _nvFila(clase, marca, texto){
+  var d = document.createElement('div');
+  d.className = 'nv-fila ' + clase;
+  var m = document.createElement('span');
+  m.className = 'nv-marca';
+  m.textContent = marca;
+  var t = document.createElement('span');
+  t.className = 'nv-txt';
+  t.textContent = texto;
+  d.appendChild(m); d.appendChild(t);
+  return d;
+}
+
+function _nvPintar(entrada){
+  var cuerpo = document.getElementById('nvCuerpo');
+  if (!cuerpo || !entrada) return;
+  cuerpo.innerHTML = '';
+
+  var ver = document.createElement('div');
+  ver.className = 'nv-ver';
+  ver.textContent = 'Version ' + entrada.ver;
+  cuerpo.appendChild(ver);
+
+  var h = document.createElement('p');
+  h.style.cssText = 'font-size:var(--fs-4xl);font-weight:800;margin:.2rem 0 0;line-height:1.25';
+  h.textContent = entrada.titulo;
+  cuerpo.appendChild(h);
+
+  /* El antes y el después, que es «lo que se ve» que pidió Jose. */
+  if (entrada.antes && entrada.ahora){
+    var art = document.createElement('div');
+    art.className = 'nv-art';
+    art.appendChild(_nvFila('nv-antes', 'BEFORE', entrada.antes));
+    art.appendChild(_nvFila('nv-ahora', 'NOW',    entrada.ahora));
+    cuerpo.appendChild(art);
+  }
+
+  var ul = document.createElement('ul');
+  ul.className = 'nv-lista';
+  (entrada.puntos || []).forEach(function(txt){
+    var li = document.createElement('li');
+    li.innerHTML = txt;          /* texto nuestro, escrito aquí arriba */
+    ul.appendChild(li);
+  });
+  cuerpo.appendChild(ul);
+
+  var acc = document.createElement('div');
+  acc.className = 'nv-acciones';
+  var cerrar = document.createElement('button');
+  cerrar.className = 'btn';
+  cerrar.type = 'button';
+  cerrar.textContent = 'Got it';
+  cerrar.onclick = cerrarNovedades;
+  acc.appendChild(cerrar);
+  if (_nvEsDeFabrica()){
+    var leer = document.createElement('a');
+    leer.className = 'btn btn-ghost';
+    leer.href = _nvEnlace(entrada.ver);
+    leer.target = '_blank';
+    leer.rel = 'noopener noreferrer';
+    leer.textContent = 'Read the full note';
+    leer.style.textDecoration = 'none';
+    acc.appendChild(leer);
+  }
+  cuerpo.appendChild(acc);
+
+  if (_nvEsDeFabrica()){
+    var pie = document.createElement('div');
+    pie.className = 'nv-pie';
+    pie.textContent = 'Updates and support are the same subscription. Something not ' +
+                      'working, or something you wish it did? Write to ';
+    /* GMAIL, Y NO EL ESQUEMA DE CORREO DEL SISTEMA. Lo aprendimos con Jose
+     * delante: pulsó el botón ✉ Email, Windows le preguntó con qué app
+     * abrirlo, marcó «Always» sobre Outlook — y desde entonces ese botón sólo
+     * abría una app que no usa. Ese esquema depende de una configuración POR
+     * COMPUTADORA que nadie recuerda haber puesto; una dirección de Gmail no.
+     *
+     * Y ESTE COMENTARIO ESTÁ ESCRITO SIN NOMBRARLO A PROPÓSITO.
+     * `test-tanda-borrado.js` cuenta las apariciones de esa palabra en TODO el
+     * archivo, comentarios incluidos, y la primera versión de esta nota la
+     * decía tres veces: la prueba se puso roja por el texto que explicaba por
+     * qué no hay ninguno. Se podría haber aflojado la prueba para que no mire
+     * los comentarios, pero un recuento de cero en el archivo entero es
+     * trivial de verificar y un quitador de comentarios se atraganta con el
+     * `//` de cualquier URL. Más barato escribir la nota así. */
+    var a = document.createElement('a');
+    /* ── LA URL, ARMADA A TROZOS, Y NO ES MANÍA ──────────────────────────
+     *
+     * 15/10/2026. Jose tuvo dos días la app muerta y el vigilante de la
+     * v12.70c dio por fin la posición exacta: línea 13532, columna 14 del
+     * bloque grande, que es LA COMILLA DE APERTURA de esta URL. Y el panel
+     * Sources de su navegador enseñaba la línea servida así:
+     *
+     *     a.href = 'https:
+     *
+     * Cortada justo en la doble barra, con el resto de líneas intactas y
+     * numeradas igual. Una cadena que se queda sin cerrar da exactamente
+     * «Invalid or unexpected token» en su comilla de apertura, y un error de
+     * compilación no ejecuta NI UNA línea del bloque: la app entera muerta
+     * por una dirección de correo en el pie de una ventana de novedades.
+     *
+     * Lo honesto es decir qué no sé: no sé QUÉ corta ahí. Hay siete URLs con
+     * doble barra antes que ésta en el mismo bloque y ninguna se corta, así
+     * que no es un quitador de comentarios a secas. Lo que sí está medido es
+     * dónde revienta, y esa línea ya no existe.
+     *
+     * Por eso va a trozos y con los caracteres de riesgo por código: no queda
+     * ni una doble barra ni un «&» literal dentro de una cadena en esta
+     * línea. Es feo y es barato. Lo que no es barato es que la app no
+     * arranque, y menos por el enlace de soporte.
+     *
+     * Y hay una nota dos párrafos más arriba, escrita hace semanas, que dice
+     * que «un quitador de comentarios se atraganta con el `//` de cualquier
+     * URL». La predicción estaba escrita encima de la línea que acabó
+     * cumpliéndola. Es la undécima vez en este proyecto. */
+    var DOSBARRAS = String.fromCharCode(47, 47);
+    var AMP       = String.fromCharCode(38);
+    a.href = 'https:' + DOSBARRAS + 'mail.google.com/mail/' +
+             '?view=cm' + AMP + 'fs=1' + AMP + 'to=' +
+             encodeURIComponent(ACOPIO_SOPORTE) +
+             AMP + 'su=' + encodeURIComponent('Acopio ' + APP_VERSION + ' - ');
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = ACOPIO_SOPORTE;
+    pie.appendChild(a);
+    pie.appendChild(document.createTextNode('.'));
+    cuerpo.appendChild(pie);
+  }
+}
+
+function abrirNovedades(){
+  /* Siempre se puede abrir a mano, haya novedad o no: es el sitio fijo. Cuando
+   * la versión de este archivo no está en la lista —una instalación con un
+   * archivo más nuevo que esta ventana, o más viejo— se enseña la primera, que
+   * es la más reciente que el archivo conoce. Nunca se queda en blanco. */
+  var entrada = null;
+  for (var i = 0; i < NOVEDADES.length; i++){
+    if (NOVEDADES[i].ver === APP_VERSION){ entrada = NOVEDADES[i]; break; }
+  }
+  if (!entrada) entrada = NOVEDADES[0];
+  _nvPintar(entrada);
+  var ov = document.getElementById('novedadesOverlay');
+  if (ov) ov.classList.add('show');
+  /* Se marca como vista al ABRIR, no al cerrar: si alguien la cierra con la ✕,
+   * con Escape o cerrando la pestaña, ya la vio. Marcarla sólo en el botón
+   * «Got it» la haría volver a salir mañana a quien la leyó y cerró con la ✕,
+   * que es la forma más rápida de convertir esto en lo que no queríamos. */
+  _nvGuardar(APP_VERSION);
+  _nvPintarPunto();
+}
+
+function cerrarNovedades(){
+  var ov = document.getElementById('novedadesOverlay');
+  if (ov) ov.classList.remove('show');
+  _nvPintarPunto();
+}
+
+/* Al arrancar. Va detrás de que la app esté pintada —no compite con la carga—
+ * y detrás del popup de la mañana, que sí es urgente: lo que llegó hoy a la
+ * bodega manda sobre lo que cambió en la app. */
+function _nvAlArrancar(){
+  var vista = _nvVista();
+  if (!vista){ _nvGuardar(APP_VERSION); _nvPintarPunto(); return; }  /* primera visita */
+  if (vista === APP_VERSION){ _nvPintarPunto(); return; }
+  _nvPintarPunto();
+  setTimeout(function(){
+    /* Si hay cualquier otra ventana abierta, no se apila encima: dos ventanas
+     * una sobre otra es el error que costó la v11.29. Se queda el punto, y la
+     * persona la abre cuando quiera. */
+    if (document.querySelector('.overlay.show')) return;
+    abrirNovedades();
+  }, 2500);
+}
 
 function openLegal(which){
   var doc = LEGAL_DOCS[which];
@@ -25797,6 +28800,14 @@ window.addEventListener('error', function(e){
 window.addEventListener('unhandledrejection', function(){
   try { _hideSplash(); } catch (x) {}
 });
+
+/* LA BANDERA DEL VIGILANTE, y va aquí por un motivo exacto: ésta es la ÚLTIMA
+ * línea ejecutable del bloque grande. Puesta en cualquier otro sitio diría «he
+ * llegado hasta aquí», que no es lo que hace falta saber; puesta aquí dice «he
+ * compilado y corrido de principio a fin», que es lo único que descarta el
+ * fallo contra el que vigila. Ver la nota larga del bloque pequeño, arriba del
+ * TOPBAR, para qué pasa cuando esto no se pone. */
+window.__acopioArranco = true;
 
 // Start
 loadDataFromGoogle();
