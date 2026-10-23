@@ -498,7 +498,25 @@
     .btn-icon{background:transparent;border:none;font-size:var(--fs-2xl);cursor:pointer;transition:.15s;padding:2px}
     .btn-icon:hover{transform:scale(1.15)}
     /* ── TABLES ── */
-    .table-wrapper{overflow-x:auto;max-height:65vh;overflow-y:auto;position:relative}
+    /* ══ LA BARRA QUE APARECE ES LA QUE MUEVE LAS COLUMNAS ═══════════════════
+       Jose, 20/10, con un vídeo de Movements cambiando de categoría: *"el
+       ligero movimiento en las columnas al cambiar de categoría y estado"*.
+
+       Durante días busqué esto en el reparto de la tabla y no estaba ahí: los
+       anchos no se mueven. Lo que se mueve es **el ancho disponible**. Con
+       `overflow-y:auto` la barra vertical aparece cuando hay muchas filas y se
+       va cuando hay pocas, y al hacerlo se lleva o devuelve sus ~15 px — así
+       que todas las columnas se corren ese tanto. Filtrar cambia el número de
+       filas, luego filtrar mueve las columnas.
+
+       No era la tabla: era la barra de al lado. Por eso siete filtros medidos
+       en una prueba con filas de sobra no lo enseñaban nunca — en todos salía
+       la barra.
+
+       `scrollbar-gutter:stable` reserva ese sitio SIEMPRE, haya barra o no. El
+       ancho disponible deja de depender de cuántas filas hay. */
+    .table-wrapper{overflow-x:auto;max-height:65vh;overflow-y:auto;position:relative;
+      scrollbar-gutter:stable}
     /* separate + 0 spacing, not collapse: Chrome mis-paints collapsed borders on
        sticky <th> whenever the table repaints (e.g. a detail row expanding),
        leaving thin gaps of the page background between header cells. Separate
@@ -1077,6 +1095,37 @@
        distinguía poco de un botón normal; a .4 se lee de un vistazo que no es
        para ahora. Al pasar el ratón sube sólo un poco: lo justo para que se vea
        que contesta, sin fingir que está disponible. */
+    /* ══ LA ✕ QUE VACÍA UN CAMPO ═════════════════════════════════════════════
+       Jose, 20/10: *"es molesto tener que darle clic a los lugares donde se
+       escribe y tener que borrar letra por letra o seleccionar con el mouse y
+       borrar, debemos poner una 'X' dentro que elimine lo que escribimos
+       enseguida"*.
+
+       SE ENVUELVE EL CAMPO, no se le ponen coordenadas a mano. Un `top`/`left`
+       calculado en píxeles hay que recalcularlo al cambiar el tamaño de la
+       ventana, al abrir un modal, al esconder una columna — y el día que no se
+       recalcule, la ✕ queda flotando sobre otra cosa. Envuelto, lo coloca el
+       navegador y no hay nada que mantener.
+
+       El envoltorio copia el `display` y el ancho del campo para no romper las
+       filas donde ya vivía: unos están en una barra de herramientas y otros
+       ocupan el ancho entero de su `.field`. */
+    .tiene-x{position:relative;display:inline-block}
+    .tiene-x.ancho{display:block;width:100%}
+    .tiene-x > .campo-x{position:absolute;top:0;bottom:0;right:.45rem;margin:auto;
+      width:18px;height:18px;line-height:16px;text-align:center;border:0;padding:0;
+      border-radius:50%;background:var(--border);color:var(--text);opacity:.55;
+      font-size:12px;cursor:pointer;display:none}
+    .tiene-x > .campo-x:hover{opacity:1}
+    /* Sólo cuando hay algo que borrar. Una ✕ sobre un campo vacío es un botón
+       que no hace nada, y de esos la app ya tuvo bastantes. */
+    .tiene-x.con-texto > .campo-x{display:block}
+    /* Sitio para la ✕ dentro del campo, para que no se monte sobre el texto. */
+    .tiene-x.con-texto > input,
+    .tiene-x.con-texto > textarea{padding-right:var(--sp-7)}
+    /* En un `textarea` el centro vertical sería la mitad de la caja; arriba. */
+    .tiene-x > textarea ~ .campo-x{top:.5rem;bottom:auto;margin:0}
+
     .pro-lock{position:relative;opacity:.4;filter:grayscale(1)}
     .pro-lock:hover{opacity:.62}
     .pro-lock::after{content:'🔒';font-size:.7em;margin-left:var(--sp-1);opacity:.85}
@@ -1472,6 +1521,24 @@
     .inc-suggest-item .inc-tag{font-size:var(--fs-xs);font-weight:700;background:#DBEAFE;color:var(--accent2);border-radius:var(--r-pildora);padding:var(--pad-pildora);flex-shrink:0}
     .inc-suggest-item>span:not(.inc-tag):not(.inc-meta){flex:1 1 100px;min-width:0;overflow-wrap:break-word;word-break:break-word}
     .inc-suggest-item .inc-meta{font-size:var(--fs-sm);color:var(--muted);margin-left:auto;flex-shrink:0;max-width:100%}
+    /* ── LA LISTA DE LO QUE ESTÁ FUERA (RETURN) ──────────────────────────────
+       Es la MISMA caja que la de bodega —un solo cuadro cuelga del nombre y una
+       sola función lo gobierna— pero cada fila lleva un dato más: el sitio
+       donde está. Con 260px el nombre y el sitio se pisan, así que la caja se
+       ensancha sólo mientras muestra esta lista. El tope en vw de arriba sigue
+       mandando, que es lo que la salva en un teléfono.
+
+       OJO CON LA ESPECIFICIDAD, que casi me come: la regla de arriba
+       `.inc-suggest-item>span:not(.inc-tag):not(.inc-meta)` vale 0-3-1 y le
+       pone `flex:1 1 100px` a CUALQUIER span de la fila. Un `.fuera-sitio`
+       suelto vale 0-1-0 y pierde en silencio: el sitio se quedaría en la misma
+       línea, apretado. De ahí el selector largo de abajo —misma cuenta, pero
+       escrito después, así que gana. */
+    .inc-suggest-box.caja-fuera{width:360px}
+    .caja-fuera .inc-suggest-item>span.fuera-sitio{flex:1 1 100%;font-size:var(--fs-sm);
+      color:var(--muted);display:flex;align-items:center;gap:.3rem;overflow-wrap:anywhere}
+    .caja-fuera .inc-meta{font-weight:700;color:var(--accent2)}
+    .fuera-nada{padding:var(--sp-4) var(--sp-5);font-size:var(--fs-sm);color:var(--muted);line-height:1.45}
     /* ── CONFIRM DIALOG ── */
     .cconfirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:var(--z-confirm);display:none;align-items:center;justify-content:center;padding:var(--sp-6)}
     .cconfirm-overlay.show{display:flex}
@@ -1926,6 +1993,29 @@
        dieciséis columnas no caben en 960px, y una barra horizontal es mejor que
        un texto que no se puede leer. */
     #tableContainer table{table-layout:fixed;width:100%}
+
+    /* ══ Y EL DASHBOARD, QUE SE QUEDÓ FUERA HASTA LA v12.79 ═══════════════════
+       Jose, 19/10, repasando la app entera: *"revisé el salto y movimiento de
+       las filas y columnas, y la mayoría está bien y no se mueven en
+       'Movements', pero en el 'Dashboard' sí se mueven y saltan algunas según
+       cambio de categorías y estado"*.
+
+       Lo raro es que el trabajo ya estaba hecho a medias: `STOCK_COLS` lleva su
+       ancho en cada columna desde siempre, y la v12.22 le puso el mínimo
+       calculado. Lo que faltaba era ESTA LÍNEA. Sin `table-layout:fixed` un
+       ancho declarado es una SUGERENCIA: el navegador la usa de punto de
+       partida y luego reparte por lo que haya dentro. Tres cuartas partes del
+       mecanismo puestas, y la que las ata, no.
+
+       POR QUÉ SOBREVIVIÓ: `tools/test-columnas.js` mide las columnas bajo siete
+       filtros y falla si alguna se mueve... pero sólo medía `#movHeadRow`. La
+       prueba demostraba que Movements estaba quieto, y de la tabla de al lado
+       no decía nada. Ahora mide las dos. Una prueba que cubre media pantalla
+       certifica media pantalla. */
+    #stockTable{table-layout:fixed;width:100%}
+    /* Y lo que no cabe se parte, no se recorta — misma regla que Movements: el
+       final de un nombre es donde están la letra y el número que lo distinguen. */
+    #stockTable td{overflow-wrap:anywhere}
     /* Y lo que no cabe SE PARTE, no se recorta. Es la misma regla que Jose fijó
        para la tira de reservas: el final de un nombre es donde están la letra y
        el número que lo distinguen, así que esconderlo con puntos suspensivos es
@@ -2573,7 +2663,7 @@
     /* One place for the pace of the whole pile. Jose asked for "2 out of 5" —
        unhurried enough that the eye follows what moved, short of the point
        where waiting for it becomes the feeling. */
-    .deck{--deck-in:.62s;--deck-out:.5s;--deck-ease:cubic-bezier(.22,.61,.36,1);--deck-step:55ms}
+    .deck{--deck-in:.62s;--deck-out:.78s;--deck-ease:cubic-bezier(.22,.61,.36,1);--deck-step:55ms}
     /* transform-origin lives HERE, unconditionally, not only on the resting
        rule below. It used to be set only while the pile was closed, so the
        instant the pile opened that rule stopped matching and the origin
@@ -2665,6 +2755,40 @@
     .deck-card.saliendo-descartada{opacity:0;pointer-events:none;
       margin-bottom:calc(-1 * (var(--card-h) + .45rem));transition-delay:0s!important}
     .deck-card.saliendo-aceptada{transform:translateX(-22%) scale(.94)}
+    /* ══ LA QUE ENTRA SE VE ENTRAR ════════════════════════════════════════════
+       Jose, 20/10: *"ahora se ve mejor, pero eso no quiere decir que se vea
+       profesional; aún creo que la tarjeta que entra debe verse ENTRANDO en el
+       espacio, y la que se elimina debe demorar un poco más"*.
+
+       Antes el relevo aparecía de golpe: el mazo se redibuja entero con
+       `innerHTML`, así que la tarjeta nueva simplemente estaba ahí. Una
+       aparición instantánea al lado de una salida lenta se lee como un fallo de
+       dibujo, no como que llegó algo.
+
+       SE MUEVE CON `margin-left`, NO CON `transform`, y eso es deliberado: la
+       pila usa `transform` para el abanico y para la escala de reposo —abierta
+       al 100%, cerrada más pequeña—, así que una animación que lo tocara
+       pelearía con esas reglas y la tarjeta acabaría del tamaño equivocado.
+       El margen no lo toca nadie más. */
+    @keyframes deck-llega{from{opacity:0;margin-left:var(--sp-9)}to{opacity:1;margin-left:0}}
+    .deck-card.llegando{animation:deck-llega var(--deck-in) var(--deck-ease) both}
+    /* ══ CUANDO HAY RELEVO, EL HUECO NO SE DEVUELVE ═══════════════════════════
+       Jose, 19/10: *"al eliminar una se borra, todas se ruedan para arriba y en
+       menos de 1 segundo después todas se bajan para dejar entrar a la que
+       estaba afuera, y ésta se pone arriba... parece un error"*.
+
+       Y tiene razón: son DOS movimientos donde hay UN cambio. El margen
+       negativo de arriba hace que el resto suba a ocupar el hueco —que es lo
+       correcto cuando la pila se queda más corta— pero si había tarjetas
+       esperando fuera, el redibujado mete la siguiente y la pila vuelve a su
+       altura: todas bajan otra vez.
+
+       Con relevo, la pila NO cambia de altura, así que no tiene por qué
+       moverse. La tarjeta se va y la siguiente aparece en su sitio. Una baraja
+       se comporta así: quitas la de arriba y ves la de abajo, no se mueve el
+       montón entero dos veces. */
+    .deck-card.saliendo-aceptada.conserva-hueco,
+    .deck-card.saliendo-descartada.conserva-hueco{margin-bottom:0}
     /* Leaving. The card slides out to the right and gives its height back over
        the same beat, so everything below rises into the gap instead of jumping.
        margin-bottom is what moves the others: shrinking it by the card's own
@@ -3279,9 +3403,50 @@
     .toast-msg{flex:1;line-height:1.4}
     .toast-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.9rem;padding:0 0 0 .35rem;line-height:1;flex-shrink:0;align-self:flex-start}
     .toast-close:hover{color:var(--text)}
+    /* EL BOTÓN DEL AVISO. Se ve como un botón y no como un enlace a propósito:
+       es la única forma de llegar a las etiquetas después de guardar, y algo
+       que hay que pulsar tiene que parecer pulsable. Von Restorff: en un aviso
+       que es todo texto gris, un rectángulo con color salta sin gritar. */
+    .toast-accion{background:var(--accent);border:none;color:#fff;cursor:pointer;
+      font-size:var(--fs-md);font-weight:700;padding:var(--sp-2) var(--sp-5);
+      border-radius:var(--r-btn);margin-left:var(--sp-3);flex-shrink:0;
+      align-self:center;white-space:nowrap}
+    .toast-accion:hover{filter:brightness(1.08)}
+    .toast-accion:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+    /* ── UNA SECCIÓN PLEGADA ──────────────────────────────────────────────
+       Tiene que parecer pulsable sin parecer un botón de acción: lo que hay
+       detrás no es «hacer algo», es «ver el resto». De ahí el borde punteado,
+       que en este archivo ya significa «aquí se añade» (+ Add Location, + Add
+       Another Material). Jakob: que se parezca a lo que ya hay. */
+    .seccion-plegada{display:flex;width:100%;align-items:center;justify-content:space-between;
+      gap:var(--sp-4);background:none;border:1px dashed var(--border);border-radius:var(--r-btn);
+      padding:var(--sp-4) var(--sp-5);cursor:pointer;color:var(--muted);
+      font-size:var(--fs-base);font-weight:600;text-align:left;transition:border-color .15s,color .15s}
+    .seccion-plegada:hover{border-color:var(--accent);color:var(--accent)}
+    .seccion-plegada:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+    .seccion-abrir{font-size:var(--fs-4xl);font-weight:700;line-height:1;flex-shrink:0}
+    /* `display:none !important` y no un `style` en la etiqueta: estos campos
+       los enciende y apaga `setModalType` escribiendo `style.display`, así que
+       una regla sin `!important` perdería contra lo que esa función acaba de
+       poner. Son las dos únicas cosas que tocan la visibilidad de un campo y
+       tienen que poder convivir sin pisarse. */
+    .field.campo-plegado{display:none !important}
+    .campos-mas{grid-column:1/-1;justify-self:start;background:none;border:none;
+      color:var(--accent);cursor:pointer;font-size:var(--fs-sm);font-weight:600;
+      padding:var(--sp-2) 0;text-align:left}
+    .campos-mas:hover{text-decoration:underline}
+    .campos-mas:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
     .toast.fade-out{animation:toastOut .3s ease forwards}
     @keyframes toastIn {from{opacity:0;transform:translateY(-18px) scale(.96)} to{opacity:1;transform:translateY(0) scale(1)}}
     @keyframes toastOut{from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-12px) scale(.95)}}
+    /* EL GOLPECITO DE «YA TE OÍ». El aviso de Pro es uno solo, así que al
+       volver a pulsar el mismo candado no aparece nada nuevo — y sin esto
+       parecería que el clic no hizo nada, que es lo que lleva a seguir
+       pulsando. Es un empujón de 6px, no una sacudida: el que pulsa no se ha
+       equivocado, sólo ha insistido. */
+    @keyframes pro-reavisa{0%{transform:translateX(0)}30%{transform:translateX(6px)}60%{transform:translateX(-4px)}100%{transform:translateX(0)}}
+    .toast.pro-reavisa{animation:pro-reavisa .26s ease}
+    @media (prefers-reduced-motion:reduce){ .toast.pro-reavisa{animation:none} }
     /* ── LA LÍNEA DE PROGRESO ───────────────────────────────────────────────
        Jose, 2026-09-15: "en lugar de mostrar los toasts de cada eliminación,
        ¿no sería mejor usar lo que Google usa en el Drive al cargar un archivo
@@ -4322,7 +4487,7 @@
         <button class="btn btn-ghost btn-sm" onclick="clearStockSelection()">Clear</button>
       </div>
       <div class="table-wrapper">
-        <table>
+        <table id="stockTable">
           <thead><tr id="stockHeadRow"></tr></thead>
           <tbody id="stockBody"></tbody>
         </table>
@@ -5023,8 +5188,15 @@
       </div>
       <div class="field" id="mNameField" style="position:relative">
         <label>Name / Description</label>
+        <!-- EL `onfocus` ES LO QUE HACE ÚTIL EL RETURN. En una salida se
+             escribe el nombre porque se sabe cuál es; al devolver no se sabe
+             —por eso Jose pidió la lista—, y una lista que sólo aparece tras
+             teclear dos letras no se encuentra nunca. Al entrar en el campo
+             sale lo que está fuera de bodega en esta categoría; a partir de la
+             tercera letra se filtra. En las demás pantallas el foco no muestra
+             nada: con el campo vacío la caja se esconde igual que siempre. -->
         <input type="text" id="mName" list="matList" placeholder="Type or select..."
-               oninput="_checkStockSuggest(this)">
+               oninput="_checkStockSuggest(this)" onfocus="_checkStockSuggest(this)">
         <datalist id="matList"></datalist>
         <datalist id="matNameList"></datalist>
         <div class="inc-suggest-box" id="stockSuggestBox" style="display:none"></div>
@@ -5277,6 +5449,12 @@
         <input type="text" id="mPM" list="pmNameList" placeholder="Name of project manager">
         <datalist id="pmNameList"></datalist>
       </div>
+      <!-- LA PUERTA DE VUELTA, y está siempre. Ver `_plegarCamposSinUso`: lo
+           que se pliega no desaparece, se esconde detrás de esta línea, que
+           dice cuántos campos hay dentro. Plegar sin dejar por dónde volver
+           cambiaría un problema por otro peor. -->
+      <button type="button" class="campos-mas" id="camposMas" style="display:none"
+              onclick="_abrirCamposMas()">+ more fields</button>
       <div class="field" id="mStatusField" style="display:none">
         <label>Status</label>
         <select id="mStatus">
@@ -5295,21 +5473,40 @@
       </div>
     </div>
 
-    <!-- ── Document Builder (ENTRY only) ── -->
+    <!-- ── Document Builder (ENTRY only) ──
+         PLEGADA DESDE LA v12.87. Jose, 21/10, marcando este bloque en una
+         captura: *"quiero que todas las cosas que no se usen no molesten en la
+         pantalla o ventana"*.
+
+         Ocupaba un bloque entero —cabecera, botón de IA, una tarjeta de
+         documento con Cámara / Archivos / Drive, y «+ Add Document»— siempre
+         desplegado, entre los campos y el botón de guardar. Adjuntar un albarán
+         no es un dato del movimiento: es algo que se hace a veces y después.
+         Ahora es una línea que se abre al pulsarla, y se abre SOLA en cuanto
+         hay algo dentro. Ver `_docsPlegar`. -->
     <div class="file-section" id="fileSection" style="display:none;margin-top:.75rem">
-      <div class="doc-builder-hdr">
-        <label class="sec-label" style="margin:0">📎 Documents</label>
-        <button id="btnAiExtract" class="btn btn-ghost btn-sm" onclick="aiExtractFromModal()"
-          title="Take a photo of the invoice and AI will fill the fields for you"
-          style="border-color:var(--purple);color:var(--purple);font-size:.75rem">
-          🪄 AI Extract
-        </button>
+      <button type="button" class="seccion-plegada" id="fileToggle" onclick="_docsAbrir()">
+        <span>📎 Add documents</span>
+        <span class="seccion-abrir">+</span>
+      </button>
+      <div id="fileBody" style="display:none">
+        <div class="doc-builder-hdr">
+          <label class="sec-label" style="margin:0">📎 Documents</label>
+          <button id="btnAiExtract" class="btn btn-ghost btn-sm" onclick="aiExtractFromModal()"
+            title="Take a photo of the invoice and AI will fill the fields for you"
+            style="border-color:var(--purple);color:var(--purple);font-size:.75rem">
+            🪄 AI Extract
+          </button>
+        </div>
+        <!-- Doc groups rendered here by JS -->
+        <div id="docGroupsContainer"></div>
+        <button id="btnAddDoc" class="btn btn-ghost btn-sm" onclick="addDocGroup()" style="margin-top:.35rem;font-size:.8rem">+ Add Document</button>
+        <div id="aiExtractStatus" style="display:none;margin-top:.5rem;font-size:.78rem;padding:.4rem .6rem;border-radius:6px;background:var(--purple-bg);color:var(--purple)"></div>
       </div>
-      <!-- Doc groups rendered here by JS -->
-      <div id="docGroupsContainer"></div>
-      <button id="btnAddDoc" class="btn btn-ghost btn-sm" onclick="addDocGroup()" style="margin-top:.35rem;font-size:.8rem">+ Add Document</button>
-      <div id="aiExtractStatus" style="display:none;margin-top:.5rem;font-size:.78rem;padding:.4rem .6rem;border-radius:6px;background:var(--purple-bg);color:var(--purple)"></div>
-      <!-- Hidden file input (kept for AI extract compatibility) -->
+      <!-- Hidden file input (kept for AI extract compatibility). FUERA del
+           cuerpo plegable: lo usa la extracción con IA, que puede dispararse
+           desde otro sitio, y un input escondido dentro de algo escondido es
+           la clase de detalle que falla un martes. -->
       <input type="file" id="legacyFileInput" class="mFile" accept="image/*,.pdf,video/*" style="display:none">
     </div>
 
@@ -5570,7 +5767,7 @@ var _MOV_PAGE_SZ = 75;   // rows per page in Movements tab
 var chartsReady = false;
 // Version handshake — must match APP_VERSION in Code.gs. If they differ, one
 // file was deployed without the other; loadDataFromGoogle shows a warning banner.
-var APP_VERSION = '12.78';
+var APP_VERSION = '12.87';
 // Build fingerprint — a short hash of the two shipped files, written by
 // tools/build-fingerprint.js and shown next to the version in the app.
 //
@@ -5582,7 +5779,7 @@ var APP_VERSION = '12.78';
 // part that matters in docs/LICENCIA-E-INTEGRIDAD.md.
 //
 // Never edit this by hand. Run: node tools/build-fingerprint.js --stamp
-var APP_BUILD = 'c3500714';
+var APP_BUILD = 'c6eeee05';
 var userRole = 'WAREHOUSE';
 /* QUÉ EDICIÓN ES. La manda el servidor con los datos iniciales; el navegador
  * NO la declara por su cuenta a propósito. Si hubiera una constante aquí y otra
@@ -10765,7 +10962,41 @@ function setModalType(type){
   if (multiMatSection) multiMatSection.style.display = 'none';
   var multiExitSectionEl = document.getElementById('multiExitSection');
   if (multiExitSectionEl) multiExitSectionEl.style.display = 'none';
-  if (mPMField)   mPMField.style.display   = 'none';  // only for ENTRY
+  if (mPMField)   mPMField.style.display   = 'none';  // ENTRY y RETURN
+
+  /* ── EL CAMIÓN APARECE SI LA BODEGA TIENE CAMIONES ───────────────────────
+   *
+   * Jose, 21/10: *"si alguna bodega maneja camiones, ¿deberíamos poner una
+   * forma de que el usuario ingrese su número o nombre, o le diga cuáles desde
+   * una lista, pero que no moleste si no los tiene?"*.
+   *
+   * Estaba TODO construido desde hace tiempo —el campo, el desplegable que se
+   * llena solo, el guardado, la búsqueda, la exportación, y la gestión en el
+   * servidor con persona asignada y estado— y el campo tenía `display:none` en
+   * el HTML sin que nada lo encendiera nunca. Una función entera inalcanzable.
+   *
+   * Y su pregunta se contesta sola sin aprender nada del historial, al revés
+   * que los campos de abajo: **la lista de camiones YA ES la respuesta**. Sin
+   * camiones registrados el campo no existe para esa bodega; en cuanto se
+   * registra uno, aparece. */
+  var mTruckField = document.getElementById('mTruckField');
+  if (mTruckField) {
+    var hayCamiones = ((config && config.trucks) || []).some(function(t){
+      return t && t.status !== 'INACTIVE';
+    });
+    mTruckField.style.display = hayCamiones ? 'flex' : 'none';
+  }
+  /* Y el saldo de «lo que está fuera» se tira en CADA cambio de tipo. Es un
+   * número que sale de leer el archivo entero, y guardarlo de una pantalla a la
+   * siguiente es ofrecer devolver algo que otro ya devolvió. Ver `_fueraPedir`.
+   *
+   * El cuadro se cierra aquí mismo, y no al siguiente tecleo: la lista se abre
+   * sola al entrar en el campo, así que al cambiar de pestaña se queda flotando
+   * encima del formulario nuevo hasta que alguien escriba algo. Lo enseñó la
+   * prueba. */
+  if (typeof _fueraOlvidar === 'function') _fueraOlvidar();
+  var cajaSug = document.getElementById('stockSuggestBox');
+  if (cajaSug){ cajaSug.style.display = 'none'; cajaSug.classList.remove('caja-fuera'); }
 
   // Point rackListDest at racks by default
   mDestDl.id = 'rackListDest';
@@ -10847,6 +11078,15 @@ function setModalType(type){
     /* Y EL QUE SÍ AGRUPA. Es lo único que esta versión añade al RETURN, y es
      * todo lo que hacía falta para contestar «qué sobró de qué obra». */
     _origProjMostrar(true, 'Came back from (project)');
+    /* EL JEFE DE OBRA SE VE AQUÍ, y hasta ahora no. No es un capricho de la
+     * lista nueva: el campo estaba escondido en esta pantalla pero `_doSubmit`
+     * lo lee SIEMPRE, sin mirar el tipo. Así que quien escribía un PM en una
+     * entrada y luego cambiaba a RETURN sin cerrar la ventana guardaba ese
+     * nombre sin verlo nunca —el reset de `openMoveModal` sólo corre al abrir,
+     * no al cambiar de pestaña—. Mostrarlo arregla eso y le da sitio visible a
+     * lo que la lista rellena: un dato que la app escribe sola tiene que poder
+     * verse y corregirse. */
+    if (mPMField) mPMField.style.display = 'flex';
     dateLabel.textContent = 'Date Returned';
     respLabel.textContent = 'Returned By';
     mStatus.value = 'In Stock';
@@ -10887,6 +11127,122 @@ function setModalType(type){
 
   updateMatList();
   checkStock();
+  _plegarCamposSinUso();
+}
+
+/* ══ LOS CAMPOS QUE ESTA BODEGA NUNCA LLENA ═════════════════════════════════
+ *
+ * Jose, 21/10: *"quiero que todas las cosas que no se usen no molesten en la
+ * pantalla o ventana... analiza qué cosas puedes esconder detrás de un checkbox
+ * y deja la ventana mucho más limpia"*.
+ *
+ * ── POR QUÉ NO ES UN CHECKBOX ──────────────────────────────────────────────
+ *
+ * Porque un checkbox es UNA DECISIÓN MÁS que tomar —la ley de Hick de la propia
+ * lámina que mandó Jose— y encima hay que acordarse de ir a marcarlo. Y no hace
+ * falta preguntarlo: **la app ya sabe la respuesta**. Tiene todos los
+ * movimientos que esa instalación ha guardado.
+ *
+ *     Un campo que lleva sesenta movimientos vacío es ruido PARA ESA BODEGA.
+ *
+ * Hay almacenes que llenan GC, PO y jefe de obra en cada entrada, y hay
+ * almacenes que no han escrito uno solo en su vida. La misma ventana no puede
+ * ser la correcta para los dos, y el que decide no debería ser el usuario
+ * marcando casillas: debería ser lo que ya hizo.
+ *
+ * ── LAS CUATRO REGLAS QUE LO HACEN SEGURO ──────────────────────────────────
+ *
+ * 1. CON POCA HISTORIA NO SE ESCONDE NADA. Por debajo de `MINIMO_HISTORIA`
+ *    movimientos no hay con qué opinar, y una instalación recién hecha
+ *    escondiendo campos sería la app decidiendo por una bodega que todavía no
+ *    ha dicho nada. Un sitio nuevo los ve todos.
+ * 2. NUNCA SE ESCONDE UN CAMPO CON VALOR. Si algo lo rellenó —una entrega
+ *    esperada, el historial del material, la persona— se queda a la vista.
+ *    Esconder un dato que ya está puesto es hacerlo desaparecer.
+ * 3. LA PUERTA ESTÁ SIEMPRE A LA VISTA. La línea «+ N campos más» no
+ *    desaparece nunca y dice cuántos esconde. Plegar sin dejar por dónde volver
+ *    cambia un problema por otro peor: alguien nuevo que no encuentra el campo
+ *    que necesita.
+ * 4. UNA VEZ ABIERTA, SE QUEDA ABIERTA toda la sesión. Quien la abrió está
+ *    buscando algo; volver a plegársela en el siguiente movimiento sería
+ *    discutir con él.
+ *
+ * Y no hace falta guardar nada: en cuanto se guarda UN movimiento con ese campo
+ * lleno, el propio historial lo devuelve a la vista. El recuerdo es el dato.
+ */
+var CAMPOS_PLEGABLES = [
+  { caja: 'mSupField',      lee: 'supplier'    },
+  { caja: 'mGCField',       lee: 'gc'          },
+  { caja: 'mPOField',       lee: 'po'          },
+  { caja: 'mProjField',     lee: 'project'     },
+  { caja: 'mPMField',       lee: 'pm'          },
+  { caja: 'mRespFieldWrap', lee: 'responsible' }
+];
+var MINIMO_HISTORIA = 25;   // por debajo de esto no se opina
+var MIRA_ULTIMOS    = 60;   // y se mira esta ventana de historia
+var _camposAbiertos = false;   // la regla 4, y vive sólo en esta sesión
+
+function _camposMas(){ return document.getElementById('camposMas'); }
+
+/** Qué campos lleva esta bodega sin usar. Devuelve [] cuando no hay historia
+ *  suficiente para decir nada, que NO es lo mismo que «los usa todos». */
+function _camposSinUso(){
+  var hist = (typeof movements !== 'undefined' && movements) ? movements : [];
+  if (hist.length < MINIMO_HISTORIA) return [];
+  var ultimos = hist.slice(-MIRA_ULTIMOS);
+  return CAMPOS_PLEGABLES.filter(function(c){
+    return !ultimos.some(function(m){
+      var v = m && m[c.lee];
+      /* GENERIC es el relleno que la app pone cuando no hay proyecto, así que
+       * no cuenta como que alguien escribió uno. Sin esto, «Project» no se
+       * plegaría nunca en ninguna instalación. */
+      v = String(v == null ? '' : v).trim();
+      return v && v.toUpperCase() !== 'GENERIC';
+    });
+  });
+}
+
+function _plegarCamposSinUso(){
+  var linea = _camposMas();
+  if (!linea) return;
+
+  /* Se parte siempre de todo visible y se esconde después, en vez de recordar
+   * qué se escondió la vez anterior: `setModalType` acaba de decidir qué campos
+   * tienen sentido para ESTE tipo de movimiento, y mezclar las dos decisiones
+   * sería volver a tener dos cosas que coordinar. */
+  CAMPOS_PLEGABLES.forEach(function(c){
+    var el = document.getElementById(c.caja);
+    if (el) el.classList.remove('campo-plegado');
+  });
+  linea.style.display = 'none';
+
+  if (_camposAbiertos) return;
+
+  var sinUso = _camposSinUso().filter(function(c){
+    var el = document.getElementById(c.caja);
+    if (!el) return false;
+    /* Sólo se pliega lo que este tipo de movimiento mostraba. Lo que
+     * `setModalType` ya escondió no se cuenta: decir «+ 3 campos más» y abrir
+     * para encontrar dos sería mentir con un número. */
+    if (el.style.display === 'none') return false;
+    var inp = el.querySelector('input, select, textarea');
+    if (inp && String(inp.value || '').trim()) return false;   // regla 2
+    return true;
+  });
+
+  if (!sinUso.length) return;
+
+  sinUso.forEach(function(c){
+    var el = document.getElementById(c.caja);
+    if (el) el.classList.add('campo-plegado');
+  });
+  linea.textContent = '+ ' + sinUso.length + ' more field' + (sinUso.length === 1 ? '' : 's');
+  linea.style.display = '';
+}
+
+function _abrirCamposMas(){
+  _camposAbiertos = true;
+  _plegarCamposSinUso();
 }
 
 // The quantity badge on the TRANSFER/RETURN/WASTE material box — the same
@@ -11973,6 +12329,44 @@ async function submitMovement(){
     comments = adjust.reason + (adjust.note ? ' — ' + adjust.note : '');
   }
 
+  /* ── DEVOLVER MÁS DE LO QUE SALIÓ ──────────────────────────────────────────
+   *
+   * Jose, 21/10, eligiendo entre cuatro salidas: *"avisar y dejar pasar, y
+   * anotarlo"*. Y es la correcta: rechazar la devolución deja a alguien con el
+   * material en la mano y sin forma de registrarlo, y como el cliente no entra
+   * nunca a la hoja, se queda sin salida ninguna.
+   *
+   * LAS DOS MITADES DE SU REGLA, y la primera importa tanto como la segunda:
+   *
+   *   · Si el material NO tiene ninguna salida registrada, se guarda SIN DECIR
+   *     NADA. La historia de cualquier bodega empieza a mitad, y algo que salió
+   *     antes de instalar Acopio es una devolución legítima de la que ningún
+   *     registro puede saber. Avisar ahí sería avisar de lo normal, y un aviso
+   *     que salta en lo normal se aprende a cerrar sin leer.
+   *   · Si SÍ tiene salidas y la cantidad se pasa, se pregunta antes.
+   *
+   * ES UN AVISO, NO UN GUARDIA. El saldo sale del caché que la lista de «lo que
+   * está fuera» cargó al abrir la pantalla, así que puede estar viejo si otro
+   * devolvió algo hace un minuto. Por eso no bloquea — y por eso la cuenta de
+   * verdad, la que acaba escrita, tiene que hacerla el servidor. Eso es la otra
+   * mitad y está en el backlog: la tarjeta de ajuste que Jose diseñó. */
+  if (currentMoveType === 'RETURN'){
+    var sobra = _fueraSobrante(cat, name, srcVal, qty);
+    if (sobra){
+      _showConfirm({
+        icon: '⚠️',
+        title: 'More than went out',
+        message: 'Only ' + _fueraNum(sobra.fuera) + ' of this material is recorded as out ' +
+                 'at ' + sobra.site + ',\nand you are returning ' + _fueraNum(qty) + '.\n\n' +
+                 _fueraNum(sobra.extra) + ' more will be added to the warehouse than ever ' +
+                 'left it.\n\nSave anyway?',
+        confirmText: 'Save anyway',
+        onConfirm: function(){ _doSubmit(false); }
+      });
+      return;
+    }
+  }
+
   // Advisory total-stock check for WASTE (TRANSFER is already validated per-row above)
   if (currentMoveType === 'WASTE'){
     var key2 = _normKey(cat) + '|||' + _normKey(name);
@@ -12472,21 +12866,30 @@ function _matLineTpl(n){
     '<div class="mat-line-hdr">' +
       '<span class="mat-line-lbl">Material ' + n + '</span>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
-        /* DECIR AQUÍ CUÁL LLEVA ETIQUETA. Jose: *"mi idea es poner un checkbox
-         * al crear el entry para los que quiera labels, así ya la app sabe
-         * cuáles quiero."*
+        /* ── AQUÍ VIVÍA LA CASILLA DE «🏷 Label», Y SE FUE EN LA v12.87 ──────
          *
-         * Nace SIN MARCAR, y eso es lo que le ahorra trabajo: con diez
-         * materiales y dos que necesitan etiqueta, marcar dos es mejor que
-         * desmarcar ocho en el cuadro de después.
+         * Jose, 21/10, marcándola en una captura junto a otras tres cosas:
+         * *"quiero que todas las cosas que no se usen no molesten en la
+         * pantalla"*.
          *
-         * PERO SI NADIE LA TOCA, EL CUADRO SE COMPORTA COMO SIEMPRE — todas
-         * marcadas. Quien ignore esta casilla no puede perder una función que
-         * ya tenía; lo que hace esta casilla es ESTRECHAR la selección, no
-         * crearla. Ver _labelsFromEntry. */
-        '<label class="mat-lbl-want" title="Print a 4&quot;×6&quot; label for this material">' +
-          '<input type="checkbox" id="mat-label-' + n + '"><span>🏷 Label</span>' +
-        '</label>' +
+         * Y el motivo para quitarla de AQUÍ no es sólo el sitio que ocupa.
+         * Imprimir una etiqueta **no es un dato de la recepción**: es algo que
+         * se hace con el material una vez guardado. Preguntarlo arriba, en la
+         * misma línea que el nombre, es pedir una decisión sobre el futuro
+         * antes de haber escrito el presente — y encima en la edición gratis
+         * llevaba candado, o sea una puerta cerrada en el formulario más usado
+         * de la app.
+         *
+         * LA PREGUNTA NO DESAPARECE, SE MUEVE AL MOMENTO EN QUE SE PUEDE
+         * CONTESTAR: al guardar, el aviso de «Saved ✓» ofrece «🏷 Print
+         * labels». Quien lo pulsa tiene los bultos delante y sabe si los
+         * quiere; quien no, ya terminó.
+         *
+         * Y respeta lo que Jose exigió la primera vez —*"eso es pedir
+         * información al usuario pero hacer lo que queremos después"*—, porque
+         * ahora la respuesta SE USA tal cual: se pulsa y se abre con todo
+         * marcado, no se pulsa y no se abre nada. Reimprimir sigue existiendo:
+         * se marca el movimiento en Movements y se pulsa Labels. */
         '<span id="mat-total-' + n + '" style="font-size:.78rem;font-weight:700;color:var(--accent2);background:#DBEAFE;padding:2px 10px;border-radius:10px">0 units</span>' +
         '<button type="button" class="mat-line-remove" onclick="removeMatLine(' + n + ')" title="Remove this material">×</button>' +
       '</div>' +
@@ -12691,7 +13094,7 @@ function _initMultiMatSection(){
     _refreshPmDatalist();
   } else {
     google.script.run
-      .withSuccessHandler(function(list) { _pmDirectoryData = list || []; _refreshPmDatalist(); })
+      .withSuccessHandler(function(list) { _pmDirPoner(list); _refreshPmDatalist(); })
       .withFailureHandler(function(){})
       .processMovement('getPmDirectory', _h({}));
   }
@@ -13187,10 +13590,25 @@ function updateExitMatNameList(n){
   dl.innerHTML = names.map(function(nm){ return '<option value="'+nm+'">'; }).join('');
 }
 
-// ── Warehouse stock suggestion box (for EXIT/TRANSFER/WASTE single-modal) ─────
+// ── EL CUADRO QUE CUELGA DEL NOMBRE, Y POR QUÉ ES UNO SOLO ───────────────────
+//
+// Hay dos listas que pueden aparecer bajo `#mName`, y son contrarias: al sacar
+// material se ofrece lo que está EN BODEGA, y al devolverlo lo que está FUERA.
+// La forma obvia de añadir la segunda era un segundo cuadro con su propio
+// mostrar/esconder, y es justo la forma que llevamos dieciséis veces pagando en
+// este archivo: dos cosas que tienen que coincidir sin que nada lo obligue. Con
+// dos cuadros, el día que uno se abra sin que el otro se cierre se ven las dos
+// listas a la vez y nadie sabe por qué.
+//
+// Así que es UN cuadro y UNA función. Ésta decide qué lista toca por el tipo de
+// movimiento, y como sólo hay un sitio donde se enciende, no hay nada que
+// sincronizar. La diferencia de ancho —la de fuera lleva el sitio— es una clase
+// que esta misma función pone y quita.
 function _checkStockSuggest(inputEl){
   var box = document.getElementById('stockSuggestBox');
   if (!box) return;
+  if (currentMoveType === 'RETURN') { _fueraSugerir(box, inputEl); return; }
+  box.classList.remove('caja-fuera');
   if (currentMoveType !== 'EXIT' && currentMoveType !== 'TRANSFER' && currentMoveType !== 'WASTE') {
     box.style.display = 'none'; return;
   }
@@ -13234,6 +13652,264 @@ function _applyStockSuggest(name){
   }
 }
 
+/* ══ LO QUE ESTÁ FUERA DE BODEGA, PARA DEVOLVERLO ════════════════════════════
+ *
+ * Jose, 20/10: *"al seleccionar RETURN es lógico que voy a devolver algo que ya
+ * estaba fuera de la bodega, pero la app solo sugiere 1 material (debería dar la
+ * lista de todos los materiales parecidos y solo como lista flotante, no como
+ * tarjetas abajo del nombre)... debería tomar los datos de ese material y
+ * autorellenar los campos... incluso debe sugerir la cantidad como se lo hace en
+ * un EXIT"*.
+ *
+ * ── POR QUÉ LA LISTA VA POR MATERIAL **Y SITIO** ───────────────────────────
+ *
+ * Jose otra vez, y es la decisión que da forma a todo esto: *"para RETURN debe
+ * ser por MATERIAL, porque no importa si se hicieron 4 EXITs de un material a un
+ * mismo lugar, importa cuánto material hay en ESE LUGAR para devolver la
+ * cantidad que necesitamos de ese lugar a la bodega"*.
+ *
+ * Una lista por MOVIMIENTO —lo primero que uno dibuja, porque los movimientos
+ * son lo que hay en la hoja— mostraría cuatro líneas idénticas de la misma obra
+ * y obligaría a sumarlas de cabeza para saber qué se puede devolver. Una lista
+ * por material a secas sumaría dos obras distintas en un número que no se puede
+ * devolver a ninguna parte. El par material+sitio es el único que contesta la
+ * pregunta que se tiene delante: *cuánto de esto hay allí*.
+ *
+ * ── EL CACHÉ, Y POR QUÉ DURA TAN POCO ─────────────────────────────────────
+ *
+ * `getOutstandingBySite` lee el archivo entero, así que no puede colgar de cada
+ * tecla. Se pide UNA vez por categoría al entrar en RETURN y se filtra en el
+ * navegador. Y se tira al cambiar de pantalla: un saldo de hace diez minutos
+ * ofrecería devolver algo que otro ya devolvió, y en ese caso la app estaría
+ * mintiendo con cara de dato. Vale más una lectura de más que un número viejo.
+ */
+var _fueraCache = { cat: null, filas: null, pidiendo: false };
+var _fueraVista = [];      // lo que se está mostrando, en el orden que se ve
+var _fueraAncla = null;    // el campo al que se pega la caja cuando llegue
+
+function _fueraOlvidar(){
+  _fueraCache = { cat: null, filas: null, pidiendo: false };
+  _fueraVista = [];
+}
+
+/* La categoría que manda es la del formulario: Jose ya la eligió antes de
+ * escribir el nombre, y filtrar en el servidor es lo que mantiene corta la
+ * respuesta. */
+function _fueraCat(){ return ((document.getElementById('mType') || {}).value || '').trim(); }
+
+/* NO SE REDONDEA A ENTERO, aunque `_fmtInt` esté a mano y sea más corto: la
+ * cantidad lleva `step="any"` en todo el formulario y media plancha es media
+ * plancha. Un «3» donde quedaban 2,5 es una cifra inventada en la casilla donde
+ * menos se puede inventar. */
+function _fueraNum(n){
+  return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-US');
+}
+
+function _fueraPedir(cat, cuandoLlegue){
+  if (_fueraCache.pidiendo) return;                       // una sola en vuelo
+  _fueraCache = { cat: cat, filas: null, pidiendo: true };
+  google.script.run
+    .withSuccessHandler(function(filas){
+      /* Si mientras volaba se cambió de categoría o de pantalla, esta respuesta
+       * ya no es de nadie. Guardarla pintaría la lista de la categoría
+       * anterior sobre la nueva. */
+      if (_fueraCache.cat !== cat) return;
+      /* `Array.isArray` Y NO `filas || []`, que es lo que escribí primero: un
+       * objeto pasa el `||` tan contento y luego revienta en el `.filter` de
+       * `_fueraSugerir`. Lo encontró `test-form-symmetry`, cuyo doble del
+       * servidor contesta `{}` a todo lo que no conoce —y un doble que contesta
+       * algo raro es justo el ensayo que hace falta—. La misma falta estaba en
+       * el directorio de jefes de obra, en tres sitios a la vez; ahora toda
+       * respuesta de ésa pasa por `_pmDirPoner`. */
+      _fueraCache = { cat: cat, filas: Array.isArray(filas) ? filas : [], pidiendo: false };
+      cuandoLlegue && cuandoLlegue();
+    })
+    .withFailureHandler(function(err){
+      _fueraCache = { cat: cat, filas: [], pidiendo: false };
+      console.warn('getOutstandingBySite:', err && err.message);
+      cuandoLlegue && cuandoLlegue();
+    })
+    .getOutstandingBySite(_sessionToken || null, cat);
+}
+
+function _fueraSugerir(box, inputEl){
+  box.classList.add('caja-fuera');
+  _fueraAncla = inputEl;
+
+  var cat = _fueraCat();
+  if (_fueraCache.cat !== cat && !_fueraCache.pidiendo) {
+    _fueraPedir(cat, function(){
+      /* Se repinta sólo si el campo sigue siendo el de antes y seguimos en
+       * RETURN. Una respuesta que llega después de cerrar la ventana no tiene
+       * derecho a abrir una caja. */
+      if (currentMoveType === 'RETURN' && _fueraAncla === inputEl &&
+          document.activeElement === inputEl) _fueraSugerir(box, inputEl);
+    });
+  }
+
+  if (_fueraCache.filas === null) {
+    box.innerHTML = '<div class="inc-suggest-hdr">↩ Out on site</div>' +
+      '<div class="fuera-nada">Checking what is out…</div>';
+    box.style.display = 'block';
+    _positionSuggestBox(box, inputEl, 360);
+    return;
+  }
+
+  var typed = nt(inputEl.value || '');
+  /* TRES LETRAS, NO DOS, y el motivo es que esta lista se abre SOLA al entrar
+   * en el campo: con el campo vacío se ve entera, que es el caso que Jose
+   * pidió. A partir de la tercera letra filtra por trozo de nombre. */
+  var filas = !typed ? _fueraCache.filas
+    : _fueraCache.filas.filter(function(f){
+        return nt(f.name).indexOf(typed) !== -1;
+      });
+
+  if (!filas.length) {
+    /* CON ALGO ESCRITO Y SIN COINCIDENCIAS, LA CAJA SE QUITA DE EN MEDIO.
+     * Devolver material que nunca se registró saliendo es legítimo —la historia
+     * de cualquier bodega empieza a mitad—, y un cartel de «no encontré nada»
+     * encima de cada letra que se teclea sería un estorbo permanente. Con el
+     * campo vacío sí se dice, porque entonces el cartel es el dato: en esta
+     * categoría no hay nada fuera, así que esto probablemente no es un RETURN. */
+    if (typed) { box.style.display = 'none'; _fueraVista = []; return; }
+    box.innerHTML = '<div class="inc-suggest-hdr">↩ Out on site</div>' +
+      '<div class="fuera-nada">Nothing from this category is out on a site right ' +
+      'now. You can still type a name — the warehouse history may start after ' +
+      'this material left.</div>';
+    box.style.display = 'block';
+    _fueraVista = [];
+    _positionSuggestBox(box, inputEl, 360);
+    return;
+  }
+
+  _fueraVista = filas.slice(0, 12);
+  box.innerHTML = '<div class="inc-suggest-hdr">↩ Out on site · pick one to fill the form</div>' +
+    _fueraVista.map(function(f, i){
+      /* EL ÍNDICE Y NO EL NOMBRE en el atributo: el nombre y el sitio son texto
+       * libre del almacén, y una fila se identifica por el PAR. Mandar los dos
+       * por atributos sería volver a pegarlos al otro lado. */
+      return '<div class="inc-suggest-item" data-action="fuera-pick" data-i="' + i + '">' +
+        '<span class="inc-tag">' + _he(nt(f.category)) + '</span>' +
+        '<span>' + _he(f.name) + '</span>' +
+        '<span class="inc-meta">' + _fueraNum(f.qty) +
+          (f.unit ? ' ' + _he(f.unit) : '') + ' out</span>' +
+        '<span class="fuera-sitio">📍 ' + _he(f.site) +
+          (f.project ? ' · ' + _he(f.project) : '') + '</span>' +
+      '</div>';
+    }).join('');
+  box.style.display = 'block';
+  _positionSuggestBox(box, inputEl, 360);
+}
+
+/* ¿SE ESTÁ DEVOLVIENDO MÁS DE LO QUE SALIÓ DE ESE SITIO?
+ *
+ * Devuelve `null` cuando no hay nada que decir, y eso incluye el caso que más
+ * importa: **que el material no tenga ninguna salida registrada**. Jose,
+ * 21/10: *"si el material no tiene ninguna salida registrada, se guarda sin
+ * decir nada"*. Un almacén que empieza a usar Acopio tiene material fuera que
+ * salió antes, y avisar de cada una de esas devoluciones es avisar de lo normal.
+ *
+ * TAMBIÉN DEVUELVE `null` CUANDO NO SABE, y hay que decirlo porque es la mitad
+ * silenciosa: si el caché es de otra categoría —porque alguien cambió el
+ * desplegable y no volvió a tocar el nombre— o si no se llegó a cargar, aquí no
+ * hay dato con el que afirmar nada. Inventarse un aviso con un saldo de otra
+ * categoría sería peor que callarse.
+ */
+function _fueraSobrante(cat, nombre, sitio, qty) {
+  if (_fueraCache.filas === null) return null;            // no cargó
+  if (nt(_fueraCache.cat) !== nt(cat)) return null;       // es de otra categoría
+  var sit = nt(sitio);
+  if (!sit) return null;                                  // sin sitio no hay con qué comparar
+
+  var nom = nt(nombre);
+  var f = null;
+  for (var i = 0; i < _fueraCache.filas.length; i++) {
+    var r = _fueraCache.filas[i];
+    if (nt(r.name) === nom && nt(r.site) === sit) { f = r; break; }
+  }
+  /* SIN FILA NO HAY AVISO, y es la regla de Jose: puede ser que ese material
+   * nunca saliera de aquí, o que saliera antes de que existiera el registro. */
+  if (!f) return null;
+
+  var n = Number(qty) || 0;
+  if (!(n > f.qty)) return null;
+  return { fuera: f.qty, extra: Math.round((n - f.qty) * 100) / 100, site: f.site };
+}
+
+/* ── LO QUE SE RELLENA, Y LOS DOS CAMPOS QUE NO ─────────────────────────────
+ *
+ * Jose: *"luego yo relleno la información que falta como a dónde lo voy a poner
+ * ahora que regresó, y la cantidad y el motivo, pero todo lo demás ya debe venir
+ * del registro"*. Así que de aquí salen el nombre, la categoría, el sitio del
+ * que vuelve, la unidad, la obra y el jefe de obra; y la cantidad se SUGIERE,
+ * como en una salida.
+ *
+ * NO SE RELLENA «Returned By», y es por lo mismo que el proyecto de origen tiene
+ * su propio campo en vez de reusar `mProj`: esa columna cambia de significado
+ * con la dirección del movimiento. En la salida dice quién lo entregó; en la
+ * devolución, quién lo trae de vuelta. A menudo es la misma persona, pero
+ * «a menudo» escrito en una casilla que nadie revisa es un nombre inventado en
+ * el registro de otro. Se queda vacío.
+ */
+function _fueraAplicar(i){
+  var f = _fueraVista[i];
+  if (!f) return;
+
+  var ponTexto = function(id, val){
+    var el = document.getElementById(id);
+    if (el && val) el.value = val;
+  };
+
+  /* La categoría primero: si la lista vino sin filtrar —porque el formulario
+   * abrió en la primera categoría y el material es de otra— elegir una fila es
+   * también decir de qué categoría es. */
+  var sel = document.getElementById('mType');
+  if (sel && f.category) {
+    for (var k = 0; k < sel.options.length; k++) {
+      if (nt(sel.options[k].value) === nt(f.category)) { sel.selectedIndex = k; break; }
+    }
+  }
+
+  ponTexto('mSrc',      f.site);          // «From (site or address)»
+  ponTexto('mOrigProj', f.project);       // «Came back from (project)»
+  ponTexto('mPM',       f.pm);
+
+  /* LA UNIDAD ES UNA LISTA CERRADA, así que no se le escribe encima: si lo que
+   * dice el registro no está entre las opciones, se deja la que hay. Asignar un
+   * valor que no existe en un `<select>` lo deja en blanco, y un blanco aquí es
+   * una unidad perdida. */
+  var unidad = document.getElementById('mUnit');
+  if (unidad && f.unit) {
+    for (var u = 0; u < unidad.options.length; u++) {
+      if (nt(unidad.options[u].value) === nt(f.unit)) { unidad.value = unidad.options[u].value; break; }
+    }
+  }
+
+  /* La cantidad se sugiere entera —todo lo que hay allí— porque devolver el
+   * resto completo es el caso corriente, y recortarla es un número menos que
+   * escribir. Va antes del nombre para que el total del cuadro de material, que
+   * se recalcula con el nombre, ya la vea. */
+  var qty = document.getElementById('mQty');
+  if (qty) qty.value = f.qty;
+
+  var inp = document.getElementById('mName');
+  if (inp) {
+    inp.value = f.name;
+    inp.dispatchEvent(new Event('input'));   // checkStock, el total, los avisos
+  }
+  if (typeof _syncMoveMatTotal === 'function') _syncMoveMatTotal();
+
+  /* Se cierra DESPUÉS del `input`, porque ese `input` vuelve a entrar en
+   * `_checkStockSuggest` y la abriría otra vez. */
+  var box = document.getElementById('stockSuggestBox');
+  if (box) box.style.display = 'none';
+
+  /* Y el foco al único campo que de verdad falta: a qué estante va. Es lo que
+   * Jose dijo que rellena él, y el servidor lo exige. */
+  var dest = document.getElementById('mDest');
+  if (dest) try { dest.focus(); } catch (e) {}
+}
+
 // ── Stock suggestion box for multi-EXIT exit-name inputs ─────────────────────
 // Positions a suggestion box using position:fixed (viewport coordinates) instead
 // of position:absolute inside the modal — the modal itself scrolls
@@ -13242,9 +13918,12 @@ function _applyStockSuggest(name){
 // fully visible regardless of where the input sits or how far the modal has
 // scrolled. Flips to the LEFT of the input if there isn't enough room on the
 // right (near the modal's right edge), same idea for the bottom edge.
-function _positionSuggestBox(box, inputEl) {
+function _positionSuggestBox(box, inputEl, ancho) {
   var rect = inputEl.getBoundingClientRect();
-  var boxW = 260, boxH = Math.min(box.scrollHeight || 280, 280);
+  /* El ancho se recibe porque la caja de «lo que está fuera» mide más: si se
+   * calculara el hueco con 260 cuando el cuadro ocupa 360, se decidiría que
+   * cabe a la derecha y se saldría 100px de la pantalla. */
+  var boxW = ancho || 260, boxH = Math.min(box.scrollHeight || 280, 280);
   var spaceRight = window.innerWidth - rect.right;
   var left = spaceRight >= boxW + 16 ? rect.right + 8 : Math.max(8, rect.left - boxW - 8);
   var top  = rect.top;
@@ -13493,11 +14172,7 @@ function submitMultiEntry(){
       valid = false; return;
     }
 
-    var matEntry = { category: cat, name: name, unit: unit, locations: locs, qty: totalQty,
-                     // Sólo para el cuadro de etiquetas; NO viaja al servidor.
-                     // Ver el `_h(payload)` de más abajo: lo que se manda es
-                     // payload, y esto vive en el array local.
-                     wantsLabel: !!(document.getElementById('mat-label-' + n) || {}).checked };
+    var matEntry = { category: cat, name: name, unit: unit, locations: locs, qty: totalQty };
     // Per-material always, unlike Supplier/PO/etc below — cost belongs to the
     // material being bought, never to the "same info for all" grouping, and
     // the field doesn't exist in the DOM at all for someone without
@@ -13598,21 +14273,36 @@ function submitMultiEntry(){
             if (res.pmError)      msgs.push('📇 ' + res.pmError);
             if (res.refreshError) msgs.push('⚠ ' + res.refreshError);
             showToast('Saved ✓ — ' + count + ' material(s), ' + rows + ' row(s) — ' + msgs.join(' | '), 'warn', res.refreshError ? 12000 : 8000);
-          } else {
-            showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' + (rows===1?'':'s') + ')', 'ok', TOAST_QUICK);
           }
-          /* DOS COSAS DESPUÉS DE GUARDAR, Y EN ESTE ORDEN.
+          /* DOS COSAS DESPUÉS DE GUARDAR, Y SIGUEN SIN PODER APILARSE.
              Las dos van al final y no antes: los movimientos ya están
-             guardados. Preguntar por entregas —o imprimir una etiqueta— de algo
-             que todavía podía fallar sería peor que no preguntar.
-             LAS ETIQUETAS PRIMERO, porque son la parte física: quien acaba de
-             registrar un camión tiene los bultos delante y necesita pegarles
-             algo AHORA. Lo de las entregas es papeleo y aguanta treinta
-             segundos. Y encadenadas, no las dos a la vez: dos ventanas
-             apiladas es el error que costó la v11.29. */
-          _openLabels(_labelsFromEntry(materials, payload), function(){
-            _offerAlsoArrived(materials, dateRec, po, deLaEntrega);
-          });
+             guardados, y preguntar por algo que todavía podía fallar sería peor
+             que no preguntar.
+
+             LO QUE CAMBIÓ EN LA v12.87: las etiquetas ya no se abren solas. La
+             casilla «🏷 Label» que decidía cuáles se fue de la línea de cada
+             material —ocupaba sitio y pedía decidir sobre el futuro antes de
+             escribir el presente— así que la pregunta se hace AQUÍ, donde se
+             puede contestar: el aviso de guardado ofrece imprimirlas.
+
+             Y SIGUE SIN HABER DOS VENTANAS A LA VEZ, que es el error que costó
+             la v11.29: o se pulsa el botón del aviso —y entonces el cuadro de
+             etiquetas encadena la pregunta de las entregas al cerrarse— o el
+             aviso caduca y esa pregunta corre sola. Nunca las dos. */
+          var filasEtq = _labelsFromEntry(materials, payload);
+          var luego    = function(){ _offerAlsoArrived(materials, dateRec, po, deLaEntrega); };
+          if (filasEtq.length) {
+            showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' +
+                      (rows===1?'':'s') + ')', 'ok', 12000, {
+              texto: '🏷 Print labels',
+              hacer: function(){ _openLabels(filasEtq, luego); },
+              siNo:  luego
+            });
+          } else {
+            showToast('Saved ✓ — ' + count + ' material(s) received (' + rows + ' archive row' +
+                      (rows===1?'':'s') + ')', 'ok', TOAST_QUICK);
+            luego();
+          }
         }, 400);
       })
       .withFailureHandler(function(err){
@@ -13821,7 +14511,7 @@ function _loadSettings(opts) {
   if (!quiet) _pmDirectoryData = null;
   google.script.run
     .withSuccessHandler(function(list) {
-      _pmDirectoryData = list || [];
+      _pmDirPoner(list);
       if (_settingsTab === 'pmdirectory') _drawPmDirectory();
       _refreshPmDatalist();
     })
@@ -15630,14 +16320,14 @@ function _renderSettingsTab(tab) {
    * también — y DESPUÉS, no antes. Jose encontró la pestaña de sistema con
    * todas sus opciones pulsables: *"todas están disponibles, si doy clic
    * muestran un mensaje que parece de error"*. El mensaje llegaba tarde. */
-  if (tab === 'materials')   { _renderMaterialsTab();   _basicApagarAjuste(tab); return; }
-  if (tab === 'errorlog')    { _renderErrorLogTab();    _basicApagarAjuste(tab); return; }
-  if (tab === 'system')      { _renderSystemTab();      _basicApagarAjuste(tab); return; }
-  if (tab === 'pmdirectory') { _renderPmDirectoryTab(); _basicApagarAjuste(tab); return; }
-  if (tab === 'import')      { _renderImportTab();      _basicApagarAjuste(tab); return; }
-  if (tab === 'locations')   { _renderLocationsTab();   _basicApagarAjuste(tab); return; }
-  if (tab === 'company')     { _renderCompanyTab();     _basicApagarAjuste(tab); return; }
-  if (tab === 'permissions') { _renderPermissionsTab(); _basicApagarAjuste(tab); return; }
+  if (tab === 'materials')   { _renderMaterialsTab();   _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'errorlog')    { _renderErrorLogTab();    _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'system')      { _renderSystemTab();      _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'pmdirectory') { _renderPmDirectoryTab(); _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'import')      { _renderImportTab();      _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'locations')   { _renderLocationsTab();   _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'company')     { _renderCompanyTab();     _basicApagarAjuste(tab); _equisTrasPintar(); return; }
+  if (tab === 'permissions') { _renderPermissionsTab(); _basicApagarAjuste(tab); _equisTrasPintar(); return; }
 
   var items = _settingsData[tab] || [];
   var label = { categories:'Category', projects:'Project', suppliers:'Supplier', locations:'Location' }[tab] || 'Item';
@@ -16670,13 +17360,28 @@ function _clearErrorLog(mode) {
   });
 }
 
-var _pmDirectoryData = null;
+var _pmDirectoryData = null;   // null = sin cargar todavía, que no es lo mismo que cargado y vacío
+
+/* EL DIRECTORIO SE GUARDA SIEMPRE COMO LISTA, y las tres respuestas del servidor
+ * pasan por aquí. Antes cada sitio hacía `list || []`, que es lo mismo salvo
+ * justo en el caso que importa: un `{}` pasa el `||` tan contento y revienta
+ * después en el `.map` de `_refreshPmDatalist` o de `_drawPmDirectory`, lejos de
+ * donde está la causa y sin decir de dónde vino.
+ *
+ * No es hipotético: la misma falta en la lista de «lo que está fuera» la cazó
+ * `test-form-symmetry` en la v12.82, cuyo doble del servidor contesta `{}` a
+ * todo lo que no conoce. Ésta es la hermana, y eran tres sitios que tenían que
+ * acordarse de hacer lo mismo — ahora es uno. */
+function _pmDirPoner(list) {
+  _pmDirectoryData = Array.isArray(list) ? list : [];
+}
+
 function _renderPmDirectoryTab() {
   var content = document.getElementById('settingsTabContent');
   if (_pmDirectoryData) { _drawPmDirectory(); return; }
   content.innerHTML = '<p style="padding:1rem;color:var(--muted);font-size:.85rem">Loading…</p>';
   google.script.run
-    .withSuccessHandler(function(list) { _pmDirectoryData = list || []; _drawPmDirectory(); })
+    .withSuccessHandler(function(list) { _pmDirPoner(list); _drawPmDirectory(); })
     .withFailureHandler(function(e) { content.innerHTML = '<p style="padding:1rem;color:#c0392b;font-size:.85rem">Error: '+_he(e.message||e)+'</p>'; })
     .processMovement('getPmDirectory', _h({}));
 }
@@ -17826,6 +18531,8 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _perso
     // y trabajan sobre lo marcado. Ver editSelectedUser y toggleSelectedUsers.
     } else if (a === 'stock-suggest') {
       _applyStockSuggest(el.getAttribute('data-name'));
+    } else if (a === 'fuera-pick') {
+      _fueraAplicar(parseInt(el.getAttribute('data-i'), 10));
     } else if (a === 'exit-suggest') {
       _applyExitMatSuggest(parseInt(el.getAttribute('data-n'),10), el.getAttribute('data-name'), el.getAttribute('data-cat'));
     } else if (a === 'rack-photo-upload') {
@@ -17852,12 +18559,12 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _perso
     var el = e.target.closest && e.target.closest('[data-action]');
     if (!el) return;
     var a = el.getAttribute('data-action');
-    if (a === 'stock-suggest' || a === 'exit-suggest') return; // handled on mousedown
+    if (a === 'stock-suggest' || a === 'exit-suggest' || a === 'fuera-pick') return; // handled on mousedown
     dispatch(el);
   });
   // Suggestion items must fire on mousedown — before the input's blur hides the box.
   document.addEventListener('mousedown', function(e){
-    var el = e.target.closest && e.target.closest('[data-action="stock-suggest"],[data-action="exit-suggest"]');
+    var el = e.target.closest && e.target.closest('[data-action="stock-suggest"],[data-action="exit-suggest"],[data-action="fuera-pick"]');
     if (!el) return;
     e.preventDefault(); // keep input focus / win the blur race
     dispatch(el);
@@ -18479,11 +19186,58 @@ function _collectDocGroups(containerId) {
 }
 
 // Reset the ENTRY modal document builder
+/* ══ LA SECCIÓN DE DOCUMENTOS, PLEGADA ══════════════════════════════════════
+ *
+ * Jose, 21/10, marcándola en una captura: *"quiero que todas las cosas que no
+ * se usen no molesten en la pantalla o ventana"*.
+ *
+ * LA REGLA, Y ES LA QUE HACE QUE ESTO NO SEA PELIGROSO: **nunca se esconde algo
+ * que tenga contenido**. Plegar es una ayuda; plegar encima de un archivo que
+ * alguien ya adjuntó es perderlo de vista, y perderlo de vista es perderlo. Por
+ * eso `_docsPlegar` se niega a cerrar si hay algo dentro, y cualquier camino
+ * que meta un documento llama a `_docsAbrir`.
+ */
+function _docsAbrir(){
+  var b = document.getElementById('fileBody');
+  var t = document.getElementById('fileToggle');
+  if (!b) return;
+  b.style.display = '';
+  if (t) t.style.display = 'none';
+}
+
+/** ¿Hay algo dentro? Un grupo vacío no cuenta: `resetDocBuilder` crea uno
+ *  siempre, así que «existe un grupo» no significa «hay un documento». Lo que
+ *  cuenta es un archivo elegido o un nombre escrito por una persona. */
+function _docsConContenido(){
+  var c = document.getElementById('docGroupsContainer');
+  if (!c) return false;
+  var hayArchivo = [].slice.call(c.querySelectorAll('input[type=file]'))
+    .some(function(i){ return i.files && i.files.length; });
+  if (hayArchivo) return true;
+  /* Un nombre distinto del que viene de serie también es trabajo de alguien. */
+  return [].slice.call(c.querySelectorAll('input[type=text]'))
+    .some(function(i){ var v = (i.value || '').trim(); return v && v !== 'Document'; });
+}
+
+function _docsPlegar(){
+  var b = document.getElementById('fileBody');
+  var t = document.getElementById('fileToggle');
+  if (!b || !t) return;
+  if (_docsConContenido()) { _docsAbrir(); return; }   // ver la regla de arriba
+  b.style.display = 'none';
+  t.style.display = '';
+}
+
 function resetDocBuilder() {
   var c = document.getElementById('docGroupsContainer');
   if (c) c.innerHTML = '';
   _docGroupCounters['docGroupsContainer'] = 0;
   addDocGroup('Document', 'docGroupsContainer', '');
+  /* Al abrir una ventana nueva no hay nada adjunto todavía, así que se pliega.
+   * Va DESPUÉS de crear el grupo de serie, no antes: `_docsConContenido` mira
+   * lo que hay, y mirar antes de que exista daría siempre «vacío» por el motivo
+   * equivocado. */
+  _docsPlegar();
 }
 
 // Reset the Attach modal document builder
@@ -18536,6 +19290,22 @@ function triggerSimilarCheck() {
   _similarDebounce = setTimeout(function() {
     var hint   = document.getElementById('similarHint');
     var label  = document.getElementById('similarHintName');
+    /* EN RETURN ESTA TARJETA SE CALLA, y es literalmente lo que Jose pidió:
+     * *"debería dar la lista de todos los materiales parecidos y SOLO COMO
+     * LISTA FLOTANTE, no como tarjetas abajo del nombre"*. La lista flotante de
+     * `_fueraSugerir` hace el mismo trabajo mejor en esta pantalla —enseña
+     * TODOS los parecidos, con cuánto hay y dónde, en vez de uno— y las dos a
+     * la vez son dos cosas diciendo lo mismo en sitios distintos.
+     *
+     * EN LAS DEMÁS SE QUEDA. Esta tarjeta cuelga de `#mName`, y las pantallas
+     * que usan ese campo son TRANSFER, RETURN, WASTE y ADJUST —ENTRY y EXIT lo
+     * esconden porque traen su propia sección de varios materiales—. En esas
+     * tres no hay ninguna lista de «lo que está fuera» que ofrecer, así que lo
+     * único que se puede hacer es avisar del error de dedo, y lo sigue
+     * haciendo. */
+    if (currentMoveType === 'RETURN') {
+      hint.classList.remove('show'); _similarHintSuggested = ''; return;
+    }
     var typed  = (document.getElementById('mName').value || '').trim();
     var cat    = document.getElementById('mType').value;
     var similar = _findSimilarMaterial(typed, cat);
@@ -18618,8 +19388,26 @@ function _cfgKnownValues(type){
   return set;
 }
 
+/* ── DÓNDE SE CUELGA UN AVISO DE UN CAMPO ──────────────────────────────────
+ *
+ * Desde la v12.81 los campos donde se escribe van envueltos para poder llevar
+ * su ✕, así que «lo que hay justo después del campo» ya no es su aviso: es el
+ * botón de borrar. Y el aviso insertado «después del campo» caería DENTRO del
+ * envoltorio, encima del texto.
+ *
+ * Esto devuelve a qué hay que agarrarse: al envoltorio si lo hay, al campo si
+ * no. Lo usan los dos avisos que cuelgan de un campo —el de proveedor/proyecto
+ * nuevo y el de ubicación desconocida— tanto para ponerlos como para buscarlos.
+ *
+ * SIN ESTO, envolver los campos habría roto las dos cosas en silencio: el aviso
+ * se habría seguido creando y nadie lo habría encontrado para quitarlo. */
+function _anclaDeCampo(input){
+  var p = input && input.parentElement;
+  return (p && p.classList && p.classList.contains('tiene-x')) ? p : input;
+}
+
 function _cfgHintFor(input){
-  var next = input.nextElementSibling;
+  var next = _anclaDeCampo(input).nextElementSibling;
   return (next && next.classList && next.classList.contains('cfg-new-hint')) ? next : null;
 }
 
@@ -18647,7 +19435,7 @@ function _maybeOfferCfgAdd(input){
   hint.querySelector('.cfg-new-add').addEventListener('click', function(){
     _cfgAddInline(type, val, hint);
   });
-  input.insertAdjacentElement('afterend', hint);
+  _anclaDeCampo(input).insertAdjacentElement('afterend', hint);
 
   // Surface it in the deck straight away rather than waiting for the movement
   // to be saved. Typed values are held separately from the ones derived from
@@ -18809,7 +19597,24 @@ var _deckSeenIds = {};
 // removed it: out to the right, giving its height back over the same beat so
 // the ones below rise into the gap. Redrawing first would rebuild the pile and
 // leave nothing to animate, so the redraw waits for the movement to finish.
-var _DECK_LEAVE_ANIM_MS = 500;
+/* CUÁNTO DURA LA SALIDA — LEÍDO DEL CSS, NO ESCRITO DOS VECES.
+ *
+ * Aquí había un 500 a mano y en el CSS un `--deck-out:.5s`. Dos números que
+ * tenían que decir lo mismo sin que nada lo obligara: subir uno y olvidar el
+ * otro deja la tarjeta a medio desvanecer cuando se rehace el mazo —o un hueco
+ * quieto esperando a un número que ya terminó—. Pasó al subirlo a .78s.
+ *
+ * El CSS manda, porque es donde se ve. El 500 queda de red por si la variable
+ * no se puede leer. */
+function _deckSalidaMs(){
+  try {
+    var v = getComputedStyle(document.querySelector('.deck') || document.documentElement)
+              .getPropertyValue('--deck-out').trim();
+    if (/ms$/.test(v))  return parseFloat(v);
+    if (/s$/.test(v))   return parseFloat(v) * 1000;
+  } catch (e) {}
+  return 500;
+}
 
 /* DOS SALIDAS, PORQUE SON DOS COSAS DISTINTAS. Ver el comentario largo del CSS.
  *
@@ -18819,10 +19624,18 @@ var _DECK_LEAVE_ANIM_MS = 500;
  * El `then` espera a que el movimiento termine. Redibujar antes reconstruiría
  * el mazo y no quedaría nada que animar, que es el fallo que esta función
  * existe para impedir. */
-function _deckCardLeave(el, then, modo){
+/**
+ * `hayRelevo` — si detrás de esta tarjeta hay otra esperando a entrar.
+ *
+ * Decide si la pila se encoge o se queda igual. Con relevo no se encoge, así
+ * que las de abajo no deben moverse: ver `.conserva-hueco` en el CSS. Sin él,
+ * el comportamiento es el de siempre.
+ */
+function _deckCardLeave(el, then, modo, hayRelevo){
   if (!el){ if (then) then(); return; }
   el.classList.add(modo === 'aceptada' ? 'saliendo-aceptada' : 'saliendo-descartada');
-  setTimeout(function(){ if (then) then(); }, _DECK_LEAVE_ANIM_MS);
+  if (hayRelevo) el.classList.add('conserva-hueco');
+  setTimeout(function(){ if (then) then(); }, _deckSalidaMs());
 }
 
 function _paintDeck(){
@@ -19562,7 +20375,7 @@ function _esCampoDeUbicacion(el){
 }
 
 function _quitarAvisoUbic(input){
-  var sig = input.nextElementSibling;
+  var sig = _anclaDeCampo(input).nextElementSibling;
   if (sig && sig.classList && sig.classList.contains('ubic-hint')) sig.remove();
 }
 
@@ -19636,7 +20449,7 @@ function _avisarUbicacion(input){
     hint.appendChild(quien);
   }
 
-  input.insertAdjacentElement('afterend', hint);
+  _anclaDeCampo(input).insertAdjacentElement('afterend', hint);
 }
 
 document.addEventListener('change', function(e){
@@ -22934,7 +23747,12 @@ function _labelsFromEntry(materiales, compartido){
     (mat.locations || []).forEach(function(l){
       if (!l || !(l.qty > 0)) return;
       out.push({
-        marcada:  !!mat.wantsLabel,
+        /* SIN `marcada`, y es a propósito. La regla de `_openLabels` dice que
+         * una fila sin ese campo cuenta como marcada — que es lo correcto desde
+         * la v12.87: aquí ya no se elige cuáles, porque la pregunta se hace
+         * DESPUÉS de guardar y la respuesta es sí o no para todas. Poner
+         * `marcada: false` cerraría el cuadro justo cuando alguien acaba de
+         * pedir que se abra. */
         name:     mat.name || '',
         category: mat.category || compartido.category || '',
         qty:      l.qty,
@@ -25994,6 +26812,40 @@ function _fmtWhen(iso){
 
 var _sysCards = [];
 
+/* ── QUÉ MERECE UNA TARJETA Y QUÉ NO ────────────────────────────────────────
+ *
+ * Jose, 21/10, con un vídeo de 33 segundos: pulsa la ✕ del mazo una y otra vez
+ * y siguen saliendo tarjetas — «archive start» del 8/10, «Backup created» del
+ * 9/10, «archive start» del 9/10, «Old movements archived» del 10/10, del
+ * 14/10, del 15/10… Doce clics y seguían entrando desde el fondo de la cola.
+ *
+ * Lo que vacía el mazo no es más paciencia, es una LÍNEA:
+ *
+ *     Una tarjeta es para «la app cambió algo que tú no pediste».
+ *     Un registro es para «la app hizo su trabajo».
+ *
+ * El respaldo de cada noche y el archivado de lo viejo son la segunda cosa.
+ * Pasan todas las noches, salen bien todas las noches, y no hay nada que
+ * decidir con ellas. Tres por noche, por los días que uno no entre, es un muro
+ * — y un muro no avisa de nada: entierra lo que sí importaba.
+ *
+ * `ARCHIVE_START` es peor todavía: es la MITAD de un evento, el «voy a
+ * empezar» de un trabajo que ya tiene su propio «terminé». Nunca debió ser una
+ * tarjeta; se colaba porque el servidor convierte en tarjeta cualquier fila del
+ * registro hecha por el sistema, tenga nombre bonito o no.
+ *
+ * NO SE PIERDE NADA, y es la condición para poder hacer esto sin preguntar:
+ * las tres siguen enteras en Settings → System, que a propósito enseña también
+ * lo descartado (ver `_renderSystemTab`). Lo que cambia es dónde se leen, no si
+ * existen.
+ *
+ * LO QUE SÍ SIGUE SIENDO TARJETA, y es lo que el muro tapaba: los movimientos
+ * re-enlazados a su material, los totales recalculados, las cabeceras
+ * reparadas, el stock reconstruido. Todas ésas son la app tocando datos por su
+ * cuenta, y eso hay que decirlo a la cara. */
+var SYS_RUTINA = { BACKUP_CREATED: 1, ARCHIVE_START: 1, ARCHIVE_RECONCILE: 1 };
+function _sysRutina(accion){ return SYS_RUTINA[String(accion || '').toUpperCase()] === 1; }
+
 // Dismissals are the SERVER's memory now, not this browser's.
 //
 // They lived in localStorage, and every backup notice since August came back on
@@ -26020,10 +26872,13 @@ function _dismissSysCard(id){
   // like a list rather than a stack of paper.
   var el = document.querySelector('[data-card-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
   // La ✕ de una notificación es "ya lo leí", no "esto se guardó": descartada.
+  /* ¿Queda alguna esperando fuera? Si la pila está llena, al quitar ésta entra
+   * la siguiente y la altura no cambia — así que nada debe moverse. */
+  var hayRelevo = _sysCards.length > _DECK_VISIBLE;
   _deckCardLeave(el, function(){
     _sysCards = _sysCards.filter(function(c){ return c.id !== id; });
     _renderSysDeck();
-  }, 'descartada');
+  }, 'descartada', hayRelevo);
 }
 
 // A notification stays until somebody presses its ✕. It used to carry a
@@ -26046,7 +26901,8 @@ function _announceSystemActivity(){
   // shows both (see _renderSystemTab): a notice is something you dismiss,
   // a maintenance record is not.
   _sysCards = (systemActivity || []).filter(function(a){
-    return a.at && !a.dismissed && !_sysDismissedNow[a.at + '|' + a.action];
+    return a.at && !_sysRutina(a.action) &&
+           !a.dismissed && !_sysDismissedNow[a.at + '|' + a.action];
   }).map(function(a){
     return { id: a.at + '|' + a.action, label: a.label, at: a.at, detail: a.detail, extra: a.extra };
   });
@@ -26224,6 +27080,13 @@ function _renderSysDeck(){
   if (!_sysCards.length){ _sysDeckHtml = ''; _paintDeck(); return; }
 
   // Newest painted last so it sits nearest the top of the pile.
+  /* QUIÉN ESTABA ANTES, para saber quién es nueva. El mazo se redibuja entero
+   * con `innerHTML`, así que sin esto no hay forma de distinguir la tarjeta que
+   * acaba de llegar de las que ya estaban — y todas o ninguna se animarían. */
+  var _antes = {};
+  Array.prototype.forEach.call(deck.querySelectorAll('.sys-card[data-card-id]'),
+    function(el){ _antes[el.getAttribute('data-card-id')] = 1; });
+
   _sysDeckHtml = _sysCards.slice(0, _DECK_VISIBLE).reverse().map(function(c){
     return '<div class="deck-card sys-card" data-card-id="' + _he(c.id) + '" data-sys-open="' + _he(c.id) + '" title="Click for the full record">' +
       '<button class="sys-card-x" data-sys-x="' + _he(c.id) + '" title="Dismiss">✕</button>' +
@@ -26234,6 +27097,16 @@ function _renderSysDeck(){
     '</div>';
   }).join('');
   _paintDeck();
+
+  /* Y la que no estaba, entra. Sólo si había algo antes: en la primera pintada
+   * TODAS son nuevas, y animarlas a la vez sería el abanico de apertura otra
+   * vez, que ya tiene el suyo. */
+  if (Object.keys(_antes).length) {
+    Array.prototype.forEach.call(deck.querySelectorAll('.sys-card[data-card-id]'),
+      function(el){
+        if (!_antes[el.getAttribute('data-card-id')]) el.classList.add('llegando');
+      });
+  }
 
   // Solid on arrival, then out of the way; hovering brings it back. One pile,
   // one timer — the two decks used to run their own and could disagree about
@@ -26647,7 +27520,20 @@ function _progFinish(){
  */
 var TOAST_QUICK = 2000;
 
-function showToast(msg, type, duration) {
+/**
+ * `accion` es opcional y añade UN botón al aviso: `{ texto, hacer, siNo }`.
+ *
+ * PARA QUÉ EXISTE: desde la v12.87 la pregunta de «¿imprimo etiquetas?» ya no
+ * está en el formulario —ocupaba sitio en la línea de cada material y pedía
+ * decidir sobre el futuro antes de escribir el presente— sino aquí, al guardar,
+ * que es cuando se puede contestar con los bultos delante.
+ *
+ * `siNo` CORRE SI EL AVISO SE VA SIN QUE SE PULSE, y no es un adorno: es lo que
+ * mantiene la regla de no apilar dos ventanas, la que costó la v11.29. O se
+ * pulsa —y entonces el cuadro de etiquetas encadena lo que venga después— o el
+ * aviso caduca y eso de después corre solo. Nunca las dos cosas, nunca a la vez.
+ */
+function showToast(msg, type, duration, accion) {
   type     = type     || 'ok';
   duration = duration || 3500;
   var icons = { ok:'✅', err:'❌', warn:'⚠️', info:'ℹ️' };
@@ -26658,9 +27544,30 @@ function showToast(msg, type, duration) {
   el.innerHTML =
     '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span>' +
     '<span class="toast-msg">'  + _he(msg) + '</span>' +
+    (accion && accion.texto
+      ? '<button class="toast-accion" type="button">' + _he(accion.texto) + '</button>' : '') +
     '<button class="toast-close" onclick="dismissToast(\'' + id + '\')">✕</button>';
   var container = document.getElementById('toastContainer');
   if (container) container.appendChild(el);
+
+  if (accion && accion.texto) {
+    var usada = false;
+    el.querySelector('.toast-accion').addEventListener('click', function(){
+      if (usada) return;
+      usada = true;
+      dismissToast(id);
+      try { accion.hacer && accion.hacer(); } catch (e) { console.warn('toast accion:', e); }
+    });
+    /* El `siNo` se arma sobre el MISMO reloj que esconde el aviso, no sobre uno
+     * propio: dos relojes para un solo aviso serían dos cosas que tienen que
+     * coincidir sin que nada lo obligue. */
+    setTimeout(function(){
+      if (usada) return;
+      usada = true;
+      try { accion.siNo && accion.siNo(); } catch (e) { console.warn('toast siNo:', e); }
+    }, duration);
+  }
+
   setTimeout(function(){ dismissToast(id); }, duration);
   return id;
 }
@@ -27057,14 +27964,43 @@ var BASIC_PRO = {
   /* El lector de correos va aparte y con su propio mensaje: vende muchísimo y
    * no cabe en la frase genérica. */
   correo:    { titulo: '📧 Read it from the email',
-               que: 'Paste a supplier email and the app fills in what is arriving — supplier, items, quantities and dates.' }
+               que: 'Paste a supplier email and the app fills in what is arriving — supplier, items, quantities and dates.' },
+  /* LEER UNA FACTURA NO ES LO MISMO QUE ADJUNTARLA, y hasta la v12.86 el botón
+   * «📷 Take a photo of the invoice» contestaba con el mensaje de adjuntar
+   * documentos. Parecido no basta: quien pulsa «léemela» y recibe «puedes
+   * guardarla» no entiende que le acaban de ofrecer otra cosa, entiende que la
+   * app no le entendió. */
+  lectura:   { titulo: '🤖 Let the app read the invoice',
+               que: 'Take a photo of a delivery note or an invoice and the app fills in the supplier, the items and the quantities for you.' }
 };
 
 /* Qué botón abre qué oferta. Un botón puede estar en la lista y no existir en
  * la pantalla: se comprueba antes de tocarlo. */
+/* ── CADA CANDADO CONTESTA DE LO QUE SE PULSÓ ───────────────────────────────
+ *
+ * Jose, 21/10: *"al dar clic en la ventana de low stock aparece un mensaje que
+ * dice algo sobre los incomings. Eso está mal... analiza todos los candados y el
+ * mensaje que muestra, deben hablar de lo mismo"*.
+ *
+ * Tenía razón y el repaso encontró tres, de dos clases distintas:
+ *
+ *   1. `btnMonitorSettings` y su gemelo de la barra contestaban «Expected
+ *      deliveries». Eran el ⚙ Monitor —elegir qué materiales se vigilan y con
+ *      qué mínimo—, y acabaron en 'llegadas' por estar cerca en el archivo.
+ *      **Pero el arreglo no era cambiarles el mensaje: era quitarles el
+ *      candado.** Ver la nota de abajo.
+ *   2. `btnAiExtract` contestaba «Photos and documents». Es «hazme la foto de
+ *      la factura y relléname los campos», que no es adjuntar un archivo: es
+ *      que te lo LEAN. Ahora tiene su propia oferta.
+ *
+ * CÓMO SE COLARON, que importa más que las tres: nada obligaba al mensaje a
+ * hablar del botón. Son dos cosas que tienen que coincidir sin que nada lo
+ * obligue — la misma falta que llevamos dieciséis veces pagando, esta vez en el
+ * texto en vez de en el código. Ahora lo vigila
+ * `test-candados-hablan-de-lo-mismo.js`. */
 var BASIC_PRO_BOTONES = {
   btnAddDoc:                 'fotos',
-  btnAiExtract:              'fotos',
+  btnAiExtract:              'lectura',
   btnMovLabels:              'etiquetas',
   btnEscanear:               'escanear',
   btnEscanearMov:            'escanear',
@@ -27072,8 +28008,22 @@ var BASIC_PRO_BOTONES = {
   btnAddIncoming:            'llegadas',
   btnDeleteIncoming:         'llegadas',
   btnWeekSchedule:           'llegadas',
-  btnMonitorSettings:        'llegadas',
-  btnMonitorSettingsToolbar: 'llegadas',
+  /* ── EL ⚙ MONITOR SE QUEDA ABIERTO EN LA GRATIS ──────────────────────────
+   *
+   * Estaba aquí, y era un descuido con consecuencias. La franja de «⚠ Zero
+   * Stock (1) · ⚠ Below Minimum (5)» **se ve en la Básica** —sale en el propio
+   * vídeo de Jose— y el botón que decide qué es «mínimo» estaba cerrado. O sea:
+   * la app le enseña a alguien un problema y le esconde el control con el que
+   * se define. Es el peor de los dos mundos, peor que no tener ninguna de las
+   * dos cosas.
+   *
+   * Y no había nada que lo justificara. La lista de materiales vigilados vive
+   * en las Script Properties del propio archivo del cliente: no pide ni un
+   * permiso más, que es el único portero que tiene la edición gratis. Lo que
+   * sí es de Pro es que ese aviso **llegue por correo**, porque eso necesita
+   * `MailApp` — y eso ya está cerrado por su lado.
+   *
+   * Nota deliberada: no se le pone candado NI se le esconde. Se deja funcionar. */
   btnBackupNow:              'respaldo',
   btnFromEmail:              'correo',
   btnReadEmail:              'correo'
@@ -27147,13 +28097,34 @@ function _proUrl(clave){
  * alcanzaría nunca el enlace. El hover es una mejora para quien tiene ratón, no
  * la única forma de llegar.
  */
+/* EL AVISO DE PRO ES UNO SOLO, SIEMPRE.
+ *
+ * Jose, 21/10, con un vídeo de quince segundos: pulsa el candado de «Incoming»
+ * cuatro veces y se apilan cuatro avisos idénticos, uno sobre otro, tapando la
+ * barra de pestañas. Es mío, de la v12.78: cada llamada hacía `appendChild` y
+ * nadie quitaba el anterior.
+ *
+ * Y es peor que un fallo de dibujo. Lo que una persona hace cuando pulsa algo y
+ * no pasa lo que esperaba es VOLVER A PULSAR, así que el caso de las cuatro
+ * copias no es el raro: es el normal. Un aviso que se multiplica al insistir
+ * castiga justo a quien no lo entendió a la primera, y además le tapa la
+ * navegación con la que se iría a otro sitio.
+ *
+ * Así que el aviso se REUSA: si ya hay uno, se le cambia el texto —puede ser
+ * otra función— y se le reinicia el reloj, con un golpecito para que se vea que
+ * contestó. Uno en pantalla, pase lo que pase. */
+var _proToastEl = null;
+
 function _proToast(clave){
   var f = BASIC_PRO[clave];
   if (!f) return;
   var cont = document.getElementById('toastContainer');
   if (!cont) return;
 
-  var el = document.createElement('div');
+  /* ¿Sigue puesto el de antes? No basta con que la variable no sea nula: el
+   * aviso pudo irse solo por su reloj, o porque alguien pulsó su ✕. */
+  var previo = (_proToastEl && _proToastEl.parentNode === cont) ? _proToastEl : null;
+  var el = previo || document.createElement('div');
   el.className = 'toast info';
   el.innerHTML =
     '<span class="toast-icon">🔒</span>' +
@@ -27161,12 +28132,32 @@ function _proToast(clave){
       '<a class="toast-pro" href="' + _he(_proUrl(clave)) + '" target="_blank" rel="noopener">Acopio Pro</a>' +
     '</span>' +
     '<button class="toast-close" type="button">✕</button>';
-  cont.appendChild(el);
+  if (!previo) cont.appendChild(el);
+  _proToastEl = el;
+
+  if (previo) {
+    /* EL GOLPECITO, Y POR QUÉ HAY QUE QUITAR LA CLASE ANTES DE PONERLA. Si sólo
+     * se añade, el navegador ve que ya estaba y no vuelve a lanzar la
+     * animación — o sea que del segundo clic en adelante no se vería nada, que
+     * es exactamente cuando hace falta que se vea. El `offsetWidth` de en medio
+     * es lo que le obliga a darse cuenta del cambio. */
+    el.classList.remove('pro-reavisa');
+    void el.offsetWidth;
+    el.classList.add('pro-reavisa');
+  }
 
   var reloj = null;
-  function irse(){ try { el.remove(); } catch (e) {} }
+  function irse(){
+    try { el.remove(); } catch (e) {}
+    if (_proToastEl === el) _proToastEl = null;
+  }
   function contar(ms){ clearTimeout(reloj); reloj = setTimeout(irse, ms); }
 
+  /* Los oyentes se ponen CADA VEZ sobre el mismo elemento cuando se reusa, y no
+   * se acumulan por una razón concreta: `innerHTML` de arriba destruye el ✕
+   * viejo y crea uno nuevo, así que su oyente anterior se fue con él. Los del
+   * ratón sí quedarían repetidos — y no importa, porque los dos hacen lo mismo
+   * sobre el reloj de ESTA llamada, que es el único que queda armado. */
   el.querySelector('.toast-close').addEventListener('click', function(){
     clearTimeout(reloj); irse();
   });
@@ -27174,6 +28165,87 @@ function _proToast(clave){
   el.addEventListener('mouseleave', function(){ contar(2500); });
 
   contar(9000);
+}
+
+/* ══ UNA ✕ EN CADA CAMPO DONDE SE ESCRIBE ═══════════════════════════════════
+ *
+ * Jose, 20/10: *"es molesto tener que darle clic a los lugares donde se escribe
+ * y tener que borrar letra por letra... debemos ponerlo en TODOS los lugares
+ * donde se escribe, excepto lo que no dejan escribir cualquier cosa y dan la
+ * lista para escoger"*.
+ *
+ * Ochenta y dos campos. Escribir la ✕ en cada uno a mano sería ochenta y dos
+ * sitios que tienen que acordarse de algo, y el campo ochenta y tres —el que
+ * alguien añada en diciembre— no la tendría. Un barrido, en cambio, la tiene
+ * desde que el campo existe.
+ *
+ * ── QUIÉN SÍ Y QUIÉN NO ────────────────────────────────────────────────────
+ *
+ *   SÍ:  donde se escribe libremente — texto, búsqueda, correo, teléfono,
+ *        número, y las áreas de comentarios. También los que tienen `list=`:
+ *        una lista de sugerencias no impide escribir lo que quieras, así que
+ *        ahí borrar a mano duele igual.
+ *
+ *   NO:  `<select>`, que es la lista cerrada de la que habla Jose — no se
+ *        escribe, se elige, y vaciarlo no significa nada.
+ *        Tampoco fechas (el navegador ya trae su propio control), ni casillas,
+ *        ni los de sólo lectura, ni los que están apagados por ser de Pro.
+ */
+function _ponerEquis(raiz){
+  var campos = (raiz || document).querySelectorAll(
+    'input[type=text],input[type=search],input[type=email],input[type=tel],' +
+    'input[type=number],input:not([type]),textarea');
+
+  Array.prototype.forEach.call(campos, function(el){
+    if (el.dataset.equis) return;                       // ya lo tiene
+    if (el.readOnly || el.disabled) return;
+    if (el.closest('.pro-off')) return;                 // apagado por ser de Pro
+    if (el.type === 'hidden') return;
+
+    el.dataset.equis = '1';
+
+    var caja = document.createElement('span');
+    caja.className = 'tiene-x';
+    /* ANCHO: si el campo ocupaba todo lo ancho de su hueco, el envoltorio
+     * también tiene que ocuparlo, o la fila se encoge al envolverlo. Se mira
+     * lo que el navegador le estaba dando, no lo que creemos que debería. */
+    var estilo = getComputedStyle(el);
+    if (estilo.display === 'block' || estilo.width === '100%' ||
+        el.offsetWidth >= (el.parentElement ? el.parentElement.clientWidth - 4 : 0)) {
+      caja.className += ' ancho';
+    }
+    el.parentNode.insertBefore(caja, el);
+    caja.appendChild(el);
+
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'campo-x';
+    x.textContent = '✕';
+    x.tabIndex = -1;                 // se llega escribiendo, no tabulando
+    x.setAttribute('aria-label', 'Clear');
+    x.title = 'Clear';
+    caja.appendChild(x);
+
+    function pintar(){ caja.classList.toggle('con-texto', !!el.value); }
+
+    x.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      el.value = '';
+      /* LOS DOS AVISOS, Y HACEN FALTA LOS DOS. Las búsquedas escuchan `input`
+       * y los filtros escuchan `change`. Vaciar el campo sin avisar dejaría la
+       * tabla filtrada por un texto que ya no está escrito en ninguna parte —
+       * que es peor que no tener la ✕. */
+      el.dispatchEvent(new Event('input',  { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      pintar();
+      el.focus();
+    });
+
+    el.addEventListener('input', pintar);
+    el.addEventListener('change', pintar);
+    pintar();
+  });
 }
 
 /**
@@ -27276,6 +28348,13 @@ function _basicPintar(){
  * Lo mismo para una pestaña de ajustes, que se pinta de nuevo cada vez.
  * La llama `_renderSettingsTab` al final, una vez por pintada.
  */
+/* Las pestañas de ajustes y los modales se pintan de nuevo cada vez, así que
+ * sus campos nacen sin ✕. Se vuelve a pasar; los que ya la tienen se saltan
+ * solos. */
+function _equisTrasPintar(){
+  try { _ponerEquis(document); } catch (e) {}
+}
+
 function _basicApagarAjuste(tab){
   if (!APP_BASIC) return;
   var clave = BASIC_PRO_AJUSTES[tab];
@@ -27364,6 +28443,10 @@ function applyRoleUI(){
    * La edición manda sobre el rol porque es una capa más abajo: el rol decide
    * qué puede hacer esta persona, la edición decide qué existe. */
   _basicPintar();
+  /* Y la ✕ de los campos, después de que el rol y la edición hayan decidido
+   * cuáles están a la vista: envolver uno escondido no estorba, pero envolver
+   * uno apagado por ser de Pro le pondría un botón que no debe tener. */
+  try { _ponerEquis(document); } catch (e) { console.warn('_ponerEquis:', e && e.message); }
 }
 
 // ── Connection status ─────────────────────────────────────────────────────────
@@ -27753,48 +28836,51 @@ var LEGAL_DOCS = {
  */
 
 var NOVEDADES = [
-  { ver: '12.78',
-    titulo: 'Nothing half-done, and no surprises at the end',
+  { ver: '12.87',
+    titulo: 'A much quieter Receive window',
     puntos: [
-      'In the free edition you could pick a photo, write who to email, attach a document \u2014 and only find out <i>on save</i> that none of it would happen. Worse: the movement saved and the document did not.',
-      'Now anything that belongs to Acopio Pro is <b>greyed out and cannot be started</b>. One tap tells you what it does and how to get it, before you have put any work into it.',
-      'Editing a movement no longer fails. It was saving the change and <i>then</i> trying to email about it, which left a red error sitting on top of a change that had already happened.',
-      'And the app asks your name once, so every movement you record carries it \u2014 ready for the day you move up.',
-      'None of this exists in the paid edition.'
+      'There were sixteen controls on screen to record "20 windows arrived, they are in A1A". Two of them are the movement; the rest is context some warehouses fill every time and others never.',
+      '<b>The form now learns which ones yours uses.</b> A field left empty across your last sixty movements folds behind one <b>+ 3 more fields</b> line \u2014 no setting to find, no box to tick. Save one movement with it filled and it comes back on its own.',
+      'It never hides a field that already has something in it, and the line that brings them back is always there and says how many it holds.',
+      '<b>Documents</b> is one line that opens when you need it. The <b>\ud83c\udff7 Label</b> tickbox left the material line \u2014 after saving, the confirmation offers <b>Print labels</b>, which is when you can answer that.'
     ],
-    antes:  'You could start anything, and find out at the end that it did not happen',
-    ahora:  'What you cannot finish, you cannot start' },
+    antes:  'Sixteen controls to write down twenty windows',
+    ahora:  'The ones your warehouse actually uses' },
 
-  { ver: '12.77',
-    titulo: 'The free edition opens now',
+  { ver: '12.86',
+    titulo: 'Every padlock now answers about what you clicked',
     puntos: [
-      'It did not. It drew the screen and then died asking for data, with <i>Not authenticated</i>. Nothing in the paid edition was affected \u2014 that switch is off in your copy.',
-      'The cause was two of our own decisions meeting: the free edition has no sign-in, so it has no email address to show, and the door read \u201cno email\u201d as \u201cnobody signed in\u201d.',
-      'In the free edition the door is the deployment itself \u2014 Google only lets the owner of the copy open it \u2014 so the email was never the proof. The rest of the door is untouched: roles, read-only and refused accounts behave exactly as before.',
-      'A test now runs that door in both editions with a user who has no email, so this cannot come back quietly.'
+      'In the free edition, clicking the low-stock settings used to answer with a message about <i>expected deliveries</i>. Three of them pointed at the wrong explanation.',
+      'And the low-stock settings should never have been closed. The free edition already shows the "below minimum" banner, so closing the button that decides what "minimum" means showed you a problem and hid the control that defines it. <b>It is open now.</b>',
+      'What is still Pro is getting that alert <b>by email</b>, which needs a permission the free edition does not ask for.'
     ],
-    antes:  'The free edition drew its screen and then stopped, asking you to sign in to something that has no sign-in',
-    ahora:  'It opens' },
+    antes:  'Click the low-stock settings, get told about expected deliveries',
+    ahora:  'Each one explains the thing you actually clicked' },
 
-  { ver: '12.76',
-    titulo: 'The free edition now shows what it is missing',
+  { ver: '12.85',
+    titulo: 'Two notices that piled up',
     puntos: [
-      'In <b>Acopio Basic</b>, the Pro features are no longer hidden. The button is there, marked with a \u{1F512}, and pressing it says what that feature does.',
-      'It says what you <i>get</i>, not what you lack \u2014 and it never interrupts what you were doing. A movement still saves, with or without the photo.',
-      'The full message appears <b>once</b>. After that it is a quiet one-line note. A reminder shown every time is not a reminder, it is nagging.',
-      'The paid edition is unaffected: none of this exists in your copy.'
+      'Clicking a Pro feature you do not have four times used to stack four identical notices, covering the tabs. Now there is <b>one</b>, always: clicking again rewrites it and nudges it.',
+      'Clicking twice is not the odd case \u2014 it is what anyone does when a click does not do what they expected. The notice was multiplying for exactly the person who had not understood it.',
+      'And the corner cards stopped filling with maintenance. A card is now for <b>something the app changed that you did not ask for</b>; nightly backups and archiving are still there in full under Settings \u2192 System.'
     ],
-    antes:  'A free edition that quietly lacked things, and never said so',
-    ahora:  'It tells you what else it can do, at the moment you want it' },
-  { ver: '12.74',
-    titulo: 'Scanning works after all — with a photo',
+    antes:  'Four clicks, four notices, and a week away meant a wall of backup cards',
+    ahora:  'One notice, and cards only for what needs a look' },
+
+  { ver: '12.84',
+    titulo: 'Returning more than went out now says so',
     puntos: [
-      'Open <b>Scan label</b> and tap <b>Take a photo of the label</b>. Your phone camera opens, you take the picture, and the app reads the code from it.',
-      'The live viewfinder is what Google blocks inside this app. A photo is not blocked, because it is not the app asking for your camera — it is your phone handing back a picture, the same way the app already takes photos of documents.',
-      'Everything after the read is unchanged: it offers what you can do with that label and fills the form. It still never saves on its own.'
+      'If you return more of a material than is recorded as out at that site, the app asks before saving: how much is out there, how much you are returning, and how much is about to be added to the warehouse that never left it.',
+      'It <b>asks</b> \u2014 it does not refuse. Someone standing there with material in hand has to be able to record it, and you never have to open the spreadsheet to fix it.',
+      'And it stays quiet in the case that matters: a material with <b>no recorded dispatch at all</b> saves with no warning. Warehouse history starts partway through, and something that left before Acopio existed is a real return no record can know about.'
     ],
-    antes:  'A black box asking you to point a camera that was never allowed to turn on',
-    ahora:  'Take the picture, and it reads the label' },
+    antes:  'Return five of something that never left, and the warehouse silently gained five',
+    ahora:  'The app asks first, and says exactly how many were never out' },
+
+
+
+
+
 ];
 
 var NV_CLAVE = 'acopio_novedades_vista';
@@ -28150,7 +29236,19 @@ function _setAccountIdentity(name, email, role, stale){
   // it is so Jose can ask "what does this line say?" and know exactly which
   // bytes they are running, without asking anyone to open the script editor or
   // send a file. Shown only once it has actually been stamped.
-  if (foot) foot.textContent = (_companyName ? _companyName + ' · ' : '') + PRODUCT + ' v' + APP_VERSION +
+  /* QUÉ EDICIÓN ES, DICHO EN LA PANTALLA.
+   *
+   * El archivo que se manda sale SIEMPRE con `ACOPIO_BASIC = false`, porque la
+   * versión de pago es la que se publica. O sea que cada vez que se pega una
+   * versión nueva en una copia básica hay que volver a poner `true` — y
+   * olvidarlo da una app que parece la básica y no lo es, sin nada que lo diga.
+   *
+   * Es, otra vez, dos cosas que tienen que coincidir sin que nada lo obligue.
+   * No se puede quitar —el interruptor es lo que hace que haya una sola base de
+   * código— pero sí se puede hacer VISIBLE, que es la diferencia entre un
+   * despiste de dos segundos y uno de media hora. */
+  if (foot) foot.textContent = (_companyName ? _companyName + ' · ' : '') + PRODUCT +
+                               (APP_BASIC ? ' Basic' : '') + ' v' + APP_VERSION +
                                (APP_BUILD ? ' · build ' + APP_BUILD : '');
 }
 
