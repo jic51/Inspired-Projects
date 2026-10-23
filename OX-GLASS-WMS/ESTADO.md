@@ -4,10 +4,13 @@
 > vez que olvide cómo vamos, y señala las partes que estamos trabajando, las que
 > recién hicimos y las no se han verificado, para enfocarme en ellas."*
 >
-> **Este documento se actualiza en cada versión.** Si la fecha de abajo tiene más
-> de una semana, está viejo y hay que decirlo.
+> **Este documento se actualiza en cada versión** y va con cada entrega. Si la
+> fecha de abajo tiene más de una semana, está viejo y hay que decirlo.
+>
+> **«El estado de Acopio» y `ESTADO.md` son lo mismo**: este fichero. Es el
+> único sitio donde mirar cómo vamos.
 
-**Última actualización:** 21/10/2026 · **versión v12.87** · build `c6eeee05`
+**Última actualización:** 23/10/2026 · **versión v12.95** · build `ac9fd6eb`
 
 ---
 
@@ -18,15 +21,271 @@ contexto.
 
 | # | Qué | Por qué está parado | Cuánto cuesta |
 |---|---|---|---|
-| 1 | **Verificar la v12.82–87 en la app de verdad** | Seis versiones publicadas y ninguna abierta | 20 min |
-| 2 | **Que alguien de fuera instale la Básica** | El enlace `/copy` le falló a la única persona que lo intentó | 20 min, con otra persona |
+| 1 | **La lista de verificación de abajo** | Hay diez versiones de cambios y ninguno está confirmado por ti | 30 min, con la app abierta |
+| 2 | ~~Que alguien de fuera instale la Básica~~ | ✅ **HECHO el 21/10** — alguien de fuera instaló con los dos enlaces y funcionaron. En computadora | — |
 | 3 | **Grabar V1, el vídeo del cronómetro** | Es el hueco más caro de la landing | una mañana |
 | 4 | **Decidir el precio de la Básica en la página** | El precio de Pro ya está decidido; la columna de la gratis no | 10 min de decisión |
 | 5 | **Una forma de agendar una llamada** | Hoy el camino muere en un correo | 20 min de configuración |
+| 6 | **¿Las filas importadas sin ubicación van a `RECEIVING`?** | Hoy caen en `UNASSIGNED`, que es una palabra del programa | 2 min de decisión |
+| 7 | **La casilla «todos» de Movements** | Tres opciones, y la que tú propusiste no es la que yo construiría | 2 min de decisión |
+| 8 | **¿Destildar filas al importar, en vez de «subir uno por uno»?** | Da el mismo control sin una pantalla nueva | 1 min de decisión |
+
+---
+
+## 📋 LA LISTA DE VERIFICACIÓN — depurada el 23/10
+
+> **Lo que ya confirmaste está fuera de esta lista.** Sólo queda lo que falta
+> mirar, separado por edición como pediste. Lo tachado se fue porque lo
+> verificaste tú; lo que descubriste roto pasó a `docs/BACKLOG.md`.
+
+### ✅ Lo que confirmaste el 23/10 — ya no hay que volver a mirarlo
+
+La ✕ dentro de la caja (Dashboard, Movements, Warehouse Map) · los candados de
+Pro, cada uno con su mensaje · cuatro clics en el mismo candado = un solo aviso ·
+Documentos es una línea que se abre · Entry abre bien · la lista de «lo que está
+fuera» sale al entrar en el nombre, sin teclear · un material en dos obras sale
+en dos líneas · al elegir una se rellenan nombre, sitio, cantidad, unidad, obra
+y PM, con el cursor en el estante · «Returned By» se queda vacío · las columnas
+del Dashboard ya no se mueven al cambiar de filtro.
+
+---
+
+### 🟦 ACOPIO **BÁSICO** — lo que falta mirar
+
+| ✓ | Qué | Dónde |
+|---|---|---|
+| ☐ | **Decir «sí» en un aviso guarda** (v12.94 — el fallo que encontraste) | Return → algo con 49 fuera → escribe 60 → Save anyway. Tiene que **guardar**, no dar error |
+| ☐ | **Borrar muchos tarda segundos y se puede parar** (v12.92) | Marca unos cientos → Delete. Botón **Stop** a mitad: debe decir *«Stopped — X of Y deleted»* |
+| ☐ | **Importar no pierde filas** (v12.91) | Un fichero de más de 500 filas: el botón y el final tienen que decir **el mismo número**, con *«matches the file»* |
+| ☐ | **El mismo fichero dos veces avisa** (v12.91) | Súbelo otra vez: recuadro rojo arriba, y el botón **sigue ahí** |
+| ☐ | **Deshacer una importación** (v12.91) | Ajustes → Import → **↩ Undo this import** |
+| ☐ | **Unir nombres duplicados** (v12.93) | Ajustes → Projects → el grupo de catorce: **«listed 14 times»** y **Keep one** |
+| ☐ | **El Error Log en vivo** (v12.93) | Provoca un error **sin cerrar Ajustes** → la fila nueva entra **arriba**, con destello, sin repintar |
+| ☐ | **El candado del correo** (v12.91) | «Send notification email» → el mensaje habla de **avisar**, no de *leer* un correo |
+| ☐ | **La ✕ dentro de la ventana de movimiento** | Abre Entry y escribe en un campo: la ✕ va **dentro** de la caja |
+| ☐ | **Vaciar la búsqueda con la ✕ relanza la búsqueda** | Movements: escribe, filtra, pulsa ✕ → la tabla se repuebla |
+| ☐ | **La papelera después de borrar** | Ajustes → Sistema → lo borrado está ahí para devolverlo |
+
+**Y tres que YA SABEMOS que están mal en Básico** (anotadas, no hace falta que
+las mires otra vez): 🏷 Labels sale a color en vez de gris · la pregunta de
+«¿también llegó esto?» no debería salir · no aparece ni una tarjeta en el mazo.
+
+---
+
+### 🟪 ACOPIO **PRO** — lo que falta mirar
+
+| ✓ | Qué | Dónde |
+|---|---|---|
+| ☐ | **Lo mismo de la lista de arriba** que no depende de la edición | importar, borrar en tanda, fusionar, Error Log, la ✕ |
+| ☐ | **«+ N more fields»** | Entry: la línea existe y al pulsarla vuelven GC, PO#, Project y PM |
+| ☐ | **Un campo con algo escrito no se esconde** | Escribe en PO#, cambia de pestaña y vuelve |
+| ☐ | **Documentos no se cierra sola** | Abre Documentos, escribe un nombre |
+| ☐ | **🏷 Print labels tras guardar** | Guarda una entrada → el aviso lo ofrece → se abre el cuadro con todo marcado |
+| ☐ | **«¿También llegó esto?»** | Guarda una entrada y **no** pulses nada: la pregunta tiene que salir igual |
+| ☐ | **El campo Truck** | Registra un camión en Ajustes → aparece en el formulario. Sin camiones, no está |
+| ☐ | **⚙ Monitor** | Se abre (en Pro no lleva candado) |
+| ☐ | **El mazo de tarjetas** | **Sí** debe haber tarjetas aquí. Y **ninguna** de «Backup created» ni «archive start» |
+| ☐ | **Ajustes → Sistema** | Ahí **sí** siguen todos los respaldos y archivados |
+| ☐ | **Los documentos en un movimiento** | Adjuntar, y que se guarden con él |
+
+---
+
+### ⏳ Esperando algo tuyo
+
+| Qué | Qué hace falta |
+|---|---|
+| **Ajustes → Sistema en Básico** | Dijiste que mandabas un vídeo y no llegó |
+| **«El menú se apaga»** | ¿Cuál menú? El de arriba, el de la cuenta, o el de la hoja |
+| **La app tarda en abrir** | Un vídeo con la v12.94 ya pegada, para medir con lo de ahora y no con lo de antes |
+
+---
+
+## 🧭 LO QUE ESTAMOS MIRANDO AHORA — el plan del 22/10
+
+El detalle completo, con números de línea, está en `docs/BACKLOG.md`, al
+principio.
+
+| # | Qué | Estado |
+|---|---|---|
+| 1 | **Importar perdía las filas pasada la 500** | ✅ **HECHO — v12.91** |
+| 1-bis | **Borrar 490 tardaba media hora y no se podía parar** | ✅ **HECHO — v12.92** |
+| 2 | **El mismo fichero dos veces**: aviso + **deshacer** | ✅ **HECHO — v12.91** |
+| 3 | **La pantalla de importar dice la verdad** (un número, todas las columnas, qué va a crear antes) | ✅ **HECHO — v12.91** |
+| 4 | **«Send notification email» contestaba sobre LEER el correo** | ✅ **HECHO — v12.91** |
+| 5 | **Fusionar nombres**, las dos mitades | ✅ **HECHO — v12.93** · causa confirmada con tu vídeo: fallan **las 28** |
+| 6 | **El Error Log en vivo**, sin repintar | ✅ **HECHO — v12.93** |
+| 7 | **Dueño único de las pestañas** + papelera abierta + Import abierto (CSV) | 🔜 **v12.94** |
+| 8 | **Importar de verdad**: ventana propia, ubicación por fila y por grupos, destildar, prueba de 20 | 🔜 **v12.94+** |
+| 9 | Materials (Ajustes), como las alertas de stock bajo | anotado |
+| 10 | Directory (Ajustes), como la pantalla de usuarios | anotado |
+| — | La casilla «todos» de Movements | 🔵 **la revisaste y se queda como está** |
+| — | Importar el **historial** (fechas, tipos, quién) | 🔵 **tu decisión** · es otra función, no una columna más |
+
+**Los cuatro primeros ya están en la v12.91.** Lo siguiente es la fusión de
+nombres y el Error Log en vivo, que van juntos en la v12.92.
+
+### ✅ La página recortada — HECHO el 22/10
+
+Aprobado por ti y ya está. **No cambia ni una línea del producto**: misma
+versión, mismo sello, mismo código. Lo único que cambia es que lo que se pega
+en Apps Script ya no lleva los comentarios.
+
+| | Antes | Ahora |
+|---|---|---|
+| `Index_v3_fixed.html` | 1.590 KB | **897 KB** |
+| `Code_v3_fixed.gs` | 813 KB | **400 KB** |
+| **Por la red (lo que esperas en 3G)** | **527 KB** | **225 KB** |
+
+Y lo que hacía falta arreglar antes de recomendártelo: la herramienta borraba
+también las líneas vacías, y el archivo pasaba de 30.246 líneas a 17.858. Eso
+rompe lo único que usamos para encontrar un fallo — tú mandas la captura de tu
+consola, yo leo «línea 19174» y voy ahí. **Ahora las líneas son las mismas**, y
+hay una prueba que comprueba que **cada una de las 1.181 funciones cae en la
+misma línea** que en el repositorio.
+
+**Lo que cambia para ti:** a partir de ahora pegas los archivos de la carpeta
+`pegar/` (te los mando aparte), no los del repositorio. Son el mismo producto.
 
 ---
 
 ## ✅ LO QUE ACABAMOS DE HACER — y qué hay que mirar de cada cosa
+
+### v12.95 · Una obra no es una estantería · **SIN VERIFICAR**
+
+Tu hallazgo de concepto. **Qué probar:**
+
+1. **Return → escribe una obra** en «Came back from»: **no** debe salir
+   *«is not a location in your warehouse»* ni el botón de crearla.
+2. **Hay un solo campo**, no dos: «From» y «Came back from» eran la misma
+   pregunta.
+3. **La lista que ofrece** son los sitios a donde ha salido material y tus
+   obras — **ningún estante**.
+4. **El estante de vuelta (Return to Rack) SÍ sigue avisando** si no existe.
+5. **Entry / Exit / Transfer**: «Source Rack» sigue ofreciendo estantes y
+   avisando. Eso no cambió.
+6. **El Error Log**: los «System busy» ya salen en amarillo (WARN), no en rojo.
+
+### v12.94 · Decir «sí» en un aviso ahora guarda · **SIN VERIFICAR**
+
+7. **Return → devuelve más de lo que salió → Save anyway**: tiene que
+   **guardar**. Era el error que encontraste.
+
+### v12.93 · Unir nombres funciona, y el Error Log se entera · **SIN VERIFICAR**
+
+**Qué probar:**
+
+1. **Ajustes → Projects.** El grupo de «ASPEN HOLLOW LOT 14» ya no te pide
+   elegir entre catorce botones iguales: dice **«listed 14 times»** y ofrece
+   **Keep one**. Púlsalo — tiene que quedar **una** fila.
+2. **Lo mismo en Suppliers**, con los ocho grupos.
+3. **Un grupo de verdad parecido** (dos grafías distintas) sigue pidiendo cuál
+   conservar, que es lo correcto. Elige una: el historial se reescribe con ella.
+4. **El Error Log en vivo.** Abre Ajustes, provoca un error, y **sin cerrar
+   Ajustes** ve a Error Log: la fila nueva tiene que estar **arriba**, con un
+   destello azul, y **sin que se repinte la tabla**. Arriba sale
+   *«• 1 new since you opened this»*.
+5. **Escribe algo en el buscador del Error Log** y deja que llegue otro error:
+   el texto que escribiste **no se borra**, y la fila nueva sólo entra si
+   coincide con lo buscado.
+6. Y hay un botón **↻ Refresh** por si quieres pedirlo tú.
+
+### v12.92 · Borrar muchos tarda segundos, y se puede parar · **SIN VERIFICAR**
+
+De tus dos vídeos del 22/10: 490 movimientos, **casi media hora**, 40 perdidas,
+y sin forma de pararlo.
+
+**Qué probar:**
+
+1. **La prueba grande.** Marca unos cuantos cientos de movimientos y pulsa
+   Delete. Tiene que tardar **segundos**, no minutos. Y ya no debe salir ningún
+   *«Too many requests»*.
+2. **El botón de Parar.** Mientras trabaja, la línea de abajo a la izquierda
+   tiene un botón **Stop**. Púlsalo a mitad: tiene que decir algo como
+   *«Stopped — 300 of 490 deleted. The other 190 are untouched»*, y esos 190
+   tienen que seguir en la lista.
+3. **Borrar UNO solo** sigue igual que siempre: la fila se va al pulsar y las
+   cifras del almacén se actualizan con la respuesta. Eso no cambió.
+4. **Los avisos repetidos.** Si algo falla varias veces, **no se apilan**: al
+   que está en pantalla le sale un **× 4** pequeño.
+5. **Deshacer una importación grande** (más de 300 filas) tiene que terminar
+   del todo, no pararse a medias diciendo que ya está.
+6. Y lo borrado sigue en **Ajustes → Sistema → papelera**, para devolverlo.
+
+### v12.91 · Importar deja de perder filas · **SIN VERIFICAR — Y ES LA MÁS IMPORTANTE**
+
+Los cuatro puntos que aprobaste. **Esto arregla una pérdida de datos**, así que
+si sólo compruebas una versión este mes, que sea ésta.
+
+**Qué probar, en orden:**
+
+1. **La prueba grande.** Coge tu fichero de 1.052 filas e impórtalo en una copia
+   **vacía**. Mira que el botón diga **1.052**, y que al terminar la línea diga
+   **1.052 filas** y las unidades, con **«matches the file»**. Antes entraban
+   500.
+2. **Las columnas.** Al cargar el fichero, la tabla tiene que enseñar
+   **Unit, Project, Supplier, PO# y Comments** además de las cinco de siempre.
+   Si tu fichero no trae alguna, esa columna no sale — eso también está bien.
+3. **Lo que va a crear.** Encima del botón, un recuadro azul: *«This import will
+   also create: 7 locations…»*. Antes eso se contaba **al terminar**.
+4. **Sube el MISMO fichero otra vez.** Tiene que salir un recuadro rojo arriba
+   del todo: *«You already imported this exact file»*, con cuándo y quién. **Y
+   el botón sigue ahí** — avisa y deja pasar, como en las devoluciones.
+5. **Deshacer.** Abajo de esa pantalla está **«Imports you have already done»**.
+   Pulsa **↩ Undo this import** en una: tiene que decir cuántos movimientos
+   quitó, y el almacén volver a lo de antes. Luego mira **Ajustes → Sistema →
+   papelera**: ahí están, para devolverlos.
+6. **[B] El candado del correo.** En la gratis, pulsa **«Send notification
+   email»**: el mensaje tiene que hablar de **avisar por correo**, no de *leer*
+   un correo.
+
+### v12.90 · La devolución no pregunta lo que ya sabe, y el aviso dura 7s · **SIN VERIFICAR**
+
+De tu vídeo del 22/10.
+
+**Qué probar:**
+1. Return → elige un material que salió **a un solo sitio**: el sitio, la obra,
+   el PM, la unidad y la cantidad se rellenan **solos**. Ya no te pregunta de
+   dónde vino.
+2. Elige uno que salió **a dos sitios distintos**: ahí **sí** sale la lista de
+   los dos para que elijas.
+3. Elige uno que **nunca salió**: el cajón se queda vacío, para contestarlo.
+4. Escribe algo a mano en el sitio y luego cambia el material: **no te lo pisa**.
+5. [B] Pulsa un candado de Pro: el aviso se va a los **7 segundos**, no a los 14.
+   Pasa el ratón por encima: se queda. Quítalo: se va en **2 ó 3**.
+6. Pulsa cuatro candados seguidos: sigue habiendo **un solo aviso**.
+
+### v12.89 · Una lista, búsqueda que no se queda atrás, y 2 MB menos · **SIN VERIFICAR**
+
+De tu repaso del 22/10.
+
+**Qué probar:**
+1. Return → entra en el nombre: **una sola lista**, la nuestra. La del navegador
+   ya no sale encima.
+2. Cambia a Waste y escribe: ahí **sí** vuelve la lista del navegador, porque en
+   esa pantalla es la única ayuda.
+3. Escribe **seguido y rápido** en cualquier búsqueda: el texto de abajo tiene
+   que seguirte, no esperar a que pares.
+4. Abre la app con la red lenta (DevTools → Network → 3G, como en tu vídeo):
+   tiene que entrar **mucho antes**. Las gráficas llegan después, solas.
+5. [B] Pulsa los ajustes de **stock mínimo**: ahora **no** se abre, y el mensaje
+   habla de alertas de stock bajo — no de entregas esperadas.
+6. [B] En una copia nueva de la hoja, mira «WHAT HAPPENS NEXT»: ya no habla del
+   asistente ni de materiales y locaciones.
+
+### v12.88 · La ✕ dentro de la caja, y la gratis sin menú fantasma · **SIN VERIFICAR**
+
+Tus dos capturas del 21/10. En Movements la ✕ se dibujaba al final de la fila, a
+cientos de píxeles de la caja — y por eso la caja se quedaba sola arriba. Y en
+la versión gratis la hoja mandaba a un menú «Acopio» que **no puede existir
+ahí**: necesita un permiso sensible que esa edición no pide a propósito.
+
+**Qué probar:**
+1. Movements → escribe algo en la búsqueda: la ✕ tiene que salir **dentro** de
+   la caja, y la caja ya no debe ocupar la fila entera.
+2. Lo mismo en cualquier otra caja de escritura de la app.
+3. En la copia gratis, destilda y vuelve a tildar la casilla de términos: el
+   texto ya no debe hablar de ningún menú, y tiene que decirte que el nombre de
+   la empresa se pone en **Settings → Name & Logo**.
 
 ### v12.87 · La ventana de entrada, limpia · **SIN VERIFICAR**
 
@@ -191,7 +450,7 @@ Para no perder de vista el tamaño de lo que ya hay.
 
 ## 📋 LO SIGUIENTE, EN ORDEN
 
-1. **Verificar la v12.82–87** (20 min, tú) — son seis versiones sin abrir
+1. **La lista de verificación** (30 min, tú) — diez versiones de cambios sin confirmar
 2. **Terminar la tarjeta de ajuste** (yo, ~1 versión)
 3. **Precios y sección de Pro en la página** (medio día, yo; la decisión, tú)
 4. **Agendar llamadas** (20 min, tú)
