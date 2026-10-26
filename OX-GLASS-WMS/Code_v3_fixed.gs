@@ -128,7 +128,7 @@
 
 
 
-var APP_VERSION = '12.96';
+var APP_VERSION = '12.97';
 
 
 
@@ -140,7 +140,7 @@ var APP_VERSION = '12.96';
 
 
 
-var APP_BUILD = '4839af6b';
+var APP_BUILD = 'fb3ce95f';
 
 
 
@@ -11361,7 +11361,7 @@ var LEGAL_SHEET_TEXT = {
   terms: [
     ["title","Terms of Service — Acopio"],
     ["p",""],
-    ["p","Last updated: 27 August 2026"],
+    ["p","Last updated: 24 October 2026"],
     ["p",""],
     ["p","These terms govern your use of Acopio, warehouse-management software provided by Jose Castro (\"we\", \"us\"). By installing or using it, you agree to them. If you are agreeing on behalf of a company, you confirm you are authorised to do so."],
     ["p",""],
