@@ -2116,11 +2116,24 @@
 
 
 
+    
+
+
+
+
     #tableContainer td.mc-qty .qpair{
       display:grid;grid-template-columns:46px 48px;gap:5px;align-items:baseline}
     #tableContainer td.mc-qty .qv{
       text-align:right;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
-    #tableContainer td.mc-qty .qv.qty-lg{font-size:var(--fs-base)}
+    
+
+
+
+
+
+
+
+    #tableContainer td.mc-qty .qv.qty-lg{font-size:var(--fs-sm)}
     #tableContainer td.mc-qty .qu{
       text-align:left;color:var(--muted);font-size:var(--fs-md);
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -5840,7 +5853,7 @@ var _MOV_PAGE_SZ = 75;
 var chartsReady = false;
 
 
-var APP_VERSION = '12.97';
+var APP_VERSION = '13.0';
 
 
 
@@ -5852,7 +5865,7 @@ var APP_VERSION = '12.97';
 
 
 
-var APP_BUILD = 'fb3ce95f';
+var APP_BUILD = '9a16bf6a';
 var userRole = 'WAREHOUSE';
 
 
@@ -9561,7 +9574,7 @@ function renderMovements(){
         var txt = (isOut ? '−' : '+') + m.qty;
         var uni = String(m.unit || '—');
         return '<td class="mc-qty"><span class="qpair">' +
-          '<span class="qv' + (txt.length > 5 ? ' qty-lg' : '') + '" style="color:' +
+          '<span class="qv' + (txt.length >= 5 ? ' qty-lg' : '') + '" style="color:' +
             (isOut ? 'var(--red)' : 'var(--accent2)') + '">' + _he(txt) + '</span>' +
           '<span class="qu" title="' + _escAttr(uni) + '">' + _he(uni) + '</span>' +
         '</span></td>';
@@ -15513,7 +15526,7 @@ function _renderSystemTab() {
                 'their own section below.') +
       '</label>' + actHtml +
     '</div>' +
-    '<div class="field" style="margin-bottom:1.25rem">' +
+    '<div class="field" id="sysArchivado" style="margin-bottom:1.25rem">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Archive movements older than ' +
         _infoIc('Older movements stay accessible via "Load Older History" — this only moves them out of the main table for speed.') +
       '</label>' +
@@ -15525,7 +15538,7 @@ function _renderSystemTab() {
         '</select>' +
       '</div>' +
     '</div>' +
-    '<div class="field" style="margin-bottom:1.25rem">' +
+    '<div class="field" id="sysRespaldo" style="margin-bottom:1.25rem">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Backups ' +
         _infoIc('A full copy of your system is made every night at 2am and kept for 30 days ' +
                 'in a folder in your own Drive. Old copies are deleted after that.\n\n' +
@@ -15534,7 +15547,7 @@ function _renderSystemTab() {
       '</label>' +
       '<div id="backupBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Checking…</div>' +
     '</div>' +
-    '<div class="field" style="margin-bottom:1.25rem">' +
+    '<div class="field" id="sysReporte" style="margin-bottom:1.25rem">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Daily movement report ' +
         _infoIc('An email each evening listing what came into the warehouse and what left that day. ' +
                 'It is sent on quiet days too, saying there were no movements — so a quiet day never ' +
@@ -15548,7 +15561,7 @@ function _renderSystemTab() {
       '</label>' +
       '<div id="spaceBox" style="color:var(--muted);font-size:.78rem"><span class="spin-hg">⏳</span> Measuring…</div>' +
     '</div>' +
-    '<div class="field" style="margin-bottom:1.25rem">' +
+    '<div class="field" id="sysLector" style="margin-bottom:1.25rem">' +
       '<label style="display:flex;align-items:center;gap:.4rem">Document reader (AI) ' +
         _infoIc('Reads a pasted supplier email and pulls out what is arriving, how much and when. It runs on your own Google AI key — Google bills the usage to you, not to us.') +
       '</label>' +
@@ -15591,6 +15604,12 @@ function _renderSystemTab() {
   
   
   
+  
+
+
+
+  _basicApagarSecciones();
+
   _applySysActSpot();
 
   _loadBackupStatus();
@@ -16649,12 +16668,40 @@ function _renderImportTab() {
     '<div class="field">' +
       '<label>Bring in a file</label>' +
       '<p style="font-size:.8rem;color:var(--muted);margin:0 0 .75rem">' +
-        'Bulk-import an existing inventory from an Excel (.xlsx) or CSV file — useful for the first setup, or catching up after counting on paper. ' +
-        'Every row becomes a real ENTRY movement, reviewed here before anything is saved. Multi-sheet workbooks: the right sheet is detected automatically, and you can switch sheets after loading.' +
+        (APP_BASIC
+          ? 'Bulk-import an existing inventory from a CSV file — useful for the first setup, or catching up after counting on paper. Every row becomes a real ENTRY movement, reviewed here before anything is saved.'
+          : 'Bulk-import an existing inventory from an Excel (.xlsx) or CSV file — useful for the first setup, or catching up after counting on paper. ' +
+        'Every row becomes a real ENTRY movement, reviewed here before anything is saved. Multi-sheet workbooks: the right sheet is detected automatically, and you can switch sheets after loading.') +
       '</p>' +
       '<div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">' +
         '<button class="btn btn-ghost btn-sm" onclick="_downloadImportTemplate()">⬇ Download CSV Template</button>' +
-        '<input type="file" id="importFileInput" accept=".csv,.xlsx,.xls" style="font-size:.82rem">' +
+        
+
+
+
+
+
+        
+
+
+
+
+
+
+        '<input type="file" id="importFileInput" accept="' +
+          (APP_BASIC ? '.csv' : '.csv,.xlsx,.xls') + '" style="font-size:.82rem">' +
+        '<button type="button" id="importFileClear" class="btn btn-ghost btn-sm" ' +
+          'onclick="_limpiarFicheroImport()" title="Remove the selected file" ' +
+          'style="display:none;padding:.15rem .45rem">✕</button>' +
+        (APP_BASIC
+          ? '<p style="font-size:.78rem;color:var(--muted);margin:.5rem 0 0">' +
+              'Acopio Basic reads <b>.csv</b>. If what you have is an Excel file, open it and use ' +
+              '<b>File &rarr; Download &rarr; Comma-separated values (.csv)</b> &mdash; or, in Excel, ' +
+              '<b>Save As &rarr; CSV</b> &mdash; and bring that one. Reading .xlsx straight needs a ' +
+              'Google permission this edition does not ask for, which is what keeps it installable ' +
+              'in two minutes.' +
+            '</p>'
+          : '') +
       '</div>' +
     '</div>' +
     '<div class="field">' +
@@ -16688,10 +16735,45 @@ function _downloadImportTemplate() {
 
 var _importFileB64 = '', _importFileName = '', _importFileMime = '';
 
+
+
+
+
+
+function _limpiarFicheroImport(){
+  var inp = document.getElementById('importFileInput');
+  if (inp) inp.value = '';
+  var box = document.getElementById('importPreviewBox');
+  if (box) box.innerHTML = '';
+  var x = document.getElementById('importFileClear');
+  if (x) x.style.display = 'none';
+  _importFileB64 = ''; _importFileName = ''; _importFileMime = '';
+  _importParsedRows = []; _importValidTotal = 0; _importFingerprint = '';
+}
+
 function _onImportFileChange(e){
   var file = e.target.files[0];
-  if (!file) return;
+  if (!file) { _limpiarFicheroImport(); return; }
+  var x = document.getElementById('importFileClear');
+  if (x) x.style.display = '';
   var box = document.getElementById('importPreviewBox');
+  
+
+
+
+
+
+
+
+
+
+
+
+  if (APP_BASIC && /\.xlsx?$/i.test(file.name || '')) {
+    _limpiarFicheroImport();
+    _proPitch('importarexcel');
+    return;
+  }
   box.innerHTML = '<p style="color:var(--muted);font-size:.85rem"><span class="spin-hg">⏳</span> Reading file…</p>';
   _readFileAsBase64(file, function(b64, mime){
     if (!b64) { box.innerHTML = '<p style="color:var(--red);font-size:.85rem">Could not read this file.</p>'; return; }
@@ -17054,7 +17136,27 @@ function _syncSettingsTabButtons(tab){
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function _limpiarAvisoAjustes(){
+  var bar = document.getElementById('settingsMsgBar');
+  if (bar) { bar.style.display = 'none'; bar.textContent = ''; }
+}
+
 function switchSettingsTab(tab) {
+  _limpiarAvisoAjustes();
   
   
   
@@ -19870,7 +19972,23 @@ function addDocGroup(suggestedName, containerId, idPrefix) {
   group.dataset.gid = uid;
   group.innerHTML =
     '<div class="doc-group-hdr">' +
-      '<input class="doc-group-name" type="text" value="' + name.replace(/"/g,'&quot;') + '" placeholder="Document name">' +
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      '<input class="doc-group-name" type="text" value="' + _he(name) + '" placeholder="Document name">' +
       '<button class="doc-group-remove" title="Remove" onclick="this.closest(\'.doc-group\').remove();_updateDocPhotoCount()">×</button>' +
     '</div>' +
     '<div class="doc-photos-strip" id="strip-' + uid + '"></div>' +
@@ -29160,7 +29278,22 @@ var BASIC_FUERA = {
 
 
 
-  ajustes: ['permissions', 'pmdirectory', 'import'],
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ajustes: ['permissions', 'pmdirectory'],
   pestanas: []
 };
 
@@ -29188,7 +29321,36 @@ var BASIC_PRO_ZONAS = {
 
 
 
-var BASIC_PRO_AJUSTES = { system: 'respaldo' };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var BASIC_PRO_AJUSTES = {};
+
+
+
+var BASIC_PRO_SISTEMA = {
+  sysArchivado: 'archivado',       
+  sysRespaldo:  'respaldo',
+  sysReporte:   'reportediario',
+  sysLector:    'lectura'
+};
 
 
 
@@ -29218,6 +29380,19 @@ function _basicApagarZona(el, clave){
     ev.stopPropagation();
     _proPitch(c);
   }, true);    
+}
+
+
+
+
+
+
+
+function _basicApagarSecciones(){
+  if (!APP_BASIC) return;
+  Object.keys(BASIC_PRO_SISTEMA).forEach(function(id){
+    _basicApagarZona(document.getElementById(id), BASIC_PRO_SISTEMA[id]);
+  });
 }
 
 
@@ -29262,6 +29437,18 @@ var BASIC_PRO = {
                que: 'Record what is coming before it arrives, and see at a glance what landed and what is late.' },
   respaldo:  { titulo: '🌙 Automatic backup',
                que: 'A copy of everything, made on its own every night and kept in your own Drive.' },
+  
+
+
+
+
+
+  archivado: { titulo: '🗂 Keep it fast as it grows',
+               que: 'Old movements move to a tab of their own on their own, so the app stays quick after years of use.' },
+  importarexcel: { titulo: '📊 Excel files straight in',
+                   que: 'Bring an .xlsx in as it comes \u2014 Pro picks the right tab in a workbook and lets you switch tabs after loading. (Basic reads .csv, and any spreadsheet saves as one in two clicks.)' },
+  reportediario: { titulo: '🌆 An evening report',
+                   que: 'An email at the end of the day with everything that moved, sent on its own — including the quiet days, so silence always means the same thing.' },
   
 
   
@@ -30224,6 +30411,39 @@ var LEGAL_DOCS = {
 
 
 var NOVEDADES = [
+  { ver: '13.0',
+    titulo: 'Two things hardened that you will never see',
+    puntos: [
+      'Both are places where the app built a piece of a page out of text it did not write itself, and escaped it <b>by hand instead of properly</b>. Neither could be exploited today \u2014 that was checked, not assumed \u2014 and both are now done the same way the rest of the app does it.',
+      'The first is the name on an attached document. It escaped quotation marks and <b>not ampersands</b>, so a name containing the right six characters could have broken out of the box it was written in. Nothing reaches it today except words we put there ourselves \u2014 but with the CSV importer now open in the free edition, <b>the words in a file are written by somebody else</b>.',
+      'The second is the message on the sign-in screen when signing in fails. That text comes from Google, not from us, and it went onto the page without being made safe first.',
+      '<b>Why fix what cannot be exploited:</b> in both cases the safety was not in the line itself \u2014 it was in every other place in the app remembering to be careful. That is the kind of thing that holds until the day it does not.'
+    ],
+    antes:  'Safe because of what nobody had typed yet',
+    ahora:  'Safe because of what the line itself does' },
+
+  { ver: '12.99',
+    titulo: 'Importing: a way to unpick a file, and 1,250 is a number again',
+    puntos: [
+      '<b>A row written <code>1,250</code> was being thrown away in silence</b>, with the reason \u201cQty must be a number greater than 0\u201d \u2014 which is not even true: the number was there, and it was the biggest one in the file. Exporting with a thousands separator is normal in Excel, so this was not a rare case; and it fell on the expensive side, because the row lost was always the largest.',
+      'Separators are now removed <b>only when what is left either side are groups of three</b>. A <code>1,25</code> is still refused on purpose: in half of Europe that is a decimal, and turning it into 125 would invent a hundred and twenty-five units nobody has. A refused row is on screen and gets fixed; an invented one is never seen.',
+      '<b>You can take a file back off.</b> There is an \u2715 beside Choose File now: picking the wrong one no longer means leaving Settings and coming back in.',
+      '<b>And an error stops following you between tabs.</b> A failure message used to sit there over the next screen, talking about something no longer in front of you \u2014 that is not a warning, it is noise shaped like one.'
+    ],
+    antes:  'The biggest row in the file, dropped without a word',
+    ahora:  '1,250 is one thousand two hundred and fifty' },
+
+  { ver: '12.98',
+    titulo: 'The free edition gets Import, and the trash opens',
+    puntos: [
+      '<b>Import is in Acopio Basic now.</b> A CSV file, every row checked and counted before anything is saved, and the whole import can be undone. It is the thing that decides whether the free edition is usable at all: a warehouse that already exists arrives with its inventory in a spreadsheet, and without this it would have to be typed in.',
+      '<b>.xlsx is not</b>, and it is not a commercial decision: converting one uses the Drive API, which is a permission this edition deliberately does not ask for \u2014 that is what lets it install without the warning screen. The screen says so <b>before</b> you pick the file, and tells you the way out: any spreadsheet saves as .csv in two clicks.',
+      '<b>And deleting can be undone again.</b> Settings \u2192 System used to go grey <b>whole</b> in the free edition because two things inside it are Pro \u2014 and the trash was in there with them. Now each section closes on its own: the backup, the archive, the evening report and the document reader stay closed; the trash, the storage bar and what the system did on its own are open.',
+      'Each of those now answers for <b>itself</b> when you touch it, instead of all of them answering \u201cAutomatic backup\u201d.'
+    ],
+    antes:  'A whole tab closed because two things in it were Pro',
+    ahora:  'Import works, and a deleted movement comes back' },
+
   { ver: '12.97',
     titulo: 'Settings stops going dead in the free edition',
     puntos: [
@@ -30234,40 +30454,6 @@ var NOVEDADES = [
     ],
     antes:  'One Pro tab, and the whole of Settings dies',
     ahora:  'You leave the Pro tab and everything works again' },
-
-  { ver: '12.96',
-    titulo: 'The pages now say which edition each thing belongs to',
-    puntos: [
-      'Almost all of this version is the website and the guides, which are already updated. <b>Two things changed in the app itself</b>, and they are the reason it has a version number.',
-      '<b>The Terms you accept live in your own sheet</b>, not only on the website, and they said you were buying something and that your system backs itself up every night \u2014 <b>neither is true of the free edition</b>. They now say which clauses belong to which edition.',
-      'And the <b>\u201cCheck Acopio Pro\u201d link</b> on a feature that is not in the free edition used to leave you on the front page to go looking. It now lands on the list that explains <b>the very thing you just pressed</b>.',
-      'On the website: the feature list is <b>split in two</b>, with a heading per edition, and the price opens with <b>Acopio Basic \u2014 free, $0</b>. The list used to promise photos, your team, printed labels and the nightly backup to everyone reading it, and all four are closed in the free edition.'
-    ],
-    antes:  'One thing called \u201cAcopio\u201d, and four promises it did not keep',
-    ahora:  'Two editions, each saying what it is' },
-
-  { ver: '12.95',
-    titulo: 'A job site is not a shelf',
-    puntos: [
-      'Returning material from a site offered to <b>create that site as a shelf in your warehouse</b>. Pressing it added a rack to your map that does not exist.',
-      'The app had <b>one idea of \u201cplace\u201d and needed two</b>: inside are your racks, which you create on purpose; outside are the job sites, which come into being on their own when material leaves.',
-      'On a return the box now offers <b>the places your material has actually gone to</b>, and never offers to turn one into a shelf. The rack you return <i>to</i> still warns if it does not exist.',
-      '<b>And it asks once.</b> \u201cFrom\u201d and \u201cCame back from\u201d were the same question with two different lists. One question now; the project is worked out from your answer.',
-      'Separately: <b>\u201csystem busy\u201d is no longer filed as a breakage</b> \u2014 it was emailing the admin every time two people saved at once.'
-    ],
-    antes:  'Offering to turn a job site into a shelf',
-    ahora:  'Inside and outside are two different things' },
-
-  { ver: '12.94',
-    titulo: 'Saying \u201cyes\u201d to a warning now saves',
-    puntos: [
-      'Returning more of something than ever went out warned you correctly \u2014 and then <b>pressing \u201cSave anyway\u201d crashed</b>, so the movement could not be saved at all.',
-      '<b>It was not one warning, it was five</b>: too much stock on a multi-location entry, a transfer row over stock, a return with no rack, a return of more than went out, and waste with not enough stock.',
-      'All five asked the question <b>before the movement was ready to be sent</b>, so answering yes had nothing to send. They note the question now, and one place decides between asking and saving once everything is ready.',
-      'That also fixes something nobody had noticed: a soft \u201care you sure?\u201d used to cut the path short, so the real checks below it never ran. <b>A genuine error beats a warning now.</b>'
-    ],
-    antes:  'Five warnings where pressing Yes crashed',
-    ahora:  'Yes means save' },
 
 ];
 

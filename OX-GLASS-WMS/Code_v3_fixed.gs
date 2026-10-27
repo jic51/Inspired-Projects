@@ -128,7 +128,7 @@
 
 
 
-var APP_VERSION = '12.97';
+var APP_VERSION = '13.0';
 
 
 
@@ -140,7 +140,7 @@ var APP_VERSION = '12.97';
 
 
 
-var APP_BUILD = 'fb3ce95f';
+var APP_BUILD = '9a16bf6a';
 
 
 
@@ -2161,6 +2161,15 @@ function emailFromIdToken_(idToken) {
 
 
 
+
+
+
+function escapeHtmlSrv_(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function handleOAuthCallback_(code, state) {
   var ok = false, msg = '';
   try {
@@ -2189,7 +2198,12 @@ function handleOAuthCallback_(code, state) {
       '<script>setTimeout(function(){try{window.close();}catch(e){}},800);<\/script>'
     : '<div style="font-family:system-ui,sans-serif;text-align:center;padding:2.5rem 1rem;color:#b91c1c">' +
       '<div style="font-size:3rem">⚠</div><h2 style="margin:.5rem 0">Could not sign in</h2>' +
-      '<p style="color:#555">' + msg + '</p><p>Close this window and try again.</p></div>';
+      
+
+
+
+
+      '<p style="color:#555">' + escapeHtmlSrv_(msg) + '</p><p>Close this window and try again.</p></div>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -9617,6 +9631,39 @@ function chooseImportSheet_(sheets, wanted) {
 
 var MAX_ATTACH_BYTES = 25 * 1024 * 1024;    
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function numeroDeFichero_(v) {
+  var t = String(v == null ? '' : v).trim();
+  if (!t) return NaN;
+  
+
+
+
+  if (/^-?\d{1,3}([,\u00A0\u202F\u2009' ]\d{3})+(\.\d+)?$/.test(t)) {
+    t = t.replace(/[,\u00A0\u202F\u2009' ]/g, '');
+  }
+  return Number(t);
+}
+
 var IMPORT_REQUIRED_HEADERS = ['category', 'name', 'qty'];
 var IMPORT_ALL_HEADERS      = ['category', 'name', 'qty', 'unit', 'location', 'project', 'supplier', 'po', 'comments'];
 
@@ -9634,6 +9681,25 @@ function leerFilasDelFichero_(data) {
   var isExcel  = /\.xlsx?$/i.test(fileName);
   if (!isExcel && !/\.csv$/i.test(fileName)) {
     throw new Error('Please upload a .csv or .xlsx file.');
+  }
+  
+
+
+
+
+
+
+
+
+
+  if (isExcel && basicApagado_()) {
+    throw new Error(
+      'Acopio Basic reads .csv files. Open your Excel file and use ' +
+      'File \u2192 Download \u2192 Comma-separated values (.csv) \u2014 in Excel, ' +
+      'Save As \u2192 CSV \u2014 and bring that one; everything else works the same. ' +
+      'Reading .xlsx directly needs a Google permission this edition does not ask ' +
+      'for, which is what lets it install without the warning screen. ' +
+      'Acopio Pro reads .xlsx straight.');
   }
 
   var text;
@@ -9713,7 +9779,7 @@ function leerFilasDelFichero_(data) {
       rowNum:   i + 1,
       category: String(r[col.category] || '').trim(),
       name:     String(r[col.name]     || '').trim(),
-      qty:      Number(r[col.qty]),
+      qty:      numeroDeFichero_(r[col.qty]),
       unit:     col.unit     !== -1 ? (String(r[col.unit]     || '').trim() || 'UNIT') : 'UNIT',
       location: col.location !== -1 ?  String(r[col.location] || '').trim() : '',
       project:  col.project  !== -1 ?  String(r[col.project]  || '').trim() : '',
