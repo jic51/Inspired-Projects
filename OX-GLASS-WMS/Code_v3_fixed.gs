@@ -128,7 +128,7 @@
 
 
 
-var APP_VERSION = '13.0';
+var APP_VERSION = '13.2';
 
 
 
@@ -140,7 +140,7 @@ var APP_VERSION = '13.0';
 
 
 
-var APP_BUILD = '9a16bf6a';
+var APP_BUILD = 'a95805d7';
 
 
 
@@ -473,14 +473,43 @@ var AC = {
   
   
   
-  ORIGIN_PROJECT:23, FROM_MOV:24
+  ORIGIN_PROJECT:23, FROM_MOV:24,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  IMPORT_ID:25
 };
 
 
 
 
 
-var AC_WIDTH = 25;
+var AC_WIDTH = 26;
 
 
 
@@ -814,7 +843,7 @@ function ensureCoreSheets_(ss) {
         'System Date','Type','Name','GC','PO#','Qty','Unit','Date Received','Source Location',
         'Supplier','Comments','Status','Received By','Project','Mat ID','Doc Links','User Email',
         'Destination Location','MoveType','PM','Unit Cost','Total Cost','Movement ID',
-        'Left Over From','From Movement'] },
+        'Left Over From','From Movement','Import ID'] },
     { name: SHEETS.CONFIG, header: [
         'Projects','Categories','Suppliers','Locations','Location Type','User Email','User Role',
         'Admin Email','Truck','Truck Person','Truck Status','Min Stock Material','Min Stock Qty',
@@ -1849,7 +1878,28 @@ function oauthCfg_() {
 
 
 
-var GEMINI_MODEL_DEFAULT = 'gemini-2.5-flash';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var GEMINI_MODEL_DEFAULT = 'gemini-3.8-flash';
 
 function geminiModel_() {
   return String(PropertiesService.getScriptProperties().getProperty('GEMINI_MODEL') || '').trim()
@@ -1861,7 +1911,14 @@ function geminiModel_() {
 
 function geminiModels_() {
   var out = [geminiModel_()];
-  ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest'].forEach(function (m) {
+  [
+    
+    'gemini-3.8-flash', 'gemini-flash-latest',
+    
+    
+    
+    'gemini-2.5-flash', 'gemini-2.5-flash-lite'
+  ].forEach(function (m) {
     if (out.indexOf(m) === -1) out.push(m);
   });
   return out;
@@ -1959,18 +2016,32 @@ function setAiKey(data, auth) {
   
   
   
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   var probe;
   try {
     probe = geminiFetch_({
       contents: [{ parts: [{ text: 'Reply with the single word: ok' }] }],
       generationConfig: { maxOutputTokens: 5 }
-    }, key, true);
+    }, key);
   } catch (e) {
     throw new Error('Could not reach Google to check the key: ' + e.message);
   }
@@ -2036,8 +2107,12 @@ function setAiKey(data, auth) {
 
 
 
-function geminiFetch_(requestBody, apiKey, unSoloModelo) {
-  var models = unSoloModelo ? [geminiModel_()] : geminiModels_();
+
+
+
+
+function geminiFetch_(requestBody, apiKey) {
+  var models = geminiModels_();
   var last = null;
   for (var i = 0; i < models.length; i++) {
     last = UrlFetchApp.fetch(geminiUrl_(models[i], apiKey), {
@@ -5058,6 +5133,17 @@ function addMovementsBatch_(ss, archive, movements, auth, opciones) {
         row[AC.FROM_MOV]       = '';
       }
 
+      
+
+
+
+
+
+
+
+
+      row[AC.IMPORT_ID] = String(d.importId || '').trim();
+
       newRows.push(row);
       rowMeta.push({
         mt: mt, name: name, matId: matId, proj: proj, qty: qty, unit: row[AC.UNIT],
@@ -6040,6 +6126,83 @@ function packMath_(packCount, perPack, pricePerPack) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function alinearPapelera_(sheet) {
+  if (!sheet) return sheet;
+  try {
+    var ancho = sheet.getMaxColumns();
+    if (ancho < 1) return sheet;
+    var cab = sheet.getRange(1, 1, 1, ancho).getValues()[0];
+    var pos = -1;
+    for (var i = 0; i < cab.length; i++) {
+      if (String(cab[i] || '').trim() === 'Deleted At') { pos = i; break; }
+    }
+    if (pos === -1) return sheet;         
+    if (pos === TR.DELETED_AT) return sheet;    
+
+    if (pos > TR.DELETED_AT) {
+      
+      
+      Logger.log('alinearPapelera_: "Deleted At" en ' + pos + ', el modelo espera ' +
+                 TR.DELETED_AT + '. No se toca.');
+      return sheet;
+    }
+
+    
+    
+    sheet.insertColumnsBefore(pos + 1, TR.DELETED_AT - pos);
+  } catch (e) {
+    
+    
+    Logger.log('alinearPapelera_: ' + (e && e.message));
+  }
+  return sheet;
+}
+
 function ensureTrashSheet_(ss) {
   var sheet = ss.getSheetByName(SHEETS.TRASH);
   if (!sheet) {
@@ -6053,6 +6216,10 @@ function ensureTrashSheet_(ss) {
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   }
+  
+  
+  
+  alinearPapelera_(sheet);
   ensureArchiveWidth_(sheet);
   if (sheet.getMaxColumns() < TRASH_WIDTH) {
     sheet.insertColumnsAfter(sheet.getMaxColumns(), TRASH_WIDTH - sheet.getMaxColumns());
@@ -6094,7 +6261,10 @@ function findMovementById_(ss, movId) {
 function findTrashedById_(ss, movId) {
   var want = String(movId || '').trim();
   if (!want) return null;
-  var sheet = ss.getSheetByName(SHEETS.TRASH);
+  
+  
+  
+  var sheet = alinearPapelera_(ss.getSheetByName(SHEETS.TRASH));
   if (!sheet) return null;
   var last = sheet.getLastRow();
   if (last < 2) return null;
@@ -10042,6 +10212,13 @@ function commitImport(data, auth) {
       comments:    ('Imported from file ' + importId +
                     (r.comments ? ' — ' + r.comments : '')).trim(),
       
+
+
+
+
+
+      importId:    importId,
+      
       
       responsible: '',
       
@@ -10255,10 +10432,21 @@ function listImports(auth) {
 
 
 
-function borrarFilasEnTanda_(ss, auth, seLleva, tope) {
+
+
+
+
+
+
+
+
+
+
+
+function borrarFilasEnTanda_(ss, auth, seLleva, tope, vaALaPapelera) {
   var trash = ensureTrashSheet_(ss);
   var ahora = new Date();
-  var movidas = 0, quedanPor = 0;
+  var movidas = 0, quedanPor = 0, descartadas = 0;
   
 
 
@@ -10280,7 +10468,7 @@ function borrarFilasEnTanda_(ss, auth, seLleva, tope) {
     if (!sheet || sheet.getLastRow() < 2) return;
 
     var filas = sheet.getRange(2, 1, sheet.getLastRow() - 1, AC_WIDTH).getValues();
-    var quedan = [], aPapelera = [];
+    var quedan = [], aPapelera = [], enEstaHoja = 0;
     filas.forEach(function (f) {
       
       if (!f[AC.CATEGORY] && !f[AC.NAME]) return;
@@ -10289,25 +10477,55 @@ function borrarFilasEnTanda_(ss, auth, seLleva, tope) {
 
 
 
-      if (tope && movidas + aPapelera.length >= tope) { quedan.push(f); quedanPor++; return; }
+      if (tope && movidas + enEstaHoja >= tope) { quedan.push(f); quedanPor++; return; }
+      enEstaHoja++;
+      var idf = String(f[AC.MOV_ID] || '').trim();
+      if (idf) idsMovidos.push(idf);
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      if (typeof vaALaPapelera === 'function' && !vaALaPapelera(f)) {
+        descartadas++;
+        return;                        
+      }
       var guardada = f.slice();
       guardada[TR.DELETED_AT] = ahora;
       guardada[TR.DELETED_BY] = auth.email;
       guardada[TR.FROM_SHEET] = par.nombre;
       aPapelera.push(guardada);
-      var idf = String(f[AC.MOV_ID] || '').trim();
-      if (idf) idsMovidos.push(idf);
     });
 
-    if (!aPapelera.length) return;
+    if (!enEstaHoja) return;
 
-    trash.getRange(trash.getLastRow() + 1, 1, aPapelera.length, TRASH_WIDTH)
-         .setValues(aPapelera.map(textSafeRow_));
+    
+
+
+
+    if (aPapelera.length) {
+      trash.getRange(trash.getLastRow() + 1, 1, aPapelera.length, TRASH_WIDTH)
+           .setValues(aPapelera.map(textSafeRow_));
+    }
     escribirHojaCompleta_(sheet, quedan, AC_WIDTH);
-    movidas += aPapelera.length;
+    movidas += enEstaHoja;
   });
 
-  return { movidas: movidas, quedanPor: quedanPor, ids: idsMovidos };
+  return { movidas: movidas, quedanPor: quedanPor, ids: idsMovidos,
+           
+           
+           descartadas: descartadas };
 }
 
 
@@ -10328,32 +10546,125 @@ function borrarFilasEnTanda_(ss, auth, seLleva, tope) {
 
 var MAX_BORRADO_POR_TANDA = 300;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function esDeLaImportacion_(fila, importId) {
+  var id = String(importId || '').trim();
+  if (!id || !fila) return false;
+  if (String(fila[AC.IMPORT_ID] || '').trim() === id) return true;
+  
+  return String(fila[AC.COMMENTS] || '').indexOf('Imported from file ' + id) === 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function movimientosEditados_(ss) {
+  var out = {};
+  var sheet = ss.getSheetByName(SHEETS.AUDIT);
+  if (!sheet) return out;
+  var last = sheet.getLastRow();
+  if (last < 2) return out;
+
+  
+  
+  var filas = sheet.getRange(2, 2, last - 1, 3).getValues();
+  for (var i = 0; i < filas.length; i++) {
+    if (String(filas[i][0] || '').trim() !== 'MODIFY_MOVEMENT') continue;
+    var det = String(filas[i][2] || '').trim();
+    
+    
+    if (!det || det.indexOf('Row ') === 0) continue;
+    var id = det.split(/[\s|]/)[0].trim();
+    if (id) out[id] = true;
+  }
+  return out;
+}
+
 function undoImport(data, auth) {
   auth = requireAuth_('ADMIN');
   var importId = String((data && data.importId) || '').trim();
   if (!importId) throw new Error('Which import?');
 
   return withStockLock_(function () {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
-    var marca = 'Imported from file ' + importId;
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    var editados = movimientosEditados_(ss);
 
     var res = borrarFilasEnTanda_(ss, auth, function (f) {
-      return String(f[AC.COMMENTS] || '').indexOf(marca) === 0;
-    }, MAX_BORRADO_POR_TANDA);
+      return esDeLaImportacion_(f, importId);
+    }, MAX_BORRADO_POR_TANDA, function (f) {
+      return !!editados[String(f[AC.MOV_ID] || '').trim()];
+    });
 
     if (!res.movidas) {
       throw new Error('Nothing left from that import — it may have been undone already.');
     }
+
+    var aLaPapelera = res.movidas - res.descartadas;
 
     
     
     
     
     refreshDerivedSheets_(ss);
+    
+
+
     auditLog_(ss, 'IMPORT_UNDONE', auth.email,
-      res.movidas + ' row(s) from import ' + importId + ' moved to the trash', importId, '');
+      res.movidas + ' row(s) from import ' + importId + ' removed — ' +
+      res.descartadas + ' discarded (the file is the copy), ' +
+      aLaPapelera + ' kept in the trash (edited since importing)',
+      importId, '');
 
     return { status: 'success', removed: res.movidas, importId: importId,
+             
+             
+             discarded: res.descartadas,
+             trashed:   aLaPapelera,
              
              
              
@@ -15272,7 +15583,8 @@ function manageMaterialLocked_(data, auth) {
     return { status: 'success', removed: n };
 
   } else if (op === 'listTrash') {
-    var tSheet = ss.getSheetByName(SHEETS.TRASH);
+    
+    var tSheet = alinearPapelera_(ss.getSheetByName(SHEETS.TRASH));
     if (!tSheet || tSheet.getLastRow() < 2) return { status: 'success', items: [] };
     var tLast  = tSheet.getLastRow();
     var span   = Math.min(200, tLast - 1);           
@@ -16469,8 +16781,26 @@ function modifyMovementLocked_(data, auth) {
     normalizeString(rowVals[AC.NAME]     || ''));
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  var idEditado = String(rowVals[AC.MOV_ID] || '').trim();
   auditLog_(ss, 'MODIFY_MOVEMENT', auth.email,
-    'Row ' + rowIdx + ' | Reason: ' + reason,
+    (idEditado ? idEditado + ' (row ' + rowIdx + ')' : 'Row ' + rowIdx) + ' | Reason: ' + reason,
     changes.join(' | '), '');
 
   
